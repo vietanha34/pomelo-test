@@ -1,0 +1,17 @@
+{
+  "development": {
+    "cache" : {
+      "host" : "127.0.0.1",
+      "port" : 6379,
+      "db" : 3
+    }
+  },
+
+  "production": {
+    "cache" : {
+      "host" : "127.0.0.1",
+      "port" : 3339,
+      "db" : 3
+    }
+  }
+}

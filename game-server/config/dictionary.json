@@ -1,0 +1,6 @@
+{
+  "connector.entryHandler.ping" : 0,
+  "gate.gateHandler.getServer" : 1,
+  "connector.entryHandler.validClient" : 2,
+  "connector.entryHandler.login" : 3
+}

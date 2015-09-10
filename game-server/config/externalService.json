@@ -1,0 +1,14 @@
+{
+  "development": {
+    "avatarServer": {
+      "url" : "http://stpk.cuamobi.com/upload.php",
+      "secretKey": "pyLzHGQvxOuY"
+    }
+  },
+  "production": {
+    "avatarServer": {
+      "url" : "http://stpk.cuamobi.com/upload.php",
+      "secretKey": "pyLzHGQvxOuY"
+    }
+  }
+}

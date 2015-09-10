@@ -1,0 +1,31 @@
+{
+  "development":{
+    "connector": [
+    {"id": "connector-server-1", "host": "127.0.0.1", "port": 3150, "clientPort": 3010, "frontend": true}
+    ],
+    "auth" : [
+      {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
+     ],
+    "gate": [
+      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 3010, "frontend": true}
+    ],
+    "home": [
+      {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
+      {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
+    ],
+    "chat" : [
+      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
+    ],
+    "district" : [
+      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
+    ],
+    "manager" : [
+      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
+    ]
+  },
+  "production":{
+    "connector": [
+    {"id": "connector-server-1", "host": "127.0.0.1", "port": 3150, "clientPort": 3010, "frontend": true}
+    ]
+  }
+}

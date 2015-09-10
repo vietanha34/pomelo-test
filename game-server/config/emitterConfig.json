@@ -1,0 +1,20 @@
+{
+  "development": {
+    "FINISH_GAME": 2,
+    "LOGIN": 3,
+    "LOGOUT" : 4,
+    "TOPUP": 7,
+    "UPDATE_PROFILE" : 8,
+    "ADD_FRIEND": 10,
+    "REGISTER": 15
+  },
+  "production": {
+    "FINISH_GAME": 2,
+    "LOGIN": 3,
+    "LOGOUT" : 4,
+    "TOPUP": 7,
+    "UPDATE_PROFILE" : 8,
+    "ADD_FRIEND": 10,
+    "REGISTER": 15
+  }
+}

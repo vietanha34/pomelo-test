@@ -1,0 +1,11 @@
+{
+    "name": "Ionline v4",
+    "url": "www.gviet.vn",
+    "version": "0.0.1-beta",
+    "options": {
+        "paths": "./game-server/app",
+        "outdir": "./Document/Docs/yuidoc",
+        "exclude": "lib,docs,build",
+        "themedir": "./Document/Docs/yuidoc-themes/friendly-theme"
+    }
+}

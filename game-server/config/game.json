@@ -1,0 +1,18 @@
+{
+  "development" : [
+    "caro",
+    "cotuong",
+    "coup",
+    "covay",
+    "cothe",
+    "covua"
+  ],
+  "production" : [
+    "caro",
+    "cotuong",
+    "coup",
+    "covay",
+    "cothe",
+    "covua"
+  ]
+}

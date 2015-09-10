@@ -1,0 +1,13 @@
+{
+  "development": {
+    "dbHost" : "127.0.0.1",
+    "dbPort" : 27017,
+    "dbName" : "ipoker"
+  },
+
+  "production": {
+    "dbHost" : "172.31.2.217",
+    "dbPort" : 3338,
+    "dbName" : "ipoker"
+  }
+}
