@@ -4,5 +4,8 @@
   },
   "production": {
     "key" : "ThuD0jsc123#@!"
+  },
+  "local": {
+    "key" : "ThuD0jsc123#@!"
   }
 }

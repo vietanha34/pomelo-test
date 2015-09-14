@@ -26,25 +26,4 @@ module.exports.type = Config.TYPE.TOPUP;
  */
 
 module.exports.process = function (app, type, param) {
-  var uid = param.uid || 0;
-  if (!uid) return false;
-  var mysqlClient = pomelo.app.get('mysqlClient');
-	pomelo
-		.app
-		.get('redisCache')
-		.HINCRBY(redisKeyUtil.getPromotionKey(uid), 'hasPay', 1, function (err, count) {
-			utils.print(err);
-			if (count == 1) {
-				userDao.updateProperties(uid, {hasPay: 1});
-			}
-		});
-  mysqlClient
-    .AccUserDetail
-    .update({
-      topup : mysqlClient.sequelize.literal(' topup + ' + param.gold)
-    }, {
-      where : {
-        uid : uid
-      }
-    })
 };

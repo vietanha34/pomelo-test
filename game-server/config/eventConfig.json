@@ -62,5 +62,37 @@
       "name" : "jackpot",
       "module" : "ipoker-jackpot-event"
     }
+  ],
+  "local": [
+    {
+      "type" : 1,
+      "name" : "vipcode",
+      "module" : "ipoker-vip-code"
+    },
+    {
+      "type" : 2,
+      "name" : "freechip",
+      "module" : "ipoker-freechip"
+    },
+    {
+      "type" : 3,
+      "name" : "matchcount",
+      "module" : "ipoker-matchcount"
+    },
+    {
+      "type" : 4,
+      "name" : "payback",
+      "module" : "ipoker-payback-event"
+    },
+    {
+      "type" : 5,
+      "name" : "chipbonus",
+      "module" : "ipoker-chipbonus-event"
+    },
+    {
+      "type" : 6,
+      "name" : "jackpot",
+      "module" : "ipoker-jackpot-event"
+    }
   ]
 }
