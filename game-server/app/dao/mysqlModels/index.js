@@ -10,7 +10,7 @@ var Sequelize = require("sequelize");
 
 module.exports = function() {
   var db        = {};
-  var mysqlConfig = pomelo.app.get('mysqlClientConfig');
+  var mysqlConfig = pomelo.app.get('mysqlConfig');
   var sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.username, mysqlConfig.password, mysqlConfig);
   fs
     .readdirSync(__dirname)

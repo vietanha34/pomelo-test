@@ -3,12 +3,63 @@
     "avatarServer": {
       "url" : "http://stpk.cuamobi.com/upload.php",
       "secretKey": "pyLzHGQvxOuY"
+    },
+    "account" : {
+      "auth_url" : "https://172.16.20.20:443",
+      "login_url" : "/oauth/token/",
+      "getBalanceInit" : "/api/user/initBalance",
+      "playGame" : "/api/user/play",
+      "getGameProfile" : "/api/user/getGameProfile",
+      "getProfile_url" : "/api/user/getProfile",
+      "updateProfile" : "/api/user/updateProfile",
+      "verifyUserInfo" : "/api/user/verifyUserInfo",
+      "checkOTP" : "/api/user/checkOTP/",
+      "clientId" : "8onXVrJppLH8OMEtiqmQHB2f@SK=@M7tv6=kq66f",
+      "clientSecret" : "?JAeXFCDS9b64.N=JxF",
+      "SECRET_KEY" : "t-$u15zfgi_3&_6ot9+s_-qlcdfon@f7",
+      "play" : "/api/user/play"
     }
   },
   "production": {
     "avatarServer": {
       "url" : "http://stpk.cuamobi.com/upload.php",
       "secretKey": "pyLzHGQvxOuY"
+    },
+    "account" : {
+      "auth_url" : "https://172.16.20.20:443",
+      "login_url" : "/oauth/token/",
+      "getBalanceInit" : "/api/user/initBalance",
+      "playGame" : "/api/user/play",
+      "getGameProfile" : "/api/user/getGameProfile",
+      "getProfile_url" : "/api/user/getProfile",
+      "updateProfile" : "/api/user/updateProfile",
+      "verifyUserInfo" : "/api/user/verifyUserInfo",
+      "checkOTP" : "/api/user/checkOTP/",
+      "clientId" : "8onXVrJppLH8OMEtiqmQHB2f@SK=@M7tv6=kq66f",
+      "clientSecret" : "?JAeXFCDS9b64.N=JxF",
+      "SECRET_KEY" : "t-$u15zfgi_3&_6ot9+s_-qlcdfon@f7",
+      "play" : "/api/user/play"
+    }
+  },
+  "local": {
+    "avatarServer": {
+      "url" : "http://stpk.cuamobi.com/upload.php",
+      "secretKey": "pyLzHGQvxOuY"
+    },
+    "account" : {
+      "auth_url" : "https://172.16.20.20:443",
+      "login_url" : "/oauth/token/",
+      "getBalanceInit" : "/api/user/initBalance",
+      "playGame" : "/api/user/play",
+      "getGameProfile" : "/api/user/getGameProfile",
+      "getProfile_url" : "/api/user/getProfile",
+      "updateProfile" : "/api/user/updateProfile",
+      "verifyUserInfo" : "/api/user/verifyUserInfo",
+      "checkOTP" : "/api/user/checkOTP/",
+      "clientId" : "8onXVrJppLH8OMEtiqmQHB2f@SK=@M7tv6=kq66f",
+      "clientSecret" : "?JAeXFCDS9b64.N=JxF",
+      "SECRET_KEY" : "t-$u15zfgi_3&_6ot9+s_-qlcdfon@f7",
+      "play" : "/api/user/play"
     }
   }
 }

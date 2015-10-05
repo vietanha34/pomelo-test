@@ -10,7 +10,6 @@ var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
-var dataApi = require('../../../util/dataApi');
 
 var LAYER_NUM_BOARD = 20;
 
@@ -25,22 +24,22 @@ var Handler = function (app) {
 Handler.prototype.quickPlay = function (msg, session, next) {
   var uid = session.uid;
   var self = this;
-  var gameId = 3;
-  //if (session.get('tableId')) {
-  //  msg.tableId = session.get('tableId');
-  //  return this.joinBoard(msg, session, next);
-  //}
-  if (!lodash.isNumber(gameId) || (gameId < 0 || gameId > 9)) {
-    next(null, {ec: Code.FAIL});
-    return;
-  }
+  var gameId = msg.gameId;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance) {
     return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
   }
-  var lang = session.get('lang');
-  var profileId = session.get('profileId');
-  var user, clause;
+  if (!gameId){
+    return next(null, utils.getError(Code.FAIL))
+  }
+  var user;
+  var whereClause = {
+    numPlayer : {
+      $lt : 2
+    },
+    gameId : gameId
+  };
+  if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var tableId;
   async.waterfall([
     // get userInfo,
@@ -52,29 +51,24 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         user = {
           gold: userInfo.gold,
           username: userInfo.username,
-          uid: userInfo.id.toString(),
+          uid: userInfo.id,
           fullname: userInfo.fullname,
           sex: userInfo.sex,
           avatar: userInfo.avatar,
           frontendId: session.frontendId
         };
-        clause = getQuickPlayclause(user, gameId, msg);
-        var orderClause = {
-          num_player: -1,
-          max_buy_in: -1,
-          bet: -1
-        };
-        self.app.get('boardService').getBoard(clause, orderClause, done)
+        self.app.get('boardService').getBoard({
+          where : whereClause,
+          limit : 1
+        },done)
       } else {
         next(null, {ec: Code.FAIL});
       }
     }, function (boardIds, done) {
-      //var boardId = boardIds[Math.floor(Math.random() * boardIds.length)];
       var boardId = boardIds[0];
       if (boardId) {
-        tableId = boardId.table_id;
-        console.log(user);
-        self.app.rpc.game.gameRemote.joinBoard(session, boardId.table_id, {userInfo: user}, done)
+        tableId = boardId.tableId;
+        self.app.rpc.game.gameRemote.joinBoard(session, boardId.tableId , {userInfo: user}, done)
       } else {
         var err = new Error('Không tìm thấy bàn chơi phù hợp');
         err.ec = Code.ON_QUICK_PLAY.FA_NOT_AVAILABLE_BOARD;
@@ -102,16 +96,13 @@ Handler.prototype.quickPlay = function (msg, session, next) {
 
 Handler.prototype.joinBoard = function (msg, session, next) {
   var uid = session.uid;
-  var lang = session.get('lang');
   var tableId = msg.tableId;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance) {
     return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
   }
-  var slotId = msg.slotId;
   var self = this;
   var type = msg.type;
-  var profileId = session.get('profileId');
   if (type == 1) {
     this.quickPlay(msg, session, next);
     return
@@ -136,7 +127,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           avatar: userInfo.avatar,
           frontendId: session.frontendId
         };
-        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, slotId: slotId}, done)
+        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user}, done)
       } else {
         next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
       }
@@ -209,16 +200,15 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   })
 };
 
-
 Handler.prototype.getNumBoard = function (msg, session, next) {
   var clause = {
     bet: msg.bet,
     game_type: msg.gameType,
     limit_pot: msg.limitPot,
     max_player: msg.maxPlayer,
-    num_player : {
-      type : consts.WHERE_TYPE.GREATER,
-      value : 0
+    num_player: {
+      type: consts.WHERE_TYPE.GREATER,
+      value: 0
     },
     count: true
   };
@@ -231,6 +221,42 @@ Handler.prototype.getNumBoard = function (msg, session, next) {
   })
 };
 
+Handler.prototype.getHall = function (msg, session, next) {
+  var gameId = msg.gameId;
+  if (gameId < 1 && gameId > 6) {
+    return next(null, {ec: Code.FAIL, msg: 'Sai Định danh game'}); // TODO change language
+  }
+  var boardService = this.app.get('boardService');
+  boardService
+    .getRoom({
+      where: {
+        gameId: gameId
+      }
+    })
+    .then(function (rooms) {
+      var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
+      rooms = lodash.groupBy(rooms, 'hallId');
+      var keys = Object.keys(rooms);
+      var results = [];
+      for (var i = 0, len = keys.length; i< len; i ++){
+        var hallId = keys[i];
+        var hallKey = parseInt(''+gameId + hallId);
+        var hallConfig = hallConfigs[hallKey];
+        results.push({
+          hallId: hallId,
+          gold: [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)],
+          icon: utils.JSONParse(hallConfig.icon, {id : 0, version : 0}),
+          hint: hallConfig.hint,
+          room: lodash.map(rooms[hallId], function (n) {
+            return { full : n.progress,  roomId: n.roomId}
+          }),
+          level: parseInt(hallConfig.level),
+          exp: parseInt(hallConfig.exp)
+        })
+      }
+    })
+};
+
 /**
  * Lấy về danh sách bàn chơi
  *
@@ -239,95 +265,41 @@ Handler.prototype.getNumBoard = function (msg, session, next) {
  * @param next
  */
 Handler.prototype.getBoardList = function (msg, session, next) {
-  var layer = msg.layer || 0;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance) {
     return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
   }
-  var self = this;
-  async.waterfall([
-    function (done) {
-      var clause = {
-        bet: msg.bet,
-        game_type: msg.gameType,
-        limit_pot: msg.limitPot,
-        max_player: msg.maxPlayer,
-        num_player : {
-          type : consts.WHERE_TYPE.GREATER,
-          value : 0
-        },
-        count: true
-      };
-      self.app.get('boardService').getBoard(clause, null, done)
-    }, function (num) {
-      num = num[0]['count(*)'];
-      var clause = {
-        bet: msg.bet,
-        stt: msg.stt,
-        game_type: msg.gameType,
-        limit_pot: msg.limitPot,
-        max_player: msg.maxPlayer
-      };
-      self.app.get('boardService').getBoard(clause, null, function (err, boards) {
-        if (err) {
-          logger.error(err);
-          next(null, {
-            ldata: [],
-            layer: layer,
-            numBoard: 0
-          })
-        }
-        else {
-          var numBoard =  lodash.countBy(function (board) {
-            return board.num_player > 0 ? 1 : 0
-          });
-          numBoard = numBoard['1'];
-          layer = layer % (Math.ceil(boards.length / LAYER_NUM_BOARD));
-          var ldata = [];
-          var boardLoad = boards.slice(layer * LAYER_NUM_BOARD, (layer + 1) * LAYER_NUM_BOARD);
-          for (var i = 0, len = boardLoad.length; i < len; i++) {
-            var board = boardLoad[i];
-            ldata.push({
-              gameType: board.game_type || 2,
-              limitPot: board.limit_pot || 2,
-              tableId: board.table_id,
-              numPlayer: board.num_player,
-              maxPlayer: board.max_player,
-              bet: board.bet
-            });
-          }
-          ldata = lodash.sortBy(ldata, function (data) {
-            return -data.numPlayer
-          });
-          next(null, {
-            numBoard: numBoard,
-            ldata: ldata,
-            layer: layer,
-            numBoard : num
-          });
-        }
-      })
-    }
-  ]);
-};
-
-var getQuickPlayclause = function (userInfo, gameId, msg) {
-  var clause = {
-    offset: 0,
-    length: 2,
-    game_type: msg.gameType,
-    limit_pot: msg.limitPot,
-    is_full: 0
-  };
-  var limitConfig = dataApi.limitConfig.findById(gameId);
-  if (msg.bet) {
-    clause.bet = msg.bet || 0
-  } else {
-    var value = Math.floor((isNaN(parseInt(userInfo.gold)) ? 0 : parseInt(userInfo.gold)) / limitConfig.limit);
-    value = value > limitConfig.min ? value : limitConfig.min;
-    clause.bet = {};
-    clause.bet.value = value;
-    clause.bet.type = consts.WHERE_TYPE.SMALLER_EQUAL;
-  }
-  return clause
+  var gameId = msg.gameId;
+  var roomId = msg.roomId;
+  var boardService = this.app.get('boardService');
+  boardService
+    .getBoard({
+      where: {
+        gameId: gameId,
+        roomId : roomId
+      }
+    })
+    .then(function (boards) {
+      var data = [];
+      for (var i = 0, len = boards.length; i < len; i ++){
+        var board = boards[i];
+        data.push({
+          index : board.index,
+          tableId : board.tableId,
+          gameId : board.gameId,
+          roomId : board.roomId,
+          stt : board.stt,
+          numPlayer : board.numPlayer,
+          bet : board.bet,
+          turnTime : board.turnTime,
+          lock : board.lock ? 1 : 0,
+          optional : utils.JSONParse(board.optional, {})
+        });
+      }
+      return next(null, { board : data, roomId : roomId, gameId : gameId})
+    })
+    .catch(function (err) {
+      logger.error('err : ', err);
+      return next(null, { board : [], roomId :roomId, gameId : gameId});
+    })
 };

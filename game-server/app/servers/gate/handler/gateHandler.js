@@ -25,11 +25,6 @@ Handler.prototype.getServer = function (msg, session, next) {
     return;
   }
   var link, type, message;
-  if (msg.platform === 'windowphone' && (!msg.versionCode || msg.versionCode < 9061015) && msg.dtid === '1') {
-    link = 'https://www.windowsphone.com/en-us/store/app/joka-%C4%91%E1%BA%A5u-tr%C6%B0%E1%BB%9Dng-online/7f83030d-4ebe-43f6-85d6-311889369e7c';
-    type = 0;
-    message = "JOKA ra bản update: fix lỗi game, bổ sung đấu trường, tránh lag mạng, tải ngay!";
-  }
   var idSession = uuid.v4();
   var key = shortId.generate();
   var idSessionKey = redisKeyUtil.getIdSessionKey(idSession);

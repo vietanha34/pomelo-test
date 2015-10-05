@@ -7,11 +7,10 @@ var lodash = require('lodash');
 var consts = require('../../../consts/consts');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var Promise = require('bluebird');
-var MailDao = require('../../../dao/mailDao');
-var FriendDao = require('../../../dao/friendDao');
+var NewsDao = require('../../../dao/newsDao');
 var Code = require('../../../consts/code');
 var logger = require('pomelo-logger').getLogger(__filename);
-var moment = require('moment');
+var utils = require('../../../util/utils');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -21,40 +20,40 @@ var Handler = function (app) {
   this.app = app;
 };
 
+/**
+ * Lấy thông tin màn hình home
+ *
+ * @param msg
+ * @param session
+ * @param next
+ */
 Handler.prototype.getHome = function (msg, session, next) {
   Promise.props({
-    numInbox: MailDao.getNumUnReadInbox(session.uid),
-    numFriend: FriendDao.getCountRequestFriend(session.uid)
-  }).then(function (result) {
-    var data = {
-      langVersion: pomelo.app.get('gameService').langVersion,
-      userInfo: {
-        fullname: session.get('fullname'),
-        username: session.get('username'),
-        uid: session.uid,
-        gold: session.get('gold')
-      },
-      regPhone: session.get('phone') ? 0 : 1,
-      inbox: result.numInbox || 0,
-      friend: result.numFriend || 0,
-      count: (result.numInbox + result.numFriend) || 0,
-      quickPlay: {
-        gameType: consts.POKER_GAME_TYPE,
-        limitPot: consts.LIMIT_POT,
-        bet: lodash.pluck(pomelo.app.get('gameService').gameConfig, 'bet'),
-        numPlayer: consts.NUM_PLAYER
-      }
-    };
-    var hidden = 0;
-    if (session.get('platform') === consts.PLATFORM.IOS && pomelo.app.get('hiddenChangeIos') && session.get('version') > '1.0.01'){
-      hidden = 1;
-    }
-    if (session.get('platform') === consts.PLATFORM.ANDROID && pomelo.app.get('hiddenChangeAndroid')){
-      hidden = 1;
-    }
-    data.hidden = hidden;
-    next(null, data);
+    newCount: NewsDao.getNumNewsUnreadByUserId(session.uid),
+    notifyCount: NewsDao.getNumNewsUnreadByUserId(session.uid)
   })
+    .then(function (result) {
+      var data = {
+        userInfo: {
+          fullname: session.get('fullname'),
+          avatar : session.get('username'),
+          uid: session.uid,
+          gold: session.get('gold'),
+          level : session.get('level'),
+          exp : [0,1000] // TODO change
+        },
+        game : [
+          {gameId : 1, status : 1},
+          {gameId : 2, status : 1},
+          {gameId : 3, status : 1},
+          {gameId : 4, status : 1},
+          {gameId : 5, status : 1},
+          {gameId : 6, status : 1}
+        ]
+      };
+      result = utils.merge_options(result, data);
+      next(null, result);
+    })
     .catch(function (err) {
       console.error('err : ', err);
     })
@@ -70,10 +69,4 @@ Handler.prototype.getLanguage = function (msg, session, next) {
 
 Handler.prototype.updateHome = function (msg, session, next) {
   return next(null, {})
-};
-
-Handler.prototype.getNumOnline = function (msg, session, next) {
-  this.app.get('redisCache').get(redisKeyUtil.getCcuKey(), function (err, res) {
-    next(null, {online: isNaN(parseInt(res)) ? 0 : parseInt(res)});
-  })
 };

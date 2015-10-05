@@ -15,8 +15,10 @@ var exp = module.exports;
 
 var boards;
 var serverId;
+var rooms;
 var intervel;
-var gameId ;
+var MAX_PLAYER_IN_ROOM = 100;
+var gameId;
 var maps = {};
 
 /**
@@ -28,6 +30,7 @@ var maps = {};
  */
 exp.init = function (opts) {
   boards = {};
+  rooms = {};
   gameId = opts.gameId;
   serverId = opts.serverId;
   intervel = opts.interval || 2 * 60 * 1000;
@@ -44,29 +47,34 @@ exp.init = function (opts) {
  */
 exp.create = function (params, cb) {
   var boardService = pomelo.app.get('boardService');
-  boardService.genBoardId({ serverId : serverId, gameId : gameId, gameType: consts.GAME_TYPE.NORMAL}, function (err, boardId) {
-    if (err) {
-      utils.invokeCallback(cb, err)
-    }
-    else {
+  return boardService.genBoardId({
+    serverId: serverId,
+    gameId: gameId,
+    gameType: consts.GAME_TYPE.NORMAL,
+    roomId: params.roomId
+  })
+    .then(function (boardId) {
       if (boards[boardId]) {
         utils.invokeCallback(cb, null, boardId);
       }
       params.serverId = serverId;
-      Board(params, boardId, function (err, board, bId) {
-        if (err) {
-          utils.invokeCallback(cb, err);
+      params.boardId = boardId;
+      return Promise.resolve(Board(params, boardId));
+    })
+    .then(function (board) {
+      if (board) {
+        boards[board.tableId] = board;
+        if (!rooms[board.roomId]){
+          rooms[board.roomId] = {};
         }
-        else if (board) {
-          boards[bId] = board;
-          utils.invokeCallback(cb, null, bId);
-        }
-        else {
-          utils.invokeCallback(cb, null, null);
-        }
-      });
-    }
-  })
+        return utils.invokeCallback(cb, null, board.tableId);
+      } else {
+        return utils.invokeCallback(cb, null, null);
+      }
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, err);
+    })
 };
 
 /**
@@ -149,35 +157,6 @@ exp.delBoard = function (boardId) {
 };
 
 
-
-function garbage() {
-  try {
-    utils.interval(function () {
-      var boardService = pomelo.app.get('boardService');
-      var result = [];
-      boardService.listBoardFromServerId(serverId, function (err, boardIds) {
-        var i, len, boardid;
-        if (!err) {
-          if (lodash.isArray(boardIds)) {
-            for (i = 0, len = boardIds.length; i < len; i++) {
-              boardid = boardIds[i].boardid;
-              if (!boards[boardid]) {
-                boardService.delBoard(boardid);
-                result.push(boardid);
-              }
-            }
-          }
-        }
-      });
-      logger.info('garbage serverid : %s result : %j', serverId, result);
-    }, 30000 * 4);
-  }
-  catch (err) {
-    logger.error("error in check : %j ", err);
-  }
-};
-
-
 /**
  * Lấy đối tượng bàn chơi từ tableId
  *
@@ -202,16 +181,23 @@ function check() {
   try {
     utils.interval(function () {
       var boardId, board;
+      var rooms = {};
       for (boardId in boards) {
         board = boards[boardId];
-        if (board && !board.isAlive()) {
-          pomelo.app.get('boardService').delBoard(boardId, function () {
-          });
-          board.close();
-          boards[boardId] = null;
-        }
+        var numPlayer = board.isAlive();
+        numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
+        rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer
       }
-    }, 20000);
+      var roomKeys = Object.keys(rooms);
+      for(var i = 0, len = roomKeys.length; i< len ; i ++){
+        var key = roomKeys[i];
+        pomelo.app.get('boardService').updateRoom({
+          roomId : key,
+          gameId : gameId,
+          progress : Math.floor(rooms[key] / 100 * 10)
+        })
+      }
+    }, 60000);
   }
   catch (err) {
     logger.error("error in check : %j ", err);

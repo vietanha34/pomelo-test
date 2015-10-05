@@ -7,7 +7,6 @@ var Code = require('../consts/code');
 var lodash = require('lodash');
 var consts = require('../consts/consts');
 var moment = require('moment');
-var dataApi = require('./dataApi');
 var redisKeyUtil = require('./redisKeyUtil');
 var MD5 = require('MD5');
 
@@ -15,8 +14,15 @@ var MD5 = require('MD5');
  * Check and invoke callback function
  */
 utils.invokeCallback = function (cb) {
+  var args = Array.prototype.slice.call(arguments, 1);
   if (!!cb && typeof cb === 'function') {
-    cb.apply(null, Array.prototype.slice.call(arguments, 1));
+    return cb.apply(null, args);
+  }else {
+    if (!!args[0]){
+      return Promise.reject(args[0]);
+    }else{
+      return Promise.resolve(args[1]);
+    }
   }
 };
 
@@ -474,19 +480,6 @@ utils.getCardString = function (cards) {
     result += ('/' + String.fromCharCode(cards[i] >> 2));
   }
   return result
-};
-
-utils.getMoneyLimit = function getMoneyLimit(gameId, bet, owner) {
-  var limitConfig = dataApi.limitConfig.findById(gameId);
-  if (limitConfig.all) {
-    return bet * limitConfig.all
-  }else {
-    if (lodash.isArray(limitConfig.solo)) {
-      return bet * limitConfig.solo[owner ? 0 : 1]
-    }else {
-      return bet * limitConfig.solo
-    }
-  }
 };
 
 utils.findTourAfterTime = function findTourAfterTime(tour, time) {

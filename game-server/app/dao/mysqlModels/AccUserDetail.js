@@ -4,7 +4,7 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('AccUserDetail', {
+  return sequelize.define('UserDetail', {
     uid: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -49,7 +49,7 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
-        models.AccUserDetail.belongsTo(models.AccUser,  { foreignKey : 'uid'});
+        //models.UserDetail.belongsTo(models.User,  { foreignKey : 'uid'});
       }
     }
   });

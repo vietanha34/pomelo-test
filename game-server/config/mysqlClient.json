@@ -16,7 +16,7 @@
   "production": {
     "host" : "172.31.2.217",
     "port": 3337,
-    "database": "ipoker",
+    "database": "cothu",
     "dialert" : "mysql",
     "username": "root",
     "password": "3tnKfhzv38a9",
@@ -28,15 +28,15 @@
     }
   },
   "local": {
-    "host" : "172.31.2.217",
-    "port": 3337,
-    "database": "ipoker",
+    "host" : "192.168.99.100",
+    "port": 32770,
+    "database": "cothu",
     "dialert" : "mysql",
     "username": "root",
-    "password": "3tnKfhzv38a9",
+    "password": "admin",
     "timezone": "+07:00",
     "pool": {
-      "max": 100,
+      "max": 10,
       "min": 0,
       "idle": 10000
     }

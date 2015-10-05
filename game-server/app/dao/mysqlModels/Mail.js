@@ -38,7 +38,6 @@ module.exports = function(sequelize, DataTypes) {
 		content : {
 			type : DataTypes.TEXT,
 			allowNull: false,
-			defaultValue: ''
 		},
 		isNew: {
 			type: DataTypes.INTEGER,

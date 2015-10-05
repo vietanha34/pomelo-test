@@ -147,7 +147,6 @@ Handler.prototype.login = function (msg, session, next) {
 			emitData.resume = 0;
 			self.app.get('waitingService').add(session);
 		}
-		Emitter.emit(Emitter.CONFIG.TYPE.LOGIN, emitData);
 		player = null;
 		msg = null;
 	})

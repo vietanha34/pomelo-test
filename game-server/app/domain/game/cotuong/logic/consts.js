@@ -4,10 +4,28 @@
 
 
 module.exports = {
+  SEAT_SLOT : {
+    0 : [0,1,2,3],
+    1 : [1,0,3,2],
+    2 : [2,3,1,0],
+    3 : [3,2,0,1]
+  },
+  SLOT_ORDER : {
+    0 : 0,
+    2 : 1,
+    1 : 2,
+    3 : 3
+  },
   LEAVEBOARD_TIMEOUT : 10000,
+  TURN_ORDER : [0,2,1,3],
   BOARD_STATUS: {
     NOT_STARTED: 1,
-    PLAYING: 2
+    SEATING: 2,
+    PREFLOP: 3,
+    FLOP: 4,
+    TURN: 5,
+    RIVER: 6,
+    SHOW_DOWN: 7
   },
 
   SLOT_STATUS : {
@@ -21,13 +39,6 @@ module.exports = {
     PLAY: 1
   },
 
-
-
-  LANGUAGE_LIMIT : {
-    ITEM_NAME : 100210,
-    ITEM_DISABLE : 100500,
-    ITEM_ENABLE : 100510
-  },
 
   PAYMENT_METHOD : {
     SUB_GOLD : 1,

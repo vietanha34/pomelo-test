@@ -5,12 +5,9 @@
 var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var consts = require('../consts/consts');
-var async = require('async');
 var utils = require('../util/utils');
-var MD5 = require('MD5');
 var Code = require('../consts/code');
 var Promise = require('bluebird');
-var request = require('request');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var regexValidUtil = require('../util/regexValid');
 var lodash = require('lodash');
@@ -215,31 +212,28 @@ var charCode = [192,
   122];
 
 UserDao.getUserProperties = function (uid, properties, cb) {
-  pomelo.app.get('mysqlClient')
+  return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {id: uid}, attributes: properties, raw: true})
+    .findOne({where: {userId: uid}, attributes: properties, raw: true})
     .then(function (user) {
-      var results = {};
-      for (var i = 0, len = properties.length; i < len; i++) {
-        results[properties[i]] = user[properties[i]]
-      }
-      utils.invokeCallback(cb, null, results);
+      console.log('properties : ', user);
+      return utils.invokeCallback(cb, null, user);
     })
     .catch(function (err) {
       console.error(err);
-      utils.invokeCallback(cb, err);
+      return utils.invokeCallback(cb, err);
     })
 };
 
 UserDao.getUserPropertiesByUids = function (uids, properties, cb) {
-  pomelo.app.get('mysqlClient')
+  return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {id: { $in: uids}}, attributes: properties})
+    .findOne({where: {userId: {$in: uids}}, attributes: properties, raw: true})
     .then(function (users) {
-
+      return utils.invokeCallback(cb, null, users);
     })
     .catch(function (err) {
-      utils.invokeCallback(cb, err);
+      return utils.invokeCallback(cb, err);
     })
 };
 
@@ -251,7 +245,7 @@ UserDao.getUserIdByUsername = function (username) {
       where: {
         username: username
       },
-      attributes: ['id'],
+      attributes: ['userId'],
       raw: true
     })
 };
@@ -263,14 +257,14 @@ UserDao.getUserIdByUsername = function (username) {
  * @param {function} cb Callback function
  */
 UserDao.getUserById = function (uid, cb) {
-  pomelo.app.get('mysqlClient')
+  return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {id: uid}})
+    .findOne({where: {userId: uid}})
     .then(function (user) {
-      utils.invokeCallback(cb, user);
+      return utils.invokeCallback(cb, null, user);
     })
     .catch(function (err) {
-      utils.invokeCallback(cb, err);
+      return utils.invokeCallback(cb, err);
     })
 };
 
@@ -281,7 +275,21 @@ UserDao.getUserById = function (uid, cb) {
  * @param opts
  * @param cb
  */
-UserDao.updateProperties = function (uid, opts, cb) {};
+UserDao.updateProperties = function (uid, opts, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .update(opts, {
+      where: {
+        userId: uid
+      }
+    })
+    .then(function (user) {
+      return utils.invokeCallback(cb, null, user);
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, err);
+    })
+};
 
 
 /**
@@ -291,6 +299,33 @@ UserDao.updateProperties = function (uid, opts, cb) {};
  * @param cb
  */
 UserDao.login = function (msg, cb) {
+  // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
+  var accountService = pomelo.app.get('accountService');
+  return accountService
+    .validAccessToken({ip: msg.ip, accessToken: msg.accessToken, cache: true})
+    .then(function (res) {
+      if (res && !res.ec) {
+        var uid = res.userInfo.userId;
+        return pomelo.app.get('mysqlClient')
+          .User
+          .findOrCreate({where: {userId: uid}, raw: true}, res.userInfo);
+      } else {
+        Promise.reject({
+          ec: Code.FAIL,
+          msg: 'Có lỗi xảy ra'
+        })
+      }
+    })
+    .spread(function (user, created) {
+      if (created) {
+        // TODO push event register
+      }
+      return utils.invokeCallback(cb, null, user);
+    })
+    .catch(function (err) {
+      console.error('err : ', err);
+      return utils.invokeCallback(cb, err);
+    })
 
 };
 
@@ -298,7 +333,7 @@ var findFullnameAvailable = function (fullname, num) {
   num = num || 0;
   var name = num > 0 ? fullname + ' ' + num : fullname;
   return pomelo.app.get('mysqlClient')
-    .AccUser
+    .User
     .count({
       where: {
         fullname: name

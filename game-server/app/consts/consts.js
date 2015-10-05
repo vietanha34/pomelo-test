@@ -10,40 +10,13 @@ module.exports = {
   },
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'uid', 'fullname', 'xp', 'sex', 'avatar', 'chip'],
 
-  GAMEID : {
-    XAM : 0,
-    TLMN_DL : 1,
-    PHOM : 2,
-    POKER : 3,
-    LIENG : 4,
-    XITO : 5,
-    MAU_BINH : 6,
-    XI_ZACH : 7,
-    TLMN : 8,
-    CAO : 9
-  },
-
-  GAME_ID_ALLOW_FRIEND : [
-    3,4,5,6,7,9
-  ],
-  GAME_ID_AUTO_START : [3,4,5],
-  TOP: {
-    TIME: {
-      WEEKLY: 1,
-      MONTHLY: 2,
-      TOTAL: 3
-    },
-    REGION: {
-      GLOBAL: 1,
-      LOCAL: 2,
-      FRIEND: 3
-    },
-    TYPE: {
-      MONEY: 1,
-      TOTALPOT: 2,
-      HANDWON: 3,
-      TOURWON: 4
-    }
+  GAME_ID : {
+    CARO : 1,
+    CO_TUONG : 2,
+    CO_UP : 3,
+    CO_VAY : 4,
+    CO_THE : 5,
+    CO_VUA : 6
   },
 
   RESPONSE_EC: {
@@ -77,15 +50,6 @@ module.exports = {
     CLOSE: 1,
     OK: 2,
     CONTINUE: 3
-  },
-
-  HOT_LINE: "19001220",
-
-  BOARD: {
-    STATE: {
-      WAITING: 0,
-      RUNNING: 1
-    }
   },
 
   DISTRICT_STATUS: {
@@ -166,17 +130,16 @@ module.exports = {
   },
 
   ACTION : {
-    DONE : 60,
-    READY : 100,
-    START_GAME : 101,
-    CONTINUE : 102,
-    SIT_BACK_IN : 110,
-    CHARGE_MONEY : 111,
-    PROMOTION : 112,
-    CHANGE_BOARD : 113,
-    INVITE_PLAYER : 114,
-    ADVERTISE : 115,
-    LEAVE_BOARD : 116
+    READY : 2,
+    START_GAME : 1,
+    CONTINUE : 100,
+    SIT_BACK_IN : 3,
+    DE_LAY : 4,
+    CHARGE_MONEY : 7,
+    DRAW : 5,
+    SURRENDER : 6,
+    HINT : 8,
+    CHANGE_TYPE : 9
   },
 
   LANGUAGE_LIMIT : {
@@ -501,34 +464,6 @@ module.exports = {
     STRING : 1,
     NUMBER : 2,
     JSON_STRING : 3
-  },
-
-  EVENT_WIN_TYPE : {
-    TLMN_4_DOI_THONG_CHAT_HEO: 0,
-    TLMN_TOI_TRANG: 1,
-    THANG_BINH_THUONG: 2,
-    PHOM_U_TRON: 10,
-    PHOM_U_KHAN: 11,
-    PHOM_U : 1005,
-    MAU_BINH: 31,
-    MAU_BINH_SANH_RONG: 30,
-    LIENG_SAP_A: 80,
-    LIENG_THANG_50_LAN_TIEN_CUOC: 81,
-    POKER_THANG_50_LAN_TIEN_CUOC: 91,
-    POKER_THUNG_PHA_SANH: 90,
-    XAM_TU_QUI_CHAT_2_HEO: 4,
-    XAM_KHUNG_7_LA: 5,
-    TLMN_DEM_LA_4_DOI_THONG_CHAT_2_HEO: 8,
-    LTMN_DEM_LA_TOI_TRANG: 9,
-    COMPLETE_MISSION_1: 41,
-    COMPLETE_MISSION_2: 42,
-    COMPLETE_MISSION_3: 43,
-    COMPLETE_MISSION_4: 44,
-    COMPLETE_MISSION_5: 45,
-    INVITE_SOCIAL_10: 46,
-    PHAT_LOC_10K: 47,
-    PHAT_LOC_50K: 48,
-    PHAT_LOC_100K: 49
   },
 
   SEX: {

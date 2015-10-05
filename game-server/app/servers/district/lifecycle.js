@@ -17,21 +17,10 @@ module.exports.afterStartup = function (app, cb) {
 
 module.exports.beforeShutdown = function (app, cb) {
   // do some operations before application shutdown down
-  app.get('boardService').close();
+  app.get('boardService').clean();
+  cb();
 };
 
 module.exports.afterStartAll = function (app) {
   // do some operations after all applications start up
-  //var hd;
-  //memwatch.on('leak', function(info) {
-  //  console.error("district-server-1");
-  //  console.error(info);
-  //  if (!hd) {
-  //    hd = new memwatch.HeapDiff();
-  //  } else {
-  //    var diff = hd.end();
-  //    console.error(util.inspect(diff, true, null));
-  //    hd = null;
-  //  }
-  //});
 };

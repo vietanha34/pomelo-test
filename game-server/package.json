@@ -24,8 +24,16 @@
     "pomelo-event-plugin": "git+ssh://git@git.vgame.us:root/pomelo-event-plugin.git",
     "pomelo-board-plugin": "git+ssh://git@git.vgame.us:root/pomelo-board-plugin.git",
     "pomelo-waiting-plugin": "git+ssh://git@git.vgame.us:root/pomelo-waiting-plugin.git",
+    "luat-co-thu" : "git+ssh://git@git.vgame.us:tungdt/luatgameco.git",
     "redis": "^1.0.0",
     "sequelize": "^3.7.1",
     "uuid": "^2.0.1"
+  },
+  "devDependencies" : {
+    "should" : "*",
+    "mockery" : "*",
+    "sinon": "*",
+    "chai": "*",
+    "sqlite3": "*"
   }
 }

@@ -1,7 +1,7 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('AccUserFriend', {
+  return sequelize.define('UserFriend', {
     userId: {
       type: DataTypes.BIGINT,
       allowNull: false,

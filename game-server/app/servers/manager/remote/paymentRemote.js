@@ -9,7 +9,6 @@ var async = require('async');
 var logger = require('pomelo-logger').getLogger('payment', __filename);
 var messageService = require('../../../services/messageService');
 var userDao = require('../../../dao/userDao');
-var request = require('request');
 var querystring = require('querystring');
 var Code = require('../../../consts/code');
 var lodash = require('lodash');

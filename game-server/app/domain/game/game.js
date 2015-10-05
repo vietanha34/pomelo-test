@@ -9,7 +9,7 @@ var channelUtil = require('../../util/channelUtil');
 var boardPool = require('./boardPool');
 var lodash = require('lodash');
 var consts = require('../../consts/consts');
-var async  = require('async');
+var async = require('async');
 
 /**
  * Tập hợp ,quản lý trò chơi, bàn chơi trong 1 process game
@@ -24,7 +24,7 @@ var Game = function (opts) {
   this.serverId = opts.serverId;
   this.district = {};
   this.boardManager = boardPool;
-  this.boardManager.init({serverId: opts.serverId, gameId : this.gameId});
+  this.boardManager.init({serverId: opts.serverId, gameId: this.gameId});
   this.init = false;
 };
 
@@ -36,19 +36,15 @@ module.exports = Game;
 Game.prototype.start = function (cb) {
   var self = this;
   if (!this.init) {
-    async.waterfall([
-      function (done) {
-        // close all board before
-        pomelo.app.get('boardService').delBoardByServerId(self.serverId, done);
-      },
-      function (done) {
-        self.initBoards(cb);
+    return pomelo.app.get('boardService').delBoardByServerId(self.serverId)
+      .then(function () {
+        console.log('initBoard');
+        self.initBoards();
         self.init = true;
-        done();
-      }
-    ]);
-  }else {
-    utils.invokeCallback(cb);
+        return utils.invokeCallback(cb);
+      });
+  } else {
+    return utils.invokeCallback(cb);
   }
 };
 
@@ -72,9 +68,9 @@ Game.prototype.createBoard = function (params, cb) {
   var self = this;
   this.boardManager.create(params, function (err, res) {
     if (res) {
-      utils.invokeCallback(cb, err, {boardId: res, serverId: self.serverId, roomId : params.roomId})
+      utils.invokeCallback(cb, err, {boardId: res, serverId: self.serverId, roomId: params.roomId})
     }
-    else {
+    else if (!!err) {
       logger.error(err);
       utils.invokeCallback(cb, err)
     }
@@ -98,26 +94,41 @@ Game.prototype.getBoard = function (boardId) {
  * @method initBoards
  * @api private
  */
-Game.prototype.initBoards = function (cb) {
-  var roomKey = Object.keys(consts.ROOM_ID);
-  var gameService = pomelo.app.get('gameService');
-  for (var j  = 0, len = roomKey.length; j  < len; j ++) {
-    var roomName = roomKey[j];
-    var params = gameService.gameConfig[this.gameId + '-' + consts.ROOM_ID[roomName]];
-    for(var z = params.configMoney[1]; z < params.configMoney[2]; z+= params.configMoney[0]){
-      var opts = utils.clone(params);
-      opts.bet = z;
-      opts.base = true;
-      for (var i = 0, leni = 10; i < leni; i++) {
-        this.createBoard(opts, function (err, results) {
-          if (err) {
-            logger.error(err);
-          }
-        })
+Game.prototype.initBoards = function () {
+  var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
+  for (var i = 1, len = 10; i < len; i++) {
+    var hallConfig = hallConfigs['' + this.gameId + i];
+    if (hallConfig) {
+      var hallId = parseInt(hallConfig.hallId);
+      for (var j = 1, lenj = parseInt(hallConfig.numRoom); j <= lenj; j++) {
+        this.createRoom(hallConfig, hallId * 100 + j)
       }
+    } else {
+      break;
     }
   }
-  utils.invokeCallback(cb);
+};
+
+Game.prototype.createRoom = function (hallConfig, roomId) {
+  console.log('hallConfig : ', hallConfig);
+  var self = this;
+  return pomelo.app.get('boardService')
+    .addRoom({
+      serverId: this.serverId,
+      gameId: this.gameId,
+      roomId: this.roomId,
+      hallId: parseInt(hallConfig.hallId)
+    })
+    .then(function () {
+      for (var i = 1; i <= 50; i++) {
+        var opts = utils.clone(hallConfig);
+        opts.bet = parseInt(hallConfig.goldMin);
+        opts.base = true;
+        opts.roomId = roomId;
+        opts.index = i;
+        self.createBoard(opts)
+      }
+    })
 };
 
 

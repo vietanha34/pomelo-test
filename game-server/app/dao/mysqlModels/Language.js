@@ -1,10 +1,12 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('Language', { 
+  return sequelize.define('Language', {
     id: {
       type: DataTypes.INTEGER(11),
-      allowNull: false
+      allowNull: false,
+      primaryKey : true,
+      autoIncrement : true
     },
     vi: {
       type: DataTypes.STRING,

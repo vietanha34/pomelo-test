@@ -8,7 +8,6 @@ var async = require('async');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
 var messageService = require('../../../services/messageService');
 var userDao = require('../../../dao/userDao');
-var request = require('request');
 var Code = require('../../../consts/code');
 var lodash = require('lodash');
 var pomelo = require('pomelo');

@@ -1,8 +1,8 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('GameConfig', { 
-    id: {
+  return sequelize.define('GameConfig', {
+    gameId: {
       type: DataTypes.INTEGER(11),
       allowNull: false
     },
@@ -33,7 +33,7 @@ module.exports = function(sequelize, DataTypes) {
     },
     maxBuyIn: {
       type: DataTypes.INTEGER(11),
-      allowNull: true,
+      allowNull: true
     },
     turnTime: {
       type: DataTypes.INTEGER(11),
@@ -54,10 +54,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER(11),
       allowNull: false,
       defaultValue: '0'
-    },
-    configPlayer: {
-      type: DataTypes.STRING,
-      allowNull: true,
     }
   },{
     classMethods: {
@@ -65,7 +61,6 @@ module.exports = function(sequelize, DataTypes) {
         // associations can be defined here
       }
     },
-    tableName : 'GameConfig',
     createdAt: false,
     updatedAt: false
   });

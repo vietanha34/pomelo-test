@@ -1,4 +1,7 @@
 var pomelo = require('pomelo');
+var Mongo = require('./app/dao/mongo/mongo');
+var path = require('path');
+var utils = require('./app/util/utils');
 
 process.env.LOGGER_LINE = true; // debug line number
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -10,16 +13,17 @@ var app = pomelo.createApp();
 app.set('name', 'cothu-v2');
 
 
-app.configure('production|development', function () {
+app.configure('production|development|local', function () {
   // config db, config module
   app.enable('systemMonitor');
   var onlineUser = require('./app/modules/onlineUser');
   var maintenance = require('./app/modules/maintenance');
   var kickUser = require('./app/modules/kickUser');
+  var globalChannel = require('pomelo-globalchannel-plugin');
   if (typeof app.registerAdmin === 'function'){
     app.registerAdmin(onlineUser, {app: app});
     app.registerAdmin(maintenance, {app: app});
-    app.registerAdmin(notify, { app : app});
+    //app.registerAdmin(notify, { app : app});
     app.registerAdmin(kickUser,  { app : app});
   }
   app.loadConfig('redisConfig', app.getBase() + '/config/redis.json');
@@ -29,53 +33,50 @@ app.configure('production|development', function () {
   app.loadConfig('serviceConfig', app.getBase() + '/config/externalService.json');
   app.loadConfig('eventConfig', app.getBase() + '/config/eventConfig.json');
   app.loadConfig('emitterConfig', app.getBase() + '/config/emitterConfig.json');
-
   var dataPlugin = require('pomelo-data-plugin');
+  var redisConfig = app.get('redisConfig');
+  var redisConfigCache = redisConfig.cache;
   app.use(dataPlugin, {
     watcher: {
       dir: __dirname + '/config/csv',
       idx: 'id',
-      interval: 3000
+      interval: 30000
     }
   });
 
   var statusPlugin = require('pomelo-status-plugin');
   app.use(statusPlugin, {
     status: {
-      host: app.get('redisConfig').cache.host,
-      port: app.get('redisConfig').cache.port,
+      host: redisConfigCache.host,
+      port: redisConfigCache.port,
       timeLive: 60,
-      db: app.get('redisConfig').cache.db
+      db: redisConfigCache.db
     }
   });
   app.use(globalChannel, {
     globalChannel: {
-      host: redisConfigClient.host,
-      port: redisConfigClient.port,
+      host: redisConfigCache.host,
+      port: redisConfigCache.port,
       cleanOnStartUp: true,
-      db: redisConfigClient.db       // optinal, from 0 to 15 with default redis configure
+      db: redisConfigCache.db       // optinal, from 0 to 15 with default redis configure
     }
   });
-  var redisConfig = app.get('redisConfig');
-  var redisConfigCache = redisConfig.cache;
   var redisCache = require('redis').createClient(redisConfigCache.port, redisConfigCache.host);
   redisCache.select(redisConfigCache.db);
-  app.set('redisCache', redisCache);
-
   // Đồng bộ mysql
   var models = require('./app/dao/mysqlModels/index');
-  var curServer= app.curServer;
+  var curServer  = app.curServer;
   var db = models();
+  app.set('redisCache', redisCache);
+  //app.set('mongoClient', Mongo(utils.merge_options({schemaDir: path.join(app.getBase(), '/app/dao/mongoSchema/')}, app.get('mongoConfig').data)))
   app.set('mysqlClient', db);
-  if (curServer.serverType == 'service') {
-    logger.info('Đồng bộ mysql');
+  if (curServer.serverType === 'manager') {
     db.sequelize
       .sync()
       .then(function () {
-        logger.info('tao bang thanh cong')
       })
       .catch(function (err) {
-        logger.error('err : ', err)
+        console.error('err : ', err)
       })
   }
 });
@@ -90,12 +91,12 @@ app.configure('production|development', 'connector|gate', function(){
     });
 });
 
-app.configure('production|development', 'master|service|connector|manager', function () {
+app.configure('production|development|local', 'master|service|connector|manager', function () {
   var EventPlugin = require('pomelo-event-plugin');
   app.use(EventPlugin, {
     event : {
       db : app.get('mysqlClient'),
-      eventServerType : 'service',
+      eventServerType : 'event',
       listenerDir : app.getBase() + '/app/events',
       emitterConfig : {
         FINISH_GAME: 2, // chơi thắng 1 ván bài bất kì
@@ -111,10 +112,53 @@ app.configure('production|development', 'master|service|connector|manager', func
         redis : 'redisCache',
         mongodb : 'mongoClient'
       },
-      eventConfig : app.get('eventConfig')
+      eventConfig : []
     }
   })
 });
+
+app.configure('production|development|local', 'game', function () {
+  app.filter(pomelo.filters.serial());
+  app.filter(pomelo.filters.time());
+  app.filter(pomelo.filters.timeout());
+  var playerFilter = require('./app/servers/game/filter/playerFilter');
+  app.before(playerFilter());
+  var server = app.curServer;
+  var gameId = server.gameId;
+  var Game = require('./app/domain/game/game');
+  app.game = new Game({gameId: gameId, serverId: server.id});
+});
+
+// config board
+app.configure('production|development|local', 'game|district|service|manager|master', function () {
+  var BoardService = require('pomelo-board-plugin');
+  app.use(BoardService, {
+    board : {
+      db : app.get('mysqlClient'),
+      redis : app.get('redisCache')
+    }
+  });
+});
+
+// config waitingService
+app.configure('production|development|local', 'district|connector|game|home', function () {
+  var WaitingService = require('pomelo-waiting-plugin');
+  app.use(WaitingService, {
+    waiting : {
+      db : app.get('mysqlClient')
+    }
+  })
+});
+
+// config accountService
+
+app.configure('production|development|local', function () {
+  var AccountPlugin = require('pomelo-account-plugin');
+  app.use(AccountPlugin, {
+    config : app.get('serviceConfig').account
+  })
+});
+
 
 // start app
 app.start();

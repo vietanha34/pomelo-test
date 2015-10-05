@@ -15,25 +15,21 @@ var Players = require('./entity/playerPool');
 var EventEmitter = require('events').EventEmitter;
 var Code = require('../../../consts/code');
 var BoardConsts = require('./logic/consts');
-var dictionary = require('../../../../config/dictionary.json');
-var dataApi = require('../../../util/dataApi');
-var ItemDao = require('../../../dao/itemDao');
 
 /**
- * Bàn chơi cơ bản của game thẻ bài, developer có thể kế thửa để phát triển cho từng loại game
+ * Bàn chơi cơ bản của game cờ, developer có thể kế thửa để phát triển cho từng loại game
  * Tham số truyền vào
  * * opts :
  *   * gameId Number: Định danh của game
  *   * tableId Number: định danh của bàn chơi
+ *   * hallId Number: Định danh của khu vực
+ *   * roomId Number : Định danh của phòng
  *   * bet Number: tiền cược của bàn chơi
  *   * roomId : Id của room : đại gia, bình dân, solo
- *   * maxPlayer Number: Số lượng ngừoi chơi tốt đa
- *   * minPlayer Number: Số lượng người chơi tối thiếu
  *   * numSlot : Lượng slot có trong bàn chơi
  *   * lock : bàn chơi có khoá hay không
  *   * autoStart : bàn chơi tự động bắt đầu khi đủ ngừoi chơi
  *   * status : trạng thái của bàn chơi
- *   * configPlayer : Array mảng lượng người chơi có thể config
  *   * configBet : Array : mảng lượng tiền có thể config
  *
  * @module GameBase
@@ -47,38 +43,28 @@ var Board = function (opts, PlayerPool, Player) {
   opts = opts || {};
   this.gameId = opts.gameId;
   this.tableId = opts.tableId;
-  this.districtId = opts.districtId || 1;
-  this.boardName = opts.boardName;
   this.bet = opts.bet || 0;
   this.roomId = opts.roomId;
   this.owner = '';
   this.base = opts.base;
   this.numMatchPlay = 0;
-  this.maxPlayer = opts.maxPlayer || opts.numSlot || 4;
-  this.minPlayer = opts.minPlayer || 2;
-  this.numSlot = opts.numSlot || 4;
-  this.minBuyIn = opts.minBuyIn || this.bet;
-  this.maxBuyIn = opts.maxBuyIn ? opts.maxBuyIn : null;
+  this.numSlot = 2;
+  this.minBuyIn = this.bet;
   this.status = consts.BOARD_STATUS.NOT_STARTED;
   this.lock = opts.lock ? 1 : 0;
-  this.autoStart = opts.autoStart == 1;
-  this.configPlayer = opts.configPlayer || [];
+  this.minPlayer = 2;
+  this.maxPlayer = 2;
   this.configBet = opts.configMoney || [];
-  this.isClose = false;
   this.isMaintenance = false;
   this.turnTime = opts.turnTime || 20000;
-  this.tax = opts.tax || 2;
-  this.totalTax = 0;
+  this.tax = opts.tax || 5;
   this.createdTime = Date.now();
+  this.jobId = null;
+  this.jobIdReady = null;
+  this.jobIdStart = null;
   this.timeStart = Date.now();
   this.gameType = opts.gameType || consts.GAME_TYPE.NORMAL;
   this.timer = new Timer();
-  this.minMoneyLength = 0;
-  this.maxMoneyLength = 0;
-  this.readyTimeout = {};
-  this.startTimeout = null;
-  this.title = opts.title;
-  this.resultLog = []; // mảng kết quả trả về cho người chơi
   var players = PlayerPool || Players;
   this.players = new players({
     numSlot: this.numSlot,
@@ -86,23 +72,9 @@ var Board = function (opts, PlayerPool, Player) {
     maxPlayer: this.maxPlayer,
     Player: Player
   });
-  this.joinBoardQueue = async.queue(this.players.addPlayer,1);
-  this.limitConfig = dataApi.limitConfig.findById(this.gameId);
-  this.districtName = channelUtil.getDistrictChannelName(this.gameId);
   this.channelName = channelUtil.getBoardChannelName(this.tableId);
-  this.giveUpUsers = [];
-  this.tourId = opts.tourId || '';
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
-    this.autoStart = 1;
-    this.startTour = false;
-    this.autoStartGame();
-    this.matchTurn = opts.matchTurn || 0; // Số ván đấu trong một turn vào bàn
-    this.elapsedTime = 10000;
-  }
   // default
   this.betDefault = this.bet;
-  this.minPlayerDefault = this.minPlayer;
-  this.maxplayerDefault = this.maxPlayer;
 };
 
 util.inherits(Board, EventEmitter);
@@ -110,31 +82,6 @@ util.inherits(Board, EventEmitter);
 var pro = Board.prototype;
 
 module.exports = Board;
-
-pro.autoStartGame = function () {
-  setTimeout(function () {
-    this.startTour = true;
-    this.elapsedTime = 0;
-    if (this.players.length < this.minPlayer) {
-      // ván chơi không đủ điều kiện để bắt đầu
-      this.pushMessage('onNotify', {
-        popup_type: consts.POPUP_TYPE.CENTER_SCREEN,
-        title: "Đấu trường",
-        message: Code.ON_TOUR.FA_BOARD_TOUR_NOT_ENOUGH_PLAYER,
-        buttonLabel: 'Rời bàn',
-        buttonColor: 1,
-        command: {
-          target: consts.NOTIFY_TARGET.LEAVE_BOARD
-        }
-      });
-      setTimeout(function removeBoard() {
-        pomelo.app.game.boardManager.remove({tableId: this.tableId});
-      }.bind(this), 20000);
-    } else {
-      this.StartGame(this.owner);
-    }
-  }.bind(this), 13000)
-};
 
 /**
  * Lấy đối tượng channel của bàn chơi
@@ -146,107 +93,6 @@ pro.getChannel = function () {
   return pomelo.app.get('channelService').getChannel(this.channelName, true);
 };
 
-
-/**
- * Kiểm tra có đủ điều kiện để bắt đầu ván chơi hay không
- *
- */
-pro.checkStartGame = function () {
-  if (this.isMaintenance) {
-    this.clearTimeoutStart();
-    return Code.ON_GAME.FA_GAME_MAINTENANCE;
-  }
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
-    if (this.numMatchPlay >= this.matchTurn) {
-      this.clearTimeoutStart();
-      return Code.ON_GAME.FA_BOARD_ALREADY_STARTED
-    }else {
-      this.players.availablePlayer = [];
-      for(var i = 0, len = this.players.playerSeat.length; i < len; i++){
-        var uid = this.players.playerSeat[i];
-        if (!uid) {
-          continue
-        }
-        if (this.players.getPlayer(uid).gold > this.bet) {
-          this.players.availablePlayer.push(this.players.playerSeat[i]);
-        }
-      }
-      if (this.players.availablePlayer.length < this.minPlayer){
-        return Code.ON_GAME.FA_NOT_ENOUGH_PLAYER;
-      }
-      return Code.OK
-    }
-  }
-  if (!this.owner || !this.players.length) {
-    this.clearTimeoutStart();
-    return Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY;
-  }
-  var availablePlayer = this.players.getNumAvailablePlayer();
-  var ownerPlayer = this.players.getPlayer(this.owner);
-  var soloLimit;
-  if (!this.autoStart) {
-    if (lodash.isArray(this.limitConfig.solo)) {
-      soloLimit = this.limitConfig.solo[0] * this.bet;
-    } else {
-      soloLimit = this.limitConfig.solo * this.bet;
-    }
-  }
-  if (this.status !== consts.BOARD_STATUS.NOT_STARTED) {
-    this.clearTimeoutStart();
-    return Code.ON_GAME.FA_BOARD_ALREADY_STARTED
-  } else if (!this.autoStart && ownerPlayer.gold < soloLimit) {
-    this.clearTimeoutStart();
-    return Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY;
-  } else if (availablePlayer < this.minPlayer) {
-    this.clearTimeoutStart();
-    return Code.ON_GAME.FA_NOT_ENOUGH_PLAYER;
-  } else {
-    if (!this.autoStart && Date.now() - (this.timeFinish || 0) < 10000 && availablePlayer !== this.players.length) {
-      // chua phai thoi gian de bat dau
-      this.clearTimeoutStart();
-      return Code.ON_GAME.FA_WAIT_FOR_READY; //{ code : , data : [(((10000 - Date.now() - (this.timeFinish || 0)) / 1000) | 0).toString()] };
-    } else {
-      return Code.OK
-    }
-  }
-};
-
-pro.divide = function (uid, deck, numCard, index) {
-  index = index || 0;
-  var fixCards = pomelo.app.get('gameService').fixCards;
-  fixCards = fixCards || {};
-  fixCards[this.gameId] = fixCards[this.gameId] || {};
-  var player = this.players.getPlayer(uid);
-  var cards = [];
-  var fixCard = fixCards[this.gameId][player.userInfo.username];
-  if (fixCard && fixCard.length > 0) {
-    var cardFix = fixCard[this.numMatchPlay % fixCard.length];
-    if (cardFix.length >= numCard) {
-      cards = cardFix.slice(index, numCard + index);
-    } else {
-      cards = cardFix;
-      for (var i = 0, len = numCard - cardFix.length; i < len; i++) {
-        var j = 0;
-        do {
-          if (cards.indexOf(deck[j]) < 0) {
-            cards.push(deck[j]);
-            break;
-          }
-          j++;
-        } while (1)
-      }
-    }
-    for (j = 0, len = cards.length; j < len; j++) {
-      var card = cards[j];
-      utils.arrayRemove(deck, card);
-    }
-    return cards
-  } else {
-    return deck.splice(0, numCard);
-  }
-};
-
-
 /**
  * Nạp tiền cho người chơi trong bàn chơi
  *
@@ -257,7 +103,7 @@ pro.divide = function (uid, deck, numCard, index) {
  */
 pro.chargeMoney = function (uid, gold, msg, cb) {
   var player = this.players.getPlayer(uid);
-  if (!player || (this.maxBuyIn && (player.gold + gold) > this.maxBuyIn)) {
+  if (!player) {
     utils.invokeCallback(cb);
   } else {
     if (!player.guest) {
@@ -348,9 +194,6 @@ pro.pushMessageToPlayer = function (uid, route, msg) {
   }
 };
 
-pro.getLimitConfig = function () {
-
-};
 
 /**
  * Gửi gói tin đến một người chơi
@@ -425,7 +268,7 @@ pro.pushOnJoinBoard = function (uid) {
       continue
     }
     var tmpState = lodash.clone(joinPlayerState);
-    tmpState.sid = this.players.getSlotId(playerUid, player.uid);
+    tmpState.sid = this.players.getSlotId(player.uid);
     if (playerOther.guest && this.players.length >= this.maxPlayer) {
       playerOther.removeMenu(consts.ACTION.SIT_BACK_IN);
       this.pushMessageToPlayer(playerUid, 'onPlayerJoin', utils.merge_options(tmpState, {menu: playerOther.menu}));
@@ -440,13 +283,12 @@ pro.pushLeaveBoard = function (uid, data) {
   for (var i = 0, len = playerUids.length; i < len; i++) {
     var playerUid = playerUids[i];
     var player = this.players.getPlayer(playerUid);
-    if (uid == playerUid) {
+    if (uid === playerUid) {
       continue
     }
+    console.log('pushMessage leaveBoard : ',uid);
     if (player.guest && this.players.length < this.maxPlayer) {
-      if (!player.hasMenu(consts.ACTION.CHARGE_MONEY) && !player.hasMenu(consts.ACTION.SIT_BACK_IN)) {
-        player.menu.push(this.genMenu(consts.ACTION.SIT_BACK_IN));
-      }
+      player.menu.push(this.genMenu(consts.ACTION.SIT_BACK_IN));
       this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', utils.merge_options(data, {menu: player.menu}));
     } else {
       this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', data);
@@ -487,12 +329,7 @@ pro.isAlive = function () {
   if (this.base) {
     return true
   }
-  if (this.players.length === 0 || this.status === consts.BOARD_STATUS.NOT_STARTED && (Date.now() - this.timeStart) > consts.TIME.GAME_IDLE) {
-    return false
-  }
-  else {
-    return true
-  }
+  return !(this.players.length === 0 || this.status === consts.BOARD_STATUS.NOT_STARTED && (Date.now() - this.timeStart) > consts.TIME.GAME_IDLE)
 };
 
 pro.clearIdlePlayer = function () {
@@ -527,40 +364,25 @@ pro.clearIdlePlayer = function () {
  * @param cb
  * @method joinBoard
  */
-pro.joinBoard = function (opts, cb) {
+pro.joinBoard = function (opts) {
   var userInfo = opts.userInfo;
   var uid = userInfo.uid;
   var self = this;
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
-    if (this.startTour && !this.players.getPlayer(uid) < 0)
-      return utils.invokeCallback(cb, null, utils.getError(Code.ON_TOUR.TOUR_ALL_READY_STARTED));
-    userInfo.fullname = '';
+  var result = this.players.addPlayer(opts);
+  console.log('result : ', result);
+  if (result.ec == Code.OK) {
+    if (result.newPlayer) {
+      console.log('emit joinBoard :');
+      self.emit('joinBoard', self.players.getPlayer(uid));
+    }
+    var state = self.getBoardState(uid);
+    if (result.guest && self.players.length === self.maxPlayer) {
+      state.msg = Code.ON_GAME.BOARD_FULL;
+    }
+    return state;
+  } else {
+    return result
   }
-  this.joinBoardQueue.push({ userInfo : userInfo, slotId: opts.slotId, context : this.players}, function (err, result) {
-    if (err) {
-      logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-      utils.invokeCallback(cb, err);
-    }
-    else if (result.ec == Code.OK) {
-      if (result.newPlayer) {
-        self.emit('joinBoard', self.players.getPlayer(uid));
-      }
-      if (result.owner) {
-        //
-      } else {
-        if (!result.guest && self.status === consts.BOARD_STATUS.NOT_STARTED && !this.autoStart && result.newPlayer) {
-          self.setTimeoutReady([uid], 10000 + consts.TIME.TIMEOUT_LEAVE_BOARD);
-        }
-      }
-      var state = self.getBoardState(uid);
-      if (result.guest && self.players.length === self.maxPlayer) {
-        state.msg = Code.ON_GAME.BOARD_FULL;
-      }
-      utils.invokeCallback(cb, null, state);
-    } else {
-      utils.invokeCallback(cb, null, result)
-    }
-  });
 };
 
 pro.checkLeaveBoard = function (uid) {
@@ -575,65 +397,34 @@ pro.checkLeaveBoard = function (uid) {
  *
  * @param {String} uid
  * @param {Function} cb
- * @param {Boolean} force
  * @method leaveBoard
  */
-pro.leaveBoard = function (uid, force, cb) {
+pro.leaveBoard = function (uid, cb ) {
   var self = this;
-  if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now() && !force && this.players.availablePlayer.indexOf(uid) > -1) {
+  if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
     utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]));
     return
   }
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT && ((!this.startTour && this.numMatchPlay === 0) && this.createdTime > Date.now() - 20 * 1000)) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_TOUR.FA_LEAVE_BOARD_TOUR_NOT_START));
-    return
+  if (typeof self.clearPlayer == 'function') {
+    self.clearPlayer(uid);
   }
-  // TODO check nguòi chơi có trong bàn chơi không
-  async.waterfall([
-    function (done) {
-      if (typeof self.clearPlayer == 'function') {
-        self.clearPlayer(uid, done)
-      } else {
-        done()
-      }
-    },
-    function (playing, done) {
-      var player = self.players.getPlayer(uid);
-      var userInfo = player.userInfo;
-      var uids = player.getUids();
-      if (player) {
-        player.reset();
-      }
-      var goldAfter = player.goldAfter + player.gold;
-      self.clearTimeoutReady([player.uid]);
-      uids.guest = player.guest;
-      self.players.removePlayer(uid);
-      if (self.owner == uid) {
-        self.setOwner();
-      }
-      self.emit('leaveBoard', userInfo);
-      uids.target = self.gameType === consts.GAME_TYPE.TOURNAMENT ? consts.NOTIFY_TARGET.TOURNAMENT : undefined;
-      uids.tourId = self.tourId;
-      uids.gold = goldAfter;
-      utils.invokeCallback(cb, null, uids);
-      if (self.owner && self.players.getPlayer(self.owner)) {
-        if (self.status == consts.BOARD_STATUS.NOT_STARTED) {
-          self.pushMessageToPlayer(self.owner, 'game.gameHandler.setOwner', {
-            uid: self.owner,
-            menu: self.players.getPlayer(self.owner).menu
-          });
-          self.pushMessageWithOutUid(self.owner, 'game.gameHandler.setOwner', {uid: self.owner})
-        } else {
-          self.pushMessage('game.gameHandler.setOwner', {uid: self.owner});
-        }
-      }
-      done();
-    }
-  ], function (err) {
-    if (err) {
-      logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-    }
-  });
+  var player = self.players.getPlayer(uid);
+  var userInfo = player.userInfo;
+  var uids = player.getUids();
+  if (player) {
+    player.reset();
+  }
+  var goldAfter = player.goldAfter + player.gold;
+  uids.guest = player.guest;
+  userInfo.guest = player.guest;
+  self.players.removePlayer(uid);
+  if (self.owner == uid) {
+    self.setOwner();
+  }
+  self.emit('leaveBoard', userInfo);
+  uids.tourId = self.tourId;
+  uids.gold = goldAfter;
+  return uids
 };
 
 /**
@@ -649,26 +440,16 @@ pro.getStatus = function () {
 };
 
 
-pro.setOwner = function (uid) {
-  if (uid) {
-    var player = this.players.getPlayer(uid);
-    if (player) {
-      if (player.uid !== this.owner) {
-        player.setOwner();
-        this.owner = player.uid;
-      } else {
-        this.owner = this.getNextOwner();
-      }
-      this.players.getPlayer(this.owner).clearOwner();
-    } else {
-      this.owner = this.getNextOwner();
-    }
-  } else {
-    this.owner = this.getNextOwner();
+pro.setOwner = function () {
+  var owner = null;
+  for (var i = 0; i< 2 ; i ++){
+    if (this.players.playerSeat[i]) owner = this.players.playerSeat[i];
   }
-  if (this.owner && !this.autoStart && this.players.length >= 2 && this.players.checkAllReady()) {
-    this.setTimeoutStart(this.owner, consts.TIME.TIMEOUT_START);
+  if (owner) {
+    this.owner = owner;
+    this.players.getPlayer(owner).setOwner();
   }
+  return owner
 };
 
 /**
@@ -679,36 +460,12 @@ pro.setOwner = function (uid) {
  * @returns {{info: *, status: *, players: *}}
  */
 pro.getBoardState = function (uid) {
-  var player = this.players.getPlayer(uid);
   var state = {
     info: this.getBoardInfo(),
     status: this.getStatus(uid),
-    players: this.players.getPlayerState(uid),
-    item: player.item,
-    emotion: player.emotion,
-    gift: player.gift,
-    award: player.award,
-    awardMsg: player.awardMsg,
-    resultLog: this.getResultLog() // logging result của game
+    players: this.players.getPlayerState(uid)
   };
-  if (player.effect && player.effect.expire) {
-    player.effect.expiredTime = Math.abs(player.effect.expire - (Date.now() / 1000 | 0)) | 0;
-  }
-  state.effect = player.effect;
-  if (this.readyTimeout[uid]) {
-    var menu = this.players.getMenu(uid);
-    var timeLeft = utils.getTimeLeft(this.readyTimeout[uid]);
-    if (timeLeft > 0 && timeLeft < 10000) {
-      for (var i = 0, len = menu.length; i < len; i++) {
-        if (menu[i].id === consts.ACTION.READY) {
-          menu[i].timeout = timeLeft
-        }
-      }
-    }
-    state.menu = this.players.getMenu(uid);
-  } else {
-    state.menu = this.players.getMenu(uid);
-  }
+  state.menu = this.players.getMenu(uid);
   return state;
 };
 
@@ -729,17 +486,12 @@ pro.getBoardInfo = function (finish) {
       gameId: this.gameId,
       tableId: this.tableId,
       roomId: this.roomId,
-      maxPlayer: this.maxPlayer,
-      minPlayer: this.minPlayer,
       owner: this.owner,
-      numSlot: this.numSlot,
       time: this.turnTime,
       lock: this.lock,
-      configPlayer: this.configPlayer,
       configBet: this.configBet,
       gameType: this.gameType,
-      title: this.title,
-      elapsedTime: this.elapsedTime
+      hallId : this.hallId
     }
   }
 };
@@ -750,188 +502,23 @@ pro.getBoardInfo = function (finish) {
  * @param force
  * @param cb
  */
-pro.standUp = function (uid, force, cb) {
+pro.standUp = function (uid) {
   var self = this;
-  var standUpPlayer;
-  if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now() && !force && this.players.availablePlayer.indexOf(uid) > -1) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000) + 1]));
-    return
+  //if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now() && !force && this.players.availablePlayer.indexOf(uid) > -1) {
+  //  return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000) + 1])
+  //}
+  var player = self.players.getPlayer(uid);
+  if (player) {
+    player.reset();
   }
-  async.waterfall([
-    function (done) {
-      if (typeof self.clearPlayer == 'function') {
-        self.clearPlayer(uid, done)
-      } else {
-        done()
-      }
-    },
-    function (playing, done) {
-      var player = self.players.getPlayer(uid);
-      if (player) {
-        player.reset();
-      }
-      standUpPlayer = player;
-      player.timeAction = Date.now();
-      self.clearTimeoutReady([player.uid]);
-      var owner = self.owner;
-      self.players.standUp(uid);
-      self.players.checkMissionAward(uid, done);
-      if (self.owner == uid) {
-        self.setOwner();
-      }
-      self.emit('standUp', player);
-      if (self.owner && self.owner !== owner && self.players.getPlayer(self.owner)) {
-        if (self.status == consts.BOARD_STATUS.NOT_STARTED) {
-          self.pushMessageToPlayer(self.owner, 'game.gameHandler.setOwner', {
-            uid: self.owner,
-            menu: self.autoStart ? undefined : self.players.getPlayer(self.owner).menu
-          });
-          self.pushMessageWithOutUid(self.owner, 'game.gameHandler.setOwner', {uid: self.owner})
-        } else {
-          self.pushMessage('game.gameHandler.setOwner', {uid: self.owner});
-        }
-      }
-    },
-    function (award, done) {
-      standUpPlayer.award = award ? award.isAward ? 1 : 0 : 0;
-      standUpPlayer.awardMsg = award ? award.msg ? award.msg : '' : '';
-      var state = self.getBoardState(uid);
-      utils.invokeCallback(cb, null, state, uid);
-      done();
-    }
-  ], function (err) {
-    if (err) {
-      utils.invokeCallback(cb, err)
-    }
-    standUpPlayer = null;
-  });
+  player.timeAction = Date.now();
+  self.players.standUp(uid);
+  if (self.owner == uid) {
+    self.setOwner();
+  }
+  self.emit('standUp', player);
+  return self.getBoardState(uid);
 };
-
-pro.getNextOwner = function () {
-  var mostUid = this.players.findMostPlayerWithoutOwner();
-  if (mostUid) {
-    this.owner = mostUid;
-    this.players.getPlayer(mostUid).setOwner();
-  }
-  return mostUid
-};
-
-pro.setTimeoutReady = function (uids, time) {
-  if (this.autoStart) {
-    return
-  }
-  var self = this;
-  if (!uids) {
-    uids = lodash.compact(this.players.playerSeat);
-  }
-  var dataSetMenu = [];
-  for (var i = 0, len = uids.length; i < len; i++) {
-    var uid = uids[i];
-    if (uid === self.owner) {
-      continue
-    }
-    dataSetMenu.push({
-      uid: uid,
-      time: time,
-      menu: consts.ACTION.READY
-    });
-    if (this.readyTimeout[uid]) {
-      this.timer.cancelJob(this.readyTimeout[uid]);
-    }
-    this.readyTimeout[uid] = this.timer.addJob(function (uid) {
-      if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !self.players) {
-        return;
-      }
-      self.startTimeout = null;
-      var player = self.players.getPlayer(uid);
-      if (player && self.owner !== player.uid && !player.ready) {
-        var fullname = player.userInfo.fullname || player.userInfo.username;
-        self.standUp(uid, true, function standUpTimeoutReady(err, state, uid) {
-          if (state && !state.ec) {
-            // TODO change message
-            state.msg = Code.ON_GAME.FA_NOT_READY;
-            self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', state);
-            self.pushLeaveBoard(uid, {
-              uid: uid,
-              msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
-            });
-            if (self.owner && self.players.length >= 2 && self.players.checkAllReady()) {
-              self.setTimeoutStart(self.owner, consts.TIME.TIMEOUT_START);
-            }
-          }
-        });
-      }
-    }, uid, time);
-  }
-  this.pushMessage('onSetMenu', {
-    data: dataSetMenu
-  })
-};
-
-pro.setTimeoutStart = function (uid, time) {
-  if (this.autoStart) {
-    return
-  }
-  var self = this;
-  if (this.startTimeout) {
-    this.timer.cancelJob(this.startTimeout);
-  }
-  this.pushMessage('onSetMenu', {
-    data: [
-      {
-        uid: uid,
-        time: consts.TIME.TIMEOUT_START,
-        menu: consts.ACTION.START_GAME
-      }
-    ]
-  });
-  this.startTimeout = this.timer.addJob(function (uid) {
-    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !self.players) {
-      return;
-    }
-    self.startTimeout = null;
-    var player = self.players.getPlayer(uid);
-    if (player && self.owner === player.uid) {
-      var fullname = player.userInfo.fullname || player.userInfo.username;
-      self.standUp(uid, true, function (err, state, uid) {
-        if (state && !state.ec) {
-          // TODO change message
-          state.msg = Code.ON_GAME.FA_OWNER_NOT_START;
-          self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', state);
-          self.pushLeaveBoard(uid, {
-            uid: uid,
-            msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
-          })
-        }
-      });
-    }
-  }, uid, time);
-};
-
-pro.clearTimeoutReady = function (uids) {
-  if (this.autoStart) {
-    return
-  }
-  uids = uids || Object.keys(this.readyTimeout);
-  for (var i = 0, len = uids.length; i < len; i++) {
-    var uid = uids[i];
-    if (this.readyTimeout[uid]) {
-      this.timer.cancelJob(this.readyTimeout[uid]);
-      this.readyTimeout[uid] = null;
-    }
-  }
-};
-
-pro.clearTimeoutStart = function () {
-  if (this.autoStart) {
-    return
-  }
-  if (this.startTimeout) {
-    this.timer.cancelJob(this.startTimeout);
-    this.startTimeout = null;
-  }
-};
-
 
 /**
  *
@@ -948,7 +535,7 @@ pro.getPunishMessage = function (msg, punish) {
  * @param properties
  * @param cb
  */
-pro.changeBoardProperties = function (properties, notify, cb) {
+pro.changeBoardProperties = function (properties, cb) {
   var changed = false;
   var dataChanged = {};
   var dataUpdate = {};
@@ -961,29 +548,14 @@ pro.changeBoardProperties = function (properties, notify, cb) {
   properties = properties || {};
   async.waterfall([
     function (done) {
-      // change numPlayer
-      var numPlayer = properties.maxPlayer;
-      if (numPlayer) {
-        if (numPlayer !== self.maxPlayer && self.configPlayer.indexOf(numPlayer) > -1 && self.players.length <= numPlayer) {
-          changed = true;
-          self.maxPlayer = numPlayer;
-          dataChanged.maxPlayer = numPlayer;
-          dataUpdate.max_player = numPlayer;
-        } else if (self.players.length > numPlayer) {
-          return done({ec: Code.ON_GAME.FA_CHANGE_MAX_PLAYER_SMALL_THAN_PLAYER});
-        } else if (self.configPlayer.indexOf(numPlayer) < 0) {
-          return done({ec: Code.ON_GAME.FA_CHANGE_MAX_PLAYER_NOT_ON_CONFIG});
-        }
-      }
-      done();
-    },
-    function (done) {
       // change bet;
       var bet = properties.bet;
       if (bet) {
-        var minMoney = utils.getMoneyLimit(self.gameId, bet, true);
         var ownerPlayer = self.players.getPlayer(self.owner);
-        if (ownerPlayer && ownerPlayer.gold < minMoney) {
+        if (bet < self.configBet[0] || bet > self.configBet[1]){
+          return done({ec : Code.FAIL});
+        }
+        if (ownerPlayer && ownerPlayer.gold < bet) {
           return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
         } else {
           self.bet = bet;
@@ -995,7 +567,7 @@ pro.changeBoardProperties = function (properties, notify, cb) {
       return done();
     },
     function (done) {
-      // changed turnTime
+      // TODO change turn Time
       done();
     },
     function (done) {
@@ -1015,19 +587,10 @@ pro.changeBoardProperties = function (properties, notify, cb) {
       utils.invokeCallback(cb, err);
     } else {
       if (changed) {
-        self.clearTimeoutReady();
-        self.setTimeoutReady(null, 10000 + consts.TIME.TIMEOUT_LEAVE_BOARD);
         self.players.unReadyAll();
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];
-        dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.maxPlayer.toString(), self.bet.toString()];
-        if (dataChanged.bet && self.gameId === consts.GAMEID.POKER) {
-          dataChanged.smallblind = dataChanged.bet;
-          dataChanged.bigblind = dataChanged.bet * 2;
-          dataChanged.bet = null;
-        }
-        if (notify) {
-          self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
-        }
+        dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
+        self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
         self.emit('setBoard', dataUpdate);
         utils.invokeCallback(cb, null, {});
       } else {
@@ -1064,9 +627,6 @@ pro.sitIn = function (uid, slotId, cb) {
           self.emit('sitIn');
           var state = self.getBoardState(uid);
           self.pushOnJoinBoard(uid);
-          if (self.status === consts.BOARD_STATUS.NOT_STARTED && !this.autoStart) {
-            self.setTimeoutReady([uid], 10000 + consts.TIME.TIMEOUT_LEAVE_BOARD);
-          }
           utils.invokeCallback(cb, null, state);
         } else {
           utils.invokeCallback(cb, null, result || {ec: Code.FAIL});
@@ -1078,7 +638,6 @@ pro.sitIn = function (uid, slotId, cb) {
 
 pro.close = function (cb) {
   var self = this;
-  this.isClose = true;
   var channel = this.getChannel();
   this.joinBoardQueue.kill();
   if (this.timer) {
@@ -1113,28 +672,21 @@ pro.getLocale = function (locale) {
   }
 };
 
-pro.ready = function (uid, cb) {
+pro.ready = function (uid) {
   var player = this.players.getPlayer(uid);
   if (player) {
-    if (this.status == consts.BOARD_STATUS.NOT_STARTED && !player.ready) {
-      if (!this.autoStart && player.gold < (this.limitConfig.all ? this.limitConfig.all * this.bet : (this.limitConfig.solo || 1) * this.bet)) {
-        utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_NOT_ENOUGH_MONEY_TO_READY));
-        return
-      }
+    if (this.status == consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid === this.owner) {
       player.Ready();
-      this.clearTimeoutReady([player.uid]);
-      if (!this.startTimeout && this.players.checkAllReady() && this.status === consts.BOARD_STATUS.NOT_STARTED) {
-        this.setTimeoutStart(this.owner, consts.TIME.TIMEOUT_START);
-      }
       player.status = consts.PLAYER_STATUS.READY;
       this.pushMessageWithOutUid(uid, 'game.gameHandler.ready', {uid: uid});
-      utils.invokeCallback(cb, null, {});
+      this.addJobStart(this.owner);
+      return {};
     } else {
-      utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED))
+      return utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED)
     }
   } else {
     // TODO change msg here
-    utils.invokeCallback(cb, null, {ec: 500, msg: 'người chơi không tồn tại '});
+    return  {ec: 500, msg: 'người chơi không tồn tại '}
   }
 };
 
@@ -1166,10 +718,6 @@ pro.kick = function (uid, cb) {
     utils.invokeCallback(cb, null, utils.getError(Code.FAIL));
     return
   }
-  if (player.checkItems(ItemDao.CONFIG.EFFECT_LIST.CAM_KICK)) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
-    return
-  }
   this.emit('kick', player);
   var userInfo = player.userInfo;
   this.leaveBoard(uid, true, function (err, uids) {
@@ -1199,11 +747,6 @@ pro.muteChat = function (uid, cb) {
     utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_CAM_CHAT_EXIST));
     return
   }
-  var ownerPlayer = this.players.getPlayer(this.owner);
-  if (!ownerPlayer.checkItems(ItemDao.CONFIG.EFFECT_LIST.CAM_CHAT)) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_OWNER_NOT_HAS_CAM_CHAT));
-    return
-  }
   player.isCamChat = true;
   this.pushMessageWithOutUid(player.uid, 'game.gameHandler.muteChat', {
     uid: player.uid,
@@ -1218,19 +761,15 @@ pro.muteChat = function (uid, cb) {
  * Tạo đối tượng menu
  *
  * @param {Number} menuId
- * @param {Number} type
- * @param {Number} size
  * @param {Object} extraData
  * @method genMenu
  * @returns {*}
  */
-pro.genMenu = function (menuId, extraData, type, size) {
+pro.genMenu = function (menuId, extraData) {
   extraData = typeof extraData == 'object' ? extraData : {};
   return utils.merge_options({
       id: menuId,
-      msg: utils.getMenuLanguage(menuId),
-      type: type || consts.BUTTON_TYPE.SUGGEST,
-      size: size || 0.25
+      msg: utils.getMenuLanguage(menuId)
     },
     extraData
   )
@@ -1294,6 +833,59 @@ pro.pushFinishGame = function (msg, finish, extraData) {
   }
 };
 
+pro.addJobReady = function (uid) {
+  var self = this;
+  if (this.jobIdReady){
+    this.timer.cancelJob(this.jobId);
+  }
+  this.pushMessage('onTurn', {
+    turn : uid,
+    time : 20000
+  });
+  this.jobIdReady = this.timer.addJob(function (uid) {
+    var player = self.players.getPlayer(uid);
+    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid){
+      return
+    }
+    self.jobIdReady = null;
+    var fullname = player.userInfo.fullname || player.userInfo.username;
+    var boardState = self.standUp(uid);
+    boardState.msg = Code.ON_GAME.FA_NOT_READY;
+    console.log('pushLeaveBoard : ', uid);
+    self.pushLeaveBoard(uid, {
+      uid: uid,
+      msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
+    });
+    self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+  }, uid, 20000);
+};
+
+pro.addJobStart = function (uid) {
+  var self = this;
+  if (this.jobIdStart){
+    this.timer.cancelJob(this.jobId);
+  }
+  this.pushMessage('onTurn', {
+    turn : uid,
+    time : 20000
+  });
+  this.jobIdStart = this.timer.addJob(function (uid) {
+    var player = self.players.getPlayer(uid);
+    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || self.owner !== player.uid){
+      return
+    }
+    self.jobIdStart = null;
+    var fullname = player.userInfo.fullname || player.userInfo.username;
+    var boardState = self.standUp(uid);
+    boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
+    self.pushLeaveBoard(uid, {
+      uid: uid,
+      msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
+    });
+    self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+  }, uid, 20000);
+};
+
 pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
   if ((this.gameType === consts.GAME_TYPE.TOURNAMENT && this.numMatchPlay >= this.matchTurn)|| this.isMaintenance) {
     if (this.isMaintenance) {
@@ -1316,36 +908,10 @@ pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
 
 pro.resetDefault = function () {
   this.bet = this.betDefault;
-  this.minPlayer = this.minPlayerDefault;
-  this.maxPlayer = this.maxplayerDefault;
+  this.minPlayer = 2;
+  this.maxPlayer = 2;
   this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet})
 };
-
-/**
- * * abtract
- *
- * Tính số tiền người chơi mất khi rời game trong quá trình chơi
- *
- * @param uid
- * @returns {number}
- */
-pro.getPunishMoney = function (uid) {
-  return 0
-};
-
-pro.reset = function () {
-  console.log('boardBase reset')
-};
-
-pro.finishGame = function () {
-  this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.players.reset();
-  this.timer.stop();
-  this.game.timeId = null;
-  this.game.close();
-  this.game = null;
-};
-
 
 /**
  * Thêm một item mới cho người chơi
@@ -1376,59 +942,20 @@ pro.addItems = function (items) {
   return player.goldAfter
 };
 
-/**
- * Tính thời gian delay lúc chia bài đầu game
- *
- * @param numPlayer
- * @param numCard
- * @returns {number}
- */
-pro.calculatorSleepTime = function (numPlayer, numCard) {
-  if (numCard <= 3) {
-    return 200 * ( numPlayer * numCard + 1)
-  } else {
-    return 100 * ( numPlayer * numCard + 1)
-  }
-};
-
-
-pro.calActionSleepTime = function (sleepType) {
-  if (sleepType === consts.SLEEP_TYPE.CARD) {
-    return 200
-  } else if (sleepType === consts.SLEEP_TYPE.MONEY) {
-    return 1000
-  } else {
-    return 100
-  }
-};
-
-pro.pushResultLog = function (log) {
-  if (this.resultLog.length > 100){
-    this.resultLog.splice(0, this.resultLog.length - 50);
-  }
-  this.resultLog.push(log)
-};
-
-pro.getResultLog = function () {
-  return lodash.takeRight(this.resultLog, 5);
-};
-
 pro.transaction = function (uids, transactionId, cb) {
   var self = this;
   var opts = [];
-  var limitConfig = dataApi.limitConfig.findById(this.gameId);
   for(var i = 0, len = uids.length; i < len ; i ++){
     var player = this.players.getPlayer(uids[i]);
     if (!player) continue;
     opts.push({
       type: consts.CHANGE_GOLD_TYPE.ADD_BOARD,
       uid: uids[i],
-      gold: limitConfig.max ? this.bet * limitConfig.max : player.gold,
-      force: true,
-      temp : true,
+      gold: player.gold,
       gameType: this.gameType,
       bet : this.bet,
       tableId : this.tableId,
+      roomId : this.roomId,
       gameId : this.gameId,
       tourId : this.tourId
     })
@@ -1440,6 +967,7 @@ pro.transaction = function (uids, transactionId, cb) {
       for(i= 0, len = results.length; i < len ; i ++ ){
         var res = results[i];
         if (res.ec){
+          // TODO rollback transaction
           continue
         }
         var uid = res.uid;
@@ -1447,9 +975,6 @@ pro.transaction = function (uids, transactionId, cb) {
         if (player){
           player.goldInGame = res.subGold;
           player.goldAfter = res.gold + res.subGold;
-          if (self.autoStart){
-            player.gold = res.subGold
-          }
         }
       }
     }

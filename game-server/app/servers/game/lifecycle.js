@@ -1,0 +1,25 @@
+/**
+ * Created by vietanha34 on 7/3/14.
+ */
+
+var utils = require('../../util/utils');
+var util = require('util');
+
+
+module.exports.afterStartup = function (app, cb) {
+  // do some operations after application start up
+  var game = app.game;
+  game.start();
+  cb();
+};
+
+module.exports.beforeShutdown = function (app, cb) {
+  // do some operations before application shutdown down
+  var game = app.game;
+  //app.get('waitingService').close();
+  if (game) {
+    game.stop();
+  }
+  cb()
+};
+

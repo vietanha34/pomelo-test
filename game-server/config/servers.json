@@ -9,6 +9,14 @@
     "gate": [
       {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 3010, "frontend": true}
     ],
+    "game" : [
+      {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},
+      {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
+      {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1},
+      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2},
+      {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
+      {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
+    ],
     "home": [
       {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
       {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
@@ -16,11 +24,17 @@
     "chat" : [
       {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
     ],
+    "event" : [
+      {"id" : "event-server-1", "host" : "10.2.10.48", "port" : 3960}
+    ],
     "district" : [
-      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
+      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
+    ],
+    "service" : [
+      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3950}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
+      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
     ]
   },
   "development":{
@@ -37,14 +51,25 @@
       {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
       {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
     ],
+    "game" : [
+      {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},
+      {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
+      {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1},
+      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2},
+      {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
+      {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
+    ],
     "chat" : [
       {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
     ],
     "district" : [
-      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
+      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
+      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
+    ],
+    "event" : [
+      {"id" : "event-server-1", "host" : "10.2.10.48", "port" : 3960}
     ]
   },
   "local":{
@@ -57,6 +82,14 @@
     "gate": [
       {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 3010, "frontend": true}
     ],
+    "game" : [
+      {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},
+      {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
+      {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1},
+      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2},
+      {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
+      {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
+    ],
     "home": [
       {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
       {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
@@ -65,10 +98,16 @@
       {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
     ],
     "district" : [
-      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
+      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
+    ],
+    "event" : [
+      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960}
+    ],
+    "service" : [
+      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3950}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
+      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
     ]
   }
 }
