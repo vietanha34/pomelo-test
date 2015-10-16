@@ -64,6 +64,11 @@ module.exports = function(sequelize, DataTypes) {
       unique : 'fullname_UNIQUE',
       defaultValue: ''
     },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: '0'
+    },
     birthday: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -90,7 +95,7 @@ module.exports = function(sequelize, DataTypes) {
     },
     sex : {
       type : DataTypes.INTEGER(4),
-      allowNull : false,
+      allowNull : true,
       defaultValue : '1'
     },
     win : {
@@ -102,11 +107,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER(11),
       allowNull: true,
       defaultValue: '0'
-    },
-    job :{
-      type : DataTypes.STRING,
-      allowNull: false,
-      defaultValue : ''
     },
 	  hasPay: {
 		  type: DataTypes.INTEGER(1),

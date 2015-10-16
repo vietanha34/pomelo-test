@@ -55,7 +55,8 @@ Handler.prototype.validClient = function (msg, session, next) {
 Handler.prototype.login = function (msg, session, next) {
 	var self = this;
 	var player, boardId;
-	var loginIp = platform ==='web' ? msg.ip : utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
+  var type = msg.type;
+	var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
 	msg.ip = loginIp;
 	var maintenance = this.app.get('maintenance');
 	async.waterfall([
@@ -71,11 +72,11 @@ Handler.prototype.login = function (msg, session, next) {
         return
       }
       player = user;
-      player.uid = user.uid;
+      player.uid = user.id;
       kickUser(self.app, user.uid, done);
 		},
 		function (done) {
-			session.bind(player.uid, {
+			session.bind(player.id, {
 				username: player.username,
 				platform: msg.platform,
 				dtId: msg.dtid
@@ -87,17 +88,18 @@ Handler.prototype.login = function (msg, session, next) {
 			session.set('level', player.level || 0);
 			session.set('gold', player.gold);
 			session.set('sex', player.sex);
-			session.set('accessToken', accessToken);
+			session.set('accessToken', msg.accessToken);
 			session.set('avatar', player.avatar);
-			session.set('platform', platform);
+			session.set('platform', msg.platform);
 			session.set('ip', loginIp);
 			session.on('closed', onUserLeave.bind(null, self.app));
 			session.pushAll(done)
 		}
 		, function (done) {
 			// TODO : kiểm tra số lượng kệnh mà người dùng đang subscribe, để tiếp tục subscribe, ví dụ như bang hội, chat nhóm ....
-			self.app.rpc.chat.chatRemote.addGlobal(session, player.uid, session.frontendId,
-				channelUtil.getGlobalChannelName(), done);
+			//self.app.rpc.chat.chatRemote.addGlobal(session, player.uid, session.frontendId,
+			//	channelUtil.getGlobalChannelName(), done);
+			done();
 		},
 		function (done) {
 			self.app.get('statusService').getBoardIdsByUid(player.uid, function (err, list) {
@@ -121,8 +123,8 @@ Handler.prototype.login = function (msg, session, next) {
 			uid: session.uid,
 			ip: loginIp,
 			lastLogin: player.lastLogin,
-			deviceId: deviceId,
-			platform : platform
+			deviceId: msg.deviceId,
+			platform : msg.platform
 		};
 
 		if (boardId) {
@@ -130,7 +132,7 @@ Handler.prototype.login = function (msg, session, next) {
 			session.push('tableId');
 			next(null, {
 				bid: boardId,
-				accessToken: accessToken,
+				accessToken: msg.accessToken,
 				uid: player.uid,
 				type: type
 			});
@@ -139,13 +141,13 @@ Handler.prototype.login = function (msg, session, next) {
 		} else {
 			// người dùng chưa chơi game, cho vào hàm waitingService
 			next(null, {
-				accessToken: accessToken,
+				accessToken: msg.accessToken,
 				uid: player.uid,
 				type: type,
 				bid: ''
 			});
 			emitData.resume = 0;
-			self.app.get('waitingService').add(session);
+			//self.app.get('waitingService').add(session);
 		}
 		player = null;
 		msg = null;
@@ -170,10 +172,10 @@ var onUserLeave = function onUserLeave(app, session, reason) {
 		// user chưa đăng nhập, bỏ qua không xử lý
 	} else {
 		// TODO, kiểm tra các kênh người dùng không sử dụng để unsubscribe, ví dụ như bang hội, chat nhóm
-		app.rpc.chat.chatRemote.leaveGlobal(session, session.uid, session.frontendId,
-			channelUtil.getGlobalChannelName(), function () {
-			});
-		app.get('waitingService').leave(session.uid);
+		//app.rpc.chat.chatRemote.leaveGlobal(session, session.uid, session.frontendId,
+		//	channelUtil.getGlobalChannelName(), function () {
+		//	});
+		//app.get('waitingService').leave(session.uid);
 		//var emitData = {
 		//	uid: session.uid,
 		//	lastLogin: session.get('lastLogin'),

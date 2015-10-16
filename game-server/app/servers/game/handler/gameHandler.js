@@ -21,10 +21,10 @@ module.exports = function (app) {
   var gameId = app.game.gameId;
   var p = getHandlerPath(app.getBase(), app.get('gameConfig')[gameId]);
   if (!!p) {
-    var handler =  new Handler(app);
+    var handler = new Handler(app);
     var handlerMap = Loader.load(p, app);
     return utils.merge_options(handler, handlerMap['gameHandler']);
-  }else {
+  } else {
     return new Handler(app);
   }
 };
@@ -51,7 +51,10 @@ pro.changeBoardProperties = function (msg, session, next) {
   var uid = session.uid;
   next();
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)} );
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     return
   }
   if (board.owner !== uid) {
@@ -68,7 +71,7 @@ pro.changeBoardProperties = function (msg, session, next) {
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));
-    }else if (res.ec){
+    } else if (res.ec) {
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
     }
   })
@@ -78,7 +81,10 @@ pro.standUp = function (msg, session, next) {
   var board = session.board;
   next();
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     return
   }
   var uid = session.uid;
@@ -91,27 +97,22 @@ pro.standUp = function (msg, session, next) {
     }
     var moneyPunish = board.getPunishMoney(uid);
     if (moneyPunish) {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm : utils.getMessage(Code.ON_GAME.FA_STAND_UP_WITH_MONEY, [moneyPunish])});
-    }else {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm : Code.ON_GAME.FA_STAND_UP});
+      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm: utils.getMessage(Code.ON_GAME.FA_STAND_UP_WITH_MONEY, [moneyPunish])});
+    } else {
+      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm: Code.ON_GAME.FA_STAND_UP});
     }
     return
   }
 
-  board.standUp(session.uid, false, function (err, res) {
-    if (err) {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));
-    }
-    else if (!res.ec){
-      messageService.pushMessageToPlayer(utils.getUids(session), 'game.gameHandler.reloadBoard', res);
-      board.pushMessageWithOutUid(uid, 'district.districtHandler.leaveBoard', {
-        uid : uid
-      })
-    }else {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__ , res);
-    }
-
-  })
+  var res = board.standUp(session.uid);
+  if (!res.ec) {
+    messageService.pushMessageToPlayer(utils.getUids(session), 'game.gameHandler.reloadBoard', res);
+    board.pushMessageWithOutUid(uid, 'district.districtHandler.leaveBoard', {
+      uid: uid
+    })
+  } else {
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
+  }
 };
 
 pro.setOwner = function (msg, session, next) {
@@ -127,37 +128,31 @@ pro.setOwner = function (msg, session, next) {
   }
   board.setOwner(msg.uid, function (err, owner) {
     if (owner) {
-      next(null, { uid : owner});
-      board.pushMessageWithOutUid(uid, 'game.gameHandler.setOwner', { uid : owner});
-    }else {
-      next(null, { uid : board.owner});
+      next(null, {uid: owner});
+      board.pushMessageWithOutUid(uid, 'game.gameHandler.setOwner', {uid: owner});
+    } else {
+      next(null, {uid: board.owner});
     }
   })
 };
 
-pro.ready = function (msg, session, next) {
-  var board = session.board;
-  var uid = session.uid;
-  if (!board) {
-    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
-    return
-  }
-  board.ready(uid, next)
-};
 
 pro.continue = function (msg, session, next) {
   var board = session.board;
   var uid = session.uid;
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     next(null);
     return
   }
   var player = board.players.getPlayer(uid);
   if (player) {
-    next(null, { menu : player.menu})
-  }else {
-    next(null, { ec :Code.FAIL});
+    next(null, {menu: player.menu})
+  } else {
+    next(null, {ec: Code.FAIL});
   }
 };
 
@@ -197,63 +192,66 @@ pro.invitePlayer = function (msg, session, next) {
   /** TODO tournament not play game **/
   if (msg.uid) {
     statusPlugin.pushByUids([msg.uid], "game.gameHandler.invitePlayer", {
-      bet : bet,
+      bet: bet,
       id: id,
-      player1 : { current : 1},
-      tableId : boardId,
-      player2 : {
+      player1: {current: 1},
+      tableId: boardId,
+      player2: {
         fname: fullname,
-        avatar : avatar,
-        gold : gold,
-        sex : sex
+        avatar: avatar,
+        gold: gold,
+        sex: sex
       },
-      gameId : gameId,
+      gameId: gameId,
       districtId: districtId,
-      slotId : slotId
+      slotId: slotId
     });
     next(null, {
-      msg : "Đã gửi lời mời thành công đến người chơi khác"
+      msg: "Đã gửi lời mời thành công đến người chơi khác"
     });
     return
   }
-  pomelo.app.get('waitingService').getRandomUser({ gold : board.bet , length : 1, gameId : board.gameId}, function (err, users) {
+  pomelo.app.get('waitingService').getRandomUser({
+    gold: board.bet,
+    length: 1,
+    gameId: board.gameId
+  }, function (err, users) {
     if (!!err) {
       logger.error(err);
-      next(null, { msg : 'gui loi moi that bai'})
-    }else
-    if (lodash.isArray(users)) {
+      next(null, {msg: 'gui loi moi that bai'})
+    } else if (lodash.isArray(users)) {
       if (users.length > 0) {
         var uids = [];
         for (var i = 0, len = users.length; i < len; i++) {
           uids.push(users[i].uid);
         }
         statusPlugin.pushByUids(uids, "game.gameHandler.invitePlayer", {
-          bet : bet,
+          bet: bet,
           id: id,
-          player1 : { current : 1},
-          tableId : boardId,
-          player2 : {
+          player1: {current: 1},
+          tableId: boardId,
+          player2: {
             fname: fullname,
-            avatar : avatar,
-            gold : gold,
-            sex : sex
+            avatar: avatar,
+            gold: gold,
+            sex: sex
           },
           boardId: boardId,
-          gameId : gameId,
+          gameId: gameId,
           districtId: districtId,
-          slotId : slotId
+          slotId: slotId
         });
         next(null, {
-          msg : "Đã gửi lời mời thành công đến người chơi khác"
+          msg: "Đã gửi lời mời thành công đến người chơi khác"
         });
-      }else {
+      } else {
         next(null, {
-          msg : 'Không có người chơi nào để mời'
+          msg: 'Không có người chơi nào để mời'
         })
       }
-    }else {
+    } else {
       next(null, {
-        msg : 'Gui loi moi that bai'
+        msg: 'Gui loi moi that bai'
       })
     }
     session = null;
@@ -268,20 +266,23 @@ pro.sitIn = function (msg, session, next) {
   var route = msg.__route__;
   next();
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     return
   }
-  board.sitIn(uid, slotId, function (err, res) {
-    if (err) {
-      messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: Code.FAIL});
-    }
-    else if (!res.ec){
-      messageService.pushMessageToPlayer(utils.getUids(session), 'game.gameHandler.reloadBoard', res);
-    }else {
-      messageService.pushMessageToPlayer(utils.getUids(session), route, res);
-    }
-    route = null;
-  })
+  board.sitIn(uid, slotId)
+    .then(function (res) {
+      if (!res.ec) {
+        messageService.pushMessageToPlayer(utils.getUids(session), 'game.gameHandler.reloadBoard', res);
+      } else {
+        messageService.pushMessageToPlayer(utils.getUids(session), route, res);
+      }
+    })
+    .finally(function () {
+      route = null;
+    })
 };
 
 pro.kick = function (msg, session, next) {
@@ -290,7 +291,10 @@ pro.kick = function (msg, session, next) {
   var route = msg.__route__;
   var board = session.board;
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     return
   }
   if (board.owner !== uid) {
@@ -298,11 +302,11 @@ pro.kick = function (msg, session, next) {
   }
   board.kick(cuid, function (err, res) {
     if (err) {
-      next(null, { ec :Code.FAIL});
+      next(null, {ec: Code.FAIL});
     }
-    else if (!res.ec){
+    else if (!res.ec) {
       next(null, {});
-    }else {
+    } else {
       next(null, res);
     }
   })
@@ -314,7 +318,10 @@ pro.muteChat = function (msg, session, next) {
   var route = msg.__route__;
   var board = session.board;
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
     return
   }
   if (board.owner !== uid) {
@@ -322,14 +329,76 @@ pro.muteChat = function (msg, session, next) {
   }
   board.muteChat(cuid, function (err, res) {
     if (err) {
-      next(null, { ec :Code.FAIL});
+      next(null, {ec: Code.FAIL});
     }
-    else if (!res.ec){
+    else if (!res.ec) {
       next(null, {});
-    }else {
+    } else {
       next(null, res);
     }
   })
+};
+
+pro.startGame = function (msg, session, next) {
+  var uid = session.uid;
+  var board = session.board;
+  var route = msg.__route__;
+  if (!board) {
+    messageService.pushMessageToPlayer(utils.getUids(session), route, utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST));
+    next(null);
+    return;
+  }
+  if (uid != board.owner) {
+    messageService.pushMessageToPlayer(utils.getUids(session), route,
+      utils.merge_options(utils.getError(Code.ON_GAME.FA_WRONG_ARGUMENT), {
+        menu: board.players.getPlayer(uid).menu
+      }));
+    next(null);
+    return;
+  }
+
+  next(null);
+  return board.startGame(uid, function (err, res) {
+    if (res && res.ec) {
+      board.pushMessageToPlayer(uid, route, res);
+    } else {
+      var ownerPlayer = board.players.getPlayer(board.owner);
+      ownerPlayer.removeMenu(consts.ACTION.START_GAME);
+    }
+    route = null
+  });
+};
+
+pro.action = function (msg, session, next) {
+  var uid = session.uid;
+  var board = session.board;
+  var route = msg.__route__;
+  if (!board) {
+    messageService.pushMessageToPlayer(utils.getUids(session), route, utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST));
+    next(null);
+    return
+  }
+  return board.action(uid, msg, function (err, res) {
+    if (err) {
+      console.log(err);
+      board.pushMessageToPlayer(uid, route, utils.getError(Code.FAIL));
+      next(null);
+    } else {
+      board.pushMessageToPlayer(uid, route, res);
+      next(null);
+    }
+    route = null;
+  })
+};
+
+pro.ready = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    return
+  }
+  next(null, board.ready(uid))
 };
 
 /**
@@ -339,7 +408,7 @@ pro.muteChat = function (msg, session, next) {
  * @param  {String} serverType server type
  * @return {String}            path string if the path exist else null
  */
-var getHandlerPath = function(appBase, serverType) {
+var getHandlerPath = function (appBase, serverType) {
   var p = path.join(appBase, '/app/domain/game/', serverType, consts.DIR.HANDLER);
   return fs.existsSync(p) ? p : null;
 };

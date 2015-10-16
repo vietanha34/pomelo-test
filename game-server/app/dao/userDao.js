@@ -214,7 +214,7 @@ var charCode = [192,
 UserDao.getUserProperties = function (uid, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {userId: uid}, attributes: properties, raw: true})
+    .findOne({where: {id: uid}, attributes: properties, raw: true})
     .then(function (user) {
       console.log('properties : ', user);
       return utils.invokeCallback(cb, null, user);
@@ -302,13 +302,16 @@ UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
   return accountService
-    .validAccessToken({ip: msg.ip, accessToken: msg.accessToken, cache: true})
+    .getUserProfile(msg.accessToken)
     .then(function (res) {
       if (res && !res.ec) {
-        var uid = res.userInfo.userId;
+        console.log('res  typeof : ', typeof res);
+        res.userId = res.id;
+        delete res['id'];
+        console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
           .User
-          .findOrCreate({where: {userId: uid}, raw: true}, res.userInfo);
+          .findOrCreate({where: {userId: res.userId}, raw: true, defaults : res});
       } else {
         Promise.reject({
           ec: Code.FAIL,

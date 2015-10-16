@@ -39,8 +39,8 @@ Handler.prototype.getServer = function (msg, session, next) {
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,
-        port : res.clientPort.toString(),
-        config : configService.getConfig(),
+        port : res.natPort ? res.natPort.toString() : res.clientPort.toString(),
+        //config : configService.getConfig(),
         idSession : idSession,
         key : key,
         msg : message,

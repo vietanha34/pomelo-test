@@ -121,7 +121,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
         var user = {
           gold: userInfo.gold,
           username: userInfo.username,
-          uid: userInfo.id.toString(),
+          uid: userInfo.id,
           fullname: userInfo.fullname,
           sex: userInfo.sex,
           avatar: userInfo.avatar,
@@ -161,7 +161,6 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
   this.app.rpc.game.gameRemote.leaveBoard(session, {
     boardId: tableId,
     uid: uid,
-    confirm: msg.confirm
   }, function (err, result) {
     if (err) {
       logger.error(err);
@@ -231,29 +230,39 @@ Handler.prototype.getHall = function (msg, session, next) {
     .getRoom({
       where: {
         gameId: gameId
-      }
+      },
+      raw : true
     })
     .then(function (rooms) {
       var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
-      rooms = lodash.groupBy(rooms, 'hallId');
+      var temp = {};
+      for (i = 0, len = rooms.length; i < len ; i++){
+        if (lodash.isArray(temp[rooms[i].hallId])){
+          temp[rooms[i].hallId].push(rooms[i]);
+        }else {
+          temp[rooms[i].hallId] = [rooms[i]];
+        }
+      }
+      rooms = temp;
       var keys = Object.keys(rooms);
       var results = [];
       for (var i = 0, len = keys.length; i< len; i ++){
         var hallId = keys[i];
         var hallKey = parseInt(''+gameId + hallId);
-        var hallConfig = hallConfigs[hallKey];
+        var hallConfig = hallConfigs[hallKey] || {};
         results.push({
           hallId: hallId,
           gold: [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)],
           icon: utils.JSONParse(hallConfig.icon, {id : 0, version : 0}),
           hint: hallConfig.hint,
           room: lodash.map(rooms[hallId], function (n) {
-            return { full : n.progress,  roomId: n.roomId}
+            return {full : n.progress,  roomId: n.roomId}
           }),
           level: parseInt(hallConfig.level),
           exp: parseInt(hallConfig.exp)
         })
       }
+      next(null, { data : results, gameId : gameId});
     })
 };
 
@@ -271,6 +280,7 @@ Handler.prototype.getBoardList = function (msg, session, next) {
   }
   var gameId = msg.gameId;
   var roomId = msg.roomId;
+  var hallId;
   var boardService = this.app.get('boardService');
   boardService
     .getBoard({
@@ -283,9 +293,10 @@ Handler.prototype.getBoardList = function (msg, session, next) {
       var data = [];
       for (var i = 0, len = boards.length; i < len; i ++){
         var board = boards[i];
+        hallId = board.hallId;
         data.push({
           index : board.index,
-          tableId : board.tableId,
+          tableId : board.boardId,
           gameId : board.gameId,
           roomId : board.roomId,
           stt : board.stt,
@@ -296,7 +307,7 @@ Handler.prototype.getBoardList = function (msg, session, next) {
           optional : utils.JSONParse(board.optional, {})
         });
       }
-      return next(null, { board : data, roomId : roomId, gameId : gameId})
+      return next(null, { board : data, roomId : roomId, gameId : gameId, hallId : hallId})
     })
     .catch(function (err) {
       logger.error('err : ', err);

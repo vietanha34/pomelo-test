@@ -27,6 +27,7 @@ var util = require('util');
  * @property {Boolean} guest guest
  */
 var Player = function (opts) {
+  console.log('opts : ', opts);
   this.userInfo = opts.userInfo || {};
   this.userInfo.sex = parseInt(this.userInfo.sex);
   this.goldAfter = 0; // Số tiền sau của người dùng
@@ -50,8 +51,6 @@ var Player = function (opts) {
   this.moneyLogs = [];
   this.sitInTime = null; // Thời gian cần thiết để ngồi xuống
   this.isStandUp = false;
-  this.standUpMsg = '';
-  this.standUpMsgWithUsername = '';
 };
 
 /**
@@ -62,6 +61,15 @@ var Player = function (opts) {
  */
 Player.prototype.getUids = function () {
   return {uid: this.uid, sid: this.userInfo.frontendId}
+};
+
+Player.prototype.genMenu = function (guest) {
+  if(guest){
+    this.menu.push(this.table.genMenu(consts.ACTION.TAN_GAU));
+  }else {
+    this.menu.push(this.table.genMenu(consts.ACTION.CHAT));
+    this.menu.push(this.table.genMenu(consts.ACTION.EMO));
+  }
 };
 
 /**
@@ -183,6 +191,13 @@ Player.prototype.reset = function () {
   this.totalTax = 0;
   this.moneyLogs.splice(0,this.moneyLogs.length);
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
+  this.menu.splice(0, this.menu.length);
+  if (this.uid === this.table.owner){
+    this.menu.push(this.table.genMenu(consts.ACTION.START_GAME));
+  }else if (!this.guest){
+    this.menu.push(this.table.genMenu(consts.ACTION.READY));
+  }
+  this.genMenu(this.guest);
 };
 
 
@@ -219,20 +234,13 @@ Player.prototype.removeMenu = function (id) {
 
 Player.prototype.Ready = function () {
   this.ready = true;
-  var index = lodash.findIndex(this.menu, {id : consts.ACTION.READY});
-  if (index > -1) {
-    this.menu.splice(index, 1)
-  }
+  this.removeMenu(consts.ACTION.READY);
 };
 
 Player.prototype.addItems = function (items) {
   // TODO handle cam kick, cam chat
 };
 
-Player.prototype.checkItems = function (itemId) {
-  var index = lodash.findIndex(this.items, {effect : itemId});
-  return !!(index > -1 && this.items[index].value);
-};
 
 Player.prototype.unReady = function () {
   this.ready = false;

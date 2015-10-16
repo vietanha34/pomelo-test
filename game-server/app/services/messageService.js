@@ -17,6 +17,9 @@ exp.pushMessageByUids = function (uids, route, msg) {
 };
 
 exp.pushMessageToPlayer = function (uid, route, msg) {
+  console.log('\n----PushMessage  to uid: %j ' +
+    '\n ---- route : %s' +
+    '\n ---- msg: %j', uid, route, msg);
   if (uid.sid) {
     exp.pushMessageByUids([uid], route, msg);
   }

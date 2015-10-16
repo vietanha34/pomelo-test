@@ -1,7 +1,7 @@
 {
   "development":{
     "connector": [
-    {"id": "connector-server-1", "host": "127.0.0.1", "port": 3150, "clientPort": 3010, "frontend": true}
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "natPort" : 6511 , "clientHost" :  "123.30.235.196", "frontend": true}
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
@@ -37,9 +37,9 @@
       {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
     ]
   },
-  "development":{
+  "production":{
     "connector": [
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3150, "clientPort": 3010, "frontend": true}
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.196", "frontend": true}
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
@@ -69,7 +69,7 @@
       {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
     ],
     "event" : [
-      {"id" : "event-server-1", "host" : "10.2.10.48", "port" : 3960}
+      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960}
     ]
   },
   "local":{

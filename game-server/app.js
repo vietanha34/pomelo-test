@@ -16,6 +16,9 @@ app.set('name', 'cothu-v2');
 app.configure('production|development|local', function () {
   // config db, config module
   app.enable('systemMonitor');
+  var routeUtil = require('./app/util/routeUtil');
+  app.route('game', routeUtil.game);
+  app.route('connector', routeUtil.connector);
   var onlineUser = require('./app/modules/onlineUser');
   var maintenance = require('./app/modules/maintenance');
   var kickUser = require('./app/modules/kickUser');
@@ -83,11 +86,13 @@ app.configure('production|development|local', function () {
 
 // app configuration
 app.configure('production|development', 'connector|gate', function(){
+  app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');
   app.set('connectorConfig',
     {
-      connector : pomelo.connectors.hybridconnector,
-      useDict : true,
-      useProtobuf : false
+      connector: pomelo.connectors.hybridconnector,
+      useDict: true,
+      useProtobuf: false,
+      msgpack: false
     });
 });
 
@@ -154,9 +159,17 @@ app.configure('production|development|local', 'district|connector|game|home', fu
 
 app.configure('production|development|local', function () {
   var AccountPlugin = require('pomelo-account-plugin');
-  app.use(AccountPlugin, {
-    config : app.get('serviceConfig').account
-  })
+  app.use(AccountPlugin, { account : {
+    config : app.get('serviceConfig').account,
+    redis: app.get('redisCache')
+  }})
+});
+
+app.configure('production|development', 'home|district|game|connector|service', function () {
+  var GameService = require('./app/services/gameService');
+  var gameService = new GameService(app);
+  gameService.init();
+  app.set('gameService', gameService)
 });
 
 

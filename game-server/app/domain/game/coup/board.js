@@ -20,7 +20,7 @@ var BoardBase = require('../base/boardBase');
 
 
 function Game(table) {
-  this.game = new Rule(false, 'default',  [],  ['handicapRook1']);
+  this.game = new Rule(false, 'default', [], []);
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -135,33 +135,6 @@ function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.game = new Game(this);
   this.looseUser = null;
-  this.lockMode = opts.lockMode || [];
-  this.removeMode = opts.removeMode || [];
-  if (this.lockMode.length > 0 || this.removeMode.length > 0){
-    this.emit('setBoard', { optional : JSON.stringify({ lock : this.lockMode, remove : this.removeMode})});
-  }
-  var self = this;
-  this.addFunction = [
-    function (properties, dataChanged, dataUpdate, changed, done) {
-      // changeOwner
-      var update = false;
-      if (lodash.isArray(properties.lock)) {
-        update = true;
-        self.lockMode = properties.lock;
-      }
-
-      if (lodash.isArray(properties.remove)) {
-        self.removeMode = properties.remove;
-        update = true;
-      }
-      if (update){
-        changed = true;
-        dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
-        dataUpdate.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
-      }
-      return done(null, properties, dataChanged, dataUpdate, changed);
-    }
-  ]
 }
 
 util.inherits(Table, BoardBase);
@@ -244,10 +217,6 @@ Table.prototype.xinThua = function () {
 };
 
 Table.prototype.xinHoa = function () {
-};
-
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
-  return Table.super_.prototype.change.call(this, properties, this.addFunction, cb);
 };
 
 module.exports = Table;

@@ -110,13 +110,12 @@ Game.prototype.initBoards = function () {
 };
 
 Game.prototype.createRoom = function (hallConfig, roomId) {
-  console.log('hallConfig : ', hallConfig);
   var self = this;
   return pomelo.app.get('boardService')
     .addRoom({
       serverId: this.serverId,
       gameId: this.gameId,
-      roomId: this.roomId,
+      roomId: roomId,
       hallId: parseInt(hallConfig.hallId)
     })
     .then(function () {

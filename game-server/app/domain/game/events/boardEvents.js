@@ -40,7 +40,7 @@ exp.addEventFromBoard = function (board) {
       });
       board.pushOnJoinBoard(player.uid);
     }
-    pomelo.app.get('waitingService').leave(player.uid);
+    //pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
       board.addJobReady(player.uid)
@@ -239,8 +239,6 @@ exp.addEventFromBoard = function (board) {
    * @event giveUp
    * @for BoardBase
    */
-  board.on('giveUp', function (opts) {
-  });
 
   board.on('changeOwner', function (owner) {
     if (owner && board.owner && board.players.getPlayer(board.owner)) {

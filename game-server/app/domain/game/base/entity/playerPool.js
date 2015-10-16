@@ -33,6 +33,7 @@ var PlayerPool = function (opts) {
   this.Player = typeof opts.Player === 'function' ? opts.Player : Player;
   this.guestIds = []; // mảng uid của người xem;
   this.orderUid = [];
+  this.mapColor = [consts.COLOR.WHITE, consts.COLOR.BLACK];
   this.slot = [];
   for (var i = 0, len = this.numSlot.length; i < len; i++) {
     this.slot.push({
@@ -51,8 +52,8 @@ var pro = PlayerPool.prototype;
  */
 pro.reset = function () {
   var i, len, player,opts = [];
-  for(i = 0, len = this.table.game.playerPlaying.length; i < len ; i++){
-    player = this.table.game.playerPlaying[i];
+  for(i = 0, len = this.table.game.playerPlayingId.length; i < len ; i++){
+    player = this.table.players.getPlayer(this.table.game.playerPlayingId[i]);
     opts.push({
       uid : player.uid,
       type : consts.CHANGE_GOLD_TYPE.PLAY_GAME,
@@ -68,12 +69,11 @@ pro.reset = function () {
     player.goldInGame = -1;
     player.reset();
   }
-  this.paymentRemote(BoardConsts.PAYMENT_METHOD.ADD_GOLD, opts, this.table.game.matchId, function (err, res) {
-    if (err) {
-      logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-    }
-  });
-  this.table.reset();
+  //this.paymentRemote(BoardConsts.PAYMENT_METHOD.ADD_GOLD, opts, this.table.game.matchId, function (err, res) {
+  //  if (err) {
+  //    logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
+  //  }
+  //});
 };
 
 
@@ -117,6 +117,7 @@ pro.addPlayer = function (opts) {
     if (slotIndex > -1) {
       // add new player
       self.playerSeat[slotIndex] = player.uid;
+      player.color = this.mapColor[slotIndex];
       self.length = lodash.compact(self.playerSeat).length;
       data.newPlayer = true;
       if (!self.table.owner) {
@@ -124,11 +125,11 @@ pro.addPlayer = function (opts) {
         data.owner = true;
         player.owner = true;
         if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
-          player.menu = [self.table.genMenu(consts.ACTION.START_GAME)]
+          player.menu.push(self.table.genMenu(consts.ACTION.START_GAME));
         }
       } else {
         if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
-          player.menu = [self.table.genMenu(consts.ACTION.READY)]
+          player.menu.push(self.table.genMenu(consts.ACTION.READY));
         }
       }
     }
@@ -137,10 +138,10 @@ pro.addPlayer = function (opts) {
       player.guest = true;
       data.guest = true;
     }
+    player.genMenu();
     result = data;
   }
   return result;
-
 };
 
 /**
@@ -227,6 +228,7 @@ pro.standUp = function (uid) {
     }
     player.guest = true;
     player.reset();
+    player.menu.slice(0, player.menu.length);
   }
   return {}
 };
@@ -239,7 +241,7 @@ pro.standUp = function (uid) {
  * @param {Number} slotId vị trí của người chơi cần ngồi
  * @param {Function} cb call tra ve
  */
-pro.sitIn = function (uid, slotId, cb) {
+pro.sitIn = function (uid, slotId) {
   var self = this;
   var player = this.getPlayer(uid);
   if (self.length >= self.table.maxPlayer) {
@@ -558,7 +560,18 @@ pro.unReadyAll = function () {
   }
 };
 
-
+pro.checkStartGame = function () {
+  for (var i = 0, len = this.playerSeat.length; i< len ; i ++){
+    if (this.playerSeat[i] && this.playerSeat[i] !== this.table.owner){
+      var player = this.getPlayer(this.playerSeat[i]);
+      if (player.gold > this.table.bet && player.ready){
+        return true
+      }else {
+        return false
+      }
+    }
+  }
+};
 
 
 module.exports = PlayerPool;

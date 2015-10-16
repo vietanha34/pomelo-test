@@ -13,7 +13,7 @@ var sh = require("shorthash");
 var lodash = require('lodash');
 var GameConfig = require('../dao/model/gameConfig');
 var pomelo = require('pomelo');
-var Promise = require('promisse');
+var Promise = require('bluebird');
 
 /**
  * Định kì lấy về danh sách các trò chơi, khu vực từ CSDL, sau đó gửi dữ liệu về cho client
@@ -55,9 +55,9 @@ GameService.prototype.init = function () {
 GameService.prototype.getData = function (cb) {
   var self = this;
   return Promise.all([
-    self.setGameConfig(),
-    self.setLanguage(),
-    self.setHall()
+    //self.setGameConfig(),
+    self.setLanguage()
+    //self.setHall()
   ])
     .then(function (res) {
       return utils.invokeCallback(cb, null, res)
@@ -102,7 +102,7 @@ GameService.prototype.setLanguage = function (cb) {
       self.language = object;
       var str = JSON.stringify(self.language);
       self.langVersion = sh.unique(str);
-      self.language.version = self.langVersion;
+      self.language.langVersion = self.langVersion;
       return utils.invokeCallback(cb);
     })
 };

@@ -5,12 +5,12 @@
       "secretKey": "pyLzHGQvxOuY"
     },
     "account" : {
-      "auth_url" : "https://172.16.20.20:443",
-      "login_url" : "/oauth/token/",
+      "authUrl" : "https://10.2.10.21:443",
+      "loginUrl" : "/oauth/token/",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",
       "getGameProfile" : "/api/user/getGameProfile",
-      "getProfile_url" : "/api/user/getProfile",
+      "getProfileUrl" : "/api/user/getProfile",
       "updateProfile" : "/api/user/updateProfile",
       "verifyUserInfo" : "/api/user/verifyUserInfo",
       "checkOTP" : "/api/user/checkOTP/",
@@ -26,12 +26,12 @@
       "secretKey": "pyLzHGQvxOuY"
     },
     "account" : {
-      "auth_url" : "https://172.16.20.20:443",
-      "login_url" : "/oauth/token/",
+      "authUrl" : "https://172.16.20.20:443",
+      "loginUrl" : "/oauth/token/",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",
       "getGameProfile" : "/api/user/getGameProfile",
-      "getProfile_url" : "/api/user/getProfile",
+      "getProfileUrl" : "/api/user/getProfile",
       "updateProfile" : "/api/user/updateProfile",
       "verifyUserInfo" : "/api/user/verifyUserInfo",
       "checkOTP" : "/api/user/checkOTP/",

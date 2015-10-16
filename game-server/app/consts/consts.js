@@ -1,5 +1,5 @@
 module.exports = {
-  PR_ID: 3,
+  PR_ID: 24,
   PARTNER_ID: 1,
   CHARGE_SECRET_KEY: 'd68Ntm5Uzjhb',
   PLATFORM_ENUM : {
@@ -8,15 +8,27 @@ module.exports = {
     WINDOWPHONE : 2,
     JAVA : 3
   },
-  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'uid', 'fullname', 'xp', 'sex', 'avatar', 'chip'],
+  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'id', 'fullname', 'sex', 'avatar', 'gold'],
 
   GAME_ID : {
-    CARO : 1,
-    CO_TUONG : 2,
-    CO_UP : 3,
-    CO_VAY : 4,
-    CO_THE : 5,
-    CO_VUA : 6
+    CARO : 5,
+    CO_TUONG : 1,
+    CO_UP : 2,
+    CO_VAY : 6,
+    CO_THE : 3,
+    CO_VUA : 4
+  },
+
+  HALL_ID : {
+    MIEN_PHI : 1,
+    BINH_DAN : 2,
+    CAO_THU : 3,
+    LIET_CHAP : 4
+  },
+
+  COLOR : {
+    WHITE : 1,
+    BLACK : 2
   },
 
   RESPONSE_EC: {
@@ -120,13 +132,9 @@ module.exports = {
   },
 
   WIN_TYPE : {
-    BIG_WIN: 1,
-    WIN : 2,
-    FIRST : 1,
-    DRAW : 3,
-    LOSE : 4,
-    BIG_LOSE : 5,
-    GIVE_UP : 6
+    WIN : 1,
+    DRAW : 0,
+    LOSE : 2
   },
 
   ACTION : {
@@ -139,7 +147,10 @@ module.exports = {
     DRAW : 5,
     SURRENDER : 6,
     HINT : 8,
-    CHANGE_TYPE : 9
+    CHANGE_TYPE : 9,
+    CHAT : 10,
+    EMO : 11,
+    TAN_GAU : 12
   },
 
   LANGUAGE_LIMIT : {
@@ -147,6 +158,22 @@ module.exports = {
     ITEM_NAME : 100210,
     ITEM_DISABLE : 100500,
     ITEM_ENABLE : 100510
+  },
+
+  LOCK_MODE : {
+    lockPawn1 : 1,
+    lockPawn3 : 2,
+    lockPawn5 : 3,
+    lockPawn7 : 4,
+    lockPawn9 : 5,
+    lockHorse2 : 6,
+    lockHorse8 : 7
+  },
+
+  HANDICAP_MODE : {
+    handicapRook1 : 1,
+    handicapHorse2 : 2,
+    handicapCannon2 : 3
   },
 
   TARGET_TYPE : {

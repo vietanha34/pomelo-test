@@ -28,6 +28,7 @@ var Handler = function (app) {
  * @param next
  */
 Handler.prototype.getHome = function (msg, session, next) {
+  var self = this;
   Promise.props({
     newCount: NewsDao.getNumNewsUnreadByUserId(session.uid),
     notifyCount: NewsDao.getNumNewsUnreadByUserId(session.uid)
@@ -51,6 +52,7 @@ Handler.prototype.getHome = function (msg, session, next) {
           {gameId : 6, status : 1}
         ]
       };
+      if (msg.langVersion !== self.app.get('gameService').langVersion) data.language = self.app.get('gameService').language
       result = utils.merge_options(result, data);
       next(null, result);
     })

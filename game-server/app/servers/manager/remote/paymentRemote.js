@@ -9,6 +9,7 @@ var async = require('async');
 var logger = require('pomelo-logger').getLogger('payment', __filename);
 var messageService = require('../../../services/messageService');
 var userDao = require('../../../dao/userDao');
+var request = require('request');
 var querystring = require('querystring');
 var Code = require('../../../consts/code');
 var lodash = require('lodash');
@@ -23,49 +24,70 @@ var PaymentRemote = function (app) {
   this.app = app
 };
 
-pro = PaymentRemote.prototype;
-
-/**
- * Lấy thông tin tiền bạc của người chơi
- *
- * @param opts
- * @param cb
- */
-pro.getBalance = function (opts , cb) {
-  pomelo.app.get('paymentService').getBalance(opts.uid ,cb );
-};
+var pro = PaymentRemote.prototype;
 
 /**
  * Trừ tiền của người chơi
  *
  * @param opts
+ * @param transaction
  * @param cb
  */
-pro.subBalance = function (opts, cb) {
-  pomelo.app.get('paymentService').subBalance(opts)
-    .then(function (result) {
-      utils.invokeCallback(cb, null, result)
+pro.subBalance = function (opts, transaction, cb) {
+  var self = this;
+  if(typeof transaction === 'function') {
+    cb = transaction;
+    transaction = null;
+  }
+  // TODO add transaction log for rollback
+  if (lodash.isArray(opts)){
+    async.map(opts, this.app.get('paymentService').subBalance.bind(this.app.get('paymentService')), function (err, res) {
+      utils.invokeCallback(cb, err, res);
+      if (transaction){
+        // save transaction
+        var multi = self.app.get('redisCache').multi();
+        multi.zadd(redisKeyUtil.getTransactionList(), Date.now(), transaction);
+        multi.set(redisKeyUtil.getTransactionDetail(transaction), JSON.stringify({
+          before : opts,
+          after : res
+        }));
+        multi.exec();
+      }
     })
-    .then(function (err) {
-      utils.invokeCallback(cb, err);
-    })
+  }else {
+    this.app.get('paymentService').subBalance(opts ,cb);
+  }
 };
 
 /**
  * Cộng tiền cho người chơi
  *
  * @param opts
+ * @param transaction
  * @param cb
  */
-pro.addBalance = function(opts, cb){
-  pomelo.app.get('paymentService').addBalance(opts)
-    .then(function (result) {
-      utils.invokeCallback(cb, null, result)
+pro.addBalance = function(opts, transaction, cb){
+  var self = this;
+  if (typeof transaction === 'function'){
+    cb = transaction;
+    transaction = null;
+  }
+  if (lodash.isArray(opts)){
+    async.map(opts, this.app.get('paymentService').addBalance.bind(this.app.get('paymentService')), function (err, res) {
+      utils.invokeCallback(cb, err, res);
+      if (transaction && !err){
+        // remove transaction
+        var multi = self.app.get('redisCache').multi();
+        multi.zrem(redisKeyUtil.getTransactionList(), transaction);
+        multi.del(redisKeyUtil.getTransactionDetail(transaction));
+        multi.exec();
+      }
     })
-    .catch(function (err) {
-      utils.invokeCallback(cb, err);
-    })
+  }else {
+    this.app.get('paymentService').addBalance(opts ,cb);
+  }
 };
+
 
 /**
  * Đồng bộ tiền bạc trong bàn game và ngoài bàn chơi
@@ -75,8 +97,6 @@ pro.addBalance = function(opts, cb){
  */
 pro.syncBalance = function (opts, cb) {
   if (!opts) { return }
-  var curServer = this.app.curServer;
-  logger.info('SYNC in %s : ', curServer.id, opts);
   if (opts.gameType === consts.GAME_TYPE.TOURNAMENT) {
     return utils.invokeCallback(cb, null, { ec :Code.OK})
   }
@@ -84,6 +104,7 @@ pro.syncBalance = function (opts, cb) {
     for (var i = 0, len = opts.syncData.length; i < len; i++) {
       var item = opts.syncData[i];
       item.gameType = opts.gameType;
+      item.gameId = opts.gameId;
       item.matchId = opts.matchId;
       item.tableId = opts.tableId;
       item.type = opts.type;

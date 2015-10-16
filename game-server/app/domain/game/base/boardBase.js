@@ -41,23 +41,28 @@ var BoardConsts = require('./logic/consts');
  */
 var Board = function (opts, PlayerPool, Player) {
   opts = opts || {};
-  this.gameId = opts.gameId;
-  this.tableId = opts.tableId;
+  this.gameId = parseInt(opts.gameId);
+  this.tableId = opts.boardId;
   this.bet = opts.bet || 0;
   this.roomId = opts.roomId;
+  this.hallId = parseInt(opts.hallId);
   this.owner = '';
   this.base = opts.base;
   this.numMatchPlay = 0;
   this.numSlot = 2;
   this.minBuyIn = this.bet;
   this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.lock = opts.lock ? 1 : 0;
+  this.lock = null;
   this.minPlayer = 2;
   this.maxPlayer = 2;
   this.configBet = opts.configMoney || [];
+  this.configTurnTime = opts.configTurnTime;
+  this.configTotalTime = opts.configTotalTime;
   this.isMaintenance = false;
-  this.turnTime = opts.turnTime || 20000;
+  this.turnTime = opts.turnTime || 10*60*1000;
+  this.totalTime = opts.totalTime || 15 * 60 * 1000;
   this.tax = opts.tax || 5;
+  this.score = [0,0];
   this.createdTime = Date.now();
   this.jobId = null;
   this.jobIdReady = null;
@@ -75,6 +80,60 @@ var Board = function (opts, PlayerPool, Player) {
   this.channelName = channelUtil.getBoardChannelName(this.tableId);
   // default
   this.betDefault = this.bet;
+  this.turnTimeDefault = this.turnTime;
+  this.totalTimeDefault = this.totalTime;
+  var self = this;
+  this.changePropertiesFunction = [
+    function (properties, dataChanged, dataUpdate, changed ,done) {
+      // change bet;
+      var bet = properties.bet;
+      if (bet) {
+        var ownerPlayer = self.players.getPlayer(self.owner);
+        if (bet < self.configBet[0] || bet > self.configBet[1]){
+          return done({ec : Code.FAIL});
+        }
+        if (ownerPlayer && ownerPlayer.gold < bet) {
+          return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
+        } else {
+          self.bet = bet;
+          changed = true;
+          dataChanged.bet = bet;
+          dataUpdate.bet = bet;
+        }
+      }
+      return done(null, properties, dataChanged, dataUpdate, changed);
+    },
+    function (properties, dataChanged, dataUpdate,changed, done) {
+      // TODO change turn Time
+      var turnTime = properties.turnTime;
+      var totalTime = properties.totalTime;
+      if (turnTime && (self.configTurnTime.indexOf(turnTime) > -1)){
+        self.turnTime = turnTime;
+        changed = true;
+        dataChanged.turnTime = turnTime;
+        dataUpdate.turnTime = turnTime;
+      }
+      if (totalTime && (self.configTotalTime.indexOf(totalTime))){
+        self.totalTime = totalTime;
+        changed = true;
+        dataChanged.totalTime = totalTime;
+        dataUpdate.totalTime = totalTime;
+      }
+      return done(null, properties, dataChanged, dataUpdate, changed);
+    },
+    function (properties, dataChanged, dataUpdate, changed, done) {
+      // changeOwner
+      var owner = properties.owner;
+      if (owner && self.owner !== owner && self.players.playerSeat.indexOf(owner)) {
+        self.players.getPlayer(self.owner).clearOwner();
+        self.players.getPlayer(owner).setOwner();
+        self.owner = owner;
+        changed = true;
+        dataChanged.owner = owner;
+      }
+      return done(null, properties, dataChanged, dataUpdate, changed);
+    }
+  ]
 };
 
 util.inherits(Board, EventEmitter);
@@ -343,7 +402,7 @@ pro.clearIdlePlayer = function () {
     if (playerSeat.indexOf(player.uid) > -1) {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
-    if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_TIMEOUT && ((this.status !== consts.BOARD_STATUS.NOT_STARTED && this.players.availablePlayer.indexOf(player.uid) < 0) || this.status === consts.BOARD_STATUS.NOT_STARTED)) {
+    if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_TIMEOUT && ((this.status !== consts.BOARD_STATUS.NOT_STARTED) || this.status === consts.BOARD_STATUS.NOT_STARTED)) {
       this.playerTimeout(player);
     }
   }
@@ -376,6 +435,7 @@ pro.joinBoard = function (opts) {
       self.emit('joinBoard', self.players.getPlayer(uid));
     }
     var state = self.getBoardState(uid);
+    console.log('state : ', state);
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
     }
@@ -399,7 +459,7 @@ pro.checkLeaveBoard = function (uid) {
  * @param {Function} cb
  * @method leaveBoard
  */
-pro.leaveBoard = function (uid, cb ) {
+pro.leaveBoard = function (uid, cb) {
   var self = this;
   if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
     utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]));
@@ -435,7 +495,7 @@ pro.leaveBoard = function (uid, cb ) {
  */
 pro.getStatus = function () {
   return {
-    bet: this.bet
+    stt : this.status
   };
 };
 
@@ -445,8 +505,8 @@ pro.setOwner = function () {
   for (var i = 0; i< 2 ; i ++){
     if (this.players.playerSeat[i]) owner = this.players.playerSeat[i];
   }
+  this.owner = owner;
   if (owner) {
-    this.owner = owner;
     this.players.getPlayer(owner).setOwner();
   }
   return owner
@@ -490,8 +550,11 @@ pro.getBoardInfo = function (finish) {
       time: this.turnTime,
       lock: this.lock,
       configBet: this.configBet,
+      configTime : this.configTime || [],
       gameType: this.gameType,
-      hallId : this.hallId
+      hallId : this.hallId,
+      index : this.index,
+      bet  :this.bet
     }
   }
 };
@@ -499,8 +562,6 @@ pro.getBoardInfo = function (finish) {
 /**
  *
  * @param uid
- * @param force
- * @param cb
  */
 pro.standUp = function (uid) {
   var self = this;
@@ -533,9 +594,10 @@ pro.getPunishMessage = function (msg, punish) {
 /**
  *
  * @param properties
+ * @param addFunction
  * @param cb
  */
-pro.changeBoardProperties = function (properties, cb) {
+pro.changeBoardProperties = function (properties, addFunction, cb) {
   var changed = false;
   var dataChanged = {};
   var dataUpdate = {};
@@ -546,55 +608,25 @@ pro.changeBoardProperties = function (properties, cb) {
     ownerName = ''
   }
   properties = properties || {};
-  async.waterfall([
+  var propertiesFunction = [
     function (done) {
-      // change bet;
-      var bet = properties.bet;
-      if (bet) {
-        var ownerPlayer = self.players.getPlayer(self.owner);
-        if (bet < self.configBet[0] || bet > self.configBet[1]){
-          return done({ec : Code.FAIL});
-        }
-        if (ownerPlayer && ownerPlayer.gold < bet) {
-          return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
-        } else {
-          self.bet = bet;
-          changed = true;
-          dataChanged.bet = bet;
-          dataUpdate.bet = bet;
-        }
-      }
-      return done();
-    },
-    function (done) {
-      // TODO change turn Time
-      done();
-    },
-    function (done) {
-      // changeOwner
-      var owner = properties.owner;
-      if (owner && self.owner !== owner && self.players.playerSeat.indexOf(owner)) {
-        self.players.getPlayer(self.owner).clearOwner();
-        self.players.getPlayer(owner).setOwner();
-        self.owner = owner;
-        changed = true;
-        dataChanged.owner = owner;
-      }
-      done();
+      return done(null, properties, dataChanged, dataUpdate, changed);
     }
-  ], function (err) {
+  ].concat(this.changePropertiesFunction, lodash.isArray(addFunction) ? addFunction : []);
+  async.waterfall(propertiesFunction, function (err) {
     if (err) {
-      utils.invokeCallback(cb, err);
+      return utils.invokeCallback(cb, err);
     } else {
+      propertiesFunction.splice(0, propertiesFunction.length);
       if (changed) {
         self.players.unReadyAll();
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];
         dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
         self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
         self.emit('setBoard', dataUpdate);
-        utils.invokeCallback(cb, null, {});
+        return utils.invokeCallback(cb, null, {});
       } else {
-        utils.invokeCallback(cb, null, {ec: Code.FAIL});
+        return utils.invokeCallback(cb, null, {ec: Code.FAIL});
       }
     }
   })
@@ -611,28 +643,21 @@ pro.sitIn = function (uid, slotId, cb) {
   var self = this;
   var player = this.players.getPlayer(uid);
   if (!player || !player.guest || this.players.playerSeat.indexOf(uid) > -1) {
-    utils.invokeCallback(cb, null, {ec: Code.FAIL})
+    return utils.invokeCallback(cb, null, {ec: Code.FAIL})
   } else {
     player.timeAction = Date.now();
-    this.players.sitIn(uid, slotId, function (err, result) {
-      if (err) {
-        logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-        utils.invokeCallback(cb, err);
+    var result = this.players.sitIn(uid, slotId);
+    if (result && !result.ec) {
+      if (!self.owner) {
+        self.owner = uid;
       }
-      else {
-        if (result && !result.ec) {
-          if (!self.owner) {
-            self.owner = uid;
-          }
-          self.emit('sitIn');
-          var state = self.getBoardState(uid);
-          self.pushOnJoinBoard(uid);
-          utils.invokeCallback(cb, null, state);
-        } else {
-          utils.invokeCallback(cb, null, result || {ec: Code.FAIL});
-        }
-      }
-    });
+      self.emit('sitIn');
+      var state = self.getBoardState(uid);
+      self.pushOnJoinBoard(uid);
+      return utils.invokeCallback(cb, null, state);
+    } else {
+      return utils.invokeCallback(cb, null, result || {ec: Code.FAIL});
+    }
   }
 };
 
@@ -675,7 +700,7 @@ pro.getLocale = function (locale) {
 pro.ready = function (uid) {
   var player = this.players.getPlayer(uid);
   if (player) {
-    if (this.status == consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid === this.owner) {
+    if (this.status === consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid !== this.owner) {
       player.Ready();
       player.status = consts.PLAYER_STATUS.READY;
       this.pushMessageWithOutUid(uid, 'game.gameHandler.ready', {uid: uid});
@@ -704,6 +729,14 @@ pro.maintenance = function (opts) {
       this.checkCloseWhenFinishGame()
     }
   }
+};
+
+pro.finishGame = function () {
+  this.status = consts.BOARD_STATUS.NOT_STARTED;
+  this.players.reset();
+  this.timer.stop();
+  this.game.close();
+  this.game = null;
 };
 
 pro.kick = function (uid, cb) {
@@ -799,28 +832,10 @@ pro.pushFinishGame = function (msg, finish, extraData) {
       if (!this.players.getPlayer(playerUid)) {
         continue
       }
-      if (this.gameType == consts.GAME_TYPE.TOURNAMENT && this.numMatchPlay >= this.matchTurn) {
-        extra = utils.merge_options(extraData[playerUid], {menu: [self.genMenu(consts.ACTION.LEAVE_BOARD)]});
-        this.pushMessageToPlayer(playerUid, 'onFinishGame', utils.merge_options(msg, extra));
-      }
-      else {
-        if (playerUid === this.owner) {
-          extra = utils.merge_options(extraData[playerUid], {menu: [self.genMenu(consts.ACTION.CONTINUE)]});
-          this.pushMessageToPlayer(playerUid, 'onFinishGame',
-            utils.merge_options(msg, extra)
-          );
-        } else {
-          extra = utils.merge_options(extraData[playerUid], {
-            menu: [self.genMenu(consts.ACTION.READY, {
-              msg: utils.getMenuLanguage(consts.ACTION.CONTINUE),
-              timeout: (10000 + this.winLayer * consts.TIME.LAYER_TIME)
-            }, consts.BUTTON_TYPE.SUGGEST)]
-          });
-          this.pushMessageToPlayer(playerUid, 'onFinishGame',
-            utils.merge_options(msg, extra)
-          );
-        }
-      }
+      extra = utils.merge_options(extraData[playerUid], {menu: this.players.getPlayer(playerUid).menu});
+      this.pushMessageToPlayer(playerUid, 'onFinishGame',
+        utils.merge_options(msg, extra)
+      );
     }
     for (i = 0, len = this.players.guestIds.length; i < len; i++) {
       var uid = this.players.guestIds[i];
@@ -839,8 +854,8 @@ pro.addJobReady = function (uid) {
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
-    turn : uid,
-    time : 20000
+    uid : uid,
+    time : [20000, this.totalTime]
   });
   this.jobIdReady = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
@@ -866,8 +881,8 @@ pro.addJobStart = function (uid) {
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
-    turn : uid,
-    time : 20000
+    uid : uid,
+    time : [20000, this.totalTime]
   });
   this.jobIdStart = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
@@ -943,6 +958,7 @@ pro.addItems = function (items) {
 };
 
 pro.transaction = function (uids, transactionId, cb) {
+  return utils.invokeCallback(cb, null, {});
   var self = this;
   var opts = [];
   for(var i = 0, len = uids.length; i < len ; i ++){
@@ -980,4 +996,13 @@ pro.transaction = function (uids, transactionId, cb) {
     }
     utils.invokeCallback(cb, err, res);
   })
+};
+
+pro.checkStartGame = function () {
+  var result = this.players.checkStartGame();
+  if (!result){
+    return Code.ON_GAME.FA_NOT_READY
+  }else {
+    return Code.OK;
+  }
 };

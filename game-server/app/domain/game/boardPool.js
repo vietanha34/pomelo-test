@@ -59,11 +59,12 @@ exp.create = function (params, cb) {
       }
       params.serverId = serverId;
       params.boardId = boardId;
-      return Promise.resolve(Board(params, boardId));
+      return Promise.resolve([Board(params, boardId), boardId]);
     })
-    .then(function (board) {
+    .spread(function (board, boardId) {
       if (board) {
-        boards[board.tableId] = board;
+        console.log('boardId : ', boardId, board.roomId, gameId);
+        boards[boardId] = board;
         if (!rooms[board.roomId]){
           rooms[board.roomId] = {};
         }

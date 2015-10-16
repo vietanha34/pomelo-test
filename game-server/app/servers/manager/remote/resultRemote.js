@@ -8,9 +8,9 @@ var async = require('async');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
 var messageService = require('../../../services/messageService');
 var userDao = require('../../../dao/userDao');
+var request = require('request');
 var Code = require('../../../consts/code');
 var lodash = require('lodash');
-var pomelo = require('pomelo');
 
 module.exports = function (app) {
   return new ResultRemote(app);
@@ -58,12 +58,13 @@ var pro = ResultRemote.prototype;
  */
 
 pro.management = function (logs, cb) {
+  var self = this;
   utils.invokeCallback(cb, null, {});
   // TODO , Đồng bộ dữ liệu
+  var redisInfo = this.app.get('redisInfo');
   async.map(logs.users, function (user, done) {
-    userDao.getUserProperties(user.uid, ['gold', 'id'], done)
+    userDao.getUserProperties(user.uid, ['gold', 'uid'], done)
   }, function (err, results) {
-    console.log('results : ', err, results);
     results = lodash.compact(results);
     for (var i = 0, len = results.length; i < len; i++) {
       var result = results[i];
@@ -72,9 +73,18 @@ pro.management = function (logs, cb) {
           logs.users[index].result.remain = parseInt(result.gold) || 0 + logs.users[index].result.remain || 0;
       }
     }
-    pomelo.app.rpc.service.eventRemote.emit(null, pomelo.app.get('emitterConfig').FINISH_GAME, logs, function () {
-    })
+    self.app.rpc.service.eventRemote.emit(null, self.app.get('emitterConfig').FINISH_GAME , logs, function (s) {
+      
+    });
   });
+  var users = logs.users;
+  //for (var i = 0, len = users.length; i < len; i++) {
+  //  var user = users[i];
+  //  if (user.result && user.result.eventType) {
+  //    console.log('push event NICE_CARD');
+  //    Emitter.emit(Emitter.CONFIG.TYPE.NICE_CARD, { uid : user.uid, cardType : user.result.eventType});
+  //  }
+  //}
 };
 
 

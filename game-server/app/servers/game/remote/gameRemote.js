@@ -27,33 +27,12 @@ GameRemote.prototype.leaveBoard = function (opts, cb) {
     utils.invokeCallback(cb, null, {ec: Code.OK});
     return
   }
-
-  if (opts.confirm && board.status !== consts.BOARD_STATUS.NOT_STARTED && board.players.availablePlayer.indexOf(uid) > -1) {
-    var checkLeaveBoard = board.checkLeaveBoard(uid);
-    if (checkLeaveBoard) {
-      utils.invokeCallback(cb, null, checkLeaveBoard);
-      return
-    }
-    var moneyPunish = board.getPunishMoney(opts.uid);
-    if (moneyPunish) {
-      utils.invokeCallback(cb, null, {confirm : utils.getMessage(Code.ON_GAME.FA_LEAVE_BOARD_WITH_MONEY, [moneyPunish])});
-    }else {
-      utils.invokeCallback(cb, null, {confirm : Code.ON_GAME.FA_LEAVE_BOARD});
-    }
-    return
+  var res = board.leaveBoard(uid);
+  if (!res.ec && !res.guest) {
+    board.pushMessageWithOutUid(uid, route, {uid: uid});
   }
-
-  return board.leaveBoard(uid, false, function (err, res) {
-    if (err) {
-      utils.invokeCallback(cb, err)
-    }
-    else {
-      if (!res.ec && !res.guest) {
-        board.pushMessageWithOutUid(uid, route, {uid: uid});
-      }
-      utils.invokeCallback(cb, null, res);
-    }
-  })
+  res.uid = uid;
+  utils.invokeCallback(cb, null, res);
 };
 
 GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
@@ -64,20 +43,14 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
     return utils.invokeCallback(cb, null, {data : utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   };
   logger.error('joinBoard : ', tableId, opts);
-  board.joinBoard(opts, function (err, res) {
-    if (err) {
-      utils.invokeCallback(cb, err);
-    }
-    else {
-      if (res && !res.ec) {
-        utils.invokeCallback(cb, null,
-          {data: res, tableId: tableId, serverId: game.serverId, roomId: game.roomId});
-      }
-      else {
-        utils.invokeCallback(cb, null, {data: res})
-      }
-    }
-  });
+  var state = board.joinBoard(opts);
+  if (state && !state.ec) {
+    utils.invokeCallback(cb, null,
+      {data: state, tableId: tableId, serverId: game.serverId, roomId: game.roomId});
+  }
+  else {
+    utils.invokeCallback(cb, null, {data: state})
+  }
 };
 
 /**

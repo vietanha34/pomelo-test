@@ -17,10 +17,10 @@ module.exports.afterStartup = function (app, cb) {
 
 module.exports.beforeShutdown = function (app, cb) {
   // do some operations before application shutdown down
-  app.get('boardService').clean();
   cb();
 };
 
 module.exports.afterStartAll = function (app) {
   // do some operations after all applications start up
+  app.get('boardService').clean();
 };

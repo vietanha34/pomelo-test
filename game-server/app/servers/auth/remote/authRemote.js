@@ -25,7 +25,7 @@ AuthRemote.prototype.login = function (msg, cb) {
   userDao
     .login(msg)
     .then(function (res) {
-      utils.invokeCallback(cb, res);
+      utils.invokeCallback(cb, null, res);
     })
     .catch(function (err) {
       utils.invokeCallback(cb, err);
