@@ -50,5 +50,5 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  * @param {Object} param
  */
 module.exports.process = function (app, type, param) {
- //fsd
+ //hihi
 };
