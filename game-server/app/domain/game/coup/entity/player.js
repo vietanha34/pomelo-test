@@ -38,7 +38,6 @@ util.inherits(Player, PlayerBase);
 Player.prototype.getState = function (uid) {
   var result = Player.super_.prototype.getState.apply(this, [uid]);
   result.color = this.color;
-  result.side = this.color === consts.COLOR.WHITE ? 1 : 2;
   return result
 };
 

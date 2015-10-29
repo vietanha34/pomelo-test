@@ -131,7 +131,7 @@ Handler.prototype.login = function (msg, session, next) {
 			session.set('tableId', boardId);
 			session.push('tableId');
 			next(null, {
-				bid: boardId,
+				tableId : boardId,
 				accessToken: msg.accessToken,
 				uid: player.uid,
 				type: type
@@ -144,7 +144,7 @@ Handler.prototype.login = function (msg, session, next) {
 				accessToken: msg.accessToken,
 				uid: player.uid,
 				type: type,
-				bid: ''
+				tableId: ''
 			});
 			emitData.resume = 0;
 			//self.app.get('waitingService').add(session);

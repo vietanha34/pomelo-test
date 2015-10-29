@@ -113,6 +113,7 @@ Player.prototype.getState = function (uid) {
     uid : this.uid,
     level : this.userInfo.level,
     gold : this.gold,
+    color : this.color,
     status : this.status,
     avatar : this.userInfo.avatar,
     sex : parseInt(this.userInfo.sex)
@@ -230,6 +231,7 @@ Player.prototype.removeMenu = function (id) {
       break;
     }
   }
+  console.log('remove Menu : ', id, menu);
 };
 
 Player.prototype.Ready = function () {

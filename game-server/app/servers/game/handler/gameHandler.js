@@ -49,6 +49,7 @@ pro.reloadBoard = function (msg, session, next) {
 pro.changeBoardProperties = function (msg, session, next) {
   var board = session.board;
   var uid = session.uid;
+  msg.uid = uid;
   next();
   if (!board) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
@@ -67,7 +68,7 @@ pro.changeBoardProperties = function (msg, session, next) {
     return
   }
 
-  board.changeBoardProperties(msg, true, function (err, res) {
+  board.changeBoardProperties(msg, [], function (err, res) {
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));
@@ -362,7 +363,7 @@ pro.startGame = function (msg, session, next) {
     if (res && res.ec) {
       board.pushMessageToPlayer(uid, route, res);
     } else {
-      var ownerPlayer = board.players.getPlayer(board.owner);
+      var ownerPlayer = board.players.getPlayer(uid);
       ownerPlayer.removeMenu(consts.ACTION.START_GAME);
     }
     route = null
@@ -400,6 +401,18 @@ pro.ready = function (msg, session, next) {
   }
   next(null, board.ready(uid))
 };
+
+pro.demand = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    return
+  }
+  msg.uid = uid;
+  next(null, board.demand(msg));
+};
+
 
 /**
  * Get handler path

@@ -52,21 +52,20 @@ var Board = function (opts, PlayerPool, Player) {
   this.numSlot = 2;
   this.minBuyIn = this.bet;
   this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.lock = null;
+  this.lock = '';
   this.minPlayer = 2;
+  this.index = opts.index;
   this.maxPlayer = 2;
-  this.configBet = opts.configMoney || [];
-  this.configTurnTime = opts.configTurnTime;
-  this.configTotalTime = opts.configTotalTime;
+  this.configBet = opts.configBet || [];
+  this.configTurnTime = opts.configTurnTime || [30 * 1000, 80 * 1000, 130 * 1000, 180 * 1000];
+  this.configTotalTime = opts.configTotalTime || [5*60 * 1000, 10*60 * 1000, 15*60 * 1000, 20*60 * 1000];
   this.isMaintenance = false;
-  this.turnTime = opts.turnTime || 10*60*1000;
+  this.turnTime = opts.turnTime || 180 * 1000;
   this.totalTime = opts.totalTime || 15 * 60 * 1000;
   this.tax = opts.tax || 5;
   this.score = [0,0];
   this.createdTime = Date.now();
   this.jobId = null;
-  this.jobIdReady = null;
-  this.jobIdStart = null;
   this.timeStart = Date.now();
   this.gameType = opts.gameType || consts.GAME_TYPE.NORMAL;
   this.timer = new Timer();
@@ -84,10 +83,12 @@ var Board = function (opts, PlayerPool, Player) {
   this.totalTimeDefault = this.totalTime;
   var self = this;
   this.changePropertiesFunction = [
+    // thay đổi tiền cược
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
       var bet = properties.bet;
       if (bet) {
+        console.log('update bet : ', bet);
         var ownerPlayer = self.players.getPlayer(self.owner);
         if (bet < self.configBet[0] || bet > self.configBet[1]){
           return done({ec : Code.FAIL});
@@ -103,17 +104,33 @@ var Board = function (opts, PlayerPool, Player) {
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     },
+    // thay đổi password
+    function (properties, dataChanged, dataUpdate, changed ,done) {
+      // change bet;
+      var lock = properties.lock;
+      if (lodash.isString(lock)) {
+        console.log('update password');
+        self.lock = lock;
+        changed = true;
+        dataChanged.lock = lock;
+        dataUpdate.password = lock;
+      }
+      return done(null, properties, dataChanged, dataUpdate, changed);
+    },
+    // thay đổi thời gian
     function (properties, dataChanged, dataUpdate,changed, done) {
       // TODO change turn Time
       var turnTime = properties.turnTime;
       var totalTime = properties.totalTime;
       if (turnTime && (self.configTurnTime.indexOf(turnTime) > -1)){
+        console.log('update TurnTime :', turnTime);
         self.turnTime = turnTime;
         changed = true;
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime;
       }
       if (totalTime && (self.configTotalTime.indexOf(totalTime))){
+        console.log('update TurnTime :', totalTime);
         self.totalTime = totalTime;
         changed = true;
         dataChanged.totalTime = totalTime;
@@ -130,6 +147,21 @@ var Board = function (opts, PlayerPool, Player) {
         self.owner = owner;
         changed = true;
         dataChanged.owner = owner;
+      }
+      return done(null, properties, dataChanged, dataUpdate, changed);
+    },
+    //  change color
+    function (properties, dataChanged, dataUpdate, changed, done) {
+      var color = properties.color;
+      if (!color || (color !== 1 && color !== 2)) return done(null, properties, dataChanged, dataUpdate, changed);
+      var uid = properties.uid;
+      var player = self.players.getPlayer(uid);
+      if (player && player.color !== color){
+        player.color = color;
+        var otherPlayerUid = self.players.getOtherPlayer();
+        var otherPlayer = self.players.getPlayer(otherPlayerUid);
+        if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK
+        changed = true;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
@@ -384,7 +416,7 @@ pro.isAlive = function () {
   if (!this.players) {
     return false;
   }
-  this.clearIdlePlayer();
+  //this.clearIdlePlayer();
   if (this.base) {
     return true
   }
@@ -480,6 +512,9 @@ pro.leaveBoard = function (uid, cb) {
   self.players.removePlayer(uid);
   if (self.owner == uid) {
     self.setOwner();
+    if (this.owner){
+      this.emit('changeOwner');
+    }
   }
   self.emit('leaveBoard', userInfo);
   uids.tourId = self.tourId;
@@ -494,11 +529,17 @@ pro.leaveBoard = function (uid, cb) {
  * @returns {{bet: *}}
  */
 pro.getStatus = function () {
-  return {
+  var status = {
     stt : this.status
   };
+  if (lodash.isNumber(this.jobId) && this.players.getPlayer(this.turnUid)){
+    status.turn = {
+      uid : this.turnUid,
+      time : [this.timer.getLeftTime(this.jobId), this.turnTime]
+    };
+  }
+  return status
 };
-
 
 pro.setOwner = function () {
   var owner = null;
@@ -523,7 +564,8 @@ pro.getBoardState = function (uid) {
   var state = {
     info: this.getBoardInfo(),
     status: this.getStatus(uid),
-    players: this.players.getPlayerState(uid)
+    players: this.players.getPlayerState(uid),
+    owner : this.owner
   };
   state.menu = this.players.getMenu(uid);
   return state;
@@ -538,7 +580,7 @@ pro.getBoardInfo = function (finish) {
       districtId: this.districtId,
       matchId: this.game ? this.game.matchId : '',
       bet: this.bet,
-      owner: this.owner,
+      owner : this.owner,
       gameType: this.gameType
     }
   } else {
@@ -546,11 +588,12 @@ pro.getBoardInfo = function (finish) {
       gameId: this.gameId,
       tableId: this.tableId,
       roomId: this.roomId,
-      owner: this.owner,
-      time: this.turnTime,
+      turnTime: this.turnTime,
+      totalTime : this.totalTime,
       lock: this.lock,
       configBet: this.configBet,
-      configTime : this.configTime || [],
+      configTurnTime : this.configTurnTime || [],
+      configTotalTime : this.configTotalTime || [],
       gameType: this.gameType,
       hallId : this.hallId,
       index : this.index,
@@ -598,9 +641,6 @@ pro.getPunishMessage = function (msg, punish) {
  * @param cb
  */
 pro.changeBoardProperties = function (properties, addFunction, cb) {
-  var changed = false;
-  var dataChanged = {};
-  var dataUpdate = {};
   var self = this;
   if (this.owner) {
     var ownerName = this.players.getPlayer(this.owner).userInfo.fullname;
@@ -610,20 +650,26 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
   properties = properties || {};
   var propertiesFunction = [
     function (done) {
-      return done(null, properties, dataChanged, dataUpdate, changed);
+      return done(null, properties, {}, {}, false);
     }
   ].concat(this.changePropertiesFunction, lodash.isArray(addFunction) ? addFunction : []);
-  async.waterfall(propertiesFunction, function (err) {
+  async.waterfall(propertiesFunction, function (err, properties, dataChanged, dataUpdate, changed) {
+    console.log('arguments : ', arguments);
     if (err) {
       return utils.invokeCallback(cb, err);
     } else {
       propertiesFunction.splice(0, propertiesFunction.length);
+      console.log('dataChanged : ', changed, dataChanged, dataUpdate);
       if (changed) {
         self.players.unReadyAll();
+        var otherPlayer = self.players.getOtherPlayer();
+        if(otherPlayer){
+          self.addJobReady(otherPlayer);
+        }
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];
         dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
-        self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
         self.emit('setBoard', dataUpdate);
+        self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
         return utils.invokeCallback(cb, null, {});
       } else {
         return utils.invokeCallback(cb, null, {ec: Code.FAIL});
@@ -850,19 +896,20 @@ pro.pushFinishGame = function (msg, finish, extraData) {
 
 pro.addJobReady = function (uid) {
   var self = this;
-  if (this.jobIdReady){
+  if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
     uid : uid,
     time : [20000, this.totalTime]
   });
-  this.jobIdReady = this.timer.addJob(function (uid) {
+  this.turnUid = uid;
+  this.jobId = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
     if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid){
       return
     }
-    self.jobIdReady = null;
+    self.jobId = null;
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
     boardState.msg = Code.ON_GAME.FA_NOT_READY;
@@ -877,19 +924,20 @@ pro.addJobReady = function (uid) {
 
 pro.addJobStart = function (uid) {
   var self = this;
-  if (this.jobIdStart){
+  if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
     uid : uid,
     time : [20000, this.totalTime]
   });
-  this.jobIdStart = this.timer.addJob(function (uid) {
+  this.turnUid = uid;
+  this.jobId = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
     if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || self.owner !== player.uid){
       return
     }
-    self.jobIdStart = null;
+    self.jobId = null;
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
     boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
@@ -923,9 +971,11 @@ pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
 
 pro.resetDefault = function () {
   this.bet = this.betDefault;
+  this.lock = '';
   this.minPlayer = 2;
   this.maxPlayer = 2;
-  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet})
+  this.score = [0,0];
+  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null})
 };
 
 /**
@@ -977,9 +1027,9 @@ pro.transaction = function (uids, transactionId, cb) {
     })
   }
   this.players.paymentRemote(BoardConsts.PAYMENT_METHOD.SUB_GOLD, opts, transactionId, function (err, results) {
-    if (err){
+    if (err) {
       logger.error('err : ', err);
-    }else{
+    } else {
       for(i= 0, len = results.length; i < len ; i ++ ){
         var res = results[i];
         if (res.ec){
@@ -996,6 +1046,14 @@ pro.transaction = function (uids, transactionId, cb) {
     }
     utils.invokeCallback(cb, err, res);
   })
+};
+
+pro.plusScore = function (whiteWin) {
+  if (whiteWin) {
+    this.score[0] += 1;
+  }else {
+    this.score[1] += 1;
+  }
 };
 
 pro.checkStartGame = function () {
