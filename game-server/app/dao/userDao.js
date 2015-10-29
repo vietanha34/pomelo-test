@@ -228,7 +228,7 @@ UserDao.getUserProperties = function (uid, properties, cb) {
 UserDao.getUserPropertiesByUids = function (uids, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {userId: {$in: uids}}, attributes: properties, raw: true})
+    .find({where: {userId: {$in: uids}}, attributes: properties, raw: true})
     .then(function (users) {
       return utils.invokeCallback(cb, null, users);
     })
