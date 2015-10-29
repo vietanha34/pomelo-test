@@ -1,24 +1,70 @@
 {
   "development": {
+    "info" : {
+      "host" : "127.0.0.1",
+      "port" : 6379,
+      "db" : 0
+    },
+    "service" : {
+      "host" : "127.0.0.1",
+      "port" : 6379,
+      "db" : 2
+    },
     "cache" : {
       "host" : "127.0.0.1",
       "port" : 6379,
       "db" : 3
+    },
+    "payment" : {
+      "host" : "172.16.20.10",
+      "port" : 6379,
+      "db" :0
     }
   },
 
   "production": {
+    "info" : {
+      "host" : "127.0.0.1",
+      "port" : 6379,
+      "db" : 0
+    },
+    "service" : {
+      "host" : "127.0.0.1",
+      "port" : 6379,
+      "db" : 2
+    },
     "cache" : {
       "host" : "127.0.0.1",
-      "port" : 3339,
+      "port" : 6379,
       "db" : 3
+    },
+    "payment" : {
+      "host" : "172.16.20.10",
+      "port" : 6379,
+      "db" :0
     }
   },
+
   "local": {
+    "info" : {
+      "host" : "192.168.99.100",
+      "port" : 6379,
+      "db" : 0
+    },
+    "service" : {
+      "host" : "192.168.99.100",
+      "port" : 6379,
+      "db" : 2
+    },
     "cache" : {
       "host" : "192.168.99.100",
-      "port" : 32769,
+      "port" : 6379,
       "db" : 3
+    },
+    "payment" : {
+      "host" : "172.16.20.10",
+      "port" : 6379,
+      "db" :0
     }
   }
 }

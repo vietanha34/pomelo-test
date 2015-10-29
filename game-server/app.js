@@ -64,13 +64,28 @@ app.configure('production|development|local', function () {
       db: redisConfigCache.db       // optinal, from 0 to 15 with default redis configure
     }
   });
+
+  // Khai báo redis
+  var redisInfo = require('redis').createClient(redisConfig.info.port, redisConfig.info.host);
+  redisInfo.select(redisConfig.info.db);
+  app.set('redisInfo', redisInfo);
+
+  var redisService = require('redis').createClient(redisConfig.service.port, redisConfig.service.host);
+  redisService.select(redisConfig.service.db);
+  app.set('redisService', redisService);
+
   var redisCache = require('redis').createClient(redisConfigCache.port, redisConfigCache.host);
   redisCache.select(redisConfigCache.db);
+  app.set('redisCache', redisCache);
+
+  var redisPayment = require('redis').createClient(redisConfig.payment.port, redisConfig.payment.host);
+  redisPayment.select(redisConfig.payment.db);
+  app.set('redisPayment', redisPayment);
+
   // Đồng bộ mysql
   var models = require('./app/dao/mysqlModels/index');
   var curServer  = app.curServer;
   var db = models();
-  app.set('redisCache', redisCache);
   //app.set('mongoClient', Mongo(utils.merge_options({schemaDir: path.join(app.getBase(), '/app/dao/mongoSchema/')}, app.get('mongoConfig').data)))
   app.set('mysqlClient', db);
   if (curServer.serverType === 'manager') {
