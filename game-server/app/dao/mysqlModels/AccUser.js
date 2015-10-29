@@ -2,16 +2,9 @@
 
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('User', {
-    id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-      primaryKey : true,
-      autoIncrement : true
-    },
-    userId : {
+    uid : {
       type : DataTypes.INTEGER,
-      allowNull: false,
-      unique : true
+      primaryKey : true
     },
     username: {
       type: DataTypes.STRING,

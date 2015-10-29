@@ -214,7 +214,7 @@ var charCode = [192,
 UserDao.getUserProperties = function (uid, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {id: uid}, attributes: properties, raw: true})
+    .findOne({where: {uid: uid}, attributes: properties, raw: true})
     .then(function (user) {
       console.log('properties : ', user);
       return utils.invokeCallback(cb, null, user);
@@ -225,14 +225,29 @@ UserDao.getUserProperties = function (uid, properties, cb) {
     })
 };
 
-UserDao.getUserPropertiesByUids = function (uids, properties, cb) {
+UserDao.getUserPropertiesByUsername = function (username, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .find({where: {userId: {$in: uids}}, attributes: properties, raw: true})
+    .findOne({where: {username: username}, attributes: properties, raw: true})
+    .then(function (user) {
+      console.log('properties : ', user);
+      return utils.invokeCallback(cb, null, user);
+    })
+    .catch(function (err) {
+      console.error(err);
+      return utils.invokeCallback(cb, err);
+    })
+};
+
+UserDao.getUsersPropertiesByUids = function (uids, properties, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .find({where: {uid: {$in: uids}}, attributes: properties, raw: true})
     .then(function (users) {
       return utils.invokeCallback(cb, null, users);
     })
     .catch(function (err) {
+      console.error(err);
       return utils.invokeCallback(cb, err);
     })
 };
@@ -245,13 +260,13 @@ UserDao.getUserIdByUsername = function (username) {
       where: {
         username: username
       },
-      attributes: ['userId'],
+      attributes: ['uid'],
       raw: true
     })
 };
 
 /**
- * Get user infomation by userId
+ * Get user information by userId
  *
  * @param {String} uid UserId
  * @param {function} cb Callback function
@@ -259,7 +274,7 @@ UserDao.getUserIdByUsername = function (username) {
 UserDao.getUserById = function (uid, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {userId: uid}})
+    .findOne({where: {uid: uid}})
     .then(function (user) {
       return utils.invokeCallback(cb, null, user);
     })
@@ -280,7 +295,7 @@ UserDao.updateProperties = function (uid, opts, cb) {
     .User
     .update(opts, {
       where: {
-        userId: uid
+        uid: uid
       }
     })
     .then(function (user) {
@@ -306,12 +321,12 @@ UserDao.login = function (msg, cb) {
     .then(function (res) {
       if (res && !res.ec) {
         console.log('res  typeof : ', typeof res);
-        res.userId = res.id;
+        res.uid = res.id;
         delete res['id'];
         console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
           .User
-          .findOrCreate({where: {userId: res.userId}, raw: true, defaults : res});
+          .findOrCreate({where: {uid: res.uid}, raw: true, defaults : res});
       } else {
         Promise.reject({
           ec: Code.FAIL,
