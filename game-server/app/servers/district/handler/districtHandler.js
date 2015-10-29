@@ -303,7 +303,7 @@ Handler.prototype.getBoardList = function (msg, session, next) {
           numPlayer : board.numPlayer,
           bet : board.bet,
           turnTime : board.turnTime,
-          lock : board.lock ? 1 : 0,
+          lock : board.password ? 1 : 0,
           optional : utils.JSONParse(board.optional, {})
         });
       }

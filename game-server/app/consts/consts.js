@@ -26,6 +26,8 @@ module.exports = {
     LIET_CHAP : 4
   },
 
+
+
   COLOR : {
     WHITE : 1,
     BLACK : 2
@@ -160,20 +162,73 @@ module.exports = {
     ITEM_ENABLE : 100510
   },
 
-  LOCK_MODE : {
-    lockPawn1 : 1,
-    lockPawn3 : 2,
-    lockPawn5 : 3,
-    lockPawn7 : 4,
-    lockPawn9 : 5,
-    lockHorse2 : 6,
-    lockHorse8 : 7
+  LOCK_MODE : [1,2,3,4,5,6,7],
+  HANDICAP_MODE : [11,12,13],
+
+  LOCK_MODE_MAP : {
+    1 : {
+      id : 1,
+      name : 'lockPawn1',
+      before :  [75, 106],
+      after :  [88, 93]
+    },
+    2 : {
+      id : 2,
+      name : 'lockPawn3',
+      before :  [73, 108],
+      after : [86, 95]
+    },
+    3 : {
+      id : 3,
+      name : 'lockPawn5',
+      before : [71, 110],
+      after : [84, 97]
+    },
+    4 : {
+      id : 4,
+      name : 'lockPawn7',
+      before : [69, 112],
+      after : [82, 99]
+    },
+    5 : {
+      id : 5,
+      name : 'lockPawn9',
+      before : [67, 114],
+      after : [80, 101]
+    },
+    6 : {
+      id : 6,
+      name : 'lockHorse2',
+      before : [35, 146],
+      after :  [35, 146]
+    },
+    7 : {
+      id : 7,
+      name : 'lockHorse8',
+      before :  [29, 152],
+      after :  [29, 152]
+    }
   },
 
-  HANDICAP_MODE : {
-    handicapRook1 : 1,
-    handicapHorse2 : 2,
-    handicapCannon2 : 3
+  HANDICAP_MODE_MAP : {
+    11 : {
+      id : 11,
+      name : 'handicapRook1',
+      before : [36],
+      after : [36]
+    },
+    12 : {
+      id : 12,
+      name :'handicapHorse2',
+      before : [35],
+      after : [35]
+    },
+    13 :{
+      id : 13,
+      name : 'handicapCannon2',
+      before :  [61],
+      after :  [61]
+    }
   },
 
   TARGET_TYPE : {

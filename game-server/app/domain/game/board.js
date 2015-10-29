@@ -21,6 +21,7 @@ module.exports = function (params, boardId, cb) {
     .then(function (res) {
       var board, Board;
       if (res) {
+        console.log('gameConfig : ', gameConfig);
         var gameId = params.gameId;
         var boardDir = getBoardPath(pomelo.app.getBase(), gameConfig[gameId] || 'tướng');
         if (boardDir) {

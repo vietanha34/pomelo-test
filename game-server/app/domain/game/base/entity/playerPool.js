@@ -512,6 +512,16 @@ pro.checkAllReady = function () {
   return true;
 };
 
+pro.getOtherPlayer = function (uid) {
+  uid = uid ? uid : this.table.owner;
+  for (var i = 0, len = this.playerSeat.length; i < len; i++) {
+    var otherUid = this.playerSeat[i];
+    if (uid !== otherUid){
+      return otherUid;
+    }
+  }
+};
+
 /**
  *
  * @param m
@@ -564,7 +574,7 @@ pro.checkStartGame = function () {
   for (var i = 0, len = this.playerSeat.length; i< len ; i ++){
     if (this.playerSeat[i] && this.playerSeat[i] !== this.table.owner){
       var player = this.getPlayer(this.playerSeat[i]);
-      if (player.gold > this.table.bet && player.ready){
+      if (player.gold >= this.table.bet && player.ready){
         return true
       }else {
         return false

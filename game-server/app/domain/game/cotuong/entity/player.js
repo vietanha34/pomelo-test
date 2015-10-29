@@ -29,21 +29,58 @@ var util = require('util');
 var Player = function (opts) {
   Player.super_.call(this, opts);
   this.color = opts.color;
-  this.totalTime  = opts.totalTime || 15 * 60 * 1000;
+  this.totalTime  = opts.totalTime;
+  this.totalTimeDefault = opts.totalTime;
   this.timeTurnStart = Date.now();
+  this.numDelay = 2;
+  this.timeDelay = 0; // nước đi xin hoãn;
+  this.timeDraw = 0; // nước đi xin hoà
+  this.requestDraw  = false;
+  this.requestDelay = false;
 };
 
 util.inherits(Player, PlayerBase);
 
 Player.prototype.getState = function (uid) {
   var result = Player.super_.prototype.getState.apply(this, [uid]);
-  result.color = this.color;
-  result.side = this.color === consts.COLOR.WHITE ? 1 : 2;
   return result
 };
 
-Player.prototype.move = function () {
-  this.totalTime -= Math.floor((Date.now() - this.timeTurnStart) / 1000);
+Player.prototype.xinThua = function (numMove) {
+  this.requestDelay = true;
+  this.timeDelay = numMove;
+  this.numDelay -= 1;
 };
+
+Player.prototype.xinHoa = function (numMove) {
+  this.requestDraw = true;
+  this.timeDraw  = numMove
+};
+
+Player.prototype.move = function () {
+  this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
+};
+
+Player.prototype.reset = function () {
+  Player.super_.prototype.reset.call(this);
+  this.totalTime = this.totalTimeDefault;
+  this.numDelay = 2;
+  this.timeDelay = 0; // nước đi xin hoãn;
+  this.timeDraw = 0; // nước đi xin hoãn;
+};
+
+Player.prototype.genMenu = function (guest) {
+  Player.super_.prototype.genMenu.call(this);
+  if (!guest){
+    this.menu.push(this.table.genMenu(consts.ACTION.DE_LAY));
+    this.menu.push(this.table.genMenu(consts.ACTION.DRAW));
+    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
+  }
+};
+
+Player.prototype.startGame = function () {
+  this.menu.push(this.table.genMenu)
+};
+
 
 module.exports = Player;

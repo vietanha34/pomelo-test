@@ -115,6 +115,7 @@
   "service.guideHandler.getData" : 190,
   "service.guideHandler.getGuide" : 191,
   "onPlayerJoin" : 200,
+  "game.gameHandler.demand" : 208,
   "onTurn" : 202,
   "onDeal" :203,
   "onFinishGame" : 204,

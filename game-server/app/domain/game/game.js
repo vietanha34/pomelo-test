@@ -68,11 +68,11 @@ Game.prototype.createBoard = function (params, cb) {
   var self = this;
   this.boardManager.create(params, function (err, res) {
     if (res) {
-      utils.invokeCallback(cb, err, {boardId: res, serverId: self.serverId, roomId: params.roomId})
+      return utils.invokeCallback(cb, err, {boardId: res, serverId: self.serverId, roomId: params.roomId})
     }
     else if (!!err) {
       logger.error(err);
-      utils.invokeCallback(cb, err)
+      return utils.invokeCallback(cb, err)
     }
   });
 };
@@ -111,16 +111,24 @@ Game.prototype.initBoards = function () {
 
 Game.prototype.createRoom = function (hallConfig, roomId) {
   var self = this;
+  var hallId = parseInt(hallConfig.hallId);
+  var opts = {
+    serverId: this.serverId,
+    gameId: this.gameId,
+    roomId: roomId,
+    hallId: parseInt(hallConfig.hallId)
+  };
   return pomelo.app.get('boardService')
-    .addRoom({
-      serverId: this.serverId,
-      gameId: this.gameId,
-      roomId: roomId,
-      hallId: parseInt(hallConfig.hallId)
-    })
+    .addRoom(opts)
     .then(function () {
       for (var i = 1; i <= 50; i++) {
         var opts = utils.clone(hallConfig);
+        if (hallId === consts.HALL_ID.LIET_CHAP){
+          opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
+          opts.removeMode = [consts.HANDICAP_MODE[Math.floor(Math.random() * consts.HANDICAP_MODE.length)]];
+          opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+        }
+        opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax) ];
         opts.bet = parseInt(hallConfig.goldMin);
         opts.base = true;
         opts.roomId = roomId;

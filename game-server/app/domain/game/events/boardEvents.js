@@ -69,9 +69,13 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo) {
+    board.score = [0,0]; // restart scorec
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
+    }
+    if (board.jobId){
+      board.timer.cancelJob(board.jobId);
     }
     var channel = board.getChannel();
     if (channel) {
@@ -119,6 +123,7 @@ exp.addEventFromBoard = function (board) {
 
 
   board.on('startGame', function (userPlaying) {
+    board.timer.stop();
   });
 
 
@@ -160,6 +165,10 @@ exp.addEventFromBoard = function (board) {
    *
    */
   board.on('standUp', function (player) {
+    board.score = [0,0]; // restart score;
+    if (board.jobId){
+      board.timer.cancelJob(board.jobId);
+    }
     if (player.gold > board.bet) {
       player.menu = [board.genMenu(consts.ACTION.SIT_BACK_IN)]
     }
@@ -231,6 +240,7 @@ exp.addEventFromBoard = function (board) {
     else {
       opts.isFull = 0;
     }
+    console.log('updateBoard is : ', opts);
     pomelo.app.get('boardService').updateBoard(board.tableId, opts)
   });
 
@@ -240,16 +250,16 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
 
-  board.on('changeOwner', function (owner) {
-    if (owner && board.owner && board.players.getPlayer(board.owner)) {
-      if (board.status == consts.BOARD_STATUS.NOT_STARTED) {
+  board.on('changeOwner', function () {
+    if (board.owner && board.players.getPlayer(board.owner)) {
+      if (board.status === consts.BOARD_STATUS.NOT_STARTED) {
         board.pushMessageToPlayer(board.owner, 'game.gameHandler.setOwner', {
-          uid: board.owner,
+          owner: board.owner,
           menu: board.players.getPlayer(board.owner).menu
         });
-        board.pushMessageWithOutUid(board.owner, 'game.gameHandler.setOwner', {uid: board.owner})
+        board.pushMessageWithOutUid(board.owner, 'game.gameHandler.setOwner', {owner: board.owner})
       } else {
-        board.pushMessage('game.gameHandler.setOwner', {uid: board.owner});
+        board.pushMessage('game.gameHandler.setOwner', {owner: board.owner});
       }
     }
   })
