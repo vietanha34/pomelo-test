@@ -2,6 +2,7 @@ var pomelo = require('pomelo');
 var Mongo = require('./app/dao/mongo/mongo');
 var path = require('path');
 var utils = require('./app/util/utils');
+var Promise = require('bluebird');
 
 process.env.LOGGER_LINE = true; // debug line number
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -66,19 +67,23 @@ app.configure('production|development|local', function () {
   });
 
   // Khai báo redis
-  var redisInfo = require('redis').createClient(redisConfig.info.port, redisConfig.info.host);
+  var redis = require('redis');
+  Promise.promisifyAll(redis.RedisClient.prototype);
+  Promise.promisifyAll(redis.Multi.prototype);
+
+  var redisInfo = redis.createClient(redisConfig.info.port, redisConfig.info.host);
   redisInfo.select(redisConfig.info.db);
   app.set('redisInfo', redisInfo);
 
-  var redisService = require('redis').createClient(redisConfig.service.port, redisConfig.service.host);
+  var redisService = redis.createClient(redisConfig.service.port, redisConfig.service.host);
   redisService.select(redisConfig.service.db);
   app.set('redisService', redisService);
 
-  var redisCache = require('redis').createClient(redisConfigCache.port, redisConfigCache.host);
+  var redisCache = redis.createClient(redisConfigCache.port, redisConfigCache.host);
   redisCache.select(redisConfigCache.db);
   app.set('redisCache', redisCache);
 
-  var redisPayment = require('redis').createClient(redisConfig.payment.port, redisConfig.payment.host);
+  var redisPayment = redis.createClient(redisConfig.payment.port, redisConfig.payment.host);
   redisPayment.select(redisConfig.payment.db);
   app.set('redisPayment', redisPayment);
 

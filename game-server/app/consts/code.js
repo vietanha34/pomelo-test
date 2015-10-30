@@ -232,5 +232,17 @@ module.exports = {
     KICKED: 808,
     VIP_POINT: 809,
     VIP_POINT_PER: 810
+  },
+
+  COMMON_LANUAGE: {
+    ERROR: 'Chức năng đang bảo trì',
+    ADD_GOLD: 'Bạn vừa được cộng %s gold'
+  },
+
+  EC: {
+    SUCCESS: 0,
+    GO_HOME: 1,
+    GO_LOGIN: 2,
+    NORMAL: 3
   }
 };

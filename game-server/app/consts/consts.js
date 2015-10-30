@@ -368,16 +368,8 @@ module.exports = {
     TOPUP_SMS: 2,
     TOPUP_IAP: 3,
     TOPUP_BANKING: 4,
-    SPIN: 31,
-    BUY_SPIN: 32,
-    EVENT_SELL_CHARACTER: 33,
     BUY_ITEM: 34,
-    PHAT_LOC: 35,
-    XIN_LOC: 36,
     MISSION_AWARD: 37,
-    UPDATE_PROFILE: 38,
-    SEND_GIFT: 39,
-    RECEIVE_GIFT: 40,
     CMS: 41,
     REGISTER: 42,
     DAILY: 43,
@@ -386,7 +378,6 @@ module.exports = {
     LEAVE_BOARD: 46,
     PLAY_GAME: 47,
     ADD_BOARD : 48,
-	  VIP_UP: 49,
     UNKNOWN: 99
   },
 
@@ -566,5 +557,37 @@ module.exports = {
     FINISH : 2
   },
 
-  CMS_SECRET_KEY: 'tXbC8ieHLBZ0'
+  CMS_SECRET_KEY: 'tXbC8ieHLBZ0',
+
+  NOTIFY: {
+    TYPE: {
+      NOTIFY_CENTER: 0,
+      POPUP: 1,
+      MARQUEE: 2
+    },
+    TARGET: {
+      NORMAL: 0,
+      HOME: 1,
+      GO_LOBBY: 2,
+      GO_SHOP: 3,
+      GO_MISSION: 4,
+      GO_NEWS: 5,
+      GO_FRIEND: 6,
+      GO_TOPUP: 7,
+      GO_TOP: 8,
+      GET_GOLD: 9
+    },
+    SCOPE: {
+      ALL: 99,
+      USER: 100
+    },
+    IMAGE: {
+      NORMAL: {},
+      FRIEND: {},
+      ALERT: {},
+      GOLD: {},
+      AWARD: {},
+      UP: {}
+    }
+  }
 };

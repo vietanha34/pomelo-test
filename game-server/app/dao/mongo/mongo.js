@@ -3,6 +3,7 @@
  */
 
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var Code = require('../../consts/code');
 var consts = require('../../consts/consts');
 var utils = require('../../util/utils');
