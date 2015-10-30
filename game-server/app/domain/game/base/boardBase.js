@@ -160,7 +160,7 @@ var Board = function (opts, PlayerPool, Player) {
         player.color = color;
         var otherPlayerUid = self.players.getOtherPlayer();
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
-        if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK
+        if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         changed = true;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);

@@ -13,14 +13,14 @@ var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
-var Rule = require('luat-co-thu').Xiangqi;
+var Rule = require('luat-co-thu').Chess;
 var dictionary = require('../../../../config/dictionary.json');
 var BoardBase = require('../base/boardBase');
 
 
 
 function Game(table) {
-  this.game = new Rule(false, 'default',  table.lockMode || [],  table.removeMode||[]);
+  this.game = new Rule(false, 'default');
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -66,26 +66,7 @@ Game.prototype.init = function () {
     }
   }
   var lock = false;
-  if (this.game.lockModes.length > 0){
-    var moveInit = [];
-    var moveAfter = [];
-    for (i = 0, len = this.game.lockModes.length; i< len; i ++){
-      var square = this.game.lockModes[i];
-      if (square < 6){
-        lock = true;
-        var config = consts.LOCK_MODE_MAP[square];
-        moveInit.push([config.before[0],config.after[0]]);
-        moveAfter.push([config.before[1],config.after[1]]);
-      }
-    }
-  }
-  if (lock){
-    this.table.pushMessage('game.gameHandler.startGame', {sleep : 500});
-    this.table.pushMessage('game.gameHandler.action',{move : moveInit, sleep: 500});
-    this.table.pushMessage('game.gameHandler.action',{move : moveAfter});
-  }else {
-    this.table.pushMessage('game.gameHandler.startGame', {});
-  }
+  this.table.pushMessage('game.gameHandler.startGame', {});
   this.table.emit('startGame', this.playerPlayingId);
   var gameStatus = this.game.getBoardStatus();
   this.setOnTurn(gameStatus);
@@ -135,8 +116,8 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
-  var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+  console.trace('finishGame');
+  var turnColor = this.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
@@ -225,8 +206,6 @@ Table.prototype.getStatus = function () {
     ? { king : boardStatus.checkInfo.kingPosition, attack : boardStatus.checkInfo.attackerPositions}
     : undefined;
   status.score  = this.score;
-  status.lock = this.game.game.lockSquares;
-  status.remove = this.game.game.handicapSquares;
   status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
@@ -236,11 +215,7 @@ Table.prototype.getStatus = function () {
 };
 
 Table.prototype.getBoardInfo = function (finish) {
-  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish);
-  boardInfo.allowLock = this.allowLockMode ? 1 : 0;
-  boardInfo.lock  = this.lockMode;
-  boardInfo.remove = this.removeMode;
-  return boardInfo
+  return Table.super_.prototype.getBoardInfo.call(this, finish);
 };
 
 Table.prototype.clearPlayer = function (uid) {
@@ -374,29 +349,29 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(null, opts.uid);
   }
 };
 
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
-  var uid = properties.uid;
-  var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
-    if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-      var ownerPlayer = self.players.getPlayer(self.owner);
-      if (ownerPlayer.color === consts.COLOR.WHITE){
-        self.game.game.isWhiteTurn = true;
-      }else {
-        self.game.game.isWhiteTurn = false;
-      }
-      console.log('turnToMode : ');
-      self.game.game.turnToMode();
-      var boardState = self.getBoardState(uid);
-      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-    }
-    return utils.invokeCallback(cb, err, res)
-  });
-};
+//Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+//  var uid = properties.uid;
+//  var self = this;
+//  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+//    if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
+//      var ownerPlayer = self.players.getPlayer(self.owner);
+//      if (ownerPlayer.color === consts.COLOR.WHITE){
+//        self.game.game.isWhiteTurn = true;
+//      }else {
+//        self.game.game.isWhiteTurn = false;
+//      }
+//      console.log('turnToMode : ');
+//      self.game.game.turnToMode();
+//      var boardState = self.getBoardState(uid);
+//      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+//    }
+//    return utils.invokeCallback(cb, err, res)
+//  });
+//};
 
 module.exports = Table;

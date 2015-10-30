@@ -7,7 +7,7 @@ var consts = require('../../../consts/consts');
 var Code = require('../../../consts/code');
 var util = require('util');
 var utils = require('../../../util/utils');
-var Player = require('../cotuong/entity/player');
+var Player = require('./entity/player');
 var lodash = require('lodash');
 var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
@@ -92,9 +92,14 @@ Game.prototype.setOnTurn = function (gameStatus) {
 };
 
 
-Game.prototype.progress = function (gameStatus) {
+Game.prototype.progress = function () {
+  var gameStatus = this.game.getBoardStatus();
   if (gameStatus.matchResult){
-    var result = gameStatus.matchResult === 'thuaRoi' ? undefined : consts.WIN_TYPE.DRAW;
+    var result = gameStatus.matchResult === 'thuaRoi'
+      ? consts.WIN_TYPE.LOSE
+      : gameStatus.matchResult === 'thangRoi'
+      ? consts.WIN_TYPE.WIN
+      : consts.WIN_TYPE.DRAW;
     return this.finishGame(result);
   }else {
     return this.setOnTurn(gameStatus);
@@ -114,7 +119,7 @@ Game.prototype.finishGame = function (result, uid) {
       players.push({
         uid : player.uid,
         gold : subGold,
-        result : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.LOSE,
+        result : result,
         totalGold : player.gold,
         elo : 0,
         xp : 0
@@ -124,7 +129,7 @@ Game.prototype.finishGame = function (result, uid) {
       players.push({
         uid : player.uid,
         gold : addGold,
-        result : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN,
+        result : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
         totalGold : player.gold,
         elo : 0,
         xp : 0
@@ -233,7 +238,8 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.game.makeMove(opts.move[0], opts.move[1]);
     this.game.numMove += 1;
     var boardStatus = this.game.game.getBoardStatus();
-    this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
+    this.pushMessageToPlayer(uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
+    this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
@@ -245,6 +251,44 @@ Table.prototype.action = function (uid, opts, cb) {
     return utils.invokeCallback(cb, null, { ec :Code.FAIL})
   }
 };
+
+Table.prototype.demand = function (opts) {
+  var uid = opts.uid, otherPlayerUid, otherPlayer;
+  var player = this.players.getPlayer(uid);
+  if (!player || this.players.playerSeat.indexOf(uid) < 0){
+    return { ec : Code.FAIL};
+  }
+  switch (opts.id){
+    case consts.ACTION.DRAW:
+      otherPlayerUid = this.players.getOtherPlayer(uid);
+      if (lodash.isNumber(opts.accept)){
+        // trả lời request
+        otherPlayer = this.players.getPlayer(otherPlayerUid);
+        if (opts.accept && otherPlayer.requestDraw){
+          // xử lý hoà cờ nước đi;
+          this.game.finishGame(consts.WIN_TYPE.DRAW);
+        }else {
+          otherPlayer.requestDraw = false;
+        }
+      }else {
+        //request
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 20){
+          return {ec : Code.FAIL};
+        }
+        player.xinHoa(this.game.numMove);
+        this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
+          id : consts.ACTION.DRAW,
+          msg : "Đối thủ muốn xin hoà",
+          time : 10000
+        })
+      }
+      break;
+    case consts.ACTION.SURRENDER:
+    default :
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+  }
+};
+
 
 Table.prototype.finishGame = function () {
   this.status = consts.BOARD_STATUS.NOT_STARTED;

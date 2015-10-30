@@ -69,6 +69,7 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo) {
+    console.log('event leaveBoard : ');
     board.score = [0,0]; // restart scorec
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
