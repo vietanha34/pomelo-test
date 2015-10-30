@@ -2,6 +2,7 @@
  * Created by vietanha34 on 5/28/14.
  */
 
+var util = require('util');
 var utils = require('./utils');
 
 var RedisKeyUtil = module.exports;
@@ -38,6 +39,8 @@ var CMS_PROMOTION_KEY = 'cothu:cms:promotion';
 var USER_ALERT_KEY = 'cothu:alert:mark:{uid}';
 var TRANSACTION_DETAIL = 'transaction:detail:{transactionId}';
 var TRANSACTION_LIST = 'transaction:list';
+var USER_GOLD = 'cothu:user_gold:%d';
+var USER_NOTIFY = 'cothu:user_notify:%d';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
@@ -305,4 +308,12 @@ RedisKeyUtil.getUserAlertKey = function (uid) {
       return uid;
     }
   );
+};
+
+RedisKeyUtil.getUserGoldKey = function getUserGoldKey(uid) {
+  return utils.format(USER_GOLD, uid);
+};
+
+RedisKeyUtil.getUserNotifyKey = function getUserNotifyKey(uid) {
+  return utils.format(USER_NOTIFY, uid);
 };

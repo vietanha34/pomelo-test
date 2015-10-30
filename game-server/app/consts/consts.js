@@ -566,5 +566,37 @@ module.exports = {
     FINISH : 2
   },
 
-  CMS_SECRET_KEY: 'tXbC8ieHLBZ0'
+  CMS_SECRET_KEY: 'tXbC8ieHLBZ0',
+
+  NOTIFY: {
+    TYPE: {
+      NOTIFY_CENTER: 0,
+      POPUP: 1,
+      MARQUEE: 2
+    },
+    TARGET: {
+      NORMAL: 0,
+      HOME: 1,
+      GO_LOBBY: 2,
+      GO_SHOP: 3,
+      GO_MISSION: 4,
+      GO_NEWS: 5,
+      GO_FRIEND: 6,
+      GO_TOPUP: 7,
+      GO_TOP: 8,
+      GET_GOLD: 9
+    },
+    SCOPE: {
+      ALL: 99,
+      USER: 100
+    },
+    IMAGE: {
+      NORMAL: {},
+      FRIEND: {},
+      ALERT: {},
+      GOLD: {},
+      AWARD: {},
+      UP: {}
+    }
+  }
 };
