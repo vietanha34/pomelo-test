@@ -7,6 +7,7 @@ var pomelo = require('pomelo');
 var Promise = require('bluebird');
 var lodash = require('lodash');
 var consts = require('../consts/consts');
+var code = require('../consts/code');
 var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var NotifyDao = require('./notifyDao');
@@ -31,6 +32,9 @@ TopupDao.topup = function topup(params, cb) {
         ({uid: params.uid}, params, function (e, res) {
           res = res || {};
           res.addGold = params.gold;
+          if (res.ec) {
+            e = 'topup ec: '+res.ec;
+          }
           return utils.invokeCallback(cb, e, res);
         });
     }
@@ -40,6 +44,9 @@ TopupDao.topup = function topup(params, cb) {
         ({uid: params.uid}, params, function (e, res) {
           res = res || {};
           res.subGold = -params.gold;
+          if (res.ec) {
+            e = 'topup ec: '+res.ec;
+          }
           return utils.invokeCallback(cb, e, res);
         });
     }
@@ -62,7 +69,7 @@ TopupDao.topup = function topup(params, cb) {
  */
 TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
   if (!params.uid || !params.gold || !params.type || !params.msg) {
-    return utils.invokeCallback(cb, 'invalid param topup');
+    return utils.invokeCallback(cb, 'invalid param pushGoldAward');
   }
 
   params.title = params.title || params.msg;
@@ -96,4 +103,44 @@ TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
       console.error(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
     });
+};
+
+/**
+ * User nhận gói gold
+ * @param uid
+ * @param packageId
+ * @param cb
+ */
+TopupDao.getGoldAward = function getGoldAward(uid, packageId, cb) {
+  if (!uid || !packageId) {
+    return utils.invokeCallback(cb, 'invalid params getGoldAward')
+  }
+
+  var redis = pomelo.app.get('redisService');
+
+  return redis.hgetAsync(redisKeyUtil.getUserGoldKey(uid), packageId)
+    .then(function(gold){
+      var type = packageId.split(':')[0];
+      var changeGoldType = (consts.CHANGE_GOLD_TYPE[type] || consts.CHANGE_GOLD_TYPE.UNKNOWN);
+      return TopupDao.topup({
+        uid: uid,
+        gold: Number(gold),
+        type: changeGoldType,
+        msg: 'Nhận gold '+type+'; gold: '+gold
+      });
+    })
+    .then(function(topup){
+      return redis.multi()
+        .hdel(redisKeyUtil.getUserGoldKey(uid), packageId)
+        .hdel(redisKeyUtil.getUserNotifyKey(uid), packageId)
+        .execAsync()
+        .then(function() {
+          topup.msg = [code.COMMON_LANUAGE.ADD_GOLD, (topup.addGold||0).toString()];
+          return utils.invokeCallback(cb, null, topup);
+        });
+    })
+    .catch(function(e){
+      console.error(e.stack || e);
+      return utils.invokeCallback(cb, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANUAGE.ERROR});
+    })
 };
