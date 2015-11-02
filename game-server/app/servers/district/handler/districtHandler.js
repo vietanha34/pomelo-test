@@ -280,7 +280,8 @@ Handler.prototype.getBoardList = function (msg, session, next) {
       where: {
         gameId: gameId,
         roomId : roomId
-      }
+      },
+      //order: 'index'
     })
     .then(function (boards) {
       var data = [];

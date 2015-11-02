@@ -40,7 +40,7 @@ Game.prototype.close = function () {
 Game.prototype.init = function () {
   var i, len;
   this.table.timer.stop();
-  this.game.startGame();
+  //this.game.startGame();
   this.table.status = consts.BOARD_STATUS.PLAY;
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
@@ -65,7 +65,6 @@ Game.prototype.init = function () {
       }
     }
   }
-  var lock = false;
   this.table.pushMessage('game.gameHandler.startGame', {});
   this.table.emit('startGame', this.playerPlayingId);
   var gameStatus = this.game.getBoardStatus();
@@ -88,7 +87,9 @@ Game.prototype.setOnTurn = function (gameStatus) {
     uid : player.uid,
     time : [turnTime, player.totalTime],
     moves : gameStatus.legalMoves,
-    isCheck : isCheck
+    isCheck : isCheck,
+    promote : gameStatus.promotionalMoves,
+    redSquare : gameStatus.redSquare
   });
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
@@ -210,6 +211,8 @@ Table.prototype.getStatus = function () {
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
     status.turn.moves   = this.game.legalMoves;
+    status.turn.redSquare = boardStatus.redSquare;
+    status.turn.promote = boardStatus.promotionalMoves;
   }
   return status
 };
@@ -251,13 +254,28 @@ Table.prototype.action = function (uid, opts, cb) {
   var legal = this.game.game.checkMoveIsLegal(opts.move[0], opts.move[1]);
   if (legal){
     var killed = this.game.game.squares[opts.move[1]];
-    this.game.previousChange = this.game.game.makeMove(opts.move[0], opts.move[1]);
+    var makeMoveResult = this.game.game.newMakeMove(opts.move[0], opts.move[1], opts.promote);
     this.game.previousMove = {
       move : [opts.move[1], opts.move[0]],
       killed : killed ? [[opts.move[1],killed]] : undefined
     };
+    var actionResponse = { move : [opts.move]};
+    console.log('makeMoveResult : ', makeMoveResult);
+    switch (makeMoveResult['specialType']){
+      case 'batTotQuaDuong':
+        actionResponse.remove = [makeMoveResult['removingSquare']];
+        break;
+      case 'nhapThanh':
+        actionResponse.move.push([makeMoveResult['removingSquare'],makeMoveResult['addingSquare'][0]]);
+        break;
+      case 'phongCap':
+        actionResponse.promote = [[opts.move[1], opts.promote]];
+        break;
+      default :
+        break;
+    }
     this.game.numMove += 1;
-    this.pushMessage('game.gameHandler.action', { move : [opts.move]});
+    this.pushMessage('game.gameHandler.action', actionResponse);
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
@@ -266,7 +284,7 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {
-    return utils.invokeCallback(cb, null, { ec :Code.FAIL})
+    return utils.invokeCallback(cb, null, { ec :Code.FAIL, msg :'đánh sai'});
   }
 };
 

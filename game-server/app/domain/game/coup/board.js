@@ -87,7 +87,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.jobId = this.table.timer.addJob(function () {
-    self.finishGame();
+    self.finishGame(consts.WIN_TYPE.LOSE);
   }, null, turnTime);
 };
 
@@ -142,9 +142,9 @@ Game.prototype.finishGame = function (result, uid) {
 
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
+  this.showKill = true;
   this.game = new Game(this);
   this.looseUser = null;
-  this.showKill = true;
   var self = this;
   this.addFunction = [
     function (properties, dataChanged, dataUpdate, changed, done) {
@@ -196,7 +196,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(null, uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
     }
   }
 };
@@ -238,8 +238,9 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.game.makeMove(opts.move[0], opts.move[1]);
     this.game.numMove += 1;
     var boardStatus = this.game.game.getBoardStatus();
-    this.pushMessageToPlayer(uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
-    this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
+    console.log('boardStatus : ', boardStatus);
+    this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
+    //this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
