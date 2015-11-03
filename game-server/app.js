@@ -91,7 +91,7 @@ app.configure('production|development|local', function () {
   var models = require('./app/dao/mysqlModels/index');
   var curServer  = app.curServer;
   var db = models();
-  //app.set('mongoClient', Mongo(utils.merge_options({schemaDir: path.join(app.getBase(), '/app/dao/mongoSchema/')}, app.get('mongoConfig').data)))
+  app.set('mongoClient', Mongo(utils.merge_options({schemaDir: path.join(app.getBase(), '/app/dao/mongoSchema/')}, app.get('mongoConfig').data)))
   app.set('mysqlClient', db);
   if (curServer.serverType === 'manager') {
     db.sequelize

@@ -3,7 +3,7 @@
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('User', {
     uid : {
-      type : DataTypes.INTEGER,
+      type : DataTypes.INTEGER.UNSIGNED.ZEROFILL,
       primaryKey : true
     },
     username: {
@@ -12,12 +12,12 @@ module.exports = function(sequelize, DataTypes) {
       unique : true
     },
     gold: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.BIGINT.UNSIGNED.ZEROFILL,
       allowNull: false,
       defaultValue: '0'
     },
     goldInGame : {
-      type : DataTypes.BIGINT,
+      type : DataTypes.BIGINT.UNSIGNED.ZEROFILL,
       allowNull : false,
       defaultValue : '0'
     },
@@ -32,12 +32,12 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue : ''
     },
     platform: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.INTEGER(4).UNSIGNED,
       allowNull: false,
       defaultValue: '1'
     },
     distributorId: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.INTEGER(11).UNSIGNED,
       allowNull: false,
       defaultValue: '1'
     },
@@ -58,7 +58,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ''
     },
     level: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER(6).UNSIGNED.ZEROFILL,
       allowNull: false,
       defaultValue: '0'
     },
@@ -77,32 +77,22 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     status : {
-      type : DataTypes.INTEGER(11),
+      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
       allowNull : false,
       defaultValue : '0'
     },
     accountType : {
-      type : DataTypes.INTEGER(11),
+      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
       allowNull : false,
       defaultValue : '1'
     },
     sex : {
-      type : DataTypes.INTEGER(4),
+      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
       allowNull : true,
       defaultValue : '1'
     },
-    win : {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      defaultValue: '0'
-    },
-    lose : {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      defaultValue: '0'
-    },
 	  hasPay: {
-		  type: DataTypes.INTEGER(1),
+		  type: DataTypes.INTEGER(1).UNSIGNED.ZEROFILL,
 		  allowNull: true,
 		  defaultValue: 0
 	  },
@@ -110,6 +100,21 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.STRING,
       allowNull: true,
       defaultValue: ''
+    },
+    statusMsg : {
+      type : DataTypes.STRING,
+      allowNull: true,
+      defaultValue: ''
+    },
+    exp: {
+      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
+      allowNull: false,
+      defaultValue: '0'
+    },
+    vipPoint: {
+      type: DataTypes. INTEGER.UNSIGNED.ZEROFILL,
+      allowNull: false,
+      defaultValue: '0'
     }
   }, {
     classMethods: {

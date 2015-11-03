@@ -2,70 +2,36 @@ var formula = module.exports;
 var lodash = require('lodash');
 var consts = require('./consts');
 
-/**
- * Tinh level user
- *
- */
-formula.calLevel = function (opts) {
-  var level = 0;
-  var block = 100;
-  var current = 0;
-  while ((++level * block + current) <= opts.score) {
-    current += level * block;
+formula.eloArray = [1230,1900,2900];
+formula.calEloLevel = function calEloLevel(elo) {
+  for (var i=0; i<formula.eloArray.length; i++) {
+    if (elo < formula.eloArray[i]) return i;
   }
-  block = null;
-  current = null;
-  return level > 2 ? level - 2 : 0;
+  return i;
 };
 
-formula.calRemainXpUpgradeLevel = function (level, currentScore) {
-  var remain = (level + 2) * 100;
-  var score = 0;
-  var i = level + 1;
-  while(i > 0) {
-    score += i * 100;
-    i--;
+formula.vipArray = [1000, 5000, 10000];
+formula.calVipLevel = function calVipLevel(vipPoint) {
+  for (var i=0; i<formula.vipArray.length; i++) {
+    if (vipPoint < formula.vipArray[i]) return i;
   }
-  if (currentScore <= score)
-    return 0;
-  return Math.ceil(((currentScore - score) / remain) * 100);
+  return i;
 };
 
-formula.calActive = function (mixed) {
-  var score;
-  if (typeof mixed == 'object') {
-    score = mixed.score;
-  } else {
-    score = mixed;
-  }
-  var aapd = consts.AAPD.SCORE;
-  var keys = Object.keys(aapd);
-  for (var i = keys.length - 1; i >= 0; i--) {
-    var key = parseInt(keys[i]);
-    if (score >= key)
-      return aapd[key];
-  }
-  return 0;
+formula.calVipPoint = function calVipPoint(level) {
+  return formula.vipArray[level-1];
 };
 
-formula.calBattle = function (doc) {
-  if (doc.score < 10) return '0/5';
-  if (doc.score <= 100) return '1/5';
-  if (doc.score <= 1000) return '2/5';
-  if (doc.score <= 10000) return '3/5';
-  if (doc.score <= 100000) return '4/5';
-  return '5/5';
+formula.expArray = [10,35,80,150,250,385,560,780,1050,1375,2055,2775,3545,4375,5275,6255,7325,8495,9775,11175,14055,17035,20135,23375,26775,30355,34135,38135,42375,46875,51655,56735,62135,67875,73975,84825,95885,107190,118775,130675,142925,155560,168615,182125,196125,210650,225735,241415,257725,274700,301705,329095,356925,385250,414125,443605,473745,504600,536225,568675,602005,636270,671525,707825,745225,783780,823545,864575,906925,950650];
+formula.calExp = function calExp(level) {
+  var exp = formula.expArray[level-1];
+  if (exp) return exp;
+  else return (950650+level*50000);
 };
 
-formula.calDedicate = function (exp) {
-  return parseInt(Math.random() * 5) + '/5';
-};
-
-formula.calWinXp = function (numWin, numLose) {
-  if (!lodash.isNumber(numLose) || numLose == 0) {
-    return 2;
+formula.calLevel = function calLevel(exp) {
+  for (var i=0; i<formula.expArray.length; i++) {
+    if (exp < formula.expArray[i]) return i;
   }
-  else {
-    return numLose * 2;
-  }
+  return i+Math.floor((exp-950650)/50000);
 };

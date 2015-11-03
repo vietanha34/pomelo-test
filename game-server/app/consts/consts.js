@@ -275,16 +275,21 @@ module.exports = {
   },
 
   UMAP_GAME_NAME: {
-    0: 'xam',
-    1: 'tlmndl',
-    2: 'phom',
-    3: 'poker',
-    4: 'lieng',
-    5: 'xito',
-    6: 'maubinh',
-    7: 'xizach',
-    8: 'tlmn',
-    9: 'baicao'
+    1: 'tuong',
+    2: 'the',
+    3: 'up',
+    4: 'vua',
+    5: 'caro',
+    6: 'vay'
+  },
+
+  GAME_MAP: {
+    1: 'Cờ tướng',
+    2: 'Cờ thế',
+    3: 'Cờ úp',
+    4: 'Cờ vua',
+    5: 'Cờ caro',
+    6: 'Cờ vây'
   },
 
   COMBATIVE_SCORE: {
@@ -589,5 +594,9 @@ module.exports = {
       AWARD: {},
       UP: {}
     }
+  },
+
+  PROFILE: {
+    PER_PAGE: 5
   }
 };

@@ -2,11 +2,18 @@
  * Created by vietanha34 on 1/12/15.
  */
 
-
 var RegexValid = module.exports;
 
 RegexValid.validMongoObjectId = function(id){
   return id.match(/^[0-9a-fA-F]{24}$/)
+};
+
+RegexValid.validEmail = function validEmail(email) {
+  return email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/);
+};
+
+RegexValid.validDate = function validDate(date) {
+  return ((new Date(date)).getDate() ? true : false);
 };
 
 RegexValid.validPhone = function (phone) {

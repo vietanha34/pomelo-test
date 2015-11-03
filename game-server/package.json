@@ -29,7 +29,8 @@
     "sequelize": "^3.7.1",
     "shorthash": "0.0.2",
     "shortid": "^2.2.2",
-    "uuid": "^2.0.1"
+    "uuid": "^2.0.1",
+    "request-promise": "*"
   },
   "devDependencies": {
     "should": "*",

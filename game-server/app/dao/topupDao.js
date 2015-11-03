@@ -135,12 +135,13 @@ TopupDao.getGoldAward = function getGoldAward(uid, packageId, cb) {
         .hdel(redisKeyUtil.getUserNotifyKey(uid), packageId)
         .execAsync()
         .then(function() {
-          topup.msg = [code.COMMON_LANUAGE.ADD_GOLD, (topup.addGold||0).toString()];
+          topup.msg = [code.COMMON_LANGUAGE.ADD_GOLD, (topup.addGold||0).toString()];
           return utils.invokeCallback(cb, null, topup);
         });
     })
     .catch(function(e){
       console.error(e.stack || e);
-      return utils.invokeCallback(cb, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANUAGE.ERROR});
+      return utils.invokeCallback(cb, e.stack || e);
+      //return utils.invokeCallback(cb, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANUAGE.ERROR});
     })
 };

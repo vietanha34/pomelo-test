@@ -234,9 +234,39 @@ module.exports = {
     VIP_POINT_PER: 810
   },
 
-  COMMON_LANUAGE: {
+  COMMON_LANGUAGE: {
     ERROR: 'Chức năng đang bảo trì',
     ADD_GOLD: 'Bạn vừa được cộng %s gold'
+  },
+
+  ELO_LANGUAGE: {
+    0: 'Cờ thủ',
+    1: 'Cao thủ',
+    2: 'Danh thủ',
+    3: 'Đại sư'
+  },
+
+  FIRST_LANGUAGE: {
+    0: 'Tiên',
+    1: 'Hậu'
+  },
+
+  WIN_LANGUAGE: {
+    1: 'Thua',
+    2: 'Hòa',
+    3: 'Thắng'
+  },
+
+  VIP_LANGUAGE: {
+    0: '',
+    1: 'Vip bạc',
+    2: 'Vip vàng',
+    3: 'Vip kim cương'
+  },
+
+  PROFILE_LANGUAGE: {
+    SUCCESS: 'Cập nhật thông tin thành công',
+    PASSWORD_SUCCESS: 'Đổi mật khẩu thành công'
   },
 
   EC: {
