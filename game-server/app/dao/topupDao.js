@@ -142,6 +142,5 @@ TopupDao.getGoldAward = function getGoldAward(uid, packageId, cb) {
     .catch(function(e){
       console.error(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
-      //return utils.invokeCallback(cb, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANUAGE.ERROR});
     })
 };
