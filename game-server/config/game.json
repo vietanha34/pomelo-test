@@ -1,26 +1,29 @@
 {
   "development" : [
-    "caro",
+    null,
     "cotuong",
     "coup",
-    "covay",
     "cothe",
-    "covua"
+    "covua",
+    "caro",
+    "covay"
   ],
   "production" : [
-    "caro",
+    null,
     "cotuong",
     "coup",
-    "covay",
     "cothe",
-    "covua"
+    "covua",
+    "caro",
+    "covay"
   ],
   "local" : [
-    "caro",
+    null,
     "cotuong",
     "coup",
-    "covay",
     "cothe",
-    "covua"
+    "covua",
+    "caro",
+    "covay"
   ]
 }

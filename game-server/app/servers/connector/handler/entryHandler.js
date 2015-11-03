@@ -72,11 +72,11 @@ Handler.prototype.login = function (msg, session, next) {
         return
       }
       player = user;
-      player.uid = user.id;
+      player.uid = user.uid;
       kickUser(self.app, user.uid, done);
 		},
 		function (done) {
-			session.bind(player.id, {
+			session.bind(player.uid, {
 				username: player.username,
 				platform: msg.platform,
 				dtId: msg.dtid

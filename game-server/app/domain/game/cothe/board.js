@@ -19,8 +19,8 @@ var BoardBase = require('../base/boardBase');
 
 
 
-function Game(table) {
-  this.game = new Rule(false, 'default',  table.lockMode || [],  table.removeMode||[]);
+function Game(table, opts) {
+  this.game = new Rule(false, opts.fen,  [],  []);
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -30,6 +30,9 @@ function Game(table) {
   this.legalMoves = {};
   this.isCheck = {};
   this.numMove = 0;
+  this.maxMove = opts.numMove;
+  this.formationName = opts.name;
+  this.win = opts.win;
   this.previousMove = null;
 }
 
@@ -171,39 +174,15 @@ Game.prototype.finishGame = function (result, uid) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
-  this.lockMode = opts.lockMode || [];
-  this.removeMode = opts.removeMode || [];
   if (this.hallId === consts.HALL_ID.LIET_CHAP){
     this.allowLockMode = true;
   }
   this.game = new Game(this);
-  var self = this;
+  //var self = this;
   this.addFunction = [
-    function (properties, dataChanged, dataUpdate, changed, done) {
-      // changeOwner
-      if (!self.allowLockMode) return done(null, properties, dataChanged, dataUpdate, changed);
-      var update = false;
-      if (lodash.isArray(properties.lock)) {
-        update = true;
-        self.lockMode = properties.lock;
-        self.game.game.lockModes = self.lockMode;
-        dataChanged.lock = properties.lock;
-      }
-      if (lodash.isArray(properties.remove)) {
-        self.removeMode = properties.remove;
-        self.game.game.handicapModes = self.removeMode;
-        dataChanged.remove = properties.remove;
-        update = true;
-      }
-      console.log('self.lockMode : ', self.lockMode, self.removeMode);
-      if (update){
-        changed = true;
-        //dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
-        dataUpdate.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
-      }
-      console.log('data Update lock : ', changed);
-      return done(null, properties, dataChanged, dataUpdate, changed);
-    }
+    //function (properties, dataChanged, dataUpdate, changed, done) {
+    //
+    //}
   ]
 }
 
@@ -376,6 +355,10 @@ Table.prototype.demand = function (opts) {
     default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
+};
+
+Table.prototype.changeFormation = function (opts,cb) {
+    
 };
 
 

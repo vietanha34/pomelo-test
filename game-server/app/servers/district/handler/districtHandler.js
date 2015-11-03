@@ -48,15 +48,8 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     },
     function (userInfo, done) {
       if (userInfo) {
-        user = {
-          gold: userInfo.gold,
-          username: userInfo.username,
-          uid: userInfo.id,
-          fullname: userInfo.fullname,
-          sex: userInfo.sex,
-          avatar: userInfo.avatar,
-          frontendId: session.frontendId
-        };
+        user = userInfo;
+        user.frontendId = session.frontendId;
         self.app.get('boardService').getBoard({
           where : whereClause,
           limit : 1
@@ -121,7 +114,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
         var user = {
           gold: userInfo.gold,
           username: userInfo.username,
-          uid: userInfo.id,
+          uid: userInfo.uid,
           fullname: userInfo.fullname,
           sex: userInfo.sex,
           avatar: userInfo.avatar,
@@ -287,7 +280,8 @@ Handler.prototype.getBoardList = function (msg, session, next) {
       where: {
         gameId: gameId,
         roomId : roomId
-      }
+      },
+      //order: 'index'
     })
     .then(function (boards) {
       var data = [];
