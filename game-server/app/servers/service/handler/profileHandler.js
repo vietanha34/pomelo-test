@@ -27,12 +27,39 @@ Handler.prototype.getProfile = function getProfile(msg, session, next) {
 };
 
 Handler.prototype.updateProfile = function getProfile(msg, session, next) {
+  msg.accessToken = session.get('accessToken');
   return ProfileDao.updateProfile(session.uid, msg)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })
     .catch(function(e){
       console.error(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.getAchievement = function getAchievement(msg, session, next) {
+  msg.other = msg.uid;
+  msg.uid = session.uid;
+  return ProfileDao.getAchievement(msg)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e){
+      console.error(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.getHistory = function getHistory(msg, session, next) {
+  msg.uid = session.uid;
+  return ProfileDao.getGameHistory(msg)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e){
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
       return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
     });
 };

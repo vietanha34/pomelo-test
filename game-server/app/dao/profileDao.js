@@ -26,7 +26,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
                     'sex', 'address', 'phone', 'email', 'accountType', 'exp', 'vipPoint'];
 
   var user;
-  UserDao.getUserProperties(uid, properties)
+  return UserDao.getUserProperties(uid, properties)
     .then(function(userObj) {
       userObj.avatar = utils.JSONParse(userObj.avatar, {id: 0});
       var birthday = moment(userObj.birthday);
@@ -39,9 +39,11 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       return pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}});
     })
     .then(function(achievement) {
+      achievement = achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
       var max = 0;
       var name, elo;
+      user.gameId = 1;
       for (var i=0; i<list.length; i++) {
         name = consts.UMAP_GAME_NAME[list[i]];
         elo = achievement[name+'Elo'] || 0;
@@ -106,12 +108,15 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       return utils.invokeCallback(cb, 'invalid params update profile');
     }
 
+    if (params.phone) params.phoneNumber = params.phone;
+
     var serviceConfig = pomelo.app.get('serviceConfig');
     return request({
-      uri: serviceConfig.account.auth_url + serviceConfig.account.updateProfile,
+      uri: serviceConfig.account.authUrl + serviceConfig.account.updateProfile,
       method: 'POST',
       headers: {Authorization: 'Bearer '+params.accessToken },
-      form: params
+      form: params,
+      resolveWithFullResponse: true
     })
       .then(function(response) {
         if (response && response.statusCode == 200) {
@@ -145,9 +150,10 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
  */
 ProfileDao.getAchievement = function getAchievement(params, cb) {
   var res = {list: []};
-  pomelo.app.get('mysqlClient').Achievement
+  return pomelo.app.get('mysqlClient').Achievement
     .findOne({where: {uid: params.uid}})
     .then(function(achievement) {
+      achievement = achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
       var name, elo, max = 0;
       for (var i=0; i<list.length; i++) {
@@ -162,8 +168,10 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
           lose: achievement[name+'Lose'] || 0,
           draw: achievement[name+'Draw'] || 0
         });
-        if (elo > elo) max = elo;
+        if (elo > max) max = elo;
       }
+
+      achievement = null;
 
       if (!params.other) {
         return utils.invokeCallback(cb, null, res);
@@ -172,6 +180,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
         return UserDao.getUserProperties(params.uid, properties)
           .then(function(user) {
+            user = user || {};
             user.avatar = utils.JSONParse(user.avatar, {id: 0});
             var birthday = moment(user.birthday);
             if (birthday && birthday.unix()>100)
@@ -186,6 +195,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
 
             res.info = user;
 
+            user
             return utils.invokeCallback(cb, null, res);
           });
       }
@@ -227,7 +237,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
     if (params.date) condition.date = params.date;
     return GameHistory
       .find(condition)
-      .offset((params.page-1)*consts.PROFILE.PER_PAGE)
+      .skip((params.page-1)*consts.PROFILE.PER_PAGE)
       .limit(consts.PROFILE.PER_PAGE+1)
       .sort({ createdAt: -1 })
       .select({log: -1, date: -1})
@@ -284,6 +294,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
       })
       .catch(function(e){
         console.error(e.stack || e);
+        utils.log(e.stack || e);
         return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
       });
   }
@@ -372,6 +383,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
       })
       .catch(function(e){
         console.error(e.stack || e);
+        utils.log(e.stack || e);
         return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
       });
   }
