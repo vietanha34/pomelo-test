@@ -242,7 +242,7 @@ UserDao.getUserPropertiesByUsername = function (username, properties, cb) {
 UserDao.getUsersPropertiesByUids = function (uids, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
-    .find({where: {uid: {$in: uids}}, attributes: properties, raw: true})
+    .findAll({where: {uid: {$in: uids}}, attributes: properties, raw: true})
     .then(function (users) {
       return utils.invokeCallback(cb, null, users);
     })
@@ -319,6 +319,7 @@ UserDao.login = function (msg, cb) {
   return accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
+      res = utils.JSONParse(res, {});
       if (res && !res.ec) {
         console.log('res  typeof : ', typeof res);
         res.uid = res.id;

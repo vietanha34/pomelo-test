@@ -149,10 +149,12 @@ module.exports = {
     DRAW : 5,
     SURRENDER : 6,
     HINT : 8,
-    CHANGE_TYPE : 9,
     CHAT : 10,
     EMO : 11,
-    TAN_GAU : 12
+    TAN_GAU : 12,
+    CHANGE_FORMATION: 14,
+    SELECT_FORMATION : 13,
+    CHANGE_SIDE : 15
   },
 
   LANGUAGE_LIMIT : {
@@ -598,5 +600,11 @@ module.exports = {
 
   PROFILE: {
     PER_PAGE: 5
-  }
+  },
+
+  FRIEND: {
+    PER_PAGE: 20
+  },
+
+  MAX_FRIEND: 1000
 };
