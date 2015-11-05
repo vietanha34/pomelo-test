@@ -1,5 +1,5 @@
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('UserAchievement', {
+  return sequelize.define('Achievement', {
     uid : {
       type : DataTypes.INTEGER.UNSIGNED.ZEROFILL,
       primaryKey : true

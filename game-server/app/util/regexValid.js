@@ -9,7 +9,7 @@ RegexValid.validMongoObjectId = function(id){
 };
 
 RegexValid.validEmail = function validEmail(email) {
-  return email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/);
+  return email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i);
 };
 
 RegexValid.validDate = function validDate(date) {
