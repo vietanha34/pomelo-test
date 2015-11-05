@@ -27,7 +27,6 @@ var util = require('util');
  * @property {Boolean} guest guest
  */
 var Player = function (opts) {
-  console.log('opts : ', opts);
   this.userInfo = opts.userInfo || {};
   this.userInfo.sex = parseInt(this.userInfo.sex);
   this.goldAfter = 0; // Số tiền sau của người dùng
@@ -63,12 +62,17 @@ Player.prototype.getUids = function () {
   return {uid: this.uid, sid: this.userInfo.frontendId}
 };
 
-Player.prototype.genMenu = function (guest) {
-  if(guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.TAN_GAU));
+Player.prototype.genMenu = function () {
+  if(this.guest){
+    this.pushMenu(this.table.genMenu(consts.ACTION.TAN_GAU));
   }else {
-    this.menu.push(this.table.genMenu(consts.ACTION.CHAT));
-    this.menu.push(this.table.genMenu(consts.ACTION.EMO));
+    if (this.uid === this.table.owner){
+      this.pushMenu(this.table.genMenu(consts.ACTION.START_GAME));
+    }else {
+      this.pushMenu(this.table.genMenu(consts.ACTION.READY));
+    }
+    this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
+    this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
   }
 };
 
@@ -193,11 +197,6 @@ Player.prototype.reset = function () {
   this.moneyLogs.splice(0,this.moneyLogs.length);
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
   this.menu.splice(0, this.menu.length);
-  if (this.uid === this.table.owner){
-    this.menu.push(this.table.genMenu(consts.ACTION.START_GAME));
-  }else if (!this.guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.READY));
-  }
   this.genMenu(this.guest);
 };
 
@@ -234,6 +233,15 @@ Player.prototype.removeMenu = function (id) {
   console.log('remove Menu : ', id, menu);
 };
 
+Player.prototype.pushMenu = function (menu) {
+  var indexMenu = lodash.findIndex(this.menu, 'id', menu.id);
+  if(indexMenu > -1){
+    this.menu[indexMenu] = menu;
+  }else {
+    this.menu.push(menu);
+  }
+};
+
 Player.prototype.Ready = function () {
   this.ready = true;
   this.removeMenu(consts.ACTION.READY);
@@ -243,6 +251,10 @@ Player.prototype.addItems = function (items) {
   // TODO handle cam kick, cam chat
 };
 
+Player.prototype.startGame = function () {
+  this.removeMenu(consts.ACTION.START_GAME);
+  this.removeMenu(consts.ACTION.READY);
+};
 
 Player.prototype.unReady = function () {
   this.ready = false;

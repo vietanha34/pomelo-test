@@ -7,9 +7,10 @@ var Code = require('../../../../consts/code');
 var consts = require('../../../../consts/consts');
 var lodash = require('lodash');
 var utils = require('../../../../util/utils');
-var pokerConsts = require('../../../../domain/game/poker/consts');
 var async = require('async');
 var userDao = require('../../../../dao/userDao');
+var util = require('util');
+var Promise = require('bluebird');
 
 /**
  * Module handler for poker game online system base on pomelo framework
@@ -30,22 +31,44 @@ var pro = Handler.prototype;
 pro.getListFormation = function (msg, session, next) {
   var offset = msg.offset || 0;
   var length = msg.length || 10;
-  this.app.get('mysqlClient')
-    .XiangqiFormation
-    .findAll({
-      where : {
-        status : 1
-      },
-      offset : offset,
-      limit : length,
-      attributes : ['id','fen', 'rank', 'name', 'win', 'turn', 'numMove'],
-      order : 'rank INCR'
+  var self = this;
+  Promise.delay(0)
+    .then(function () {
+      return [
+        self.app.get('mysqlClient')
+          .XiangqiFormation
+          .findAll({
+            where: {
+              status: 1
+            },
+            offset: offset,
+            limit: length,
+            raw : true,
+            attributes: ['id', 'fen', 'rank', 'name', 'win', 'turn', 'numMove'],
+          }),
+        self.app.get('mysqlClient')
+          .XiangqiFormation
+          .count({
+            where: {
+              status: 1
+            }
+          })
+      ]
     })
-    .then(function (formations) {
-      return next(null, { formations : formations});
+    .spread(function (formations, count) {
+      var result = [];
+      for (var i = 0, len = formations.length; i < len; i++) {
+        result.push({
+          id: formations[i].id,
+          fen: formations[i].fen,
+          name: formations[i].name,
+          detail: util.format('%s đi tiên, phải %s trong', formations[i].turn === consts.COLOR.WHITE ? 'đỏ' : 'đen', formations[i].win === 1 ? 'thắng' : 'hoà', formations[i].numMove)
+        })
+      }
+      return next(null, {formations: result, offset: offset, length: formations.length, total: count});
     })
     .catch(function (err) {
-      logger.error('err : ', err);
+      console.error('err: ', err);
     })
 };
 
@@ -74,25 +97,46 @@ pro.changeFormation = function (msg, session, next) {
   this.app.get('mysqlClient')
     .XiangqiFormation
     .findOne({
-      where : {
-        id : id,
-        status : 1
-      }
+      where: {
+        id: id,
+        status: 1
+      },
+      raw : true
     })
     .then(function (formation) {
-      if(formation){
+      if (formation) {
         var result = board.changeFormation(formation);
         return next(null, result)
-      }else {
-        return next(null, { ec : Code.FAIL, msg : ''})
+      } else {
+        return next(null, {ec: Code.FAIL, msg: ''})
       }
     })
     .catch(function (err) {
-      logger.error('err : ', err);
+      //logger.error('err : ', err);
+      console.error('err: ', err);
     })
-  .finally(function () {
+    .finally(function () {
       board = null;
     })
+};
+
+
+pro.changeFormationMode = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    return next(null,{
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    })
+  }
+  if (board.owner !== uid) {
+    return next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
+  }
+  if (board.status !== consts.BOARD_STATUS.NOT_STARTED) {
+    return next(null, utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED));
+  }
+  return next(null, board.selectFormationMode());
 };
 
 module.export = Handler;

@@ -124,13 +124,6 @@ pro.addPlayer = function (opts) {
         self.table.owner = uid;
         data.owner = true;
         player.owner = true;
-        if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
-          player.menu.push(self.table.genMenu(consts.ACTION.START_GAME));
-        }
-      } else {
-        if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
-          player.menu.push(self.table.genMenu(consts.ACTION.READY));
-        }
       }
     }
     else {

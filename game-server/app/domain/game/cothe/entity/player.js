@@ -32,11 +32,9 @@ var Player = function (opts) {
   this.totalTime  = opts.totalTime;
   this.totalTimeDefault = opts.totalTime;
   this.timeTurnStart = Date.now();
-  this.numDelay = 2;
   this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoà
   this.requestDraw  = false;
-  this.requestDelay = false;
 };
 
 util.inherits(Player, PlayerBase);
@@ -47,9 +45,6 @@ Player.prototype.getState = function (uid) {
 };
 
 Player.prototype.xinThua = function (numMove) {
-  this.requestDelay = true;
-  this.timeDelay = numMove;
-  this.numDelay -= 1;
 };
 
 Player.prototype.xinHoa = function (numMove) {
@@ -64,23 +59,33 @@ Player.prototype.move = function () {
 Player.prototype.reset = function () {
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
-  this.numDelay = 2;
-  this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoãn;
 };
 
 Player.prototype.genMenu = function (guest) {
   Player.super_.prototype.genMenu.call(this);
   if (!guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.DE_LAY));
+    if (this.table.owner === this.uid){
+      if (this.table.formationMode){
+        this.removeMenu(consts.ACTION.START_GAME);
+        this.menu.push(this.table.genMenu(consts.ACTION.SELECT_FORMATION))
+      }else {
+        this.menu.push(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
+      }
+    }else {
+
+    }
+  }
+};
+
+Player.prototype.genStartMenu = function (guest) {
+  Player.super_.prototype.genMenu.call(this);
+  if (!guest){
     this.menu.push(this.table.genMenu(consts.ACTION.DRAW));
     this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
 
-Player.prototype.startGame = function () {
-  this.menu.push(this.table.genMenu)
-};
 
 
 module.exports = Player;

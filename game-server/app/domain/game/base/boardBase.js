@@ -153,15 +153,23 @@ var Board = function (opts, PlayerPool, Player) {
     //  change color
     function (properties, dataChanged, dataUpdate, changed, done) {
       var color = properties.color;
-      if (!color || (color !== 1 && color !== 2)) return done(null, properties, dataChanged, dataUpdate, changed);
+      if (lodash.isNumber(color) || (color !== 1 && color !== 2 && color !== 0)) return done(null, properties, dataChanged, dataUpdate, changed);
       var uid = properties.uid;
       var player = self.players.getPlayer(uid);
       if (player && player.color !== color){
-        player.color = color;
         var otherPlayerUid = self.players.getOtherPlayer();
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
-        if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+        if (!color){ // color === 0
+          if (otherPlayer)
+          player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+        }else {
+          player.color = color;
+          if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+        }
         changed = true;
+        var temp = self.mapColor[0];
+        self.mapColor[0] = self.mapColor[1];
+        self.mapColor[1] = temp;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
@@ -247,24 +255,24 @@ pro.pushMessageWithMenu = function (route, msg) {
 };
 
 
-pro.pushMenuGame = function (route, msg) {
-  for (var i = 0, len = this.players.playerSeat.length; i < len; i++) {
-    var playerUid = this.players.playerSeat[i];
-    if (!this.players.getPlayer(playerUid)) {
-      continue
-    }
-    if (playerUid === this.owner) {
-      this.pushMessageToPlayer(playerUid, route,
-        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.START_GAME)]})
-      );
-    } else {
-      this.pushMessageToPlayer(playerUid, route,
-        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.READY)]})
-      );
-    }
-  }
-  this.pushMessageToUids(this.players.guestIds, route, msg);
-};
+//pro.pushMenuGame = function (route, msg) {
+//  for (var i = 0, len = this.players.playerSeat.length; i < len; i++) {
+//    var playerUid = this.players.playerSeat[i];
+//    if (!this.players.getPlayer(playerUid)) {
+//      continue
+//    }
+//    if (playerUid === this.owner) {
+//      this.pushMessageToPlayer(playerUid, route,
+//        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.START_GAME)]})
+//      );
+//    } else {
+//      this.pushMessageToPlayer(playerUid, route,
+//        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.READY)]})
+//      );
+//    }
+//  }
+//  this.pushMessageToUids(this.players.guestIds, route, msg);
+//};
 
 /**
  * Gửi gói tin đến một người chơi
@@ -379,7 +387,7 @@ pro.pushLeaveBoard = function (uid, data) {
     }
     console.log('pushMessage leaveBoard : ',uid);
     if (player.guest && this.players.length < this.maxPlayer) {
-      player.menu.push(this.genMenu(consts.ACTION.SIT_BACK_IN));
+      player.pushMenu(this.genMenu(consts.ACTION.SIT_BACK_IN));
       this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', utils.merge_options(data, {menu: player.menu}));
     } else {
       this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', data);
@@ -845,7 +853,7 @@ pro.muteChat = function (uid, cb) {
  * @returns {*}
  */
 pro.genMenu = function (menuId, extraData) {
-  extraData = typeof extraData == 'object' ? extraData : {};
+  extraData = typeof extraData === 'object' ? extraData : {};
   return utils.merge_options({
       id: menuId,
       msg: utils.getMenuLanguage(menuId)
