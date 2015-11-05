@@ -55,8 +55,8 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.game = consts.GAME_MAP[user.gameId];
       user.elo = max;
       user.eloLevel = code.ELO_LANGUAGE[formula.calEloLevel(user.elo)];
-      var exp = user.exp || 0;
-      user.exp = [exp, formula.calExp(formula.calLevel(exp) + 1)];
+      var vipPoint = user.vipPoint || 0;
+      user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
       user.vipLevel = formula.calVipLevel(user.vipPoint);
 
       return utils.invokeCallback(cb, null, user);
@@ -160,7 +160,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         name = consts.UMAP_GAME_NAME[list[i]];
         elo = achievement[name+'Elo'] || 0;
         res.list.push({
-          gameId: list[i],
+          gameId: Number(list[i]),
           game: consts.GAME_MAP[list[i]],
           elo: elo,
           eloLevel: code.ELO_LANGUAGE[elo],
@@ -195,7 +195,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
 
             res.info = user;
 
-            user
+            user = null;
             return utils.invokeCallback(cb, null, res);
           });
       }
@@ -229,7 +229,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   var GameHistory = mongoClient.model('GameHistory');
 
   var condition;
-  if (!params.name) { // TH không tìm theo tên
+  if (!params.name || params.name.length < 2) { // TH không tìm theo tên
     condition = {
       gameId: params.gameId,
       uid: params.uid
