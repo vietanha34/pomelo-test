@@ -32,7 +32,10 @@ module.exports = function(sequelize, DataTypes) {
     win : {
       type : DataTypes.INTEGER(4)
     },
-    numMoves : {
+    turn : {
+      type : DataTypes.INTEGER(4)
+    },
+    numMove : {
       type : DataTypes.INTEGER
     },
     status : {

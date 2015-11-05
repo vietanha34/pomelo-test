@@ -319,6 +319,7 @@ UserDao.login = function (msg, cb) {
   return accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
+      res = utils.JSONParse(res, {});
       if (res && !res.ec) {
         console.log('res  typeof : ', typeof res);
         res.uid = res.id;

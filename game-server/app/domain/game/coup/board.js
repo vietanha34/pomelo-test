@@ -20,9 +20,7 @@ var BoardBase = require('../base/boardBase');
 
 
 function Game(table) {
-  console.log('coup : ');
   this.game = new Rule(true, 'random', [], [], table.showKill);
-  console.log('boardStatus : ', this.game.getBoardStatus());
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -53,6 +51,9 @@ Game.prototype.init = function () {
   for (var i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
     if (this.playerPlayingId.indexOf(player.uid) > -1){
+      player.menu = [];
+      player.genStartMenu();
+      player.startGame();
       player.totalTime = this.table.totalTime;
       if (player.color === consts.COLOR.WHITE ){
         this.whiteUid = player.uid;
@@ -62,7 +63,7 @@ Game.prototype.init = function () {
     }
   }
   this.table.emit('startGame', this.playerPlayingId);
-  this.table.pushMessage('game.gameHandler.startGame', {});
+  this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   var gameStatus = this.game.getBoardStatus();
   this.setOnTurn(gameStatus);
 };
@@ -238,14 +239,19 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.game.makeMove(opts.move[0], opts.move[1]);
     this.game.numMove += 1;
     var boardStatus = this.game.game.getBoardStatus();
-    console.log('boardStatus : ', boardStatus);
-    this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
     //this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    player.move();
+    var result = player.move();
+    if (result){
+      // change Menu
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move]});
+    }else {
+      this.pushMessage('game.gameHandler.action', { move : [opts.move]});
+    }
     this.game.progress(boardStatus);
     return utils.invokeCallback(cb, null, {});
   }else {

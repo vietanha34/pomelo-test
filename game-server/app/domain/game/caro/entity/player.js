@@ -29,7 +29,6 @@ var util = require('util');
 var Player = function (opts) {
   Player.super_.call(this, opts);
   this.color = opts.color;
-  this.firstMove = false;
   this.totalTime  = opts.totalTime;
   this.totalTimeDefault = opts.totalTime;
   this.timeTurnStart = Date.now();
@@ -38,7 +37,6 @@ var Player = function (opts) {
   this.timeDraw = 0; // nước đi xin hoà
   this.requestDraw  = false;
   this.requestDelay = false;
-  this.disableDelay = false;
 };
 
 util.inherits(Player, PlayerBase);
@@ -48,12 +46,10 @@ Player.prototype.getState = function (uid) {
   return result
 };
 
-Player.prototype.xinHoan = function (numMove) {
+Player.prototype.xinThua = function (numMove) {
   this.requestDelay = true;
   this.timeDelay = numMove;
   this.numDelay -= 1;
-  this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { disable : 1 , count : this.numDelay}));
-  this.disableDelay = true;
 };
 
 Player.prototype.xinHoa = function (numMove) {
@@ -61,17 +57,8 @@ Player.prototype.xinHoa = function (numMove) {
   this.timeDraw  = numMove
 };
 
-Player.prototype.move = function (numMove) {
+Player.prototype.move = function () {
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
-  if (!this.firstMove){
-    this.firstMove = true;
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
-    return true
-  }else
-  if (this.disableDelay && numMove - this.timeDelay >= 10 && this.numDelay > 0){
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
-    return true
-  }
 };
 
 Player.prototype.reset = function () {
@@ -80,19 +67,15 @@ Player.prototype.reset = function () {
   this.numDelay = 2;
   this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoãn;
-  this.firstMove = false;
 };
 
-
-Player.prototype.genStartMenu = function () {
+Player.prototype.genMenu = function (guest) {
   Player.super_.prototype.genMenu.call(this);
-  if (!this.guest){
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, {disable : 1, count : this.numDelay}));
-    this.pushMenu(this.table.genMenu(consts.ACTION.DRAW));
-    this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
+  if (!guest){
+    this.menu.push(this.table.genMenu(consts.ACTION.DRAW));
+    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
-
 
 
 module.exports = Player;

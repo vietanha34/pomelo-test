@@ -16,10 +16,12 @@ var events = require('events');
 var Rule = require('luat-co-thu').Xiangqi;
 var dictionary = require('../../../../config/dictionary.json');
 var BoardBase = require('../base/boardBase');
+var pomelo = require('pomelo');
 
 
 
 function Game(table, opts) {
+  opts = opts || {};
   this.game = new Rule(false, opts.fen,  [],  []);
   this.turn = '';
   this.table = table;
@@ -30,6 +32,8 @@ function Game(table, opts) {
   this.legalMoves = {};
   this.isCheck = {};
   this.numMove = 0;
+  this.firstTurn = opts.turn;
+  this.formationId = opts.id;
   this.maxMove = opts.numMove;
   this.formationName = opts.name;
   this.win = opts.win;
@@ -41,7 +45,7 @@ Game.prototype.close = function () {
 };
 
 Game.prototype.init = function () {
-  var i, len;
+  var i;
   this.table.timer.stop();
   this.game.startGame();
   this.table.status = consts.BOARD_STATUS.PLAY;
@@ -59,36 +63,20 @@ Game.prototype.init = function () {
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
+    player.menu = [];
+    player.genStartMenu();
+    player.startGame();
     if (this.playerPlayingId.indexOf(player.uid) > -1){
       player.totalTime = this.table.totalTime;
-      if (player.color === consts.COLOR.WHITE ){
+      player.removeMenu(consts.ACTION.CHANGE_SIDE);
+      if (player.color === consts.COLOR.WHITE) {
         this.whiteUid = player.uid;
-      }else {
+      } else {
         this.blackUid = player.uid;
       }
     }
   }
-  var lock = false;
-  if (this.game.lockModes.length > 0){
-    var moveInit = [];
-    var moveAfter = [];
-    for (i = 0, len = this.game.lockModes.length; i< len; i ++){
-      var square = this.game.lockModes[i];
-      if (square < 6){
-        lock = true;
-        var config = consts.LOCK_MODE_MAP[square];
-        moveInit.push([config.before[0],config.after[0]]);
-        moveAfter.push([config.before[1],config.after[1]]);
-      }
-    }
-  }
-  if (lock){
-    this.table.pushMessage('game.gameHandler.startGame', {sleep : 500});
-    this.table.pushMessage('game.gameHandler.action',{move : moveInit, sleep: 500});
-    this.table.pushMessage('game.gameHandler.action',{move : moveAfter});
-  }else {
-    this.table.pushMessage('game.gameHandler.startGame', {});
-  }
+  this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   this.table.emit('startGame', this.playerPlayingId);
   var gameStatus = this.game.getBoardStatus();
   this.setOnTurn(gameStatus);
@@ -115,8 +103,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
-  console.log('setOnTurn with turnTime : ', turnTime);
-  console.log('addTurnTime : ', turnTime);
   this.table.jobId = this.table.timer.addJob(function () {
     self.finishGame(consts.WIN_TYPE.LOSE);
   }, null, turnTime + 2000);
@@ -125,12 +111,29 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 Game.prototype.progress = function () {
   var gameStatus = this.game.getBoardStatus();
+  var result = gameStatus.matchResult === 'thuaRoi'
+    ? consts.WIN_TYPE.LOSE
+    : gameStatus.matchResult === 'thangRoi'
+    ? consts.WIN_TYPE.WIN
+    : consts.WIN_TYPE.DRAW;
+  if (gameStatus.isWhiteTurn && this.maxMove === this.numMove){
+    if(this.win === result){
+      return this.finishGame(consts.WIN_TYPE.WIN, this.whiteUid);
+    }else {
+      return this.finishGame(consts.WIN_TYPE.LOSE, this.whiteUid);
+    }
+  }
   if (gameStatus.matchResult){
-    var result = gameStatus.matchResult === 'thuaRoi'
-      ? consts.WIN_TYPE.LOSE
-      : gameStatus.matchResult === 'thangRoi'
-        ? consts.WIN_TYPE.WIN
-        : consts.WIN_TYPE.DRAW;
+    switch (result){
+      case consts.WIN_TYPE.WIN:
+        break;
+      case consts.WIN_TYPE.LOSE:
+        break;
+      case consts.WIN_TYPE.DRAW:
+        break;
+      default:
+        break;
+    }
     return this.finishGame(result);
   }else {
     return this.setOnTurn(gameStatus);
@@ -174,10 +177,24 @@ Game.prototype.finishGame = function (result, uid) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
-  if (this.hallId === consts.HALL_ID.LIET_CHAP){
-    this.allowLockMode = true;
-  }
-  this.game = new Game(this);
+  this.formationMode = true;
+  this.formation = null;
+  var self = this;
+  pomelo.app.get('mysqlClient')
+    .XiangqiFormation
+    .findOne({
+      where: {
+        status: 1
+      },
+      limit: 1,
+      raw : true,
+      attributes: ['id', 'fen', 'rank', 'name', 'win', 'turn', 'numMove']
+    })
+    .then(function (formation) {
+      self.formation = formation;
+      console.log('formation : ', formation);
+      self.game = new Game(self, formation);
+    });
   //var self = this;
   this.addFunction = [
     //function (properties, dataChanged, dataUpdate, changed, done) {
@@ -195,7 +212,7 @@ Table.prototype.pushFinishGame = function (msg, finish) {
   Table.super_.prototype.pushFinishGame.call(this, msg, finish);
 };
 
-Table.prototype.getStatus = function () {
+Table.prototype.getStatus = function (uid) {
   var status = Table.super_.prototype.getStatus.call(this);
   var boardStatus = this.game.game.getBoardStatus();
   status.board = boardStatus.piecePositions;
@@ -204,13 +221,24 @@ Table.prototype.getStatus = function () {
     ? { king : boardStatus.checkInfo.kingPosition, attack : boardStatus.checkInfo.attackerPositions}
     : undefined;
   status.score  = this.score;
-  status.lock = this.game.game.lockSquares;
-  status.remove = this.game.game.handicapSquares;
   status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
     status.turn.moves   = this.game.legalMoves;
   }
+  status.formation = {
+    name : this.game.formationName,
+    maxMove : this.game.maxMove,
+    id : this.game.id,
+    total : 2,
+    status : this.formationMode
+      ? uid === this.owner
+        ? 1
+        : 0
+      : 0,
+    color : consts.COLOR.WHITE,
+    win : this.game.win
+  };
   return status
 };
 
@@ -261,12 +289,18 @@ Table.prototype.action = function (uid, opts, cb) {
       killed : killed ? [[opts.move[1],killed]] : undefined
     };
     this.game.numMove += 1;
-    this.pushMessage('game.gameHandler.action', { move : [opts.move]});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    player.move();
+    var result = player.move();
+    if (result){
+      // change Menu
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move]});
+    }else {
+      this.pushMessage('game.gameHandler.action', { move : [opts.move]});
+    }
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {
@@ -283,7 +317,7 @@ Table.prototype.finishGame = function () {
 Table.prototype.reset = function () {
   this.game.close();
   this.game = null;
-  this.game = new Game(this);
+  this.game = new Game(this, this.formation);
 };
 
 Table.prototype.demand = function (opts) {
@@ -293,40 +327,6 @@ Table.prototype.demand = function (opts) {
     return { ec : Code.FAIL};
   }
   switch (opts.id){
-    case consts.ACTION.DE_LAY:
-      otherPlayerUid = this.players.getOtherPlayer(uid);
-      if (lodash.isNumber(opts.accept)){
-        // trả lời request
-        otherPlayer = this.players.getPlayer(otherPlayerUid);
-        if (opts.accept && otherPlayer.requestDelay){
-          // xử lý hoãn nước đi;
-          if (this.jobId){
-            this.timer.cancelJob(this.jobId);
-          }
-          this.pushMessage('game.gameHandler.action', { move : [this.game.previousMove.move], add : this.game.previousMove.killed, rollBack : 1});
-          this.game.game.takeBack(this.game.previousChange);
-          this.game.progress();
-          return {};
-        }else {
-          otherPlayer.requestDelay = false;
-          return {};
-        }
-      }else {
-        //request
-        if (player.timeDelay && this.game.numMove - player.timeDelay < 10){
-          return {ec : Code.FAIL};
-        }
-        if (player.numDelay <= 0){
-          return {ec : Code.FAIL};
-        }
-        player.xinThua(this.game.numMove);
-        this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
-          id : consts.ACTION.DE_LAY,
-          msg : "Đối thủ muốn xin hoãn một nước đi",
-          time : 10000
-        })
-      }
-      break;
     case consts.ACTION.DRAW:
       otherPlayerUid = this.players.getOtherPlayer(uid);
       if (lodash.isNumber(opts.accept)){
@@ -357,8 +357,29 @@ Table.prototype.demand = function (opts) {
   }
 };
 
-Table.prototype.changeFormation = function (opts,cb) {
-    
+Table.prototype.changeFormation = function (opts) {
+  this.game.close();
+  this.formation = opts;
+  this.game = new Game(this,opts);
+  this.formationMode = false;
+  var ownerPlayer = this.players.getPlayer(this.owner);
+  ownerPlayer.removeMenu(consts.ACTION.SELECT_FORMATION);
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_FORMATION));
+  this.players.unReadyAll();
+  var boardState = this.getBoardState();
+  this.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+};
+
+Table.prototype.selectFormationMode = function () {
+  this.formationMode = true;
+  var ownerPlayer = this.players.getPlayer(this.owner);
+  ownerPlayer.removeMenu(consts.ACTION.CHANGE_FORMATION);
+  ownerPlayer.removeMenu(consts.ACTION.START_GAME);
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.SELECT_FORMATION));
+  // todo push cho người chơi khác biết là chủ bàn đang chọn thế
+  return { menu : ownerPlayer.menu};
 };
 
 
@@ -366,19 +387,7 @@ Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
   Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
-    if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-      var ownerPlayer = self.players.getPlayer(self.owner);
-      if (ownerPlayer.color === consts.COLOR.WHITE){
-        self.game.game.isWhiteTurn = true;
-      }else {
-        self.game.game.isWhiteTurn = false;
-      }
-      console.log('turnToMode : ');
-      self.game.game.turnToMode();
-      var boardState = self.getBoardState(uid);
-      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-    }
-    return utils.invokeCallback(cb, err, res)
+
   });
 };
 

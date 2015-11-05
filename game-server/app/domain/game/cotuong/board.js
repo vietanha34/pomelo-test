@@ -57,6 +57,9 @@ Game.prototype.init = function () {
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
     if (this.playerPlayingId.indexOf(player.uid) > -1){
+      player.menu = [];
+      player.genStartMenu();
+      player.startGame();
       player.totalTime = this.table.totalTime;
       if (player.color === consts.COLOR.WHITE ){
         this.whiteUid = player.uid;
@@ -80,11 +83,11 @@ Game.prototype.init = function () {
     }
   }
   if (lock){
-    this.table.pushMessage('game.gameHandler.startGame', {sleep : 500});
+    this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep : 500});
     this.table.pushMessage('game.gameHandler.action',{move : moveInit, sleep: 500});
     this.table.pushMessage('game.gameHandler.action',{move : moveAfter});
   }else {
-    this.table.pushMessage('game.gameHandler.startGame', {});
+    this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   }
   this.table.emit('startGame', this.playerPlayingId);
   var gameStatus = this.game.getBoardStatus();
@@ -282,12 +285,18 @@ Table.prototype.action = function (uid, opts, cb) {
       killed : killed ? [[opts.move[1],killed]] : undefined
     };
     this.game.numMove += 1;
-    this.pushMessage('game.gameHandler.action', { move : [opts.move]});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    player.move();
+    var result = player.move();
+    if (result){
+      // change Menu
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move]});
+    }else {
+      this.pushMessage('game.gameHandler.action', { move : [opts.move]});
+    }
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {
@@ -333,6 +342,9 @@ Table.prototype.demand = function (opts) {
           return {};
         }
       }else {
+        if (otherPlayerUid !== this.turnUid){
+          return {ec : Code.FAIL};
+        }
         //request
         if (player.timeDelay && this.game.numMove - player.timeDelay < 10){
           return {ec : Code.FAIL};
@@ -340,12 +352,13 @@ Table.prototype.demand = function (opts) {
         if (player.numDelay <= 0){
           return {ec : Code.FAIL};
         }
-        player.xinThua(this.game.numMove);
+        player.xinHoan(this.game.numMove);
         this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
           id : consts.ACTION.DE_LAY,
           msg : "Đối thủ muốn xin hoãn một nước đi",
           time : 10000
-        })
+        });
+        return {menu : player.menu}
       }
       break;
     case consts.ACTION.DRAW:
