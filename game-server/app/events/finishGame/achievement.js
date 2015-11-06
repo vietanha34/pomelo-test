@@ -82,6 +82,15 @@ module.exports.process = function (app, type, param) {
       user1Elo = Math.max(user1Elo, consts.MIN_ELO);
       user2Elo = Math.max(user2Elo, consts.MIN_ELO);
 
+      achievements[user1Index][attr] = user1Elo;
+      achievements[user2Index][attr] = user2Elo;
+      achievements[0].save().then(function(e) {
+        if (e) console.error(e.stack || e);
+      });
+      achievements[1].save().then(function(e) {
+        if (e) console.error(e.stack || e);
+      });
+
       var mongoClient = pomelo.app.get('mongoClient');
       var Top = mongoClient.model('Top');
 
