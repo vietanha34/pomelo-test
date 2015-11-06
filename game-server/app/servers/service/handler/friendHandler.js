@@ -56,7 +56,6 @@ Handler.prototype.reject = function reject(msg, session, next) {
 Handler.prototype.getListFriend = function getListFriend(msg, session, next) {
   FriendDao.getFullList(session.uid, 0)
     .then(function(res) {
-      utils.log('res: ', res);
       return utils.invokeCallback(next, null, res);
     })
     .catch(function(e) {

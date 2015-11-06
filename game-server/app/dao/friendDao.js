@@ -226,7 +226,7 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
   return redis.zrangeAsync(params)
     .then(function(list) {
       if (!list || !list.length) {
-        return utils.invokeCallback(cb, null, []);
+        return utils.invokeCallback(cb, null, {list: []});
       }
 
       var uids = [];
@@ -240,41 +240,41 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
       return UserDao.getUsersPropertiesByUids(uids, properties)
         .then(function(users) {
           users = users || [];
-          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)
-          (uids, true, function (e, statuses) {
-            statuses = statuses || [];
-            for (i = 0; i < users.length; i++) {
-              if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
-                users[i].status = consts.ONLINE_STATUS.OFFLINE;
-              else if (!statuses[users[i].userId].board)
-                users[i].status = consts.ONLINE_STATUS.ONLINE;
-              else if (typeof statuses[users[i].userId].board == 'string') {
-                var tmp = statuses[users[i].userId].board.split(':');
-                users[i].status = tmp.length > 1
-                  ? (Number(tmp[1]))
-                  : consts.ONLINE_STATUS.ONLINE;
-                users[i].boardId = tmp[0];
+          utils.log(uids, users);
+          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)(uids, true)
+            .then(function(statuses) {
+              utils.log(statuses);
+              statuses = statuses || [];
+              for (i = 0; i < users.length; i++) {
+                if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
+                  users[i].status = consts.ONLINE_STATUS.OFFLINE;
+                else if (!statuses[users[i].userId].board)
+                  users[i].status = consts.ONLINE_STATUS.ONLINE;
+                else if (typeof statuses[users[i].userId].board == 'string') {
+                  var tmp = statuses[users[i].userId].board.split(':');
+                  users[i].status = tmp.length > 1
+                    ? (Number(tmp[1]))
+                    : consts.ONLINE_STATUS.ONLINE;
+                  users[i].boardId = tmp[0];
+                }
+                else users[i].status = consts.ONLINE_STATUS.ONLINE;
+
+                users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
+                users[i].friendStatus = FriendStatuses[users[i].uid] || 0;
               }
-              else users[i].status = consts.ONLINE_STATUS.ONLINE;
 
-              users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
-              users[i].friendStatus = FriendStatuses[users[i].uid] || 0;
-            }
+              users.sort(function(a, b) {
+                return a.friendStatus - b.friendStatus;
+              });
 
-            users.sort(function(a, b) {
-              return a.friendStatus - b.friendStatus;
+              return utils.invokeCallback(cb, null, {list: users});
             });
-
-            utils.log(typeof users, users, uids);
-
-            return utils.invokeCallback(cb, null, {list: users});
-          });
         });
     })
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
-      return utils.invokeCallback(cb, null, []);
+      return utils.invokeCallback(cb, null, {list: []});
     });
 };
 
@@ -307,6 +307,9 @@ FriendDao.search = function search(params, cb) {
     .select({uid: 1})
     .then(function(list) {
       list = list || [];
+      if (!list.length)
+        return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: params.page || 1});
+
       var uids= [];
       for (var i=0; i<list.length; i++)
         if (list[i].uid) uids.push(list[i].uid);
@@ -316,36 +319,36 @@ FriendDao.search = function search(params, cb) {
         .then(function(users) {
           users = users || [];
 
-          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)
-          (uids, true, function (e, statuses) {
-            statuses = statuses || [];
-            for (i = 0; i < users.length; i++) {
-              if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
-                users[i].status = consts.ONLINE_STATUS.OFFLINE;
-              else if (!statuses[users[i].userId].board)
-                users[i].status = consts.ONLINE_STATUS.ONLINE;
-              else if (typeof statuses[users[i].userId].board == 'string') {
-                var tmp = statuses[users[i].userId].board.split(':');
-                users[i].status = tmp.length > 1
-                  ? (Number(tmp[1]))
-                  : consts.ONLINE_STATUS.ONLINE;
-                users[i].boardId = tmp[0];
+          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)(uids, true)
+            .then(function(statuses) {
+              statuses = statuses || [];
+              for (i = 0; i < users.length; i++) {
+                if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
+                  users[i].status = consts.ONLINE_STATUS.OFFLINE;
+                else if (!statuses[users[i].userId].board)
+                  users[i].status = consts.ONLINE_STATUS.ONLINE;
+                else if (typeof statuses[users[i].userId].board == 'string') {
+                  var tmp = statuses[users[i].userId].board.split(':');
+                  users[i].status = tmp.length > 1
+                    ? (Number(tmp[1]))
+                    : consts.ONLINE_STATUS.ONLINE;
+                  users[i].boardId = tmp[0];
+                }
+                else users[i].status = consts.ONLINE_STATUS.ONLINE;
+
+                users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
               }
-              else users[i].status = consts.ONLINE_STATUS.ONLINE;
 
-              users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
-            }
+              users.sort(function(a, b) {
+                return a.fullname - b.fullname;
+              });
 
-            users.sort(function(a, b) {
-              return a.fullname - b.fullname;
+              return utils.invokeCallback(cb, null, {
+                list: users,
+                hasNext: (users.length > consts.FRIEND.PER_PAGE) ? 1 : 0,
+                page: params.page || 1
+              });
             });
-
-            return utils.invokeCallback(cb, null, {
-              list: users,
-              hasNext: (users.length > consts.FRIEND.PER_PAGE) ? 1 : 0,
-              page: params.page || 1
-            });
-          });
         });
     })
     .catch(function(e) {

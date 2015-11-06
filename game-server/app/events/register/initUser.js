@@ -30,4 +30,19 @@ module.exports.type = Config.TYPE.REGISTER;
  * @param param
  */
 module.exports.process = function (app, type, param) {
+  if (!param.uid || !param.username) {
+    console.error('wrong param register: ', param);
+    return;
+  }
+
+  var Achievement = pomelo.app.get('mysqlClient').Achievement;
+  Achievement
+    .create({
+      uid: param.uid,
+      username: param.username,
+      userCount: param.userCount||1
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+    });
 };

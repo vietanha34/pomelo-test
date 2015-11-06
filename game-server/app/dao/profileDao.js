@@ -101,6 +101,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
   }
   else { // update password or profile
     if (!uid
+      || (params.password && params.password.length < 5)
+      || (params.oldPassword && params.password != params.oldPassword)
+      || (params.fullname && params.fullname.length < 2)
       || (params.birthday && !regexValid.validDate(params.birthday))
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
       || (params.phone && !regexValid.validPhone(params.phone))
@@ -126,6 +129,13 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
           else {
             return UserDao.updateProperties(uid, params)
               .then(function(){
+
+                var mongoClient = pomelo.app.get('mongoClient');
+                var Top = mongoClient.model('Top');
+                Top.update({uid: uid}, {fullname: params.fullname}, {upsert: false}, function(e) {
+                  if (e) console.error(e.stack || e);
+                });
+
                 return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.SUCCESS});
               });
           }
@@ -387,4 +397,36 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
       });
   }
+};
+
+/**
+ *
+ * @param params
+ *  uid
+ * @param cb
+ */
+ProfileDao.updateUser = function updateUser(params, cb) {
+  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint', 'exp'];
+  return UserDao.getUserProperties(params.uid, properties)
+    .then(function(user) {
+      if (!user || !user.fullname) return;
+
+      user.dtId = user.distributorId || 1;
+      delete user.distributorId;
+      user.updatedAt = new Date();
+
+      var mongoClient = pomelo.app.get('mongoClient');
+      var Top = mongoClient.model('Top');
+
+      Top.update({uid: params.uid}, user, {upsert: true}, function(e) {
+        if (e) console.error(e.stack || e);
+      });
+
+      return utils.invokeCallback(cb);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb);
+    });
 };

@@ -606,5 +606,8 @@ module.exports = {
     PER_PAGE: 20
   },
 
-  MAX_FRIEND: 1000
+  MAX_FRIEND: 1000,
+
+  MIN_ELO: 800,
+  DEFAULT_ELO: 1000
 };
