@@ -422,6 +422,19 @@ ProfileDao.updateUser = function updateUser(params, cb) {
         if (e) console.error(e.stack || e);
       });
 
+      var Achievement = pomelo.app.get('mysqlClient').Achievement;
+      Achievement
+        .findOrCreate({
+          where: {uid: params.uid},
+          defaults: {
+            username: user.username,
+            userCount: 1
+          }
+        })
+        .catch(function(e) {
+          console.error(e.stack || e);
+        });
+
       return utils.invokeCallback(cb);
     })
     .catch(function(e) {

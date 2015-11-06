@@ -36,6 +36,26 @@ formula.calLevel = function calLevel(exp) {
   return i+Math.floor((exp-950650)/50000);
 };
 
-formula.calElo = function calElo(type, meElo, opElo) {
-  return 10; // todo
+formula.calElo = function calElo(type, user1Elo, user2Elo) {
+  var Aa = type == consts.WIN_TYPE.WIN ? 1 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 0);
+  var Ab = type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1);
+  var Qa = Math.pow(10, user1Elo/400);
+  var Qb = Math.pow(10, user2Elo/400);
+  var sumQ = (Qa+Qb);
+  var Ea = Qa / sumQ;
+  var Eb = Qb / sumQ;
+  var Ka = formula.calK(user1Elo);
+  var Kb = formula.calK(user2Elo);
+
+  user1Elo += Ka*(Aa-Ea);
+  user2Elo += Kb*(Ab-Eb);
+
+  return [Math.max(user1Elo, consts.MIN_ELO), Math.max(user2Elo, consts.MIN_ELO)];
+};
+
+formula.calK = function calK(elo) {
+  if (elo < 1600) return 25;
+  else if (elo < 2000) return 20;
+  else if (elo < 2400) return 15;
+  else return 10;
 };

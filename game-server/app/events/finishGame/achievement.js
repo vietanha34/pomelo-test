@@ -74,13 +74,10 @@ module.exports.process = function (app, type, param) {
       user1Elo = achievements[user1Index][attr] || consts.MIN_ELO;
       user2Elo = achievements[user2Index][attr] || consts.MIN_ELO;
 
-      var elo1 = formula.calElo(param.users[0].result.type, user1Elo, user2Elo) || 0;
-      var elo2 = formula.calElo(param.users[1].result.type, user2Elo, user1Elo) || 0;
-      user1Elo += elo1;
-      user2Elo += elo2;
+      var newElo = formula.calElo(param.users[0].result.type, user1Elo, user2Elo);
 
-      user1Elo = Math.max(user1Elo, consts.MIN_ELO);
-      user2Elo = Math.max(user2Elo, consts.MIN_ELO);
+      user1Elo = newElo[0];
+      user2Elo = newElo[1];
 
       achievements[user1Index][attr] = user1Elo;
       achievements[user2Index][attr] = user2Elo;

@@ -56,6 +56,32 @@ Handler.prototype.reject = function reject(msg, session, next) {
 Handler.prototype.getListFriend = function getListFriend(msg, session, next) {
   FriendDao.getFullList(session.uid, 0)
     .then(function(res) {
+      res = {
+        list: [
+          {
+            uid: 1435,
+            fullname: 'Kiên đẹp trai',
+            avatar: {id: 0},
+            sex: 0,
+            gold: 10000,
+            statusMsg: 'Hận đời vô đối',
+            level: 2,
+            status: 99,
+            friendStatus: 2
+          },
+          {
+            uid: 412,
+            fullname: 'Pikachu',
+            avatar: {id: 0},
+            sex: 1,
+            gold: 123456,
+            statusMsg: 'hihi',
+            level: 3,
+            status: -1,
+            friendStatus: 2
+          }
+        ]
+      };
       return utils.invokeCallback(next, null, res);
     })
     .catch(function(e) {
@@ -68,6 +94,34 @@ Handler.prototype.searchFriend = function searchFriend(msg, session, next) {
   msg.uid = session.uid;
   FriendDao.search(msg)
     .then(function(res) {
+      res = {
+        list: [
+          {
+            uid: 1435,
+            fullname: 'Kiên đẹp trai',
+            avatar: {id: 0},
+            sex: 0,
+            gold: 10000,
+            statusMsg: 'Hận đời vô đối',
+            level: 2,
+            status: 99,
+            friendStatus: 2
+          },
+          {
+            uid: 412,
+            fullname: 'Pikachu',
+            avatar: {id: 0},
+            sex: 1,
+            gold: 123456,
+            statusMsg: 'hihi',
+            level: 3,
+            status: -1,
+            friendStatus: 2
+          }
+        ],
+        hasNext: 1,
+        page: msg.page || 1
+      };
       return utils.invokeCallback(next, null, res);
     })
     .catch(function(e) {
