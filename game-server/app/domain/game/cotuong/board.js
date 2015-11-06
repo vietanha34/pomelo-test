@@ -289,7 +289,7 @@ Table.prototype.action = function (uid, opts, cb) {
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    var result = player.move();
+    var result = player.move(this.game.numMove);
     if (result){
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu});

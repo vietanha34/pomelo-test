@@ -153,23 +153,23 @@ var Board = function (opts, PlayerPool, Player) {
     //  change color
     function (properties, dataChanged, dataUpdate, changed, done) {
       var color = properties.color;
-      if (lodash.isNumber(color) || (color !== 1 && color !== 2 && color !== 0)) return done(null, properties, dataChanged, dataUpdate, changed);
+      if (!lodash.isNumber(color) || (color !== 1 && color !== 2 && color !== 0)) return done(null, properties, dataChanged, dataUpdate, changed);
       var uid = properties.uid;
       var player = self.players.getPlayer(uid);
       if (player && player.color !== color){
         var otherPlayerUid = self.players.getOtherPlayer();
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
         if (!color){ // color === 0
-          if (otherPlayer)
+          if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
           player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }else {
           player.color = color;
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }
         changed = true;
-        var temp = self.mapColor[0];
-        self.mapColor[0] = self.mapColor[1];
-        self.mapColor[1] = temp;
+        var temp = self.players.mapColor[0];
+        self.players.mapColor[0] = self.players.mapColor[1];
+        self.players.mapColor[1] = temp;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }

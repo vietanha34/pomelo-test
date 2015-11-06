@@ -34,11 +34,13 @@ var Player = function (opts) {
   this.totalTimeDefault = opts.totalTime;
   this.timeTurnStart = Date.now();
   this.numDelay = 2;
+  this.numDraw = 3;
   this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoà
   this.requestDraw  = false;
   this.requestDelay = false;
   this.disableDelay = false;
+  this.disableDraw = false;
 };
 
 util.inherits(Player, PlayerBase);
@@ -58,7 +60,9 @@ Player.prototype.xinHoan = function (numMove) {
 
 Player.prototype.xinHoa = function (numMove) {
   this.requestDraw = true;
-  this.timeDraw  = numMove
+  this.timeDraw  = numMove;
+  this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { disable : 1 , count : this.numDelay}));
+  this.disableDraw = true;
 };
 
 Player.prototype.move = function (numMove) {
@@ -70,6 +74,10 @@ Player.prototype.move = function (numMove) {
   }else
   if (this.disableDelay && numMove - this.timeDelay >= 10 && this.numDelay > 0){
     this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
+    return true
+  }
+  if (this.disableDraw && numMove - this.timeDraw >= 10 && this.numDraw > 0){
+    this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     return true
   }
 };
@@ -88,7 +96,7 @@ Player.prototype.genStartMenu = function () {
   Player.super_.prototype.genMenu.call(this);
   if (!this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, {disable : 1, count : this.numDelay}));
-    this.pushMenu(this.table.genMenu(consts.ACTION.DRAW));
+    this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };

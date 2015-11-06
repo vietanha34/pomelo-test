@@ -236,6 +236,7 @@ Table.prototype.getStatus = function (uid) {
         ? 1
         : 0
       : 0,
+    turn : this.game.firstTurn,
     color : consts.COLOR.WHITE,
     win : this.game.win
   };
@@ -358,14 +359,17 @@ Table.prototype.demand = function (opts) {
 };
 
 Table.prototype.changeFormation = function (opts) {
+  var changeSide = opts.changeSide;
   this.game.close();
   this.formation = opts;
   this.game = new Game(this,opts);
   this.formationMode = false;
   var ownerPlayer = this.players.getPlayer(this.owner);
   ownerPlayer.removeMenu(consts.ACTION.SELECT_FORMATION);
+  var otherPlayerUid = this.players.getOtherPlayer();
+  var otherPlayer = this.players.getPlayer(otherPlayerUid);
+  otherPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
-  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_FORMATION));
   this.players.unReadyAll();
   var boardState = this.getBoardState();

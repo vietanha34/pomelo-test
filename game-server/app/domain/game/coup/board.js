@@ -89,7 +89,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.jobId = this.table.timer.addJob(function () {
     self.finishGame(consts.WIN_TYPE.LOSE);
-  }, null, turnTime);
+  }, null, turnTime + 2000);
 };
 
 

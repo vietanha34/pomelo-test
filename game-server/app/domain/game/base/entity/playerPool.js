@@ -576,5 +576,9 @@ pro.checkStartGame = function () {
   }
 };
 
+pro.changeColor = function () {
+  
+};
+
 
 module.exports = PlayerPool;

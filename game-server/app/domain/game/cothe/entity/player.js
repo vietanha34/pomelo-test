@@ -73,7 +73,12 @@ Player.prototype.genMenu = function (guest) {
         this.menu.push(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
       }
     }else {
-
+      if (this.table.formationMode){
+        this.removeMenu(consts.ACTION.START_GAME);
+        this.menu.push(this.table.genMenu(consts.ACTION.SELECT_FORMATION))
+      }else {
+        this.menu.push(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
+      }
     }
   }
 };
@@ -81,7 +86,6 @@ Player.prototype.genMenu = function (guest) {
 Player.prototype.genStartMenu = function (guest) {
   Player.super_.prototype.genMenu.call(this);
   if (!guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.DRAW));
     this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
