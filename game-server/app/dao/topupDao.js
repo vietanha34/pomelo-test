@@ -28,8 +28,8 @@ TopupDao.topup = function topup(params, cb) {
 
   try {
     if (params.gold > 0) {
-      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.addBalance)
-        ({uid: params.uid}, params, function (e, res) {
+      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.addBalance)({uid: params.uid}, params)
+        .then(function (res) {
           res = res || {};
           res.addGold = params.gold;
           if (res.ec) {
@@ -40,8 +40,8 @@ TopupDao.topup = function topup(params, cb) {
     }
     else {
       params.gold = Math.abs(params.gold);
-      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.subBalance)
-        ({uid: params.uid}, params, function (e, res) {
+      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.subBalance)({uid: params.uid}, params)
+        .then(function (e, res) {
           res = res || {};
           res.subGold = -params.gold;
           if (res.ec) {

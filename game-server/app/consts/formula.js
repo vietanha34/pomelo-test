@@ -35,3 +35,7 @@ formula.calLevel = function calLevel(exp) {
   }
   return i+Math.floor((exp-950650)/50000);
 };
+
+formula.calElo = function calElo(type, meElo, opElo) {
+  return 10; // todo
+};

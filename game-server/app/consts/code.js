@@ -274,5 +274,25 @@ module.exports = {
     GO_HOME: 1,
     GO_LOGIN: 2,
     NORMAL: 3
+  },
+
+  FRIEND_STATUS: {
+    UNFRIEND: 0,
+    FRIEND: 2,
+    WAITING: 3,
+    PENDING: 1
+  },
+
+  FRIEND_LANGUAGE: {
+    REQUEST_OK: 'Gửi lời mời kết bạn thành công',
+    REQUEST: 'Yêu cầu kết bạn',
+    FRIEND_SUCCESS: 'Kết bạn thành công',
+    ACCEPT_FRIEND: '%s đã chấp nhận lời mời kết bạn của bạn',
+    ALREADY_FRIEND: 'Bạn và người chơi này đã là bạn bè rồi',
+    CANCEL_BEFORE: 'Yêu cầu kết bạn đã bị hủy trước đó',
+    ACCEPT: 'Đồng ý',
+    REQUEST_TO_YOU: '%s vừa gửi lời mời kết bạn tới bạn',
+    REJECT_OK: 'Đã từ chối kết bạn',
+    UNFRIEND_OK: 'Đã hủy bạn bè thành công'
   }
 };

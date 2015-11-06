@@ -55,8 +55,8 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.game = consts.GAME_MAP[user.gameId];
       user.elo = max;
       user.eloLevel = code.ELO_LANGUAGE[formula.calEloLevel(user.elo)];
-      var exp = user.exp || 0;
-      user.exp = [exp, formula.calExp(formula.calLevel(exp) + 1)];
+      var vipPoint = user.vipPoint || 0;
+      user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
       user.vipLevel = formula.calVipLevel(user.vipPoint);
 
       return utils.invokeCallback(cb, null, user);
@@ -101,6 +101,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
   }
   else { // update password or profile
     if (!uid
+      || (params.password && params.password.length < 5)
+      || (params.oldPassword && params.password != params.oldPassword)
+      || (params.fullname && params.fullname.length < 2)
       || (params.birthday && !regexValid.validDate(params.birthday))
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
       || (params.phone && !regexValid.validPhone(params.phone))
@@ -126,6 +129,13 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
           else {
             return UserDao.updateProperties(uid, params)
               .then(function(){
+
+                var mongoClient = pomelo.app.get('mongoClient');
+                var Top = mongoClient.model('Top');
+                Top.update({uid: uid}, {fullname: params.fullname}, {upsert: false}, function(e) {
+                  if (e) console.error(e.stack || e);
+                });
+
                 return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.SUCCESS});
               });
           }
@@ -160,7 +170,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         name = consts.UMAP_GAME_NAME[list[i]];
         elo = achievement[name+'Elo'] || 0;
         res.list.push({
-          gameId: list[i],
+          gameId: Number(list[i]),
           game: consts.GAME_MAP[list[i]],
           elo: elo,
           eloLevel: code.ELO_LANGUAGE[elo],
@@ -195,7 +205,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
 
             res.info = user;
 
-            user
+            user = null;
             return utils.invokeCallback(cb, null, res);
           });
       }
@@ -229,7 +239,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   var GameHistory = mongoClient.model('GameHistory');
 
   var condition;
-  if (!params.name) { // TH không tìm theo tên
+  if (!params.name || params.name.length < 2) { // TH không tìm theo tên
     condition = {
       gameId: params.gameId,
       uid: params.uid
@@ -387,4 +397,36 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
       });
   }
+};
+
+/**
+ *
+ * @param params
+ *  uid
+ * @param cb
+ */
+ProfileDao.updateUser = function updateUser(params, cb) {
+  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint', 'exp'];
+  return UserDao.getUserProperties(params.uid, properties)
+    .then(function(user) {
+      if (!user || !user.fullname) return;
+
+      user.dtId = user.distributorId || 1;
+      delete user.distributorId;
+      user.updatedAt = new Date();
+
+      var mongoClient = pomelo.app.get('mongoClient');
+      var Top = mongoClient.model('Top');
+
+      Top.update({uid: params.uid}, user, {upsert: true}, function(e) {
+        if (e) console.error(e.stack || e);
+      });
+
+      return utils.invokeCallback(cb);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb);
+    });
 };

@@ -10,11 +10,11 @@
 
 var Config = require('../config');
 var consts = require('../../consts/consts');
+var formula = require('../../consts/formula');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
 var lodash = require('lodash');
 var utils = require('../../util/utils');
-var logger = require('pomelo-logger').getLogger('game');
 var Promise = require('bluebird');
 
 
@@ -50,5 +50,68 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  * @param {Object} param
  */
 module.exports.process = function (app, type, param) {
- //hihi
+  if (!param.users || param.users!=2 || !param.boardInfo || !param.boardInfo.gameId) {
+   console.error('wrong param finish game: ', param);
+   return;
+  }
+
+  var gameName = (consts.UMAP_GAME_NAME[param.boardInfo.gameId] || 'tuong');
+  var attr = gameName + 'Elo';
+  var Achievement = pomelo.app.get('mysqlClient').Achievement;
+
+  var user1Elo, user2Elo;
+  var user1Index, user2Index;
+  Achievement
+    .findAll({
+      where: {uid: {$in: [param.users[0].uid, param.users[1].uid]}},
+      attributes: ['uid', attr]
+    })
+    .then(function(achievements) {
+      achievements = achievements || [{uid: param.users[0].uid}, {uid: param.users[1].uid}];
+      user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
+      user2Index = user1Index ? 0 : 1;
+
+      user1Elo = achievements[user1Index][attr] || consts.MIN_ELO;
+      user2Elo = achievements[user2Index][attr] || consts.MIN_ELO;
+
+      var elo1 = formula.calElo(param.users[0].result.type, user1Elo, user2Elo) || 0;
+      var elo2 = formula.calElo(param.users[1].result.type, user2Elo, user1Elo) || 0;
+      user1Elo += elo1;
+      user2Elo += elo2;
+
+      user1Elo = Math.max(user1Elo, consts.MIN_ELO);
+      user2Elo = Math.max(user2Elo, consts.MIN_ELO);
+
+      achievements[user1Index][attr] = user1Elo;
+      achievements[user2Index][attr] = user2Elo;
+      achievements[0].save().then(function(e) {
+        if (e) console.error(e.stack || e);
+      });
+      achievements[1].save().then(function(e) {
+        if (e) console.error(e.stack || e);
+      });
+
+      var mongoClient = pomelo.app.get('mongoClient');
+      var Top = mongoClient.model('Top');
+
+      var update1 = {};
+      update1[gameName] = user1Elo;
+      if (param.users[0].result.remain || param.users[0].result.remain === 0)
+        update1.gold = Number(param.users[0].result.remain);
+      Top.update({uid: param.users[0].uid}, update1, {upsert: false}, function(e) {
+        if (e) console.error(e.stack || e);
+      });
+
+      var update2 = {};
+      update2[gameName] = user2Elo;
+      if (param.users[1].result.remain || param.users[1].result.remain === 0)
+        update2.gold = Number(param.users[1].result.remain);
+      Top.update({uid: param.users[1].uid}, update2, {upsert: false}, function(e) {
+        if (e) console.error(e.stack || e);
+      });
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+    });
 };

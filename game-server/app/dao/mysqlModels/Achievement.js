@@ -1,3 +1,5 @@
+var consts = require('../../consts/consts');
+
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('Achievement', {
     uid : {
@@ -8,6 +10,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       allowNull: false,
       unique : true
+    },
+    userCount: {
+      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
+      defaultValue: '0'
     },
     tuongWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -22,8 +28,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     tuongElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     },
     theWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -38,8 +44,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     theElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     },
     upWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -54,8 +60,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     upElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     },
     vayWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -70,8 +76,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vayElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     },
     caroWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -86,8 +92,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     caroElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     },
     vuaWin: {
       type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
@@ -102,8 +108,8 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vuaElo: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
-      defaultValue: '0'
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
     }
   }, {
     classMethods: {

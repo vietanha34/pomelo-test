@@ -5,6 +5,7 @@
 
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
+var consts = require('../../../consts/consts');
 
 var TopSchema = new Schema({
   uid: { type : Number, default : 0},
@@ -15,12 +16,12 @@ var TopSchema = new Schema({
   gold: { type : Number, default : 0},
   vipPoint: { type : Number, default : 0},
   exp: { type : Number, default : 0},
-  tuong: { type : Number, default : 0},
-  up: { type : Number, default : 0},
-  the: { type : Number, default : 0},
-  vay: { type : Number, default : 0},
-  caro: { type : Number, default : 0},
-  vua: { type : Number, default : 0},
+  tuong: { type : Number, default : consts.DEFAULT_ELO},
+  up: { type : Number, default : consts.DEFAULT_ELO},
+  the: { type : Number, default : consts.DEFAULT_ELO},
+  vay: { type : Number, default : consts.DEFAULT_ELO},
+  caro: { type : Number, default : consts.DEFAULT_ELO},
+  vua: { type : Number, default : consts.DEFAULT_ELO},
   updatedAt: { type: Date, default: Date.now, expires: '30d' }
 }, { versionKey: false, id: false, _id: false, collection: 'Top'});
 

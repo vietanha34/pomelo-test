@@ -5,6 +5,7 @@
 var Config = require('../config');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
+var ProfileDao = require('../../dao/profileDao');
 
 module.exports.type = Config.TYPE.LOGIN;
 
@@ -24,4 +25,7 @@ module.exports.type = Config.TYPE.LOGIN;
  * @param param
  */
 module.exports.process = function (app, type, param) {
+  if (param.resume || !param.uid) return;
+
+  ProfileDao.updateUser(param);
 };

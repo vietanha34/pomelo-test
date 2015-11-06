@@ -600,5 +600,14 @@ module.exports = {
 
   PROFILE: {
     PER_PAGE: 5
-  }
+  },
+
+  FRIEND: {
+    PER_PAGE: 20
+  },
+
+  MAX_FRIEND: 1000,
+
+  MIN_ELO: 800,
+  DEFAULT_ELO: 1000
 };
