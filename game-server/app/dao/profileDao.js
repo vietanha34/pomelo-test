@@ -54,7 +54,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       }
       user.game = consts.GAME_MAP[user.gameId];
       user.elo = max;
-      user.eloLevel = code.ELO_LANGUAGE[formula.calEloLevel(user.elo)];
+      user.eloLevel = formula.calEloLevel(user.elo);
       var vipPoint = user.vipPoint || 0;
       user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
       user.vipLevel = formula.calVipLevel(user.vipPoint);
@@ -276,7 +276,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
             matchId: list[i].matchId,
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
-            time: moment(list[i].createdAt).unix(),
+            time: moment(list[i].createdAt).format('hh:mm DD/MM'),
             status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
           });
           uids.push(list[i].uids[otherIndex]);
@@ -368,7 +368,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
                     matchId: list[i].matchId,
                     uid: list[i].uids[otherIndex] || 0,
                     name: users[j].fullname || (list[i].usernames[otherIndex] || ''),
-                    time: moment(list[i].createdAt).unix(),
+                    time: moment(list[i].createdAt).format('hh:mm DD/MM'),
                     status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
                   });
 

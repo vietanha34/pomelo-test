@@ -8,6 +8,7 @@ var Promise = require('bluebird');
 var code = require('../consts/code');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
+var formula = require('../consts/formula');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var UserDao = require('../dao/userDao');
 
@@ -75,6 +76,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
       else list[i].status = consts.ONLINE_STATUS.ONLINE;
 
       list[i].avatar = utils.JSONParse(list[i].avatar, {id: 0});
+      list[i].vipLevel = formula.calVipLevel(Number(list[i].vipPoint) || 0);
 
       if (list[i].uid == uid) {
         me = utils.clone(list[i]);
@@ -120,8 +122,8 @@ TopDao.getTop = function getTop(uid, type, cb) {
         inTop = false;
       }
 
-      var properties = ['uid', 'fullname', 'avatar', 'sex'];
-      if (type == code.TOP_TYPE.VIP || type == code.TOP_TYPE.GOLD)
+      var properties = ['uid', 'fullname', 'avatar', 'sex', 'vipPoint'];
+      if (type == code.TOP_TYPE.GOLD)
         properties.push(attr);
 
       return UserDao.getUsersPropertiesByUids(uids, properties);
