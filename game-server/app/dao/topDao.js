@@ -122,7 +122,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
         inTop = false;
       }
 
-      var properties = ['uid', 'fullname', 'avatar', 'sex', 'vipPoint'];
+      var properties = ['uid', 'fullname', 'avatar', 'sex', 'vipPoint', 'statusMsg'];
       if (type == code.TOP_TYPE.GOLD)
         properties.push(attr);
 
