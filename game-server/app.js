@@ -116,7 +116,7 @@ app.configure('production|development', 'connector|gate', function(){
     });
 });
 
-app.configure('production|development|local', 'master|service|connector|manager', function () {
+app.configure('production|development|local', 'master|service|connector|manager|event', function () {
   var EventPlugin = require('pomelo-event-plugin');
   app.use(EventPlugin, {
     event : {

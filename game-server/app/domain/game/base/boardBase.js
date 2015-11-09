@@ -678,7 +678,7 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
         dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
         self.emit('setBoard', dataUpdate);
         self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
-        return utils.invokeCallback(cb, null, {});
+        return utils.invokeCallback(cb, null, dataChanged);
       } else {
         return utils.invokeCallback(cb, null, {ec: Code.FAIL});
       }

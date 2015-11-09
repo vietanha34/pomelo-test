@@ -7,6 +7,7 @@ var consts = require('../../../consts/consts');
 var channelUtil = require('../../../util/channelUtil');
 var utils = require('../../../util/utils');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
+var pomelo = require('pomelo');
 
 module.exports = function (app) {
 	return new Handler(app);
@@ -136,7 +137,6 @@ Handler.prototype.login = function (msg, session, next) {
 				uid: player.uid,
 				type: type
 			});
-			emitData.resume = 1;
 			emitData.boardId = boardId;
 		} else {
 			// người dùng chưa chơi game, cho vào hàm waitingService
@@ -146,9 +146,11 @@ Handler.prototype.login = function (msg, session, next) {
 				type: type,
 				tableId: ''
 			});
-			emitData.resume = 0;
 			//self.app.get('waitingService').add(session);
 		}
+    emitData.resume = msg.resume;
+    var emitterConfig = self.app.get('emitterConfig');
+    self.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGIN, emitData, function () {});
 		player = null;
 		msg = null;
 	})
@@ -176,12 +178,13 @@ var onUserLeave = function onUserLeave(app, session, reason) {
 		//	channelUtil.getGlobalChannelName(), function () {
 		//	});
 		//app.get('waitingService').leave(session.uid);
-		//var emitData = {
-		//	uid: session.uid,
-		//	lastLogin: session.get('lastLogin'),
-		//	boardId: session.get('tableId')
-		//};
-		//Emitter.emit(Emitter.CONFIG.TYPE.LOGOUT, emitData);
+		var emitData = {
+			uid: session.uid,
+			lastLogin: session.get('lastLogin'),
+			boardId: session.get('tableId')
+		};
+    var emitterConfig = pomelo.app.get('emitterConfig');
+    pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGOUT, emitData, function () {});
 		//app.get('authService').playGame({
 		//	accessToken: session.get('accessToken'),
 		//	ip: session.get('ip'),

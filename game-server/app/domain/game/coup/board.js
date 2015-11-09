@@ -247,10 +247,10 @@ Table.prototype.action = function (uid, opts, cb) {
     var result = player.move();
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move]});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [opts.move]});
+      this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
     }
     this.game.progress(boardStatus);
     return utils.invokeCallback(cb, null, {});
