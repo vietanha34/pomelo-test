@@ -21,9 +21,10 @@ module.exports = {
 
   HALL_ID : {
     MIEN_PHI : 1,
-    BINH_DAN : 2,
-    CAO_THU : 3,
-    LIET_CHAP : 4
+    TAP_SU : 2,
+    BINH_DAN : 3,
+    CAO_THU : 4,
+    LIET_CHAP : 5
   },
 
 
@@ -603,6 +604,10 @@ module.exports = {
   },
 
   FRIEND: {
+    PER_PAGE: 20
+  },
+
+  TOP: {
     PER_PAGE: 20
   },
 

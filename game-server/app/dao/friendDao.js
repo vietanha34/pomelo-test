@@ -157,7 +157,7 @@ FriendDao.reject = function reject(fromId, toId, cb) {
                 if (count || count===0) HomeDao.pushInfo(toId, {friendNotifyCount: count});
               });
 
-            return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.UNFRIEND_OK});
+            return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.UNFRIEND_OK, uid: toId});
           });
       }
       else {
@@ -246,12 +246,12 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
               utils.log(statuses);
               statuses = statuses || [];
               for (i = 0; i < users.length; i++) {
-                if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
+                if (!statuses[users[i].uid] || !statuses[users[i].uid].online)
                   users[i].status = consts.ONLINE_STATUS.OFFLINE;
-                else if (!statuses[users[i].userId].board)
+                else if (!statuses[users[i].uid].board)
                   users[i].status = consts.ONLINE_STATUS.ONLINE;
-                else if (typeof statuses[users[i].userId].board == 'string') {
-                  var tmp = statuses[users[i].userId].board.split(':');
+                else if (typeof statuses[users[i].uid].board == 'string') {
+                  var tmp = statuses[users[i].uid].board.split(':');
                   users[i].status = tmp.length > 1
                     ? (Number(tmp[1]))
                     : consts.ONLINE_STATUS.ONLINE;
@@ -323,12 +323,12 @@ FriendDao.search = function search(params, cb) {
             .then(function(statuses) {
               statuses = statuses || [];
               for (i = 0; i < users.length; i++) {
-                if (!statuses[users[i].userId] || !statuses[users[i].userId].online)
+                if (!statuses[users[i].uid] || !statuses[users[i].uid].online)
                   users[i].status = consts.ONLINE_STATUS.OFFLINE;
-                else if (!statuses[users[i].userId].board)
+                else if (!statuses[users[i].uid].board)
                   users[i].status = consts.ONLINE_STATUS.ONLINE;
-                else if (typeof statuses[users[i].userId].board == 'string') {
-                  var tmp = statuses[users[i].userId].board.split(':');
+                else if (typeof statuses[users[i].uid].board == 'string') {
+                  var tmp = statuses[users[i].uid].board.split(':');
                   users[i].status = tmp.length > 1
                     ? (Number(tmp[1]))
                     : consts.ONLINE_STATUS.ONLINE;

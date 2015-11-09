@@ -16,7 +16,7 @@ var redisKeyUtil = require('../../util/redisKeyUtil');
 var lodash = require('lodash');
 var utils = require('../../util/utils');
 var Promise = require('bluebird');
-
+var TopDao = require('../../dao/topDao');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -88,27 +88,45 @@ module.exports.process = function (app, type, param) {
         if (e) console.error(e.stack || e);
       });
 
-      var mongoClient = pomelo.app.get('mongoClient');
-      var Top = mongoClient.model('Top');
-
       var update1 = {};
       update1[gameName] = user1Elo;
       if (param.users[0].result.remain || param.users[0].result.remain === 0)
         update1.gold = Number(param.users[0].result.remain);
-      Top.update({uid: param.users[0].uid}, update1, {upsert: false}, function(e) {
-        if (e) console.error(e.stack || e);
+      TopDao.updateGame({
+        uid: param.users[0].uid,
+        update: update1,
+        gameName: gameName
       });
 
       var update2 = {};
       update2[gameName] = user2Elo;
       if (param.users[1].result.remain || param.users[1].result.remain === 0)
         update2.gold = Number(param.users[1].result.remain);
-      Top.update({uid: param.users[1].uid}, update2, {upsert: false}, function(e) {
-        if (e) console.error(e.stack || e);
+      TopDao.updateGame({
+        uid: param.users[1].uid,
+        update: update2,
+        gameName: gameName
       });
     })
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
     });
+
+  // cộng exp
+  var winIndex = false;
+  if (param.users[0].result.type == consts.WIN_TYPE.WIN) {
+    winIndex = 0;
+  }
+  else if (param.users[1].result.type == consts.WIN_TYPE.WIN) {
+    winIndex = 1;
+  }
+  if (winIndex !== false) {
+    var exp = formula.calGameExp(param.boardInfo.gameId, param.boardInfo.hallId);
+    TopDao.add({
+      uid: param.users[winIndex].uid,
+      attr: 'exp',
+      point: exp
+    });
+  }
 };

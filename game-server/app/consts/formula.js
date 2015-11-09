@@ -59,3 +59,47 @@ formula.calK = function calK(elo) {
   else if (elo < 2400) return 15;
   else return 10;
 };
+
+formula.calGameExp = function calGameExp(gameId, hallId) {
+  var exp = 0;
+  switch (gameId) {
+    case consts.GAME_ID.CO_TUONG:
+
+      switch (hallId) {
+        case consts.HALL_ID.LIET_CHAP:
+          exp = 25;
+          break;
+        case consts.HALL_ID.BINH_DAN:
+          exp = 15;
+          break;
+        case consts.HALL_ID.CAO_THU:
+          exp = 40;
+          break;
+        default:
+          exp = 0;
+          break;
+      }
+
+      break;
+    default:
+
+      switch (hallId) {
+        case consts.HALL_ID.TAP_SU:
+          exp = 10;
+          break;
+        case consts.HALL_ID.BINH_DAN:
+          exp = 20;
+          break;
+        case consts.HALL_ID.CAO_THU:
+          exp = 40;
+          break;
+        default:
+          exp = 0;
+          break;
+      }
+
+      break;
+  }
+
+  return exp;
+};

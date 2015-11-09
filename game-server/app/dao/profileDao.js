@@ -406,7 +406,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
  * @param cb
  */
 ProfileDao.updateUser = function updateUser(params, cb) {
-  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint', 'exp'];
+  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint'];
   return UserDao.getUserProperties(params.uid, properties)
     .then(function(user) {
       if (!user || !user.fullname) return;

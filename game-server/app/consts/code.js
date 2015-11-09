@@ -283,6 +283,11 @@ module.exports = {
     PENDING: 1
   },
 
+  TOP_TYPE: {
+    VIP: 99,
+    GOLD: 100
+  },
+
   FRIEND_LANGUAGE: {
     REQUEST_OK: 'Gửi lời mời kết bạn thành công',
     REQUEST: 'Yêu cầu kết bạn',
