@@ -16,7 +16,7 @@ module.exports = {
     CO_THE : 3,
     CO_VUA : 4,
     CARO : 5,
-    CO_VAY : 6,
+    CO_VAY : 6
   },
 
   HALL_ID : {
@@ -155,7 +155,8 @@ module.exports = {
     TAN_GAU : 12,
     CHANGE_FORMATION: 14,
     SELECT_FORMATION : 13,
-    CHANGE_SIDE : 15
+    CHANGE_SIDE : 15,
+    BOTTOM_MENU_CHANGE_SIDE : 16
   },
 
   LANGUAGE_LIMIT : {

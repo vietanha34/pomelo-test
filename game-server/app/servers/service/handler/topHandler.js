@@ -23,6 +23,7 @@ Handler.prototype.getTop = function (msg, session, next) {
     })
     .catch(function(e) {
       console.error(e.stack || e);
+      utils.log(e.stack || e);
       return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
     });
 };
