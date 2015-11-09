@@ -154,7 +154,8 @@ module.exports = {
     TAN_GAU : 12,
     CHANGE_FORMATION: 14,
     SELECT_FORMATION : 13,
-    CHANGE_SIDE : 15
+    CHANGE_SIDE : 15,
+    BOTTOM_MENU_CHANGE_SIDE : 16
   },
 
   LANGUAGE_LIMIT : {

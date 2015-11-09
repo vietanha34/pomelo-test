@@ -62,6 +62,7 @@ pro.getListFormation = function (msg, session, next) {
           id: formations[i].id,
           fen: formations[i].fen,
           name: formations[i].name,
+          turn: formations[i].turn,
           detail: util.format('%s đi tiên, phải %s trong', formations[i].turn === consts.COLOR.WHITE ? 'đỏ' : 'đen', formations[i].win === 1 ? 'thắng' : 'hoà', formations[i].numMove)
         })
       }
@@ -105,7 +106,7 @@ pro.changeFormation = function (msg, session, next) {
     })
     .then(function (formation) {
       if (formation) {
-        var result = board.changeFormation(formation);
+        var result = board.changeFormation(formation, msg);
         return next(null, result)
       } else {
         return next(null, {ec: Code.FAIL, msg: ''})

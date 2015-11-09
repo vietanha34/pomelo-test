@@ -576,8 +576,21 @@ pro.checkStartGame = function () {
   }
 };
 
-pro.changeColor = function () {
-  
+pro.changeColor = function (uid, color) {
+  var player = this.getPlayer(uid);
+  if(player){
+    player.color = color;
+    var otherPlayer = this.getPlayer(this.getOtherPlayer(uid));
+    var index = this.playerSeat.indexOf(uid);
+    if (this.mapColor[index] !== color){
+      var temp = this.mapColor[0];
+      this.mapColor[0] = this.mapColor[1];
+      this.mapColor[1] = temp;
+    }
+    if(otherPlayer){
+      otherPlayer.color = color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE
+    }
+  }
 };
 
 

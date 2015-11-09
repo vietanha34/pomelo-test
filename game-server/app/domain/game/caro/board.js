@@ -86,7 +86,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     banSquare : gameStatus.forbidenSquares
   });
   var self = this;
-  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
+  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime]});
   this.table.turnUid = player.uid;
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
@@ -171,7 +171,8 @@ Table.prototype.getStatus = function () {
   var status = Table.super_.prototype.getStatus.call(this);
   var boardStatus = this.game.game.getBoardStatus();
   status.board = boardStatus.piecePositions;
-  status.previous = boardStatus.prevMove || undefined;
+  status.previous = boardStatus.prevMove;
+  status.banSquare = boardStatus.forbidenSquares;
   status.score  = this.score;
   return status
 };
@@ -214,7 +215,7 @@ Table.prototype.action = function (uid, opts, cb) {
   this.game.game.makeMove(opts.move);
   this.game.numMove += 1;
   var player = this.players.getPlayer(uid);
-  var id = player.color === consts.COLOR.WHITE ? -1 : 1;
+  var id = player.color === consts.COLOR.WHITE ? 1 : -1;
   this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]]});
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
@@ -278,18 +279,17 @@ Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
   Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
-    if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-      var ownerPlayer = self.players.getPlayer(self.owner);
-      if (ownerPlayer.color === consts.COLOR.WHITE){
-        self.game.game.isWhiteTurn = true;
-      }else {
-        self.game.game.isWhiteTurn = false;
-      }
-      console.log('turnToMode : ');
-      self.game.game.turnToMode();
-      var boardState = self.getBoardState(uid);
-      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-    }
+    //if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
+    //  var ownerPlayer = self.players.getPlayer(self.owner);
+    //  if (ownerPlayer.color === consts.COLOR.WHITE){
+    //    self.game.game.isWhiteTurn = true;
+    //  }else {
+    //    self.game.game.isWhiteTurn = false;
+    //  }
+    //  console.log('turnToMode : ');
+    //  var boardState = self.getBoardState(uid);
+    //  self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+    //}
     return utils.invokeCallback(cb, err, res)
   });
 };

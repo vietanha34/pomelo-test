@@ -68,16 +68,16 @@ Player.prototype.genMenu = function (guest) {
     if (this.table.owner === this.uid){
       if (this.table.formationMode){
         this.removeMenu(consts.ACTION.START_GAME);
-        this.menu.push(this.table.genMenu(consts.ACTION.SELECT_FORMATION))
+        this.pushMenu(this.table.genMenu(consts.ACTION.SELECT_FORMATION));
+        this.pushMenu(this.table.genMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE))
       }else {
-        this.menu.push(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
+        this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
       }
     }else {
       if (this.table.formationMode){
-        this.removeMenu(consts.ACTION.START_GAME);
-        this.menu.push(this.table.genMenu(consts.ACTION.SELECT_FORMATION))
+
       }else {
-        this.menu.push(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
+        this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_SIDE));
       }
     }
   }

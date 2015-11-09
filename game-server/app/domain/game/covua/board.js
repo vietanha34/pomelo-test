@@ -347,24 +347,16 @@ Table.prototype.demand = function (opts) {
 };
 
 
-//Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
-//  var uid = properties.uid;
-//  var self = this;
-//  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
-//    if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-//      var ownerPlayer = self.players.getPlayer(self.owner);
-//      if (ownerPlayer.color === consts.COLOR.WHITE){
-//        self.game.game.isWhiteTurn = true;
-//      }else {
-//        self.game.game.isWhiteTurn = false;
-//      }
-//      console.log('turnToMode : ');
-//      self.game.game.turnToMode();
-//      var boardState = self.getBoardState(uid);
-//      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-//    }
-//    return utils.invokeCallback(cb, err, res)
-//  });
-//};
+Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+  var uid = properties.uid;
+  var self = this;
+  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+    if (lodash.isNumber(properties.color)){
+      var boardState = self.getBoardState(uid);
+      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+    }
+    return utils.invokeCallback(cb, err, res)
+  });
+};
 
 module.exports = Table;
