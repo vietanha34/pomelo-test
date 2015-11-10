@@ -224,6 +224,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
  *  name
  *  date
  *  page
+ *  perPage
  * @param cb
  */
 ProfileDao.getGameHistory = function getGameHistory(params, cb) {
@@ -232,6 +233,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   }
 
   params.page = params.page || 1;
+  var perPage = params.perPage || consts.PROFILE.PER_PAGE;
   if (params.date) params.date = Number(moment(params.date).format('YYYYMMDD'));
   else if (params.name) params.date = Number(moment().format('YYYYMMDD'));
 
@@ -247,8 +249,8 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
     if (params.date) condition.date = params.date;
     return GameHistory
       .find(condition)
-      .skip((params.page-1)*consts.PROFILE.PER_PAGE)
-      .limit(consts.PROFILE.PER_PAGE+1)
+      .skip((params.page-1)*perPage)
+      .limit(perPage+1)
       .sort({ createdAt: -1 })
       .select({log: -1, date: -1})
       .then(function(list) {
@@ -257,12 +259,12 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         }
 
         var logs = [];
-        var hasNext = list.length > consts.PROFILE.PER_PAGE ? 1 : 0;
+        var hasNext = list.length > perPage ? 1 : 0;
         var uids = [];
         var otherIndex;
         var status;
 
-        if (list.length > consts.PROFILE.PER_PAGE) {
+        if (list.length > perPage) {
           list.splice(list.length - 1, 1);
         }
 
@@ -355,7 +357,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
             users = users || [];
             var j, count = 0;
             var isBreak = false;
-            var offset = (params.page-1)*consts.PROFILE.PER_PAGE;
+            var offset = (params.page-1)*perPage;
             for (i=0; i<list.length; i++) {
               for (j = 0; j < users.length; j++) {
                 if (uids[i] == users[j].uid) {
@@ -372,7 +374,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
                     status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
                   });
 
-                  if (logs.length >= consts.PROFILE.PER_PAGE) {
+                  if (logs.length >= perPage) {
                     isBreak = true;
                     break;
                   }
