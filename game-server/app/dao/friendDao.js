@@ -305,6 +305,7 @@ FriendDao.search = function search(params, cb) {
     .limit(consts.FRIEND.PER_PAGE+1)
     .sort({ fullname: 1 })
     .select({uid: 1})
+    .lean()
     .then(function(list) {
       list = list || [];
       if (!list.length)

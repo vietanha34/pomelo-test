@@ -253,6 +253,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
       .limit(perPage+1)
       .sort({ createdAt: -1 })
       .select({log: -1, date: -1})
+      .lean()
       .then(function(list) {
         if (!list || !list.length) {
           return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});

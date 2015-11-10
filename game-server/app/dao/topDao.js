@@ -95,6 +95,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
       return Top
         .findOne({uid: uid})
         .select(rankAttr)
+        .lean()
         .then(function(user) {
           if (user && user[rankAttr])
             me.rank = Number(user[rankAttr]);
