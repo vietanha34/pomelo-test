@@ -131,7 +131,8 @@ TopDao.getTop = function getTop(uid, type, cb) {
     })
     .then(function(users) {
       list = users || [];
-      return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)(uids, true);
+      var statusService = pomelo.app.get('statusService');
+      return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true);
     })
     .then(function(status) {
       statuses = status || [];

@@ -240,10 +240,9 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
       return UserDao.getUsersPropertiesByUids(uids, properties)
         .then(function(users) {
           users = users || [];
-          utils.log(uids, users);
-          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)(uids, true)
+          var statusService = pomelo.app.get('statusService');
+          return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
             .then(function(statuses) {
-              utils.log(statuses);
               statuses = statuses || [];
               for (i = 0; i < users.length; i++) {
                 if (!statuses[users[i].uid] || !statuses[users[i].uid].online)
@@ -320,7 +319,8 @@ FriendDao.search = function search(params, cb) {
         .then(function(users) {
           users = users || [];
 
-          return Promise.promisify(pomelo.app.get('statusService').getStatusByUids)(uids, true)
+          var statusService = pomelo.app.get('statusService');
+          return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
             .then(function(statuses) {
               statuses = statuses || [];
               for (i = 0; i < users.length; i++) {
