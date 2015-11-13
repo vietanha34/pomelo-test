@@ -188,7 +188,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
       }
       else {
         var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
-        return UserDao.getUserProperties(params.uid, properties)
+        return UserDao.getUserProperties(params.other, properties)
           .then(function(user) {
             user = user || {};
             user.avatar = utils.JSONParse(user.avatar, {id: 0});
