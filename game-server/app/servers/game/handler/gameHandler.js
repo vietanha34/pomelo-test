@@ -281,9 +281,6 @@ pro.sitIn = function (msg, session, next) {
         messageService.pushMessageToPlayer(utils.getUids(session), route, res);
       }
     })
-    .finally(function () {
-      route = null;
-    })
 };
 
 pro.kick = function (msg, session, next) {

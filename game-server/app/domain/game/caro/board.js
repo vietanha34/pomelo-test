@@ -43,13 +43,14 @@ Game.prototype.init = function () {
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
   }else {
-    var index = Math.floor(Math.random());
+    var index = Math.round(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
-    this.isWhiteTurn = false;
+    this.game.isWhiteTurn = false;
   }
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
@@ -90,9 +91,9 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.turnUid = player.uid;
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
-  this.table.jobId = this.table.timer.addJob(function () {
-    self.finishGame(consts.WIN_TYPE.LOSE);
-  }, null, turnTime + 2000);
+  this.table.jobId = this.table.timer.addJob(function (uid) {
+    self.finishGame(consts.WIN_TYPE.LOSE,uid);
+  }, turnUid, turnTime + 2000);
 };
 
 
@@ -172,8 +173,10 @@ Table.prototype.getStatus = function () {
   var boardStatus = this.game.game.getBoardStatus();
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove;
-  status.banSquare = boardStatus.forbidenSquares;
   status.score  = this.score;
+  if (status.turn){
+    status.turn.banSquare = boardStatus.forbidenSquares;
+  }
   return status
 };
 
@@ -265,7 +268,8 @@ Table.prototype.demand = function (opts) {
           id : consts.ACTION.DRAW,
           msg : "Đối thủ muốn xin hoà",
           time : 10000
-        })
+        });
+        return {menu : player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:

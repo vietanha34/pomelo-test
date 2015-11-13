@@ -41,7 +41,7 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   if (!board) {
     game.delBoard(tableId);
     return utils.invokeCallback(cb, null, {data : utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
-  };
+  }
   logger.error('joinBoard : ', tableId, opts);
   var state = board.joinBoard(opts);
   if (state && !state.ec) {

@@ -8,8 +8,8 @@ var lodash = require('lodash');
 
 var MessageSchema = new Schema({
   roomId : { type : String, default : ''},
-  target : { type : String, default : ''},
-  from : { type : String , default : ''},
+  target : { type : Number, default : ''},
+  from : { type : Number , default : ''},
   type : { type : Number, default : 1 },
   content : { type : String, default: ''},
   date : { type : Date, default : Date.now},

@@ -38,20 +38,21 @@ Game.prototype.close = function () {
 };
 
 Game.prototype.init = function () {
-  var i, len;
+  var i;
   this.table.timer.stop();
   //this.game.startGame();
   this.table.status = consts.BOARD_STATUS.PLAY;
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
   }else {
-    var index = Math.floor(Math.random());
+    var index = Math.round(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
-    this.isWhiteTurn = false;
+    this.game.isWhiteTurn = false;
   }
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
@@ -99,9 +100,9 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.turnUid = player.uid;
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
-  this.table.jobId = this.table.timer.addJob(function () {
-    self.finishGame();
-  }, null, turnTime + 2000);
+  this.table.jobId = this.table.timer.addJob(function (uid) {
+    self.finishGame(consts.WIN_TYPE.LOSE, uid);
+  }, turnUid, turnTime + 2000);
 };
 
 
@@ -210,7 +211,7 @@ Table.prototype.getStatus = function () {
     ? { king : boardStatus.checkInfo.kingPosition, attack : boardStatus.checkInfo.attackerPositions}
     : undefined;
   status.score  = this.score;
-  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
+  status.killed = boardStatus.killedPiecesForWhite;
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
     status.turn.moves   = this.game.legalMoves;
@@ -228,7 +229,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(null, uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
     }
   }
 };
@@ -329,7 +330,7 @@ Table.prototype.demand = function (opts) {
         }
       }else {
         //request
-        if (player.timeDraw && this.game.numMove - player.timeDraw < 20){
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 10){
           return {ec : Code.FAIL};
         }
         player.xinHoa(this.game.numMove);
@@ -337,12 +338,13 @@ Table.prototype.demand = function (opts) {
           id : consts.ACTION.DRAW,
           msg : "Đối thủ muốn xin hoà",
           time : 10000
-        })
+        });
+        return {menu : player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(null, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
 };
 

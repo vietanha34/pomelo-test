@@ -88,6 +88,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
 };
 
 Handler.prototype.joinBoard = function (msg, session, next) {
+  console.log('msg : ', msg);
   var uid = session.uid;
   var tableId = msg.tableId;
   var maintenance = this.app.get('maintenance');
@@ -120,7 +121,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           avatar: userInfo.avatar,
           frontendId: session.frontendId
         };
-        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user}, done)
+        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password : msg.password}, done)
       } else {
         next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
       }

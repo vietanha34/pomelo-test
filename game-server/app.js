@@ -192,6 +192,11 @@ app.configure('production|development', 'home|district|game|connector|service', 
   app.set('gameService', gameService)
 });
 
+app.configure('production|development', 'chat|game', function () {
+  var ChatService = require('./app/services/chatService');
+  app.set('chatService', new ChatService(app));
+});
+
 
 // start app
 app.start();

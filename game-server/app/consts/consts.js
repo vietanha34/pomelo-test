@@ -149,6 +149,7 @@ module.exports = {
     DRAW : 5,
     SURRENDER : 6,
     HINT : 8,
+    STAND_UP : 9,
     CHAT : 10,
     EMO : 11,
     TAN_GAU : 12,

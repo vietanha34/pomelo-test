@@ -64,7 +64,6 @@ Player.prototype.move = function () {
 Player.prototype.reset = function () {
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
-  this.numDelay = 2;
   this.numDraw = 3;
   this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoãn;

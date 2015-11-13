@@ -57,8 +57,8 @@ var Board = function (opts, PlayerPool, Player) {
   this.index = opts.index;
   this.maxPlayer = 2;
   this.configBet = opts.configBet || [];
-  this.configTurnTime = opts.configTurnTime || [30 * 1000, 80 * 1000, 130 * 1000, 180 * 1000];
-  this.configTotalTime = opts.configTotalTime || [5*60 * 1000, 10*60 * 1000, 15*60 * 1000, 20*60 * 1000];
+  this.configTurnTime = opts.configTurnTime || [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
+  this.configTotalTime = opts.configTotalTime || [5*60 * 1000, 10*60 * 1000, 15*60 * 1000, 30*60 * 1000];
   this.isMaintenance = false;
   this.turnTime = opts.turnTime || 180 * 1000;
   this.totalTime = opts.totalTime || 15 * 60 * 1000;
@@ -107,12 +107,12 @@ var Board = function (opts, PlayerPool, Player) {
     // thay đổi password
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
-      var lock = properties.lock;
+      var lock = properties.password;
       if (lodash.isString(lock)) {
         console.log('update password');
         self.lock = lock;
         changed = true;
-        dataChanged.lock = lock;
+        dataChanged.password = lock;
         dataUpdate.password = lock;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
@@ -129,12 +129,13 @@ var Board = function (opts, PlayerPool, Player) {
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime;
       }
-      if (totalTime && (self.configTotalTime.indexOf(totalTime))){
+      if (totalTime && (self.configTotalTime.indexOf(totalTime) > -1)){
         console.log('update TurnTime :', totalTime);
         self.totalTime = totalTime;
         changed = true;
         dataChanged.totalTime = totalTime;
         dataUpdate.totalTime = totalTime;
+        self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     },
@@ -254,6 +255,15 @@ pro.pushMessageWithMenu = function (route, msg) {
   logger.info("\n Push message without Menu \n route :  %s \n message %j", route, msg);
 };
 
+pro.pushMessageWithMenuWithOutUid = function (uid, route, msg) {
+  var player, key;
+  for (key in this.players.players) {
+    player = this.players.players[key];
+    if (player.uid === uid) continue
+    messageService.pushMessageToPlayer(player.getUids(), route, utils.merge_options(msg, {menu: player.menu || []}))
+  }
+  logger.info("\n Push message without Menu \n route :  %s \n message %j", route, msg);
+}
 
 //pro.pushMenuGame = function (route, msg) {
 //  for (var i = 0, len = this.players.playerSeat.length; i < len; i++) {
@@ -377,6 +387,22 @@ pro.pushOnJoinBoard = function (uid) {
   }
 };
 
+pro.pushStandUp = function (uid, data) {
+  var playerUids = Object.keys(this.players.players);
+  for (var i = 0, len = playerUids.length; i < len; i++) {
+    var playerUid = playerUids[i];
+    var player = this.players.getPlayer(playerUid);
+    if (uid === playerUid) {
+      continue
+    }
+    console.log('pushMessage leaveBoard : ',uid);
+    if (player.guest && this.players.length < this.maxPlayer) {
+      player.pushMenu(this.genMenu(consts.ACTION.SIT_BACK_IN));
+    }
+  }
+  this.pushMessageWithMenuWithOutUid(uid, 'district.districtHandler.leaveBoard', data);
+};
+
 pro.pushLeaveBoard = function (uid, data) {
   var playerUids = Object.keys(this.players.players);
   for (var i = 0, len = playerUids.length; i < len; i++) {
@@ -388,11 +414,9 @@ pro.pushLeaveBoard = function (uid, data) {
     console.log('pushMessage leaveBoard : ',uid);
     if (player.guest && this.players.length < this.maxPlayer) {
       player.pushMenu(this.genMenu(consts.ACTION.SIT_BACK_IN));
-      this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', utils.merge_options(data, {menu: player.menu}));
-    } else {
-      this.pushMessageToPlayer(playerUid, 'district.districtHandler.leaveBoard', data);
     }
   }
+  this.pushMessageWithMenu('district.districtHandler.leaveBoard', data);
 };
 
 /**
@@ -467,6 +491,9 @@ pro.joinBoard = function (opts) {
   var userInfo = opts.userInfo;
   var uid = userInfo.uid;
   var self = this;
+  if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
+    return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
+  }
   var result = this.players.addPlayer(opts);
   console.log('result : ', result);
   if (result.ec == Code.OK) {
@@ -598,7 +625,7 @@ pro.getBoardInfo = function (finish) {
       roomId: this.roomId,
       turnTime: this.turnTime,
       totalTime : this.totalTime,
-      lock: this.lock,
+      password: this.lock,
       configBet: this.configBet,
       configTurnTime : this.configTurnTime || [],
       configTotalTime : this.configTotalTime || [],
@@ -705,7 +732,9 @@ pro.sitIn = function (uid, slotId, cb) {
       if (!self.owner) {
         self.owner = uid;
       }
-      self.emit('sitIn');
+      self.emit('sitIn', player);
+      player.menu.splice(0, player.menu.length);
+      player.genMenu();
       var state = self.getBoardState(uid);
       self.pushOnJoinBoard(uid);
       return utils.invokeCallback(cb, null, state);
@@ -718,7 +747,6 @@ pro.sitIn = function (uid, slotId, cb) {
 pro.close = function (cb) {
   var self = this;
   var channel = this.getChannel();
-  this.joinBoardQueue.kill();
   if (this.timer) {
     this.timer.stop();
   }
@@ -807,20 +835,17 @@ pro.kick = function (uid, cb) {
   }
   this.emit('kick', player);
   var userInfo = player.userInfo;
-  this.leaveBoard(uid, true, function (err, uids) {
-    if (err) {
-      utils.invokeCallback(cb, null, { ec : Code.FAIL});
-    } else if (uids && !uids.ec) {
-      messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
-        uid: uids.uid, msg: Code.ON_GAME.FA_KICK
-      });
-      self.pushLeaveBoard(uids.uid, {
-        uid: uids.uid,
-        msg: utils.getMessage(Code.ON_GAME.FA_KICK_WITH_NAME, [userInfo.fullname || userInfo.username])
-      });
-      utils.invokeCallback(cb, null, {});
-    }
-  });
+  var uids = this.leaveBoard(uid);
+  if (uids && !uids.ec) {
+    messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
+      uid: uids.uid, msg: Code.ON_GAME.FA_KICK
+    });
+    self.pushLeaveBoard(uids.uid, {
+      uid: uids.uid,
+      msg: utils.getMessage(Code.ON_GAME.FA_KICK_WITH_NAME, [userInfo.fullname || userInfo.username])
+    });
+    utils.invokeCallback(cb, null, {});
+  }
 };
 
 pro.muteChat = function (uid, cb) {
@@ -922,12 +947,12 @@ pro.addJobReady = function (uid) {
     var boardState = self.standUp(uid);
     boardState.msg = Code.ON_GAME.FA_NOT_READY;
     console.log('pushLeaveBoard : ', uid);
-    self.pushLeaveBoard(uid, {
+    self.pushStandUp(uid, {
       uid: uid,
       msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
     });
     self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
-  }, uid, 20000);
+  }, uid, 20000 + 2000);
 };
 
 pro.addJobStart = function (uid) {
@@ -949,7 +974,7 @@ pro.addJobStart = function (uid) {
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
     boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
-    self.pushLeaveBoard(uid, {
+    self.pushStandUp(uid, {
       uid: uid,
       msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
     });

@@ -63,6 +63,7 @@ Player.prototype.getUids = function () {
 };
 
 Player.prototype.genMenu = function () {
+  this.menu.splice(0, this.menu.length);
   if(this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.TAN_GAU));
   }else {
@@ -73,6 +74,16 @@ Player.prototype.genMenu = function () {
     }
     this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
     this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP));
+  }
+};
+
+Player.prototype.genStartMenu = function () {
+  this.genMenu();
+  if (!this.guest){
+    this.removeMenu(consts.ACTION.STAND_UP);
+  }else {
+    this.removeMenu(consts.ACTION.SIT_BACK_IN);
   }
 };
 
@@ -93,6 +104,7 @@ Player.prototype.updateUserInfo = function (userInfo) {
  * @method setOwner
  */
 Player.prototype.setOwner = function () {
+  this.genMenu();
   this.owner = true;
 };
 
@@ -235,6 +247,7 @@ Player.prototype.removeMenu = function (id) {
 
 Player.prototype.pushMenu = function (menu) {
   var indexMenu = lodash.findIndex(this.menu, 'id', menu.id);
+  console.log('this.menu : ', this.menu, indexMenu, menu);
   if(indexMenu > -1){
     this.menu[indexMenu] = menu;
   }else {
@@ -258,7 +271,7 @@ Player.prototype.startGame = function () {
 
 Player.prototype.unReady = function () {
   this.ready = false;
-  this.menu = [this.table.genMenu(consts.ACTION.READY)]
+  this.pushMenu(this.table.genMenu(consts.ACTION.READY))
 };
 
 module.exports = Player;

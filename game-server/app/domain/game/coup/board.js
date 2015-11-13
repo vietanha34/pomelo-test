@@ -36,16 +36,19 @@ Game.prototype.close = function () {
 
 Game.prototype.init = function () {
   this.table.status = consts.BOARD_STATUS.PLAY;
+  var index = Math.round(Math.random());
+  console.log('index : ', index, this.table.looseUser);
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
   }else {
-    var index = Math.floor(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
+  console.log('this.turn : ', this.turn, color);
   if (color !== consts.COLOR.WHITE){
-    this.isWhiteTurn = false;
+    this.game.isWhiteTurn = false;
   }
   var keys = Object.keys(this.table.players.players);
   for (var i = 0; i < keys.length; i++) {
@@ -87,9 +90,10 @@ Game.prototype.setOnTurn = function (gameStatus) {
   });
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
-  this.table.jobId = this.table.timer.addJob(function () {
-    self.finishGame(consts.WIN_TYPE.LOSE);
-  }, null, turnTime + 2000);
+  this.table.turnUid = player.uid;
+  this.table.jobId = this.table.timer.addJob(function (uid) {
+    self.finishGame(consts.WIN_TYPE.LOSE, uid);
+  }, turnUid, turnTime + 2000);
 };
 
 
@@ -153,6 +157,7 @@ function Table(opts) {
       console.log('dataChanged : ', dataChanged);
       if (lodash.isNumber(properties.showKill)){
         self.showKill = properties.showKill ? true : false;
+        self.game.game.hasShowKilled = self.showKill;
         changed = true;
         dataChanged.showKill = self.showKill ? 1 : 0;
       }
@@ -185,6 +190,7 @@ Table.prototype.getStatus = function () {
     ? { king : boardStatus.checkInfo.kingPosition, attack : boardStatus.checkInfo.attackerPositions}
     : undefined;
   status.score  = this.score;
+  console.log('killed : ', boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
@@ -279,7 +285,7 @@ Table.prototype.demand = function (opts) {
         }
       }else {
         //request
-        if (player.timeDraw && this.game.numMove - player.timeDraw < 20){
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 10){
           return {ec : Code.FAIL};
         }
         player.xinHoa(this.game.numMove);
@@ -287,7 +293,8 @@ Table.prototype.demand = function (opts) {
           id : consts.ACTION.DRAW,
           msg : "Đối thủ muốn xin hoà",
           time : 10000
-        })
+        });
+        return {menu : player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:
@@ -310,9 +317,11 @@ Table.prototype.reset = function () {
 };
 
 Table.prototype.xinThua = function () {
+
 };
 
 Table.prototype.xinHoa = function () {
+
 };
 
 module.exports = Table;

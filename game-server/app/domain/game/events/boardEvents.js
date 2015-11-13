@@ -47,6 +47,12 @@ exp.addEventFromBoard = function (board) {
     }
   });
 
+  board.on('sitIn', function (player) {
+    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
+      board.addJobReady(player.uid)
+    }
+  });
+
 
   board.on('updateInfo', function (userInfo) {
     var channel = board.getChannel();
@@ -98,12 +104,8 @@ exp.addEventFromBoard = function (board) {
     });
     //pomelo.app.get('waitingService').add(userInfo, true);
     if (!userInfo.guest){
-      if (board.jobIdReady) {
-        board.timer.cancelJob(board.jobIdReady)
-      }
-      if (board.jobIdStart) {
-        board.timer.cancelJob(board.jobIdStart)
-      }
+      board.looseUser = null;
+      board.timer.stop()
     }
   });
 
@@ -137,9 +139,7 @@ exp.addEventFromBoard = function (board) {
    *    * uid: Định danh người chơi
    *    * result :
    *       * type : thắng hoà thua : xem thêm tại **consts.WIN_TYPE**
-   *       * eventType : loại thằng event
-   *       * hand : Array : mảng bài thắng
-   *       * handValue : Giá trị của mảng bài
+   *       * color : màu của người chơi
    *       * money : số tiền thắng (+) , thua (-)
    * * boardInfo : tình trạng bàn chơi :
    *    * bet : Tiền cược của bàn
@@ -156,8 +156,20 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} data dữ liệu thắng thua của ván đấu , bao gồm
    * @for BoardBase
    */
-  board.on('finishGame', function (data, cb) {
+  board.on('finishGame', function (data) {
 
+    for (var i = 0, len = data.users.length; i < len; i ++){
+      var user = data.users[i];
+      if (user.result.type === consts.WIN_TYPE.WIN){
+        board.score[user.color === consts.COLOR.WHITE ? 0 : 1] += 1
+      }else if (user.result.type === consts.WIN_TYPE.LOSE){
+        board.looseUser = user.uid;
+      }
+    }
+    var otherPlayerUid = board.players.getOtherPlayer();
+    if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)){
+      board.addJobReady(otherPlayerUid);
+    }
   });
 
   /**
@@ -188,11 +200,8 @@ exp.addEventFromBoard = function (board) {
       isFull : board.players.length >= board.maxPlayer ? 1 : 0
     });
     if (!player.guest){
-      if (board.jobIdReady) {
-        board.timer.cancelJob(board.jobIdReady)
-      }
-      if (board.jobIdStart) {
-        board.timer.cancelJob(board.jobIdStart)
+      if (board.jobId) {
+        board.timer.cancelJob(board.jobId)
       }
     }
   });
@@ -250,7 +259,6 @@ exp.addEventFromBoard = function (board) {
    * @event giveUp
    * @for BoardBase
    */
-
   board.on('changeOwner', function () {
     if (board.owner && board.players.getPlayer(board.owner)) {
       if (board.status === consts.BOARD_STATUS.NOT_STARTED) {

@@ -58,7 +58,7 @@ Game.prototype.init = function () {
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
-    this.isWhiteTurn = false;
+    this.game.isWhiteTurn = false;
   }
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
@@ -116,13 +116,15 @@ Game.prototype.progress = function () {
     : gameStatus.matchResult === 'thangRoi'
     ? consts.WIN_TYPE.WIN
     : consts.WIN_TYPE.DRAW;
-  if (gameStatus.isWhiteTurn && this.maxMove === this.numMove){
+
+  if (gameStatus.isWhiteTurn && this.maxMove * 2 === this.numMove){
     if(this.win === result){
       return this.finishGame(consts.WIN_TYPE.WIN, this.whiteUid);
     }else {
       return this.finishGame(consts.WIN_TYPE.LOSE, this.whiteUid);
     }
   }
+
   if (gameStatus.matchResult){
     switch (result){
       case consts.WIN_TYPE.WIN:
@@ -228,7 +230,7 @@ Table.prototype.getStatus = function (uid) {
   }
   status.formation = {
     name : this.game.formationName,
-    maxMove : this.game.maxMove,
+    maxMove : this.game.maxMove - this.game.numMove,
     id : this.game.id,
     total : 2,
     status : this.formationMode
@@ -375,9 +377,12 @@ Table.prototype.changeFormation = function (formation, opts) {
   var otherPlayer = this.players.getPlayer(otherPlayerUid);
   if (otherPlayer) {
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
+    otherPlayer.pushMenu(this.genMenu(consts.ACTION.READY));
+    console.log('otherPlayerId : ', otherPlayerUid, otherPlayer.menu);
   }
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
   ownerPlayer.removeMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE);
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.EMO));
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_FORMATION));
   this.players.unReadyAll();
   var boardState = this.getBoardState();
@@ -389,10 +394,31 @@ Table.prototype.selectFormationMode = function () {
   var ownerPlayer = this.players.getPlayer(this.owner);
   ownerPlayer.removeMenu(consts.ACTION.CHANGE_FORMATION);
   ownerPlayer.removeMenu(consts.ACTION.START_GAME);
+  ownerPlayer.removeMenu(consts.ACTION.EMO);
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.SELECT_FORMATION));
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE));
+  ownerPlayer.pushMenu(this.genMenu(consts.ACTION.EMO));
+  var otherPlayerUid = this.players.getOtherPlayer();
+  var otherPlayer = this.players.getPlayer(otherPlayerUid);
+  if (otherPlayer) {
+    otherPlayer.removeMenu(consts.ACTION.CHANGE_SIDE);
+    otherPlayer.removeMenu(consts.ACTION.READY);
+  }
   // todo push cho người chơi khác biết là chủ bàn đang chọn thế
-  return { menu : ownerPlayer.menu};
+  return { menu : ownerPlayer.menu };
+};
+
+Table.prototype.resetDefault = function () {
+  Table.super_.prototype.resetDefault.call(this);
+  this.formationMode = false;
+};
+
+Table.prototype.ready = function (uid) {
+  var result = Table.super_.prototype.ready.call(this, uid);
+  if (!result.ec){
+    var player = this.players.getPlayer(uid);
+    player.removeMenu(consts.ACTION.CHANGE_SIDE);
+  }
 };
 
 
@@ -404,6 +430,7 @@ Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
       if (lodash.isNumber(dataChange.color)){
         var player = this.players.getPlayer(uid);
         player.removeMenu(consts.ACTION.CHANGE_SIDE);
+        self.ready(uid);
       }
     }
   });

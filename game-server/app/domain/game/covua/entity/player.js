@@ -45,25 +45,16 @@ Player.prototype.getState = function (uid) {
   return result
 };
 
-Player.prototype.xinThua = function (numMove) {
-  this.requestDelay = true;
-  this.timeDelay = numMove;
-};
-
 Player.prototype.xinHoa = function (numMove) {
   this.requestDraw = true;
   this.timeDraw  = numMove;
-  this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { disable : 1 , count : this.numDelay}));
+  this.numDraw -= 1;
+  this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { disable : 1 , count : this.numDraw}));
   this.disableDraw = true;
 };
 
 Player.prototype.move = function (numMove) {
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
-  if (!this.firstMove){
-    this.firstMove = true;
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
-    return true
-  }
   if (this.disableDraw && numMove - this.timeDraw >= 10 && this.numDraw > 0){
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     return true
@@ -73,12 +64,12 @@ Player.prototype.move = function (numMove) {
 Player.prototype.reset = function () {
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
-  this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoãn;
+  this.numDraw = 3;
 };
 
 Player.prototype.genStartMenu = function () {
-  Player.super_.prototype.genMenu.call(this);
+  Player.super_.prototype.genStartMenu.call(this);
   if (!this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));

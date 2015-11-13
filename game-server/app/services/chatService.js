@@ -137,9 +137,9 @@ pro.sendMessageToPlayer = function (fromUid, targetUid, data) {
       if (err) {
         logger.error("message : %s , stack : %s ",err.message, err.stack);
       }else {
-        HomeDao.pushInfo(targetUid, { chatCount : res}, function () {
-          
-        });
+        //HomeDao.pushInfo(targetUid, { chatCount : res}, function () {
+        //
+        //});
       }
     })
   });

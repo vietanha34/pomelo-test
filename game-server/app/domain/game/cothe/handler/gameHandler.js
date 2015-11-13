@@ -137,7 +137,44 @@ pro.changeFormationMode = function (msg, session, next) {
   if (board.status !== consts.BOARD_STATUS.NOT_STARTED) {
     return next(null, utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED));
   }
+  var otherPlayerUid = board.players.getOtherPlayer();
+  var otherPlayer = board.players.getPlayer(otherPlayerUid);
+  if(otherPlayer && otherPlayer.ready){
+    return next(null, { ec : 500, msg : 'Người chơi đã sẵn sàng, không được thay đổi thế cờ'})
+  }
   return next(null, board.selectFormationMode());
+};
+
+pro.changeBoardProperties = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  msg.uid = uid;
+  next();
+  if (!board) {
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
+      ec: Code.FA_HOME,
+      msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
+    });
+    return
+  }
+  //if (board.owner !== uid) {
+  //  messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
+  //  return
+  //}
+
+  if (board.status !== consts.BOARD_STATUS.NOT_STARTED) {
+    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED));
+    return
+  }
+
+  board.changeBoardProperties(msg, [], function (err, res) {
+    if (err) {
+      console.error(err);
+      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));
+    } else if (res.ec) {
+      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
+    }
+  })
 };
 
 module.export = Handler;

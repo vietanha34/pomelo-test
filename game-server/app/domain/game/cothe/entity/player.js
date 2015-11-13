@@ -68,15 +68,19 @@ Player.prototype.genMenu = function (guest) {
     if (this.table.owner === this.uid){
       if (this.table.formationMode){
         this.removeMenu(consts.ACTION.START_GAME);
+        this.removeMenu(consts.ACTION.EMO);
+        this.removeMenu(consts.ACTION.STAND_UP);
         this.pushMenu(this.table.genMenu(consts.ACTION.SELECT_FORMATION));
-        this.pushMenu(this.table.genMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE))
+        this.pushMenu(this.table.genMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE));
+        this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+        this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP))
       }else {
         this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
       }
     }else {
       if (this.table.formationMode){
-
-      }else {
+        this.removeMenu(consts.ACTION.READY);
+      } else {
         this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_SIDE));
       }
     }
@@ -84,7 +88,7 @@ Player.prototype.genMenu = function (guest) {
 };
 
 Player.prototype.genStartMenu = function (guest) {
-  Player.super_.prototype.genMenu.call(this);
+  Player.super_.prototype.genStartMenu.call(this);
   if (!guest){
     this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
   }

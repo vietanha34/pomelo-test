@@ -94,7 +94,7 @@ pro.addPlayer = function (opts) {
     player = self.players[uid];
     player.updateUserInfo(userInfo);
     self.table.emit('updateInfo', userInfo);
-    return {ec: Code.OK};
+    return {ec: Code.OK, exists : true};
   }
   var data = {ec : Code.OK};
   player = new self.Player({
@@ -249,9 +249,9 @@ pro.sitIn = function (uid, slotId) {
     var result = {};
     utils.arrayRemove(self.guestIds, uid);
     self.playerSeat[index] = uid;
+    player.color = this.mapColor[index];
     player.guest = false;
-    player.removeMenu(consts.ACTION.SIT_BACK_IN);
-    player.removeMenu(consts.ACTION.CHARGE_MONEY);
+    player.genMenu();
     if (!self.table.owner) {
       self.table.owner = uid;
       result.owner = true;
@@ -593,5 +593,16 @@ pro.changeColor = function (uid, color) {
   }
 };
 
+pro.changePlayerOption = function (opts) {
+  var key = Object.keys(opts);
+  for (var i = 0, len = this.playerSeat.length; i < len; i++){
+    if(!this.playerSeat[i]) continue;
+    var player = this.getPlayer(this.playerSeat[i]);
+    if(!player) continue;
+    for (var j=0, lenj = key.length; j < lenj; j++ ){
+      player[key[j]] = opts[key[j]];
+    }
+  }
+};
 
 module.exports = PlayerPool;
