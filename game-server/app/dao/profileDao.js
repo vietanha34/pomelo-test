@@ -176,7 +176,8 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
           eloLevel: code.ELO_LANGUAGE[elo],
           win: achievement[name+'Win'] || 0,
           lose: achievement[name+'Lose'] || 0,
-          draw: achievement[name+'Draw'] || 0
+          draw: achievement[name+'Draw'] || 0,
+          giveUp: achievement[name+'GiveUp'] || 0
         });
         if (elo > max) max = elo;
       }

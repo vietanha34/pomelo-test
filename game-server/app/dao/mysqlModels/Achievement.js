@@ -27,6 +27,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
+    tuongGiveUp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
     tuongElo: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
@@ -40,6 +44,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     theLose: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
+    theGiveUp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
@@ -59,6 +67,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
+    upGiveUp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
     upElo: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
@@ -72,6 +84,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vayLose: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
+    vayGiveUp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
@@ -91,6 +107,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
+    caroGiveUp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
     caroElo: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
@@ -104,6 +124,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vuaLose: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: '0'
+    },
+    vuaGiveUp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
     },
