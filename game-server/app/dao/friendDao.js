@@ -148,8 +148,8 @@ FriendDao.reject = function reject(fromId, toId, cb) {
     .then(function(status) {
       if (status) {
         return redis.multi()
-          .zrem(fromKey, code.FRIEND_STATUS.FRIEND, toId)
-          .zrem(toKey, code.FRIEND_STATUS.FRIEND, fromId)
+          .zrem(fromKey, toId)
+          .zrem(toKey, fromId)
           .execAsync()
           .then(function() {
             redis.zcountAsync(toKey, code.FRIEND_STATUS.PENDING, code.FRIEND_STATUS.PENDING)
