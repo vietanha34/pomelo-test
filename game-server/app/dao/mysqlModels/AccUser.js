@@ -3,7 +3,7 @@
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('User', {
     uid : {
-      type : DataTypes.INTEGER.UNSIGNED.ZEROFILL,
+      type : DataTypes.INTEGER.UNSIGNED,
       primaryKey : true
     },
     username: {
@@ -12,12 +12,12 @@ module.exports = function(sequelize, DataTypes) {
       unique : true
     },
     gold: {
-      type: DataTypes.BIGINT.UNSIGNED.ZEROFILL,
+      type: DataTypes.BIGINT.UNSIGNED,
       allowNull: false,
       defaultValue: '0'
     },
     goldInGame : {
-      type : DataTypes.BIGINT.UNSIGNED.ZEROFILL,
+      type : DataTypes.BIGINT.UNSIGNED,
       allowNull : false,
       defaultValue : '0'
     },
@@ -58,7 +58,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ''
     },
     level: {
-      type: DataTypes.INTEGER(6).UNSIGNED.ZEROFILL,
+      type: DataTypes.INTEGER(6).UNSIGNED,
       allowNull: false,
       defaultValue: '0'
     },
@@ -77,22 +77,22 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     status : {
-      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
+      type : DataTypes.INTEGER(4).UNSIGNED,
       allowNull : false,
       defaultValue : '0'
     },
     accountType : {
-      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
+      type : DataTypes.INTEGER(4).UNSIGNED,
       allowNull : false,
       defaultValue : '1'
     },
     sex : {
-      type : DataTypes.INTEGER(4).UNSIGNED.ZEROFILL,
+      type : DataTypes.INTEGER(4).UNSIGNED,
       allowNull : true,
       defaultValue : '1'
     },
 	  hasPay: {
-		  type: DataTypes.INTEGER(1).UNSIGNED.ZEROFILL,
+		  type: DataTypes.INTEGER(1).UNSIGNED,
 		  allowNull: true,
 		  defaultValue: 0
 	  },
@@ -107,12 +107,12 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ''
     },
     exp: {
-      type: DataTypes.INTEGER.UNSIGNED.ZEROFILL,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       defaultValue: '0'
     },
     vipPoint: {
-      type: DataTypes. INTEGER.UNSIGNED.ZEROFILL,
+      type: DataTypes. INTEGER.UNSIGNED,
       allowNull: false,
       defaultValue: '0'
     }

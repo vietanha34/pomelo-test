@@ -32,7 +32,7 @@ Handler.prototype.request = function request(msg, session, next) {
 };
 
 Handler.prototype.accept = function accept(msg, session, next) {
-  FriendDao.accept(session.uid, msg.uid)
+  FriendDao.accept(msg.uid, session.uid)
     .then(function(res) {
       return utils.invokeCallback(next, null, res);
     })
@@ -43,7 +43,7 @@ Handler.prototype.accept = function accept(msg, session, next) {
 };
 
 Handler.prototype.reject = function reject(msg, session, next) {
-  FriendDao.reject(session.uid, msg.uid)
+  FriendDao.reject(msg.uid, session.uid)
     .then(function(res) {
       return utils.invokeCallback(next, null, res);
     })
@@ -71,6 +71,7 @@ Handler.prototype.searchFriend = function searchFriend(msg, session, next) {
       return utils.invokeCallback(next, null, res);
     })
     .catch(function(e) {
+      utils.log(e.stack || e);
       console.error(e.stack || e);
       return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
     });

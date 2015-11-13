@@ -24,7 +24,7 @@ var lodash = require('lodash');
  * @param cb
  */
 NotifyDao.push = function topup(params, cb) {
-  if (!params.type || !params.title) {
+  if ((!params.type && params.type!==0) || !params.title) {
     return utils.invokeCallback(cb, 'invalid param push notify');
   }
 
@@ -39,7 +39,8 @@ NotifyDao.push = function topup(params, cb) {
   delete params.users;
 
   if (scope == 99) { // push all
-    return Promise.promisify(pomelo.app.get('channelService').broadcast)
+    var channelService = pomelo.app.get('channelService');
+    return Promise.promisify(channelService.broadcast, channelService)
       ('connector', 'onNotify', params, {}, function (err, res) {
         if (err) {
           console.error(err);
@@ -51,7 +52,8 @@ NotifyDao.push = function topup(params, cb) {
     if (!users || !users.length) {
       return utils.invokeCallback('Invalid params push notify', null);
     } else {
-      return Promise.promisify(pomelo.app.get('statusService').pushByUids)
+      var statusService = pomelo.app.get('statusService');
+      return Promise.promisify(statusService.pushByUids, statusService)
         (users, 'onNotify', params, function (err, res) {
           if (err) {
             console.error(err);

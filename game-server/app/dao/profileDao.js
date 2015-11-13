@@ -54,7 +54,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       }
       user.game = consts.GAME_MAP[user.gameId];
       user.elo = max;
-      user.eloLevel = code.ELO_LANGUAGE[formula.calEloLevel(user.elo)];
+      user.eloLevel = formula.calEloLevel(user.elo);
       var vipPoint = user.vipPoint || 0;
       user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
       user.vipLevel = formula.calVipLevel(user.vipPoint);
@@ -176,7 +176,8 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
           eloLevel: code.ELO_LANGUAGE[elo],
           win: achievement[name+'Win'] || 0,
           lose: achievement[name+'Lose'] || 0,
-          draw: achievement[name+'Draw'] || 0
+          draw: achievement[name+'Draw'] || 0,
+          giveUp: achievement[name+'GiveUp'] || 0
         });
         if (elo > max) max = elo;
       }
@@ -188,7 +189,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
       }
       else {
         var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
-        return UserDao.getUserProperties(params.uid, properties)
+        return UserDao.getUserProperties(params.other, properties)
           .then(function(user) {
             user = user || {};
             user.avatar = utils.JSONParse(user.avatar, {id: 0});
@@ -224,6 +225,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
  *  name
  *  date
  *  page
+ *  perPage
  * @param cb
  */
 ProfileDao.getGameHistory = function getGameHistory(params, cb) {
@@ -232,6 +234,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   }
 
   params.page = params.page || 1;
+  var perPage = params.perPage || consts.PROFILE.PER_PAGE;
   if (params.date) params.date = Number(moment(params.date).format('YYYYMMDD'));
   else if (params.name) params.date = Number(moment().format('YYYYMMDD'));
 
@@ -247,22 +250,23 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
     if (params.date) condition.date = params.date;
     return GameHistory
       .find(condition)
-      .skip((params.page-1)*consts.PROFILE.PER_PAGE)
-      .limit(consts.PROFILE.PER_PAGE+1)
+      .skip((params.page-1)*perPage)
+      .limit(perPage+1)
       .sort({ createdAt: -1 })
       .select({log: -1, date: -1})
+      .lean()
       .then(function(list) {
         if (!list || !list.length) {
           return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
         }
 
         var logs = [];
-        var hasNext = list.length > consts.PROFILE.PER_PAGE ? 1 : 0;
+        var hasNext = list.length > perPage ? 1 : 0;
         var uids = [];
         var otherIndex;
         var status;
 
-        if (list.length > consts.PROFILE.PER_PAGE) {
+        if (list.length > perPage) {
           list.splice(list.length - 1, 1);
         }
 
@@ -276,7 +280,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
             matchId: list[i].matchId,
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
-            time: moment(list[i].createdAt).unix(),
+            time: moment(list[i].createdAt).format('hh:mm DD/MM'),
             status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
           });
           uids.push(list[i].uids[otherIndex]);
@@ -355,7 +359,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
             users = users || [];
             var j, count = 0;
             var isBreak = false;
-            var offset = (params.page-1)*consts.PROFILE.PER_PAGE;
+            var offset = (params.page-1)*perPage;
             for (i=0; i<list.length; i++) {
               for (j = 0; j < users.length; j++) {
                 if (uids[i] == users[j].uid) {
@@ -368,11 +372,11 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
                     matchId: list[i].matchId,
                     uid: list[i].uids[otherIndex] || 0,
                     name: users[j].fullname || (list[i].usernames[otherIndex] || ''),
-                    time: moment(list[i].createdAt).unix(),
+                    time: moment(list[i].createdAt).format('hh:mm DD/MM'),
                     status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
                   });
 
-                  if (logs.length >= consts.PROFILE.PER_PAGE) {
+                  if (logs.length >= perPage) {
                     isBreak = true;
                     break;
                   }
@@ -406,7 +410,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
  * @param cb
  */
 ProfileDao.updateUser = function updateUser(params, cb) {
-  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint', 'exp'];
+  var properties = ['username', 'fullname', 'distributorId', 'platform', 'gold', 'vipPoint'];
   return UserDao.getUserProperties(params.uid, properties)
     .then(function(user) {
       if (!user || !user.fullname) return;
@@ -421,6 +425,19 @@ ProfileDao.updateUser = function updateUser(params, cb) {
       Top.update({uid: params.uid}, user, {upsert: true}, function(e) {
         if (e) console.error(e.stack || e);
       });
+
+      var Achievement = pomelo.app.get('mysqlClient').Achievement;
+      Achievement
+        .findOrCreate({
+          where: {uid: params.uid},
+          defaults: {
+            username: user.username,
+            userCount: 1
+          }
+        })
+        .catch(function(e) {
+          console.error(e.stack || e);
+        });
 
       return utils.invokeCallback(cb);
     })
