@@ -49,6 +49,13 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  * @param {Number} type
  * @param {Object} param
  */
+
+var typeMap = {};
+typeMap[consts.WIN_TYPE.WIN] = 'Win';
+typeMap[consts.WIN_TYPE.LOSE] = 'Lose';
+typeMap[consts.WIN_TYPE.DRAW] = 'Draw';
+typeMap[consts.WIN_TYPE.GIVE_UP] = 'GiveUp';
+
 module.exports.process = function (app, type, param) {
   if (!param.users || param.users!=2 || !param.boardInfo || !param.boardInfo.gameId) {
    console.error('wrong param finish game: ', param);
@@ -64,7 +71,7 @@ module.exports.process = function (app, type, param) {
   Achievement
     .findAll({
       where: {uid: {$in: [param.users[0].uid, param.users[1].uid]}},
-      attributes: ['uid', attr]
+      attributes: ['uid', attr, gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']
     })
     .then(function(achievements) {
       achievements = achievements || [{uid: param.users[0].uid}, {uid: param.users[1].uid}];
@@ -81,6 +88,10 @@ module.exports.process = function (app, type, param) {
 
       achievements[user1Index][attr] = user1Elo;
       achievements[user2Index][attr] = user2Elo;
+
+      achievements[user1Index][gameName+typeMap[param.users[user1Index].result.type]] += 1;
+      achievements[user2Index][gameName+typeMap[param.users[user2Index].result.type]] += 1;
+
       achievements[0].save().then(function(e) {
         if (e) console.error(e.stack || e);
       });

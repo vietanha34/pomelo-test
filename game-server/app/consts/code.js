@@ -290,15 +290,16 @@ module.exports = {
   },
 
   FRIEND_LANGUAGE: {
-    REQUEST_OK: 'Gửi lời mời kết bạn thành công',
-    REQUEST: 'Yêu cầu kết bạn',
+    REQUEST_OK: 'Kết bạn thành công',
+    REQUEST: 'Có thêm bạn mới!',
     FRIEND_SUCCESS: 'Kết bạn thành công',
-    ACCEPT_FRIEND: '%s đã chấp nhận lời mời kết bạn của bạn',
-    ALREADY_FRIEND: 'Bạn và người chơi này đã là bạn bè rồi',
+    //ACCEPT_FRIEND: '%s đã chấp nhận lời mời kết bạn của bạn',
+    //ALREADY_FRIEND: 'Bạn và người chơi này đã là bạn bè rồi',
     CANCEL_BEFORE: 'Yêu cầu kết bạn đã bị hủy trước đó',
     ACCEPT: 'Đồng ý',
-    REQUEST_TO_YOU: '%s vừa gửi lời mời kết bạn tới bạn',
-    REJECT_OK: 'Đã từ chối kết bạn',
-    UNFRIEND_OK: 'Đã hủy bạn bè thành công'
+    REQUEST_TO_YOU: '%s vừa kết bạn, chúc mừng đã có thêm bạn mới',
+    //REJECT_OK: 'Đã từ chối kết bạn',
+    UNFRIEND_OK: 'Đã hủy bạn bè thành công',
+    LIMITED: 'Bạn chỉ được phép có tối đa %s bạn bè'
   }
 };

@@ -14,6 +14,7 @@ var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var moment = require('moment');
 var UserDao = require('./userDao');
+var FriendDao = require('./friendDao');
 var request = require('request-promise').defaults({transform: true});
 
 /**
@@ -207,6 +208,10 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
             res.info = user;
 
             user = null;
+            return FriendDao.checkFriendStatus(params.uid, params.other);
+          })
+          .then(function(status) {
+            res.friendStatus = status;
             return utils.invokeCallback(cb, null, res);
           });
       }

@@ -8,7 +8,7 @@ module.exports = {
     WINDOWPHONE : 2,
     JAVA : 3
   },
-  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'gold', 'uid'],
+  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid'],
 
   GAME_ID : {
     CO_TUONG : 1,
@@ -137,7 +137,8 @@ module.exports = {
   WIN_TYPE : {
     WIN : 1,
     DRAW : 0,
-    LOSE : 2
+    LOSE : 2,
+    GIVE_UP: 3
   },
 
   ACTION : {
@@ -157,7 +158,8 @@ module.exports = {
     CHANGE_FORMATION: 14,
     SELECT_FORMATION : 13,
     CHANGE_SIDE : 15,
-    BOTTOM_MENU_CHANGE_SIDE : 16
+    BOTTOM_MENU_CHANGE_SIDE : 16,
+    CHANGE_TURN : 17
   },
 
   LANGUAGE_LIMIT : {
@@ -613,7 +615,7 @@ module.exports = {
     PER_PAGE: 20
   },
 
-  MAX_FRIEND: 1000,
+  MAX_FRIEND: 200,
 
   MIN_ELO: 800,
   DEFAULT_ELO: 1000
