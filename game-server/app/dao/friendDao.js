@@ -7,12 +7,9 @@ var pomelo = require('pomelo');
 var Promise = require('bluebird');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
-var formula = require('../consts/formula');
 var utils = require('../util/utils');
-var regexValid = require('../util/regexValid');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
-var moment = require('moment');
 var UserDao = require('./userDao');
 var HomeDao = require('./homeDao');
 var NotifyDao = require('./notifyDao');
@@ -33,93 +30,37 @@ FriendDao.request = function request(fromId, toId, cb) {
   var fromKey = redisKeyUtil.getPlayerFriendKey(fromId);
   var toKey = redisKeyUtil.getPlayerFriendKey(toId);
 
-  return FriendDao.checkFriendStatus(fromId, toId)
-    .then(function(status) {
-      if (status) throw new Error('Client sai luồng kết bạn');
-      return redis.multi()
-        .zadd(fromKey, code.FRIEND_STATUS.WAITING, toId)
-        .zadd(toKey, code.FRIEND_STATUS.PENDING, fromId)
-        .execAsync();
-    })
-    .then(function() {
-      UserDao.getUserProperties(fromId, ['fullname'])
-        .then(function(user) {
-          NotifyDao.push({
-            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
-            title: code.FRIEND_LANGUAGE.REQUEST,
-            msg: [code.FRIEND_LANGUAGE.REQUEST_TO_YOU, user.fullname || ''],
-            buttonLabel: code.FRIEND_LANGUAGE.ACCEPT,
-            command: {target: consts.NOTIFY.TARGET.GO_FRIEND, extra: fromId},
-            scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-            users: [toId],
-            image:  consts.NOTIFY.IMAGE.FRIEND
-          });
-        });
-
-      redis.zcountAsync(toKey, code.FRIEND_STATUS.PENDING, code.FRIEND_STATUS.PENDING)
-        .then(function(count) {
-          if (count || count===0) HomeDao.pushInfo(toId, {friendNotifyCount: count});
-        });
-
-      return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.REQUEST_OK});
-    })
-    .catch(function(e) {
-      console.error(e.stack || e);
-      utils.log(e.stack || e);
-      return utils.invokeCallback(cb, e.stack || e);
-    });
-};
-
-/**
- *
- * @param fromId
- * @param toId
- * @param cb
- */
-FriendDao.accept = function accept(fromId, toId, cb) {
-  if (!fromId || !toId) {
-    return utils.invokeCallback(cb, 'invalid params friend accept');
-  }
-
-  var redis = pomelo.app.get('redisService');
-  var fromKey = redisKeyUtil.getPlayerFriendKey(fromId);
-  var toKey = redisKeyUtil.getPlayerFriendKey(toId);
-
-  return FriendDao.checkFriendStatus(fromId, toId)
-    .then(function(status) {
-      if (status == code.FRIEND_STATUS.WAITING) {
-        return redis.multi()
-          .zadd(fromKey, code.FRIEND_STATUS.FRIEND, toId)
-          .zadd(toKey, code.FRIEND_STATUS.FRIEND, fromId)
-          .execAsync()
+  return redis.zcardAsync(fromKey)
+    .then(function(count) {
+      if (count >= consts.MAX_FRIEND) {
+        return utils.invokeCallback(cb, null, {ec: 3, msg: [code.FRIEND_LANGUAGE.LIMITED, consts.MAX_FRIEND.toString()]});
+      }
+      else {
+        return FriendDao.checkFriendStatus(fromId, toId)
+          .then(function(status) {
+            if (status) throw new Error('Client sai luồng kết bạn');
+            return redis.multi()
+              .zadd(fromKey, code.FRIEND_STATUS.FRIEND, toId)
+              .zadd(toKey, code.FRIEND_STATUS.FRIEND, fromId)
+              .execAsync();
+          })
           .then(function() {
-            UserDao.getUserProperties(toId, ['fullname'])
+            UserDao.getUserProperties(fromId, ['fullname'])
               .then(function(user) {
                 NotifyDao.push({
                   type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
-                  title: code.FRIEND_LANGUAGE.FRIEND_SUCCESS,
-                  msg: [code.FRIEND_LANGUAGE.ACCEPT_FRIEND, user.fullname || ''],
-                  buttonLabel: code.COMMON_LANGUAGE.OK,
+                  title: code.FRIEND_LANGUAGE.REQUEST,
+                  msg: [code.FRIEND_LANGUAGE.REQUEST_TO_YOU, user.fullname || ''],
+                  buttonLabel: code.FRIEND_LANGUAGE.ACCEPT,
                   command: {target: consts.NOTIFY.TARGET.GO_FRIEND},
                   scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-                  users: [fromId],
+                  users: [toId],
                   image:  consts.NOTIFY.IMAGE.FRIEND
                 });
               });
 
-            redis.zcountAsync(toKey, code.FRIEND_STATUS.PENDING, code.FRIEND_STATUS.PENDING)
-              .then(function(count) {
-                if (count || count===0) HomeDao.pushInfo(toId, {friendNotifyCount: count});
-              });
-
-            return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.FRIEND_SUCCESS});
-          });
-      }
-      else {
-        if (!status)
-          return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.CANCEL_BEFORE});
-        else
-          return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.ALREADY_FRIEND});
+            return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.REQUEST_OK});
+          })
       }
     })
     .catch(function(e) {
@@ -152,11 +93,6 @@ FriendDao.reject = function reject(fromId, toId, cb) {
           .zrem(toKey, fromId)
           .execAsync()
           .then(function() {
-            redis.zcountAsync(toKey, code.FRIEND_STATUS.PENDING, code.FRIEND_STATUS.PENDING)
-              .then(function(count) {
-                if (count || count===0) HomeDao.pushInfo(toId, {friendNotifyCount: count});
-              });
-
             return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.UNFRIEND_OK, uid: toId});
           });
       }
@@ -220,7 +156,7 @@ FriendDao.getFriendList = function getFriendList(uid, limit, cb) {
  */
 FriendDao.getFullList = function getFullList(uid, limit, cb) {
   var redis = pomelo.app.get('redisService');
-  limit = limit || (consts.MAX_FRIEND * 2);
+  limit = limit || (consts.MAX_FRIEND);
   var friendKey = redisKeyUtil.getPlayerFriendKey(uid);
   var params = [friendKey, 0, limit, 'WITHSCORES'];
   return redis.zrangeAsync(params)
@@ -262,9 +198,9 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
                 users[i].friendStatus = FriendStatuses[users[i].uid] || 0;
               }
 
-              users.sort(function(a, b) {
-                return a.friendStatus - b.friendStatus;
-              });
+              //users.sort(function(a, b) {
+              //  return a.friendStatus - b.friendStatus;
+              //});
 
               return utils.invokeCallback(cb, null, {list: users});
             });
@@ -293,6 +229,12 @@ FriendDao.search = function search(params, cb) {
   var mongoClient = pomelo.app.get('mongoClient');
   var Top = mongoClient.model('Top');
   var nameRegex = new RegExp(params.name, 'i');
+
+  var users;
+  var uids = [];
+  var list;
+  var i = 0;
+
   return Top
     .find({
       $or: [
@@ -301,56 +243,65 @@ FriendDao.search = function search(params, cb) {
       ]
     })
     .skip((params.page-1)*consts.FRIEND.PER_PAGE)
-    .limit(consts.FRIEND.PER_PAGE+1)
+    .limit(consts.FRIEND.PER_PAGE+consts.MAX_FRIEND)
     .sort({ fullname: 1 })
     .select({uid: 1})
     .lean()
-    .then(function(list) {
-      list = list || [];
+    .then(function(search) {
+      list = search || [];
       if (!list.length)
-        return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: params.page || 1});
+        throw new Error('Cannot search friend');
 
-      var uids= [];
-      for (var i=0; i<list.length; i++)
-        if (list[i].uid) uids.push(list[i].uid);
+      return FriendDao.getFriendList(params.uid, consts.MAX_FRIEND);
+    })
+    .then(function(friends) {
+      for (i=0; i<list.length; i++) {
+        if (list[i].uid && friends.indexOf(list[i].uid) == -1) {
+          uids.push(list[i].uid);
+          if (uids.length >= consts.MAX_FRIEND) break;
+        }
+      }
 
       var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'level'];
-      return UserDao.getUsersPropertiesByUids(uids, properties)
-        .then(function(users) {
-          users = users || [];
+      return UserDao.getUsersPropertiesByUids(uids, properties);
+    })
+    .then(function(userObjs) {
+      users = userObjs || [];
+      var statusService = pomelo.app.get('statusService');
+      return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true);
+    })
+    .then(function(statuses) {
+      statuses = statuses || [];
+      for (i = 0; i < users.length; i++) {
+        if (!statuses[users[i].uid] || !statuses[users[i].uid].online)
+          users[i].status = consts.ONLINE_STATUS.OFFLINE;
+        else if (!statuses[users[i].uid].board)
+          users[i].status = consts.ONLINE_STATUS.ONLINE;
+        else if (typeof statuses[users[i].uid].board == 'string') {
+          var tmp = statuses[users[i].uid].board.split(':');
+          users[i].status = tmp.length > 1
+            ? (Number(tmp[1]))
+            : consts.ONLINE_STATUS.ONLINE;
+          users[i].boardId = tmp[0];
+        }
+        else users[i].status = consts.ONLINE_STATUS.ONLINE;
 
-          var statusService = pomelo.app.get('statusService');
-          return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
-            .then(function(statuses) {
-              statuses = statuses || [];
-              for (i = 0; i < users.length; i++) {
-                if (!statuses[users[i].uid] || !statuses[users[i].uid].online)
-                  users[i].status = consts.ONLINE_STATUS.OFFLINE;
-                else if (!statuses[users[i].uid].board)
-                  users[i].status = consts.ONLINE_STATUS.ONLINE;
-                else if (typeof statuses[users[i].uid].board == 'string') {
-                  var tmp = statuses[users[i].uid].board.split(':');
-                  users[i].status = tmp.length > 1
-                    ? (Number(tmp[1]))
-                    : consts.ONLINE_STATUS.ONLINE;
-                  users[i].boardId = tmp[0];
-                }
-                else users[i].status = consts.ONLINE_STATUS.ONLINE;
+        users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
+      }
 
-                users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
-              }
+      users.sort(function(a, b) {
+        return a.fullname - b.fullname;
+      });
 
-              users.sort(function(a, b) {
-                return a.fullname - b.fullname;
-              });
+      list = null;
+      uids = null;
+      statuses =  null;
 
-              return utils.invokeCallback(cb, null, {
-                list: users,
-                hasNext: (users.length > consts.FRIEND.PER_PAGE) ? 1 : 0,
-                page: params.page || 1
-              });
-            });
-        });
+      return utils.invokeCallback(cb, null, {
+        list: users,
+        hasNext: (users.length > consts.FRIEND.PER_PAGE) ? 1 : 0,
+        page: params.page || 1
+      });
     })
     .catch(function(e) {
       console.error(e.stack || e);

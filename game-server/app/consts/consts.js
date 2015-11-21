@@ -137,7 +137,8 @@ module.exports = {
   WIN_TYPE : {
     WIN : 1,
     DRAW : 0,
-    LOSE : 2
+    LOSE : 2,
+    GIVE_UP: 3
   },
 
   ACTION : {
@@ -616,7 +617,7 @@ module.exports = {
     PER_PAGE: 20
   },
 
-  MAX_FRIEND: 1000,
+  MAX_FRIEND: 200,
 
   MIN_ELO: 800,
   DEFAULT_ELO: 1000

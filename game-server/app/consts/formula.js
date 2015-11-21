@@ -50,7 +50,7 @@ formula.calElo = function calElo(type, user1Elo, user2Elo) {
   user1Elo += Ka*(Aa-Ea);
   user2Elo += Kb*(Ab-Eb);
 
-  return [Math.max(user1Elo, consts.MIN_ELO), Math.max(user2Elo, consts.MIN_ELO)];
+  return [Math.max(Math.round(user1Elo), consts.MIN_ELO), Math.max(Math.round(user2Elo), consts.MIN_ELO)];
 };
 
 formula.calK = function calK(elo) {
