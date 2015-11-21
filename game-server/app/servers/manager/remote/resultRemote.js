@@ -58,6 +58,7 @@ var pro = ResultRemote.prototype;
  */
 
 pro.management = function (logs, cb) {
+  console.log('manager : ', logs);
   var self = this;
   utils.invokeCallback(cb, null, {});
   // TODO , Đồng bộ dữ liệu
@@ -73,18 +74,8 @@ pro.management = function (logs, cb) {
           logs.users[index].result.remain = parseInt(result.gold) || 0 + logs.users[index].result.remain || 0;
       }
     }
-    self.app.rpc.service.eventRemote.emit(null, self.app.get('emitterConfig').FINISH_GAME , logs, function (s) {
-      
-    });
+    self.app.rpc.event.eventRemote.emit(null, self.app.get('emitterConfig').FINISH_GAME , logs, function () {});
   });
-  var users = logs.users;
-  //for (var i = 0, len = users.length; i < len; i++) {
-  //  var user = users[i];
-  //  if (user.result && user.result.eventType) {
-  //    console.log('push event NICE_CARD');
-  //    Emitter.emit(Emitter.CONFIG.TYPE.NICE_CARD, { uid : user.uid, cardType : user.result.eventType});
-  //  }
-  //}
 };
 
 

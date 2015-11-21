@@ -50,14 +50,16 @@ Game.prototype.init = function () {
   }
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
-  var color = turnPlayer.color;
-  if (color !== consts.COLOR.WHITE){
+  console.log('Người chơi đi trước : ', turnPlayer.userInfo.username, turnPlayer.color);
+  if (turnPlayer.color !== consts.COLOR.WHITE) {
     this.game.isWhiteTurn = false;
+  }else {
+    this.game.isWhiteTurn = true;
   }
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
-    if (this.playerPlayingId.indexOf(player.uid) > -1){
+    if (this.playerPlayingId.indexOf(player.uid) > -1) {
       player.menu = [];
       player.genStartMenu();
       player.startGame();
@@ -99,6 +101,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
+  var notifyMsg;
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
   turnTime = turnTime >= 5000 ? turnTime : 5000;
@@ -107,18 +110,32 @@ Game.prototype.setOnTurn = function (gameStatus) {
     : undefined;
   this.isCheck = isCheck;
   this.legalMoves = gameStatus.legalMoves;
+  if (Object.keys(gameStatus.warnings).length > 0){
+    console.log('gameStatus.warning : ', gameStatus.warnings);
+    if (Object.keys(gameStatus.warnings.sapChieuDai).length > 0){
+      notifyMsg = 'Bạn chiếu dai thêm một nước nữa sẽ bị xử thua';
+    }else
+    if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && !gameStatus.warnings.sapBiChieuHet){
+      notifyMsg = 'Bạn đuổi dai thêm một nước nữa sẽ bị xử thua';
+    }else if (gameStatus.warnings.khongTienTrien === 35){
+      notifyMsg = 'Còn 5 nước nữa. Nếu không tiến triển, ván đấu sẽ bị xử hoà'
+    }
+  }
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
     time : [turnTime, player.totalTime],
+    count : 1,
+    notifyMsg : notifyMsg,
     moves : gameStatus.legalMoves,
     isCheck : isCheck
   });
   var self = this;
-  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
+  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid,count:1, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
   this.table.jobId = this.table.timer.addJob(function (uid) {
+    console.log('Job finish : ', uid);
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
   }, turnUid, turnTime + 2000);
 };
@@ -183,8 +200,9 @@ Game.prototype.finishGame = function (result, uid) {
       });
     }
   }
-  this.table.emit('finishGame', { users : finishData});
   this.table.finishGame();
+  console.log('finishData : ', finishData);
+  this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players}, true);
 };
 
@@ -326,6 +344,8 @@ Table.prototype.action = function (uid, opts, cb) {
 
 Table.prototype.finishGame = function () {
   this.status = consts.BOARD_STATUS.NOT_STARTED;
+  this.turnUid = null;
+  this.jobId = null;
   this.players.reset();
   this.timer.stop();
 };

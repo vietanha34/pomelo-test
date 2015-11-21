@@ -3,6 +3,7 @@ var logger = require('pomelo-logger').getLogger(__filename);
 var utils = require('../../../util/utils');
 var consts = require('../../../consts/consts');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
+var channelUtil = require('../../../util/channelUtil');
 var RoomDao = require('../../../dao/roomChatDao');
 var MessageDao = require('../../../dao/messageDao');
 var FriendDao = require('../../../dao/friendDao');
@@ -53,6 +54,12 @@ Handler.prototype.send = function (msg, session, next) {
           // check contain in group
           done(null, true);
           break;
+        case consts.TARGET_TYPE.BOARD_GUEST:
+          if (tableId) {
+            done(null, true)
+          } else {
+            done({ec: Code.FAIL})
+          }
         default:
           done({ec: Code.FAIL});
       }
@@ -61,7 +68,7 @@ Handler.prototype.send = function (msg, session, next) {
       if (!valid) {
         done({ec : Code.CHAT.FA_USER_NOT_FRIEND})
       }else
-      if (targetType !== consts.TARGET_TYPE.BOARD) {
+      if (targetType !== consts.TARGET_TYPE.BOARD && targetType !== consts.TARGET_TYPE.BOARD_GUEST) {
         self.chatService.createMessage(msg, done);
       }else {
         done (null, msg)
@@ -80,8 +87,10 @@ Handler.prototype.send = function (msg, session, next) {
       };
       switch (targetType) {
         case consts.TARGET_TYPE.BOARD :
-          self.chatService.sendMessageToBoard(uid, tableId, data, done);
+          self.chatService.sendMessageToBoard(uid,  channelUtil.getBoardChannelName(tableId), data, done);
           return;
+        case consts.TARGET_TYPE.BOARD_GUEST:
+          return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
         case consts.TARGET_TYPE.PERSON:
           self.chatService.sendMessageToPlayer(uid, msg.target, data, done);
           messageService.pushMessageToPlayer(uids, route, data);

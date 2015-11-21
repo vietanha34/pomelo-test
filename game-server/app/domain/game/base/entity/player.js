@@ -82,8 +82,6 @@ Player.prototype.genStartMenu = function () {
   this.genMenu();
   if (!this.guest){
     this.removeMenu(consts.ACTION.STAND_UP);
-  }else {
-    this.removeMenu(consts.ACTION.SIT_BACK_IN);
   }
 };
 
@@ -124,12 +122,15 @@ Player.prototype.clearOwner = function () {
  * @returns {{username: *, uid: *, level: *, money: *, status: *, avartarid: (*|number)}}
  */
 Player.prototype.getState = function (uid) {
+  console.log('totalTime : ', this.totalTime);
   return {
     fullname : this.userInfo.fullname,
     uid : this.uid,
     level : this.userInfo.level,
+    elo : this.userInfo.elo,
     gold : this.gold,
     color : this.color,
+    totalTime : this.totalTime,
     status : this.status,
     avatar : this.userInfo.avatar,
     sex : parseInt(this.userInfo.sex)

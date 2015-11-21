@@ -49,6 +49,8 @@ Game.prototype.init = function () {
   console.log('this.turn : ', this.turn, color);
   if (color !== consts.COLOR.WHITE){
     this.game.isWhiteTurn = false;
+  }else {
+    this.game.isWhiteTurn = true;
   }
   var keys = Object.keys(this.table.players.players);
   for (var i = 0; i < keys.length; i++) {
@@ -85,11 +87,12 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
     time : [turnTime, player.totalTime],
+    count : 1,
     moves : gameStatus.legalMoves,
     isCheck : isCheck
   });
   var self = this;
-  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
+  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count : 1, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
   this.table.jobId = this.table.timer.addJob(function (uid) {
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
@@ -113,9 +116,10 @@ Game.prototype.progress = function () {
 
 Game.prototype.finishGame = function (result, uid) {
   console.trace('finishGame');
-  var turnColor = this.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+  var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
+  var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
@@ -128,7 +132,14 @@ Game.prototype.finishGame = function (result, uid) {
         totalGold : player.gold,
         elo : 0,
         xp : 0
-      })
+      });
+      finishData.push({
+        uid : player.uid,
+        result : {
+          type : result,
+          color : player.color
+        }
+      });
     }else {
       var addGold = player.addGold(bet, true);
       players.push({
@@ -138,10 +149,18 @@ Game.prototype.finishGame = function (result, uid) {
         totalGold : player.gold,
         elo : 0,
         xp : 0
-      })
+      });
+      finishData.push({
+        uid : player.uid,
+        result : {
+          type : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
+          color : player.color
+        }
+      });
     }
   }
   this.table.finishGame();
+  this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players}, true);
 };
 
@@ -192,6 +211,7 @@ Table.prototype.getStatus = function () {
   status.score  = this.score;
   console.log('killed : ', boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
+  status.log = boardStatus.movesHistory2;
   if(status.turn){
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
     status.turn.moves  = this.game.legalMoves;
@@ -250,13 +270,13 @@ Table.prototype.action = function (uid, opts, cb) {
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    var result = player.move();
+    var result = player.move(this.game.numMove);
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha});
+      this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
     }
     this.game.progress(boardStatus);
     return utils.invokeCallback(cb, null, {});

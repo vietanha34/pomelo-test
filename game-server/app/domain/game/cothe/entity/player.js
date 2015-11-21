@@ -29,8 +29,8 @@ var util = require('util');
 var Player = function (opts) {
   Player.super_.call(this, opts);
   this.color = opts.color;
-  this.totalTime  = opts.totalTime;
-  this.totalTimeDefault = opts.totalTime;
+  this.totalTime  = opts.totalTime || 15 * 60 * 1000;
+  this.totalTimeDefault = opts.totalTime || 15 * 60 * 1000;
   this.timeTurnStart = Date.now();
   this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoà
@@ -74,8 +74,14 @@ Player.prototype.genMenu = function (guest) {
         this.pushMenu(this.table.genMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE));
         this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
         this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP))
-      }else {
-        this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_FORMATION))
+      } else {
+        if (this.table.status === consts.BOARD_STATUS.NOT_STARTED){
+          this.removeMenu(consts.ACTION.STAND_UP);
+          this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_FORMATION));
+          this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP))
+        }else {
+
+        }
       }
     }else {
       if (this.table.formationMode){
@@ -90,7 +96,7 @@ Player.prototype.genMenu = function (guest) {
 Player.prototype.genStartMenu = function (guest) {
   Player.super_.prototype.genStartMenu.call(this);
   if (!guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
+    this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
 

@@ -185,20 +185,23 @@ function check() {
       var rooms = {};
       for (boardId in boards) {
         board = boards[boardId];
-        var numPlayer = board.isAlive();
+        var numPlayer = board.players.length;
         numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
         rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer
       }
       var roomKeys = Object.keys(rooms);
       for(var i = 0, len = roomKeys.length; i< len ; i ++){
         var key = roomKeys[i];
+        console.log('roomKey : ', rooms[key]);
+        var progress = Math.floor(rooms[key] / 100 * 10);
+        if (!progress && rooms[key]) progress += 1;
         pomelo.app.get('boardService').updateRoom({
           roomId : key,
           gameId : gameId,
-          progress : Math.floor(rooms[key] / 100 * 10)
+          progress : progress
         })
       }
-    }, 60000);
+    }, 30000);
   }
   catch (err) {
     logger.error("error in check : %j ", err);

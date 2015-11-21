@@ -59,6 +59,11 @@ pro.subBalance = function (opts, transaction, cb) {
   }
 };
 
+pro.transfer = function (opts, cb) {
+  var self = this;
+  this.app.get('paymentService').transfer(opts, cb);
+};
+
 /**
  * Cộng tiền cho người chơi
  *

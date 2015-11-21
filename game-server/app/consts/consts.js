@@ -8,7 +8,7 @@ module.exports = {
     WINDOWPHONE : 2,
     JAVA : 3
   },
-  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'gold', 'uid'],
+  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid'],
 
   GAME_ID : {
     CO_TUONG : 1,
@@ -157,7 +157,8 @@ module.exports = {
     CHANGE_FORMATION: 14,
     SELECT_FORMATION : 13,
     CHANGE_SIDE : 15,
-    BOTTOM_MENU_CHANGE_SIDE : 16
+    BOTTOM_MENU_CHANGE_SIDE : 16,
+    CHANGE_TURN : 17
   },
 
   LANGUAGE_LIMIT : {
@@ -239,7 +240,9 @@ module.exports = {
   TARGET_TYPE : {
     GROUP : 1,
     PERSON : 2,
-    BOARD : 3  },
+    BOARD : 3,
+    BOARD_GUEST : 4
+  },
 
   MESSAGE_STATUS : {
     SENDED : 0,

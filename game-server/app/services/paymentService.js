@@ -66,7 +66,7 @@ pro.subBalance = function (opts) {
           pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           return user.updateAttributes({
             gold: user.gold - gold,
-            goldInGame : opts.type === consts.CHANGE_GOLD_TYPE.ADD_BOARD ? user.goldInGame + gold : user.goldInGame
+            goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.ADD_BOARD ? user.goldInGame + gold : user.goldInGame
           }, {transaction: t});
         }
       })
@@ -100,7 +100,7 @@ pro.addBalance = function (opts, cb) {
       .findOne({where: {id: uid}, attributes: ['id', 'gold', 'goldInGame']}, {transaction: t})
       .then(function (user) {
         if (!user) {
-          return Promises.reject( {ec: Code.USER_NOT_EXIST});
+          return Promises.reject({ec: Code.USER_NOT_EXIST});
         } else {
           goldAfter = user.gold + gold;
           var log = {
@@ -114,7 +114,7 @@ pro.addBalance = function (opts, cb) {
           pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           return user.updateAttributes({
             gold: user.gold + gold,
-            goldInGame : opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
+            goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
           }, {transaction: t})
         }
       })
@@ -131,6 +131,75 @@ pro.addBalance = function (opts, cb) {
     })
 };
 
+pro.transfer = function (opts, cb) {
+  var gold = opts.gold;
+  if (isNaN(gold) || gold < 0)
+    return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
+
+  return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
+    return Promises.delay(0)
+    .then(function () {
+        return [
+          pomelo.app.get('mysqlClient')
+            .AccUser
+            .findOne({
+              where: {
+                userId: opts.fromUid
+              },
+              raw: true,
+              attributes: ['gold']
+            }),
+          pomelo.app.get('mysqlClient')
+            .AccUser
+            .findOne({
+              where : {
+                userId : opts.toUid
+              },
+              raw : true,
+              attributes : ['gold']
+            })
+        ];
+      })
+    .spread(function (fromUser, toUser) {
+        var subGold = gold;
+        if (fromUser.gold >= gold) {
+          fromUser.gold -= gold
+        } else {
+          subGold = fromUser.gold;
+          user.gold = 0;
+        }
+        return [
+          pomelo.app.get('mysqlClient')
+            .AccUser
+            .update({
+              gold: user.gold
+            }, {
+              where: {
+                userId: opts.fromUid
+              },
+              transaction: t
+            }),
+          pomelo.app.get('mysqlClient')
+            .AccUser
+            .update({
+              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + subGold)
+            }, {
+              where: {
+                userId: opts.toUid
+              },
+              transaction: t
+            })
+        ]
+      })
+    })
+    .spread(function () {
+      return utils.invokeCallback(cb, null);
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, err);
+    })
+};
+
 pro.syncBalance = function (opts, cb) {
   var gold = opts.gold;
   if (opts.gameType && opts.gameType === consts.GAME_TYPE.TOURNAMENT) {
@@ -142,14 +211,14 @@ pro.syncBalance = function (opts, cb) {
   pomelo.app.get('mysqlClient')
     .AccUser
     .findOne({
-      where : {
-        id : opts.uid
+      where: {
+        id: opts.uid
       },
-      attributes : ['gold'],
-      raw : true
+      attributes: ['gold'],
+      raw: true
     })
     .then(function (user) {
-      if (user){
+      if (user) {
         var log = {
           before: opts.gold + user.gold
           , after: user.gold + opts.gold
@@ -162,10 +231,10 @@ pro.syncBalance = function (opts, cb) {
         pomelo.app.get('mysqlClient')
           .AccUser
           .update({
-            goldInGame : opts.gold
+            goldInGame: opts.gold
           }, {
-            where : {
-              id : opts.uid
+            where: {
+              id: opts.uid
             }
           })
       }

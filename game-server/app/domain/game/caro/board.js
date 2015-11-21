@@ -83,11 +83,13 @@ Game.prototype.setOnTurn = function (gameStatus) {
   turnTime = turnTime >= 5000 ? turnTime : 5000;
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
+    count : 1,
+    lockBoard : 0,
     time : [turnTime, player.totalTime],
     banSquare : gameStatus.forbidenSquares
   });
   var self = this;
-  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime]});
+  this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid,count:1, time : [turnTime, player.totalTime]});
   this.table.turnUid = player.uid;
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
@@ -121,6 +123,7 @@ Game.prototype.finishGame = function (result, uid) {
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
+  var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
@@ -133,7 +136,14 @@ Game.prototype.finishGame = function (result, uid) {
         totalGold : player.gold,
         elo : 0,
         xp : 0
-      })
+      });
+      finishData.push({
+        uid : player.uid,
+        result : {
+          type : result,
+          color : player.color
+        }
+      });
     }else {
       var addGold = player.addGold(bet, true);
       players.push({
@@ -143,12 +153,20 @@ Game.prototype.finishGame = function (result, uid) {
         totalGold : player.gold,
         elo : 0,
         xp : 0
-      })
+      });
+      finishData.push({
+        uid : player.uid,
+        result : {
+          type : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
+          color : player.color
+        }
+      });
     }
   }
   var gameStatus = this.game.getBoardStatus();
   var winningLine = gameStatus.winningLines;
   this.table.finishGame();
+  this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players, line : winningLine}, true);
 };
 
@@ -175,6 +193,9 @@ Table.prototype.getStatus = function () {
   status.previous = boardStatus.prevMove;
   status.score  = this.score;
   if (status.turn){
+    if (this.status !== consts.BOARD_STATUS.NOT_STARTED){
+      status.turn.lockBoard = 0;
+    }
     status.turn.banSquare = boardStatus.forbidenSquares;
   }
   return status

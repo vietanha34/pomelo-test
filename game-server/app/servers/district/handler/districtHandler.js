@@ -29,15 +29,15 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   if (!!maintenance) {
     return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
   }
-  if (!gameId){
+  if (!gameId) {
     return next(null, utils.getError(Code.FAIL))
   }
   var user;
   var whereClause = {
-    numPlayer : {
-      $lt : 2
+    numPlayer: {
+      $lt: 2
     },
-    gameId : gameId
+    gameId: gameId
   };
   if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var tableId;
@@ -51,17 +51,20 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         user = userInfo;
         user.frontendId = session.frontendId;
         self.app.get('boardService').getBoard({
-          where : whereClause,
-          limit : 1
-        },done)
+          where: whereClause,
+          limit: 1,
+          raw : true,
+          order: 'numPlayer DESC'
+        }, done)
       } else {
         next(null, {ec: Code.FAIL});
       }
     }, function (boardIds, done) {
+      console.log('boardId : ', boardIds);
       var boardId = boardIds[0];
       if (boardId) {
-        tableId = boardId.tableId;
-        self.app.rpc.game.gameRemote.joinBoard(session, boardId.tableId , {userInfo: user}, done)
+        tableId = boardId.boardId;
+        self.app.rpc.game.gameRemote.joinBoard(session, boardId.boardId, {userInfo: user}, done)
       } else {
         var err = new Error('Không tìm thấy bàn chơi phù hợp');
         err.ec = Code.ON_QUICK_PLAY.FA_NOT_AVAILABLE_BOARD;
@@ -121,7 +124,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           avatar: userInfo.avatar,
           frontendId: session.frontendId
         };
-        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password : msg.password}, done)
+        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
       } else {
         next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
       }
@@ -154,7 +157,7 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
   }
   this.app.rpc.game.gameRemote.leaveBoard(session, {
     boardId: tableId,
-    uid: uid,
+    uid: uid
   }, function (err, result) {
     if (err) {
       logger.error(err);
@@ -162,7 +165,7 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
     }
     else {
       next(null, result);
-      if (result && !result.ec && !result.confirm) {
+      if (result && !result.ec) {
         session.set('tableId', null);
         session.set('excludeBoardId', [tableId]);
         session.set('serverId', null);
@@ -178,19 +181,18 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   var waitingService = this.app.get('waitingService');
   var uid = session.uid;
   var waitingData = {
-    type: msg.type || 1,
+    attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
     offset: 0,
     length: 10
   };
-  waitingService.getList(waitingData, uid, function (err, res) {
-    if (err) {
-      logger.error(err.message);
-      next(null, {ec: Code.FAIL});
-    }
-    else {
-      next(null, {users: res});
-    }
-  })
+  if (msg.type === 2) return next(null, { users : [], type : msg.type});
+  return waitingService.getList(waitingData)
+    .then(function (res) {
+      next(null, {users: res, type : msg.type});
+    })
+    .finally(function () {
+      msg = null;
+    });
 };
 
 Handler.prototype.getNumBoard = function (msg, session, next) {
@@ -225,38 +227,41 @@ Handler.prototype.getHall = function (msg, session, next) {
       where: {
         gameId: gameId
       },
-      raw : true
+      raw: true,
+      order : 'roomId ASC'
     })
     .then(function (rooms) {
+      console.log('room before : ', rooms);
       var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
       var temp = {};
-      for (i = 0, len = rooms.length; i < len ; i++){
-        if (lodash.isArray(temp[rooms[i].hallId])){
+      for (i = 0, len = rooms.length; i < len; i++) {
+        if (lodash.isArray(temp[rooms[i].hallId])) {
           temp[rooms[i].hallId].push(rooms[i]);
-        }else {
+        } else {
           temp[rooms[i].hallId] = [rooms[i]];
         }
       }
       rooms = temp;
       var keys = Object.keys(rooms);
+      console.log('room after : ', rooms);
       var results = [];
-      for (var i = 0, len = keys.length; i< len; i ++){
+      for (var i = 0, len = keys.length; i < len; i++) {
         var hallId = keys[i];
-        var hallKey = parseInt(''+gameId + hallId);
+        var hallKey = parseInt('' + gameId + hallId);
         var hallConfig = hallConfigs[hallKey] || {};
         results.push({
           hallId: hallId,
           gold: [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)],
-          icon: utils.JSONParse(hallConfig.icon, {id : 0, version : 0}),
+          icon: utils.JSONParse(hallConfig.icon, {id: 0, version: 0}),
           hint: hallConfig.hint,
           room: lodash.map(rooms[hallId], function (n) {
-            return {full : n.progress,  roomId: n.roomId}
+            return {full: n.progress, roomId: n.roomId}
           }),
           level: parseInt(hallConfig.level),
           exp: parseInt(hallConfig.exp)
         })
       }
-      next(null, { data : results, gameId : gameId});
+      next(null, {data: results, gameId: gameId});
     })
 };
 
@@ -280,32 +285,32 @@ Handler.prototype.getBoardList = function (msg, session, next) {
     .getBoard({
       where: {
         gameId: gameId,
-        roomId : roomId
+        roomId: roomId
       },
-      //order: 'index'
+      order: '`index` ASC'
     })
     .then(function (boards) {
       var data = [];
-      for (var i = 0, len = boards.length; i < len; i ++){
+      for (var i = 0, len = boards.length; i < len; i++) {
         var board = boards[i];
         hallId = board.hallId;
         data.push({
-          index : board.index,
-          tableId : board.boardId,
-          gameId : board.gameId,
-          roomId : board.roomId,
-          stt : board.stt,
-          numPlayer : board.numPlayer,
-          bet : board.bet,
-          turnTime : board.turnTime,
-          lock : board.password ? 1 : 0,
-          optional : utils.JSONParse(board.optional, {})
+          index: board.index,
+          tableId: board.boardId,
+          gameId: board.gameId,
+          roomId: board.roomId,
+          stt: board.stt,
+          numPlayer: board.numPlayer,
+          bet: board.bet,
+          turnTime: board.turnTime,
+          lock: board.password ? 1 : 0,
+          optional: utils.JSONParse(board.optional, {})
         });
       }
-      return next(null, { board : data, roomId : roomId, gameId : gameId, hallId : hallId})
+      return next(null, {board: data, roomId: roomId, gameId: gameId, hallId: hallId})
     })
     .catch(function (err) {
       logger.error('err : ', err);
-      return next(null, { board : [], roomId :roomId, gameId : gameId});
+      return next(null, {board: [], roomId: roomId, gameId: gameId});
     })
 };

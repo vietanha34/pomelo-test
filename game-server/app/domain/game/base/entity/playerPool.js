@@ -97,15 +97,19 @@ pro.addPlayer = function (opts) {
     return {ec: Code.OK, exists : true};
   }
   var data = {ec : Code.OK};
-  player = new self.Player({
+  player = new self.Player ({
     userInfo: userInfo,
     players: self,
     table: self.table
   });
   self.players[uid] = player;
-  if (player.gold < self.table.bet || self.length >= self.table.maxPlayer) {
+  if (player.gold < self.table.bet || self.length >= self.table.maxPlayer || player.level < self.table.level) {
     if (player.gold < self.table.bet) {
-      player.menu.push(self.table.genMenu(consts.ACTION.CHARGE_MONEY))
+      player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
+      data.msg = 'Bạn không đủ tiền để chơi bàn chơi này'
+    }
+    if (player.level < self.table.level){
+      data.msg = 'Bạn không đủ cấp độ để chơi bàn chơi này'
     }
     self.guestIds.push(player.uid);
     player.guest = true;
@@ -232,13 +236,15 @@ pro.standUp = function (uid) {
  *
  * @param {String} uid định danh của người chơi
  * @param {Number} slotId vị trí của người chơi cần ngồi
- * @param {Function} cb call tra ve
  */
 pro.sitIn = function (uid, slotId) {
   var self = this;
   var player = this.getPlayer(uid);
   if (self.length >= self.table.maxPlayer) {
-    return done({ec: Code.ON_GAME.BOARD_FULL});
+    return {ec: Code.ON_GAME.BOARD_FULL}
+  }
+  if (player.gold < this.table.bet){
+    return utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY)
   }
   if (slotId) {
     var index = self.checkSlotIdAvailable(slotId, uid);
@@ -270,7 +276,8 @@ pro.sitIn = function (uid, slotId) {
     }
     self.length = lodash.compact(self.playerSeat).length;
     return {};
-  } else {
+  }
+  else {
     var error = {};
     error.ec = Code.ON_GAME.FA_SLOT_EXIST;
     return error
@@ -577,20 +584,20 @@ pro.checkStartGame = function () {
 };
 
 pro.changeColor = function (uid, color) {
+  var mapColor = {};
   var player = this.getPlayer(uid);
-  if(player){
+  if(player && player.color !== color){
     player.color = color;
+    mapColor[player.uid] = color;
     var otherPlayer = this.getPlayer(this.getOtherPlayer(uid));
-    var index = this.playerSeat.indexOf(uid);
-    if (this.mapColor[index] !== color){
-      var temp = this.mapColor[0];
-      this.mapColor[0] = this.mapColor[1];
-      this.mapColor[1] = temp;
-    }
+    this.mapColor.reverse();
     if(otherPlayer){
-      otherPlayer.color = color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE
+      otherPlayer.color = color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE;
+      mapColor[otherPlayer.uid] = otherPlayer.color;
     }
+    this.table.score.reverse();
   }
+  return mapColor;
 };
 
 pro.changePlayerOption = function (opts) {
@@ -603,6 +610,35 @@ pro.changePlayerOption = function (opts) {
       player[key[j]] = opts[key[j]];
     }
   }
+};
+
+pro.findPlayerByColor = function (color) {
+  for (var i = 0, len = this.playerSeat.length; i < len; i++){
+    if(!this.playerSeat[i]) continue;
+    var player = this.getPlayer(this.playerSeat[i]);
+    if(!player) continue;
+    if (player.color === color){
+      return player
+    }
+  }
+};
+
+pro.getGuest = function () {
+  var guests = this.guestIds.slice(0, 50);
+  var result = [];
+  for (var i = 0, len = guests.length; i< len; i++){
+    var uid = guests[i];
+    var player = this.getPlayer(uid);
+    if(player){
+      result.push({
+        fullname : player.userInfo.fullname,
+        gold : player.gold,
+        elo : player.elo || 0,
+        avatar : player.userInfo.avatar
+      })
+    }
+  }
+  return result
 };
 
 module.exports = PlayerPool;

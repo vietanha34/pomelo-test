@@ -146,7 +146,12 @@ Handler.prototype.login = function (msg, session, next) {
 				type: type,
 				tableId: ''
 			});
-			//self.app.get('waitingService').add(session);
+			self.app.get('waitingService').add({
+        username : session.get('username'),
+        fullname : session.get('fullname'),
+        userId : session.uid,
+        gold : session.get('gold')
+      });
 		}
     emitData.resume = msg.resume;
     var emitterConfig = self.app.get('emitterConfig');
@@ -177,7 +182,7 @@ var onUserLeave = function onUserLeave(app, session, reason) {
 		//app.rpc.chat.chatRemote.leaveGlobal(session, session.uid, session.frontendId,
 		//	channelUtil.getGlobalChannelName(), function () {
 		//	});
-		//app.get('waitingService').leave(session.uid);
+		app.get('waitingService').leave(session.uid);
 		var emitData = {
 			uid: session.uid,
 			lastLogin: session.get('lastLogin'),

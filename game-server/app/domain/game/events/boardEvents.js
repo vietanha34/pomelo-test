@@ -39,8 +39,11 @@ exp.addEventFromBoard = function (board) {
         isFull : board.players.length >= board.maxPlayer ? 1 : 0
       });
       board.pushOnJoinBoard(player.uid);
+    }else {
+      pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
+      board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
     }
-    //pomelo.app.get('waitingService').leave(player.uid);
+    pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
       board.addJobReady(player.uid)
@@ -49,7 +52,9 @@ exp.addEventFromBoard = function (board) {
 
   board.on('sitIn', function (player) {
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
-      board.addJobReady(player.uid)
+      setTimeout(function (uid) {
+        board.addJobReady(uid)
+      }, 100, player.uid)
     }
   });
 
@@ -92,6 +97,7 @@ exp.addEventFromBoard = function (board) {
       }
     }
     pomelo.app.get('globalChannelService').leave(board.channelName, userInfo.uid, userInfo.frontendId);
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
     //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
     // restart to default value
@@ -102,7 +108,8 @@ exp.addEventFromBoard = function (board) {
       numPlayer : board.players.length,
       isFull : board.players.length >= board.maxPlayer ? 1 : 0
     });
-    //pomelo.app.get('waitingService').add(userInfo, true);
+    userInfo.userId = userInfo.uid;
+    pomelo.app.get('waitingService').add(userInfo);
     if (!userInfo.guest){
       board.looseUser = null;
       board.timer.stop()
@@ -126,7 +133,7 @@ exp.addEventFromBoard = function (board) {
 
 
   board.on('startGame', function (userPlaying) {
-    board.timer.stop();
+    //board.timer.stop();
   });
 
 
@@ -158,8 +165,8 @@ exp.addEventFromBoard = function (board) {
    */
   board.on('finishGame', function (data) {
 
-    for (var i = 0, len = data.users.length; i < len; i ++){
-      var user = data.users[i];
+    for (var i = 0, len = data.length; i < len; i ++){
+      var user = data[i];
       if (user.result.type === consts.WIN_TYPE.WIN){
         board.score[user.color === consts.COLOR.WHITE ? 0 : 1] += 1
       }else if (user.result.type === consts.WIN_TYPE.LOSE){
@@ -170,6 +177,15 @@ exp.addEventFromBoard = function (board) {
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)){
       board.addJobReady(otherPlayerUid);
     }
+    var logsData = {
+      boardInfo : board.getBoardInfo(true),
+      users : data,
+      tax : 0,
+      gameType : board.gameType,
+      timeShow : consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD
+    };
+    pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
+    });
   });
 
   /**
@@ -182,16 +198,15 @@ exp.addEventFromBoard = function (board) {
     if (board.jobId){
       board.timer.cancelJob(board.jobId);
     }
-    if (player.gold > board.bet) {
-      player.menu = [board.genMenu(consts.ACTION.SIT_BACK_IN)]
-    }
-    else if (player.gold === 0){
+    else if (player.gold < board.bet){
       // TODO add msg on charge money button
-      player.menu = [board.genMenu(consts.ACTION.CHARGE_MONEY)]
+      player.pushMenu(board.genMenu(consts.ACTION.CHARGE_MONEY))
     }
     if (board.players.length === 0) {
       board.resetDefault()
     }
+    pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
     //if (board.players.length < 2 && board.startTimeout) {
     //  board.clearTimeoutStart()
     //}
@@ -211,6 +226,8 @@ exp.addEventFromBoard = function (board) {
       numPlayer : board.players.length,
       isFull : board.players.length >= board.maxPlayer ? 1 : 0
     });
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
   });
 
   board.on('kick', function (player) {

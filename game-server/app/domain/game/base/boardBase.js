@@ -60,8 +60,8 @@ var Board = function (opts, PlayerPool, Player) {
   this.configTurnTime = opts.configTurnTime || [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
   this.configTotalTime = opts.configTotalTime || [5*60 * 1000, 10*60 * 1000, 15*60 * 1000, 30*60 * 1000];
   this.isMaintenance = false;
-  this.turnTime = opts.turnTime || 180 * 1000;
-  this.totalTime = opts.totalTime || 15 * 60 * 1000;
+  this.turnTime = opts.turnTime * 1000 || 180 * 1000;
+  this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
   this.tax = opts.tax || 5;
   this.score = [0,0];
   this.createdTime = Date.now();
@@ -77,6 +77,7 @@ var Board = function (opts, PlayerPool, Player) {
     Player: Player
   });
   this.channelName = channelUtil.getBoardChannelName(this.tableId);
+  this.guestChannelName = channelUtil.getBoardGuestChannelName(this.tableId);
   // default
   this.betDefault = this.bet;
   this.turnTimeDefault = this.turnTime;
@@ -88,10 +89,10 @@ var Board = function (opts, PlayerPool, Player) {
       // change bet;
       var bet = properties.bet;
       if (bet) {
-        console.log('update bet : ', bet);
+        console.log('update bet : ', bet, self.configBet);
         var ownerPlayer = self.players.getPlayer(self.owner);
         if (bet < self.configBet[0] || bet > self.configBet[1]){
-          return done({ec : Code.FAIL});
+          return done({ec : Code.FAIL, msg : "mức tiền cược không đúng với khu vực"});
         }
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
@@ -127,14 +128,14 @@ var Board = function (opts, PlayerPool, Player) {
         self.turnTime = turnTime;
         changed = true;
         dataChanged.turnTime = turnTime;
-        dataUpdate.turnTime = turnTime;
+        //dataUpdate.turnTime = turnTime;
       }
       if (totalTime && (self.configTotalTime.indexOf(totalTime) > -1)){
         console.log('update TurnTime :', totalTime);
         self.totalTime = totalTime;
         changed = true;
         dataChanged.totalTime = totalTime;
-        dataUpdate.totalTime = totalTime;
+        dataUpdate.turnTime = totalTime / 1000;
         self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
@@ -158,19 +159,21 @@ var Board = function (opts, PlayerPool, Player) {
       var uid = properties.uid;
       var player = self.players.getPlayer(uid);
       if (player && player.color !== color){
-        var otherPlayerUid = self.players.getOtherPlayer();
+        var otherPlayerUid = self.players.getOtherPlayer(player.uid);
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
         if (!color){ // color === 0
-          if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+          console.log('player.color : ', player.color, otherPlayer.color, self.players.mapColor);
+          if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
           player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }else {
           player.color = color;
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }
+        dataChanged.color = player.color;
         changed = true;
-        var temp = self.players.mapColor[0];
-        self.players.mapColor[0] = self.players.mapColor[1];
-        self.players.mapColor[1] = temp;
+        self.players.mapColor.reverse();
+        self.score.reverse();
+        console.log('player.color : ', player.color, otherPlayer.color, self.players.mapColor);
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
@@ -259,11 +262,11 @@ pro.pushMessageWithMenuWithOutUid = function (uid, route, msg) {
   var player, key;
   for (key in this.players.players) {
     player = this.players.players[key];
-    if (player.uid === uid) continue
+    if (player.uid === uid) continue;
     messageService.pushMessageToPlayer(player.getUids(), route, utils.merge_options(msg, {menu: player.menu || []}))
   }
   logger.info("\n Push message without Menu \n route :  %s \n message %j", route, msg);
-}
+};
 
 //pro.pushMenuGame = function (route, msg) {
 //  for (var i = 0, len = this.players.playerSeat.length; i < len; i++) {
@@ -379,7 +382,6 @@ pro.pushOnJoinBoard = function (uid) {
     var tmpState = lodash.clone(joinPlayerState);
     tmpState.sid = this.players.getSlotId(player.uid);
     if (playerOther.guest && this.players.length >= this.maxPlayer) {
-      playerOther.removeMenu(consts.ACTION.SIT_BACK_IN);
       this.pushMessageToPlayer(playerUid, 'onPlayerJoin', utils.merge_options(tmpState, {menu: playerOther.menu}));
     } else {
       this.pushMessageToPlayer(playerUid, 'onPlayerJoin', tmpState);
@@ -388,18 +390,6 @@ pro.pushOnJoinBoard = function (uid) {
 };
 
 pro.pushStandUp = function (uid, data) {
-  var playerUids = Object.keys(this.players.players);
-  for (var i = 0, len = playerUids.length; i < len; i++) {
-    var playerUid = playerUids[i];
-    var player = this.players.getPlayer(playerUid);
-    if (uid === playerUid) {
-      continue
-    }
-    console.log('pushMessage leaveBoard : ',uid);
-    if (player.guest && this.players.length < this.maxPlayer) {
-      player.pushMenu(this.genMenu(consts.ACTION.SIT_BACK_IN));
-    }
-  }
   this.pushMessageWithMenuWithOutUid(uid, 'district.districtHandler.leaveBoard', data);
 };
 
@@ -412,9 +402,6 @@ pro.pushLeaveBoard = function (uid, data) {
       continue
     }
     console.log('pushMessage leaveBoard : ',uid);
-    if (player.guest && this.players.length < this.maxPlayer) {
-      player.pushMenu(this.genMenu(consts.ACTION.SIT_BACK_IN));
-    }
   }
   this.pushMessageWithMenu('district.districtHandler.leaveBoard', data);
 };
@@ -455,6 +442,7 @@ pro.isAlive = function () {
   return !(this.players.length === 0 || this.status === consts.BOARD_STATUS.NOT_STARTED && (Date.now() - this.timeStart) > consts.TIME.GAME_IDLE)
 };
 
+
 pro.clearIdlePlayer = function () {
   var key, player;
   if (!this.players) {
@@ -491,6 +479,7 @@ pro.joinBoard = function (opts) {
   var userInfo = opts.userInfo;
   var uid = userInfo.uid;
   var self = this;
+  console.log('this.lock : ', this.lock, opts.password);
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
     return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
   }
@@ -505,6 +494,8 @@ pro.joinBoard = function (opts) {
     console.log('state : ', state);
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
+    }else {
+      state.msg = result.msg ;
     }
     return state;
   } else {
@@ -567,10 +558,15 @@ pro.getStatus = function () {
   var status = {
     stt : this.status
   };
-  if (lodash.isNumber(this.jobId) && this.players.getPlayer(this.turnUid)){
+  var player = this.players.getPlayer(this.turnUid);
+  if (lodash.isNumber(this.jobId) && player){
     status.turn = {
       uid : this.turnUid,
-      time : [this.timer.getLeftTime(this.jobId), this.turnTime]
+      count : this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
+      time : [this.timer.getLeftTime(this.jobId),
+        player.totalTime,
+        this.status === consts.BOARD_STATUS.NOT_STARTED ? 30000 + 4000 : this.turnTime
+      ]
     };
   }
   return status
@@ -603,7 +599,7 @@ pro.getBoardState = function (uid) {
     owner : this.owner
   };
   state.menu = this.players.getMenu(uid);
-  return state;
+  return state
 };
 
 pro.getBoardInfo = function (finish) {
@@ -632,7 +628,8 @@ pro.getBoardInfo = function (finish) {
       gameType: this.gameType,
       hallId : this.hallId,
       index : this.index,
-      bet  :this.bet
+      bet  :this.bet,
+      guest: this.players.guestIds.length
     }
   }
 };
@@ -654,6 +651,9 @@ pro.standUp = function (uid) {
   self.players.standUp(uid);
   if (self.owner == uid) {
     self.setOwner();
+    if (this.owner){
+      this.emit('changeOwner');
+    }
   }
   self.emit('standUp', player);
   return self.getBoardState(uid);
@@ -732,11 +732,11 @@ pro.sitIn = function (uid, slotId, cb) {
       if (!self.owner) {
         self.owner = uid;
       }
-      self.emit('sitIn', player);
       player.menu.splice(0, player.menu.length);
       player.genMenu();
       var state = self.getBoardState(uid);
       self.pushOnJoinBoard(uid);
+      self.emit('sitIn', player);
       return utils.invokeCallback(cb, null, state);
     } else {
       return utils.invokeCallback(cb, null, result || {ec: Code.FAIL});
@@ -934,7 +934,8 @@ pro.addJobReady = function (uid) {
   }
   this.pushMessage('onTurn', {
     uid : uid,
-    time : [20000, this.totalTime]
+    count : 0,
+    time : [30000, this.totalTime, 30000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -946,13 +947,12 @@ pro.addJobReady = function (uid) {
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
     boardState.msg = Code.ON_GAME.FA_NOT_READY;
-    console.log('pushLeaveBoard : ', uid);
     self.pushStandUp(uid, {
       uid: uid,
       msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
     });
     self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
-  }, uid, 20000 + 2000);
+  }, uid, 30000 + 4000);
 };
 
 pro.addJobStart = function (uid) {
@@ -962,7 +962,8 @@ pro.addJobStart = function (uid) {
   }
   this.pushMessage('onTurn', {
     uid : uid,
-    time : [20000, this.totalTime]
+    count : 0,
+    time : [30000, this.totalTime, 30000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -979,7 +980,7 @@ pro.addJobStart = function (uid) {
       msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
     });
     self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
-  }, uid, 20000);
+  }, uid, 30000 + 4000);
 };
 
 pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
@@ -1087,6 +1088,10 @@ pro.plusScore = function (whiteWin) {
   }else {
     this.score[1] += 1;
   }
+};
+
+pro.getGuest = function () {
+  return this.players.getGuest();
 };
 
 pro.checkStartGame = function () {

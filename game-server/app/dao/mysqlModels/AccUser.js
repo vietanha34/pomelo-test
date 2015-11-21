@@ -62,6 +62,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: '0'
     },
+    elo : {
+      type: DataTypes.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      defaultValue : 1000
+    },
     birthday: {
       type: DataTypes.DATE,
       allowNull: true,

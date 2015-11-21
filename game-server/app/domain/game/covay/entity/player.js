@@ -33,10 +33,10 @@ var Player = function (opts) {
   this.totalTimeDefault = opts.totalTime;
   this.timeTurnStart = Date.now();
   this.numDelay = 2;
-  this.timeDelay = 0; // nước đi xin hoãn;
   this.timeDraw = 0; // nước đi xin hoà
   this.requestDraw  = false;
-  this.requestDelay = false;
+  this.firstMove = false;
+  this.numAutoChangeTurn = 0;
 };
 
 util.inherits(Player, PlayerBase);
@@ -46,11 +46,6 @@ Player.prototype.getState = function (uid) {
   return result
 };
 
-Player.prototype.xinThua = function (numMove) {
-  this.requestDelay = true;
-  this.timeDelay = numMove;
-  this.numDelay -= 1;
-};
 
 Player.prototype.xinHoa = function (numMove) {
   this.requestDraw = true;
@@ -58,21 +53,30 @@ Player.prototype.xinHoa = function (numMove) {
 };
 
 Player.prototype.move = function () {
+  if (!this.firstMove) {
+    this.firstMove = true;
+    var otherPlayer = this.table.players.getPlayer(this.table.players.getOtherPlayer(this.uid));
+    otherPlayer.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_TURN));
+    this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_TURN));
+    return true
+  }
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
 };
 
 Player.prototype.reset = function () {
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
+  this.numAutoChangeTurn = 0;
   this.numDraw = 3;
-  this.timeDelay = 0; // nước đi xin hoãn;
+  this.firstMove = false;
   this.timeDraw = 0; // nước đi xin hoãn;
 };
 
 Player.prototype.genStartMenu = function (guest) {
   Player.super_.prototype.genStartMenu.call(this);
   if (!guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
+    this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_TURN,{ disable : 1}));
+    this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
 

@@ -376,6 +376,10 @@ pro.action = function (msg, session, next) {
     next(null);
     return
   }
+  if (board.turnUid !== uid){
+    messageService.pushMessageToPlayer(utils.getUids(session), route, { ec : 500, msg : 'Chưa đến lượt của bạn'});
+    return next(null);
+  }
   return board.action(uid, msg, function (err, res) {
     if (err) {
       console.log(err);
@@ -410,6 +414,14 @@ pro.demand = function (msg, session, next) {
   next(null, board.demand(msg));
 };
 
+pro.getGuest = function (msg, session , next) {
+  var board = session.board;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    return
+  }
+  next(null, { guest : board.getGuest()});
+};
 
 /**
  * Get handler path

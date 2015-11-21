@@ -184,9 +184,8 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
   });
 };
 
-pro.sendMessageToBoard = function (fromUid, boardId, data, cb) {
+pro.sendMessageToBoard = function (fromUid, channelName, data, cb) {
   var self = this;
-  var channelName = getChannelName(boardId);
   data.content = setContent(data.content);
   this.checkBanUser(channelName, fromUid, function (err, exists) {
     if (!exists) {
@@ -222,11 +221,6 @@ pro.destroyChannel = function (channelName) {
   this.app.get('globalChannelService').destroyChannel(channelName);
   this.app.get('redisCache').del(redisKeyUtil.getChatChannelBanUserKey(channelName))
 };
-
-var getChannelName = function (boardId) {
-  return channelUtil.getBoardChannelName(boardId);
-};
-
 
 function setContent(str) {
   str = str.replace(/<\/?[^>]*>/g, '');

@@ -103,8 +103,6 @@ Game.prototype.initBoards = function () {
       for (var j = 1, lenj = parseInt(hallConfig.numRoom); j <= lenj; j++) {
         this.createRoom(hallConfig, hallId * 100 + j)
       }
-    } else {
-      break;
     }
   }
 };
@@ -121,7 +119,7 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
   return pomelo.app.get('boardService')
     .addRoom(opts)
     .then(function () {
-      for (var i = 1; i <= 50; i++) {
+      for (var i = 1; i <= 72; i++) {
         var opts = utils.clone(hallConfig);
         if (hallId === consts.HALL_ID.LIET_CHAP){
           opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
@@ -129,11 +127,27 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
         opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax) ];
-        opts.bet = parseInt(hallConfig.goldMin);
+        opts.turnTime = 3 * 60;
+        switch (hallId){
+          case consts.HALL_ID.TAP_SU:
+            opts.bet = 300 + Math.floor(i / 6) * 300;
+            break;
+          case consts.HALL_ID.BINH_DAN:
+          case consts.HALL_ID.LIET_CHAP:
+            opts.bet = 1000 + Math.floor(i / 6) * 400;
+            break;
+          case consts.HALL_ID.CAO_THU:
+            opts.bet = 1000 + Math.floor(i / 6) * 1000;
+            break;
+          default :
+            opts.bet = 0;
+        }
+        opts.totalTime = 15 * 60;
         opts.base = true;
+        opts.level = parseInt(hallConfig.level);
         opts.roomId = roomId;
         opts.index = i;
-        self.createBoard(opts)
+        self.createBoard(opts);
       }
     })
 };
