@@ -267,7 +267,8 @@ module.exports = {
 
   PROFILE_LANGUAGE: {
     SUCCESS: 'Cập nhật thông tin thành công',
-    PASSWORD_SUCCESS: 'Đổi mật khẩu thành công'
+    PASSWORD_SUCCESS: 'Đổi mật khẩu thành công',
+    WRONG_OLD_PASSWORD: 'Mật khẩu cũ không đúng'
   },
 
   EC: {

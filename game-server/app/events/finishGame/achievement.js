@@ -57,7 +57,7 @@ typeMap[consts.WIN_TYPE.DRAW] = 'Draw';
 typeMap[consts.WIN_TYPE.GIVE_UP] = 'GiveUp';
 
 module.exports.process = function (app, type, param) {
-  if (!param.users || param.users!=2 || !param.boardInfo || !param.boardInfo.gameId) {
+  if (!param.users || param.users.length!=2 || !param.boardInfo || !param.boardInfo.gameId) {
    console.error('wrong param finish game: ', param);
    return;
   }

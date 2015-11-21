@@ -103,7 +103,6 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
   else { // update password or profile
     if (!uid
       || (params.password && params.password.length < 5)
-      || (params.oldPassword && params.password != params.oldPassword)
       || (params.fullname && params.fullname.length < 2)
       || (params.birthday && !regexValid.validDate(params.birthday))
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
@@ -125,6 +124,11 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       .then(function(response) {
         if (response && response.statusCode == 200) {
           if (params.oldPassword && params.password) {
+            var json = utils.JSONParse(response.body);
+            if (!json || json.changePassword) {
+              // doi mat khau khong thanh cong
+              return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+            }
             return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.PASSWORD_SUCCESS});
           }
           else {
