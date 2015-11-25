@@ -182,21 +182,21 @@ TopDao.add = function add(params, cb) {
 TopDao.updateGame = function updateGame(params, cb) {
   var mongoClient = pomelo.app.get('mongoClient');
   var Top = mongoClient.model('Top');
+  var goldRank = 1000;
   Top.update({uid: params.uid}, params.update, {upsert: false})
     .then(function() {
-      var goldRank;
       return Top.count({gold: {$gt: params.update.gold}})
-        .then(function(count) {
-          goldRank = (count||1000) + 1;
-          var countElo = {};
-          countElo[params.gameName] = {$gt: params.update[params.gameName]};
-          return Top.count(countElo);
-        })
-        .then(function(count) {
-          var update = { goldRank: goldRank };
-          update[params.gameName+'Rank'] = (count||1000) + 1;
-          return Top.update({uid: params.uid}, update);
-        });
+    })
+    .then(function(count) {
+      goldRank = (count||1000) + 1;
+      var countElo = {};
+      countElo[params.gameName] = {$gt: params.update[params.gameName]};
+      return Top.count(countElo);
+    })
+    .then(function(count) {
+      var update = { goldRank: goldRank };
+      update[params.gameName+'Rank'] = (count||1000) + 1;
+      return Top.update({uid: params.uid}, update);
     })
     .catch(function(e) {
       console.error(e.stack || e);

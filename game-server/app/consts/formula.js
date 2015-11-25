@@ -36,21 +36,29 @@ formula.calLevel = function calLevel(exp) {
   return i+Math.floor((exp-950650)/50000);
 };
 
-formula.calElo = function calElo(type, user1Elo, user2Elo) {
-  var Aa = type == consts.WIN_TYPE.WIN ? 1 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 0);
-  var Ab = type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1);
-  var Qa = Math.pow(10, user1Elo/400);
-  var Qb = Math.pow(10, user2Elo/400);
-  var sumQ = (Qa+Qb);
-  var Ea = Qa / sumQ;
-  var Eb = Qb / sumQ;
-  var Ka = formula.calK(user1Elo);
-  var Kb = formula.calK(user2Elo);
+formula.calElo = function calElo(type, user1Elo, user2Elo, gameId, bet) {
+  gameId = gameId || 1;
+  bet = bet || 0;
 
-  user1Elo += Ka*(Aa-Ea);
-  user2Elo += Kb*(Ab-Eb);
+  user1Elo = Math.max((user1Elo||0), consts.MIN_ELO);
+  user2Elo = Math.max((user2Elo||0), consts.MIN_ELO);
 
-  return [Math.max(Math.round(user1Elo), consts.MIN_ELO), Math.max(Math.round(user2Elo), consts.MIN_ELO)];
+  if (!(bet < 1000 && ((gameId == consts.GAME_ID.CARO || gameId == consts.GAME_ID.CO_VAY) || bet < 3000))) {
+    var Aa = type == consts.WIN_TYPE.WIN ? 1 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 0);
+    var Ab = type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1);
+    var Qa = Math.pow(10, user1Elo/400);
+    var Qb = Math.pow(10, user2Elo/400);
+    var sumQ = (Qa+Qb);
+    var Ea = Qa / sumQ;
+    var Eb = Qb / sumQ;
+    var Ka = formula.calK(user1Elo);
+    var Kb = formula.calK(user2Elo);
+
+    user1Elo += Math.round(Ka*(Aa-Ea));
+    user2Elo += Math.round(Kb*(Ab-Eb));
+  }
+
+  return [Math.max(user1Elo, consts.MIN_ELO), Math.max(user2Elo, consts.MIN_ELO)];
 };
 
 formula.calK = function calK(elo) {
