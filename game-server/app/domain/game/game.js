@@ -126,7 +126,7 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
           opts.removeMode = [consts.HANDICAP_MODE[Math.floor(Math.random() * consts.HANDICAP_MODE.length)]];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
-        opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax) ];
+        opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)];
         opts.turnTime = 3 * 60;
         switch (hallId){
           case consts.HALL_ID.TAP_SU:

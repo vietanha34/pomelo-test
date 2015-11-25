@@ -4,6 +4,7 @@
 
 var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
+var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
 var util = require('util');
 var utils = require('../../../util/utils');
@@ -78,6 +79,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
+  var notifyMsg;
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
   turnTime = turnTime >= 5000 ? turnTime : 5000;
@@ -86,11 +88,22 @@ Game.prototype.setOnTurn = function (gameStatus) {
     : undefined;
   this.isCheck = isCheck;
   this.legalMoves = gameStatus.legalMoves;
+  console.log('gameStatus : ', gameStatus);
+  if (Object.keys(gameStatus.warnings).length > 0) {
+    console.log('gameStatus.warning : ', gameStatus.warnings);
+    if (gameStatus.warnings.khongTienTrien >= 44) {
+      notifyMsg = 'Còn vài nước nữa. Nếu không tiến triển, ván đấu sẽ bị xử hoà'
+    }
+    if (gameStatus.warnings.isTwoRepetition){
+      notifyMsg = 'Lặp lại thế cờ này một lần nữa, ván đấu sẽ hoà'
+    }
+  }
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
     time : [turnTime, player.totalTime],
     moves : gameStatus.legalMoves,
     isCheck : isCheck,
+    notifyMsg: notifyMsg,
     promote : gameStatus.promotionalMoves,
     redSquare : gameStatus.redSquare
   });
@@ -121,54 +134,104 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame');
+  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
-  console.log('result : ', result, turnUid, turnColor);
   var players = [];
+  var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
   var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
     if (player.uid === turnUid){
-      var subGold = player.subGold(bet);
+      turnPlayer = player;
+      index = i;
+      xp = result === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      if (result === consts.WIN_TYPE.WIN){
+        winUser = player;
+        toUid = player.uid;
+        winIndex = i;
+      }else if (result === consts.WIN_TYPE.LOSE){
+        fromUid = player.uid;
+        loseUser = player;
+        loseIndex = i;
+      }
       players.push({
         uid : player.uid,
-        gold : subGold,
+        gold : 0,
         result : result,
         totalGold : player.gold,
-        elo : 0,
-        xp : 0
+        sex : player.userInfo.sex,
+        elo : player.userInfo.elo,
+        xp : xp
       });
+
       finishData.push({
         uid : player.uid,
         result : {
           type : result,
-          color : player.color
+          color : player.color,
+          xp : xp,
+          elo : player.userInfo.elo
         }
       });
     }else {
-      var addGold = player.addGold(bet, true);
+      res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
+      xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      if (res === consts.WIN_TYPE.WIN){
+        toUid = player.uid;
+        winUser = player;
+        winIndex = i;
+      }else if (res === consts.WIN_TYPE.LOSE){
+        fromUid = player.uid;
+        loseUser = player;
+        loseIndex = i;
+      }
       players.push({
         uid : player.uid,
-        gold : addGold,
-        result : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
+        gold : 0,
+        result : res,
         totalGold : player.gold,
-        elo : 0,
-        xp : 0
+        sex : player.userInfo.sex,
+        elo : player.userInfo.elo,
+        xp : xp
       });
+
       finishData.push({
         uid : player.uid,
         result : {
-          type : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
-          color : player.color
+          type : res,
+          color : player.color,
+          xp : xp,
+          elo : player.userInfo.elo
         }
       });
     }
   }
   this.table.finishGame();
   this.table.emit('finishGame', finishData);
-  this.table.pushFinishGame({ players : players}, true);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo);
+  console.log('eloMap : ', eloMap);
+  for (i = 0, len = eloMap.length; i < len; i++) {
+    player = this.table.players.getPlayer(players[i].uid);
+    players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    player.userInfo.elo = eloMap[i];
+    finishData[i].result.elo = eloMap[i]
+  }
+  if (bet > 0){
+    subGold = loseUser.subGold(bet);
+    addGold = winUser.addGold(subGold, true);
+    players[winIndex].gold = addGold;
+    players[loseIndex].gold = -subGold;
+    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+      gold : bet,
+      fromUid : fromUid,
+      toUid : toUid,
+      tax : 5,
+      force : true
+    }, 1, function () {})
+  }
+  this.table.pushFinishGame({players: players}, true);
 };
 
 function Table(opts) {

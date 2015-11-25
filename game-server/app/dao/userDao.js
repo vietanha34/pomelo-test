@@ -225,6 +225,29 @@ UserDao.getUserProperties = function (uid, properties, cb) {
     })
 };
 
+UserDao.getUserAchievementProperties = function (uid, properties, achiProperties, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .findOne({
+      where: {uid: uid},
+      attributes: properties,
+      include: [{
+        model: pomelo.app.get('mysqlClient').Achievement,
+        attributes : achiProperties
+      }],
+      raw: true
+    })
+    .then(function (user) {
+      console.log('properties : ', user);
+      return utils.invokeCallback(cb, null, user);
+    })
+    .catch(function (err) {
+      console.error(err);
+      return utils.invokeCallback(cb, err);
+    })
+
+};
+
 UserDao.getUserPropertiesByUsername = function (username, properties, cb) {
   return pomelo.app.get('mysqlClient')
     .User
@@ -327,7 +350,7 @@ UserDao.login = function (msg, cb) {
         console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
           .User
-          .findOrCreate({where: {uid: res.uid}, raw: true, defaults : res});
+          .findOrCreate({where: {uid: res.uid}, raw: true, defaults: res});
       } else {
         Promise.reject({
           ec: Code.FAIL,

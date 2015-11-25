@@ -318,6 +318,13 @@ module.exports = {
     BANKING: 6
   },
 
+  PAYMENT_METHOD : {
+    SUB_GOLD : 1,
+    ADD_GOLD : 2,
+    SYNC_GOLD : 3,
+    TRANSFER : 4
+  },
+
   DELTA_TIME : 5000,
 
   TOUR_PRIZE_TYPE : {
@@ -603,6 +610,15 @@ module.exports = {
       AWARD: {},
       UP: {}
     }
+  },
+
+  ELO_MAP : {
+    1 : 'tuongElo',
+    2 : 'upElo',
+    3 : 'theElo',
+    4 : 'vuaElo',
+    5 : 'caroElo',
+    6 : 'vayElo'
   },
 
   PROFILE: {

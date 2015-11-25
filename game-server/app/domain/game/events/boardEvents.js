@@ -10,6 +10,7 @@ var async = require('async');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
+var Formula = require('../../../consts/formula');
 var exp = module.exports;
 
 exp.addEventFromBoard = function (board) {
@@ -163,13 +164,12 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} data dữ liệu thắng thua của ván đấu , bao gồm
    * @for BoardBase
    */
-  board.on('finishGame', function (data) {
-
+  board.on('finishGame', function (data, disableLooseUser) {
     for (var i = 0, len = data.length; i < len; i ++){
       var user = data[i];
       if (user.result.type === consts.WIN_TYPE.WIN){
         board.score[user.color === consts.COLOR.WHITE ? 0 : 1] += 1
-      }else if (user.result.type === consts.WIN_TYPE.LOSE){
+      }else if (user.result.type === consts.WIN_TYPE.LOSE && !disableLooseUser){
         board.looseUser = user.uid;
       }
     }
@@ -186,6 +186,7 @@ exp.addEventFromBoard = function (board) {
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
+    return data;
   });
 
   /**

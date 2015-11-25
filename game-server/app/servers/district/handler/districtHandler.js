@@ -39,15 +39,17 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     },
     gameId: gameId
   };
+  var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
   if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var tableId;
   async.waterfall([
     // get userInfo,
     function (done) {
-      userDao.getUserProperties(uid, consts.JOIN_BOARD_PROPERTIES, done)
+      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
     },
     function (userInfo, done) {
       if (userInfo) {
+        user.elo = user['Achievement.elo'];
         user = userInfo;
         user.frontendId = session.frontendId;
         self.app.get('boardService').getBoard({
@@ -108,10 +110,13 @@ Handler.prototype.joinBoard = function (msg, session, next) {
     next(null, {ec: Code.FAIL, msg: Code.FAIL});
     return
   }
+  var gameId = tableId.split(':')[1];
+  var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
   async.waterfall([
     function (done) {
       // TODO get userInfo
-      userDao.getUserProperties(uid, consts.JOIN_BOARD_PROPERTIES, done);
+      //userDao.getUserProperties(uid, consts.JOIN_BOARD_PROPERTIES, done);
+      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
     },
     function (userInfo, done) {
       if (userInfo) {
@@ -122,6 +127,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           fullname: userInfo.fullname,
           sex: userInfo.sex,
           avatar: userInfo.avatar,
+          elo : userInfo['Achievement.elo'] || 0,
           frontendId: session.frontendId
         };
         self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)

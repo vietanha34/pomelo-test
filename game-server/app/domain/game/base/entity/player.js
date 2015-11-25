@@ -5,6 +5,7 @@ var logger = require('pomelo-logger').getLogger('game', __filename, process.pid)
 var pomelo = require('pomelo');
 var consts = require('../../../../consts/consts');
 var BoardConsts = require('../logic/consts');
+var Formula = require('../../../../consts/formula');
 var util = require('util');
 
 /**
@@ -16,7 +17,7 @@ var util = require('util');
  * @constructor
  */
 
-/**p
+/**
  * @property {Object} userInfo Lưu trữ dữ liệu người chơi
  * @property {Number} gold Tiền của người chơi
  * @property {String} uid định danh của người chơi
@@ -29,6 +30,8 @@ var util = require('util');
 var Player = function (opts) {
   this.userInfo = opts.userInfo || {};
   this.userInfo.sex = parseInt(this.userInfo.sex);
+  this.userInfo.elo = parseInt(this.userInfo.elo);
+  this.userInfo.title = Formula.calEloLevel(this.userInfo.elo);
   this.goldAfter = 0; // Số tiền sau của người dùng
   this.uid = opts.userInfo.uid;
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
@@ -130,6 +133,7 @@ Player.prototype.getState = function (uid) {
     elo : this.userInfo.elo,
     gold : this.gold,
     color : this.color,
+    title : this.userInfo.title,
     totalTime : this.totalTime,
     status : this.status,
     avatar : this.userInfo.avatar,
@@ -147,16 +151,12 @@ Player.prototype.getState = function (uid) {
  */
 Player.prototype.subGold = function (gold, msg) {
   if  (!lodash.isNumber(gold)) return 0;
-  if (this.goldInGame >= gold) {
-    this.goldInGame -= gold;
+  if (this.gold >= gold) {
     this.deltaMoney -= gold;
-    this.goldAfter -= gold;
     this.gold -= gold;
   }else {
-    gold = this.goldInGame;
-    this.goldAfter -= gold;
+    gold = this.gold;
     this.deltaMoney -= gold;
-    this.goldInGame -= gold;
     this.gold -= gold;
   }
   this.moneyLogs.push(util.format(msg || 'Thua %s gold', -gold));

@@ -4,6 +4,7 @@
 
 var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
+var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
 var util = require('util');
 var utils = require('../../../util/utils');
@@ -117,6 +118,7 @@ Game.prototype.progress = function () {
 Game.prototype.finishGame = function (result, uid) {
   console.trace('finishGame : ', result);
   var winType = consts.WIN_TYPE.WIN;
+  var xp;
   var turnColor = result ?
       result.matchResult === 'trangThang'
         ? consts.COLOR.WHITE
@@ -139,6 +141,7 @@ Game.prototype.finishGame = function (result, uid) {
     if (player.uid === turnUid){
       var subGold = player.subGold(bet);
       var colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
+      xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.gameId, this.hallId) : 0;
       players.push({
         uid : player.uid,
         gold : subGold,
@@ -146,18 +149,22 @@ Game.prototype.finishGame = function (result, uid) {
         score : result[colorString],
         totalGold : player.gold,
         elo : 0,
-        xp : 0
+        xp : xp
       });
       finishData.push({
         uid : player.uid,
         result : {
           type : result,
-          color : player.color
+          color : player.color,
+          elo : 0,
+          xp : xp
         }
       });
     }else {
       var addGold = player.addGold(bet, true);
       colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
+      var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
+      xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
       players.push({
         uid : player.uid,
         gold : addGold,
@@ -165,13 +172,15 @@ Game.prototype.finishGame = function (result, uid) {
         result : winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
         totalGold : player.gold,
         elo : 0,
-        xp : 0
+        xp : xp
       });
       finishData.push({
         uid : player.uid,
         result : {
           type : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
-          color : player.color
+          color : player.color,
+          elo : 0,
+          xp : xp
         }
       });
     }
@@ -180,6 +189,13 @@ Game.prototype.finishGame = function (result, uid) {
   var winningLine = gameStatus.winningLines;
   this.table.finishGame();
   this.table.emit('finishGame', finishData);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].result.elo, players[1].result.elo);
+  for (i = 0, len = eloMap.length; i < len; i++) {
+    player = this.table.players.getPlayer(players[i].uid);
+    players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    this.table.players.getPlayer(players[i].uid).userInfo.elo = eloMap[i];
+    finishData[i].result.elo = eloMap[i]
+  }
   this.table.pushFinishGame({ players : players, line : winningLine}, true);
 };
 

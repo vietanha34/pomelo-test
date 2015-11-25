@@ -58,8 +58,10 @@ Handler.prototype.send = function (msg, session, next) {
           if (tableId) {
             done(null, true)
           } else {
-            done({ec: Code.FAIL})
+            console.log('Người chơi đang k ở trong bàn chơi : ', tableId);
+            done({ec: Code.FAIL, msg : 'Bạn đang không ở trong bàn chơi'})
           }
+          break;
         default:
           done({ec: Code.FAIL});
       }
@@ -78,6 +80,7 @@ Handler.prototype.send = function (msg, session, next) {
       var data = {
         msgId: message._id,
         from: uid,
+        fname : msg.fname,
         type: message.type || 0,
         content: message.content,
         date: sendDate || Date.now(),

@@ -160,7 +160,8 @@ app.configure('production|development|local', 'game|district|service|manager|mas
   app.use(BoardService, {
     board : {
       db : app.get('mysqlClient'),
-      redis : app.get('redisCache')
+      redis : app.get('redisCache'),
+      genBoardAttributes : ['gameId', 'hallId']
     }
   });
 });
@@ -197,6 +198,11 @@ app.configure('production|development', 'chat|game', function () {
   app.set('chatService', new ChatService(app));
 });
 
+app.configure('production|development', 'manager|game|service|event', function () {
+  var PaymentService = require('./app/services/paymentService');
+  var paymentService = new PaymentService(app, {});
+  app.set('paymentService', paymentService);
+});
 
 // start app
 app.start();

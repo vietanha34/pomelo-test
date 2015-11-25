@@ -135,25 +135,25 @@ pro.transfer = function (opts, cb) {
   var gold = opts.gold;
   if (isNaN(gold) || gold < 0)
     return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
-
+  console.log('handler transfer : ', opts);
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return Promises.delay(0)
     .then(function () {
         return [
           pomelo.app.get('mysqlClient')
-            .AccUser
+            .User
             .findOne({
               where: {
-                userId: opts.fromUid
+                uid: opts.fromUid
               },
               raw: true,
               attributes: ['gold']
             }),
           pomelo.app.get('mysqlClient')
-            .AccUser
+            .User
             .findOne({
               where : {
-                userId : opts.toUid
+                uid : opts.toUid
               },
               raw : true,
               attributes : ['gold']
@@ -161,31 +161,33 @@ pro.transfer = function (opts, cb) {
         ];
       })
     .spread(function (fromUser, toUser) {
+        console.log('fromUser : ', fromUser);
         var subGold = gold;
         if (fromUser.gold >= gold) {
           fromUser.gold -= gold
         } else {
           subGold = fromUser.gold;
-          user.gold = 0;
+          fromUser.gold = 0;
         }
+        var addGold = opts.tax ? Math.round(subGold * (100-opts.tax) / 100) : subGold;
         return [
           pomelo.app.get('mysqlClient')
-            .AccUser
+            .User
             .update({
-              gold: user.gold
+              gold: fromUser.gold
             }, {
               where: {
-                userId: opts.fromUid
+                uid: opts.fromUid
               },
               transaction: t
             }),
           pomelo.app.get('mysqlClient')
-            .AccUser
+            .User
             .update({
-              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + subGold)
+              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + addGold)
             }, {
               where: {
-                userId: opts.toUid
+                uid: opts.toUid
               },
               transaction: t
             })
@@ -196,6 +198,7 @@ pro.transfer = function (opts, cb) {
       return utils.invokeCallback(cb, null);
     })
     .catch(function (err) {
+      console.log('err : ',err)
       return utils.invokeCallback(cb, err);
     })
 };

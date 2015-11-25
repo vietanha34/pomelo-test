@@ -305,6 +305,9 @@ pro.paymentRemote = function (type, opts,transactionId, cb) {
     case 3:
       method = 'syncBalance';
       break;
+    case 4:
+      method = 'transfer';
+      break;
     default :
       method = 'subBalance'
   }
@@ -313,6 +316,7 @@ pro.paymentRemote = function (type, opts,transactionId, cb) {
     data = opts;
   } else {
     opts.time = Date.now();
+    data = opts;
   }
   pomelo.app.rpc.manager.paymentRemote[method](null, data, transactionId, cb);
 };
