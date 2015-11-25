@@ -43,6 +43,9 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  *       * money : số tiền thắng (+) , thua (-)
  *       * remain : Số tiền còn lại thực sự
  *       * tax : phế người chơi mất
+ *       * elo : số elo thay đổi (+/-)
+ *       * eloAfter : số elo sau (+/-)
+ *       * exp : số exp thay đổi
  * * logs :{Object} Lưu log bàn chơi
  *
  * @param {Object} app
@@ -78,13 +81,13 @@ module.exports.process = function (app, type, param) {
       user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
 
-      user1Elo = achievements[user1Index][attr] || consts.MIN_ELO;
-      user2Elo = achievements[user2Index][attr] || consts.MIN_ELO;
+      user1Elo = param.users[user1Index]['eloAfter'];
+      user2Elo = param.users[user2Index]['eloAfter'];
 
-      var newElo = formula.calElo(param.users[0].result.type, user1Elo, user2Elo);
-
-      user1Elo = newElo[0];
-      user2Elo = newElo[1];
+      //var newElo = formula.calElo(param.users[0].result.type, achievements[user1Index][attr], achievements[user2Index][attr]);
+      //
+      //user1Elo = newElo[0];
+      //user2Elo = newElo[1];
 
       achievements[user1Index][attr] = user1Elo;
       achievements[user2Index][attr] = user2Elo;
@@ -133,11 +136,11 @@ module.exports.process = function (app, type, param) {
     winIndex = 1;
   }
   if (winIndex !== false) {
-    var exp = formula.calGameExp(param.boardInfo.gameId, param.boardInfo.hallId);
+    //var exp = formula.calGameExp(param.boardInfo.gameId, param.boardInfo.hallId);
     TopDao.add({
       uid: param.users[winIndex].uid,
       attr: 'exp',
-      point: exp
+      point: param.users[winIndex]['exp']
     });
   }
 };
