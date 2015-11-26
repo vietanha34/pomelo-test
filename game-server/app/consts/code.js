@@ -302,5 +302,12 @@ module.exports = {
     //REJECT_OK: 'Đã từ chối kết bạn',
     UNFRIEND_OK: 'Đã hủy bạn bè thành công',
     LIMITED: 'Bạn chỉ được phép có tối đa %s bạn bè'
+  },
+
+  ITEM_LANGUAGE: {
+    NOT_ENOUGH_MONEY: 'Bạn không có đủ tiền!',
+    BUY_SUCCESS: '%s vật phẩm thành công!',
+    BUY: 'Mua',
+    RENEW: 'Gia hạn'
   }
 };

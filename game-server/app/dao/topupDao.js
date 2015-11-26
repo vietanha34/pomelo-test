@@ -21,41 +21,44 @@ var NotifyDao = require('./notifyDao');
  *  msg
  * @param cb
  */
-TopupDao.topup = function topup(params, cb) {
+TopupDao.topup = Promise.promisify(function topup(params, cb) {
   if (!params.uid || !params.gold || !params.type || !params.msg) {
     return utils.invokeCallback(cb, 'invalid param topup');
   }
 
+  utils.log('topup');
+
   try {
     if (params.gold > 0) {
-      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.addBalance)({uid: params.uid}, params)
-        .then(function (res) {
-          res = res || {};
-          res.addGold = params.gold;
-          if (res.ec) {
-            e = 'topup ec: '+res.ec;
-          }
-          return utils.invokeCallback(cb, e, res);
-        });
+      pomelo.app.rpc.manager.paymentRemote.addBalance({uid: params.uid}, params, function (e, res) {
+        res = res || {};
+        res.addGold = params.gold;
+        res.uid = params.uid;
+        if (res.ec) {
+          e = 'topup ec: ' + res.ec;
+        }
+        return utils.invokeCallback(cb, e, res);
+      });
     }
     else {
-      params.gold = Math.abs(params.gold);
-      return Promise.promisify(pomelo.app.rpc.manager.paymentRemote.subBalance)({uid: params.uid}, params)
-        .then(function (e, res) {
-          res = res || {};
-          res.subGold = -params.gold;
-          if (res.ec) {
-            e = 'topup ec: '+res.ec;
-          }
-          return utils.invokeCallback(cb, e, res);
-        });
+      params.gold = -params.gold;
+      pomelo.app.rpc.manager.paymentRemote.subBalance({uid: params.uid}, params, function (e, res) {
+        res = res || {};
+        res.subGold = -params.gold;
+        res.uid = params.uid;
+        if (res.ec) {
+          e = 'topup ec: ' + res.ec;
+        }
+        return utils.invokeCallback(cb, e, res);
+      });
     }
   }
   catch (e) {
     console.error(e.stack || e);
+    utils.log(e.stack || e);
     return utils.invokeCallback(cb, e.stack || e, null);
   }
-};
+});
 
 /**
  * Push gold cho user

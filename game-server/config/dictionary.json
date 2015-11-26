@@ -39,6 +39,7 @@
   "game.gameHandler.getListFormation" : 59,
   "game.gameHandler.changeFormation" : 60,
   "game.gameHandler.changeFormationMode" : 61,
+  "game.gameHandler.getGuest" : 62,
   "game.gameHandler.startGame" : 201,
   "game.gameHandler.randomCard": 207,
   "onSetMenu" : 103,
@@ -124,5 +125,6 @@
   "onAddPot" : 206,
   "onNotify" : 210,
   "onMission" : 211,
-  "onMarquee" : 212
+  "onMarquee" : 212,
+  "onUpdateGuest" : 213
 }

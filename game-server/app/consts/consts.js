@@ -241,7 +241,9 @@ module.exports = {
   TARGET_TYPE : {
     GROUP : 1,
     PERSON : 2,
-    BOARD : 3  },
+    BOARD : 3,
+    BOARD_GUEST : 4
+  },
 
   MESSAGE_STATUS : {
     SENDED : 0,
@@ -314,6 +316,13 @@ module.exports = {
     IAP_ANDROID: 4,
     IAP_WP: 5,
     BANKING: 6
+  },
+
+  PAYMENT_METHOD : {
+    SUB_GOLD : 1,
+    ADD_GOLD : 2,
+    SYNC_GOLD : 3,
+    TRANSFER : 4
   },
 
   DELTA_TIME : 5000,
@@ -603,6 +612,15 @@ module.exports = {
     }
   },
 
+  ELO_MAP : {
+    1 : 'tuongElo',
+    2 : 'upElo',
+    3 : 'theElo',
+    4 : 'vuaElo',
+    5 : 'caroElo',
+    6 : 'vayElo'
+  },
+
   PROFILE: {
     PER_PAGE: 5
   },
@@ -618,5 +636,21 @@ module.exports = {
   MAX_FRIEND: 200,
 
   MIN_ELO: 800,
-  DEFAULT_ELO: 1000
+  DEFAULT_ELO: 1000,
+
+  ITEM_EFFECT: {
+    LUAN_CO: 1,
+    CAM_KICK: 2,
+    SUA_THOI_GIAN: 3,
+    KHOA_BAN: 4,
+    LEVEL5: 5,
+    LEVEL10: 6,
+    CUOCX3: 7,
+    CUOCX5: 8,
+    THE_DAI_GIA: 9,
+    BAN_CO_SAT: 10,
+    BAN_CO_TOI: 11,
+    VE_PHONG_THUONG: 12,
+    THE_VIP: 13
+  }
 };
