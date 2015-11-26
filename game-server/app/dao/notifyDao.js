@@ -41,11 +41,13 @@ NotifyDao.push = function topup(params, cb) {
   if (scope == 99) { // push all
     var channelService = pomelo.app.get('channelService');
     return Promise.promisify(channelService.broadcast, channelService)
-      ('connector', 'onNotify', params, {}, function (err, res) {
-        if (err) {
-          console.error(err);
-        }
-        return utils.invokeCallback(cb, err, res);
+      ('connector', 'onNotify', params, {})
+      .then(function (res) {
+        return utils.invokeCallback(cb, null, res);
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        return utils.invokeCallback(cb, e.stack || e);
       });
   }
   else { // push users
@@ -54,11 +56,13 @@ NotifyDao.push = function topup(params, cb) {
     } else {
       var statusService = pomelo.app.get('statusService');
       return Promise.promisify(statusService.pushByUids, statusService)
-        (users, 'onNotify', params, function (err, res) {
-          if (err) {
-            console.error(err);
-          }
-          return utils.invokeCallback(cb, err, res);
+        (users, 'onNotify', params)
+        .then(function (res) {
+          return utils.invokeCallback(cb, null, res);
+        })
+        .catch(function(e) {
+          console.error(e.stack || e);
+          return utils.invokeCallback(cb, e.stack || e);
         });
     }
   }

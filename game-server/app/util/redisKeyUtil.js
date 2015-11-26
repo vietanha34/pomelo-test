@@ -41,6 +41,7 @@ var TRANSACTION_DETAIL = 'transaction:detail:{transactionId}';
 var TRANSACTION_LIST = 'transaction:list';
 var USER_GOLD = 'cothu:user_gold:%d';
 var USER_NOTIFY = 'cothu:user_notify:%d';
+var USER_EFFECT = 'cothu:user_effect:%d';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
@@ -311,9 +312,13 @@ RedisKeyUtil.getUserAlertKey = function (uid) {
 };
 
 RedisKeyUtil.getUserGoldKey = function getUserGoldKey(uid) {
-  return utils.format(USER_GOLD, uid);
+  return util.format(USER_GOLD, uid);
 };
 
 RedisKeyUtil.getUserNotifyKey = function getUserNotifyKey(uid) {
-  return utils.format(USER_NOTIFY, uid);
+  return util.format(USER_NOTIFY, uid);
+};
+
+RedisKeyUtil.getUserEffectKey = function getUserEffectKey(uid) {
+  return util.format(USER_EFFECT, uid);
 };

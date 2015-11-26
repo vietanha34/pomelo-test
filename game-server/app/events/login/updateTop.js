@@ -28,7 +28,6 @@ module.exports.type = Config.TYPE.LOGIN;
  */
 
 module.exports.process = function (app, type, param) {
-  utils.log('LOGIN: ', param);
   if (param.resume || !param.uid) return;
 
   ProfileDao.updateUser(param);
