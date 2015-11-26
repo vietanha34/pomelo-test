@@ -44,7 +44,7 @@ pro.getListFormation = function (msg, session, next) {
             offset: offset,
             limit: length,
             raw : true,
-            attributes: ['id', 'fen', 'rank', 'name', 'win', 'turn', 'numMove'],
+            attributes: ['id', 'fen', 'rank', 'name', 'win', 'turn', 'numMove']
           }),
         self.app.get('mysqlClient')
           .XiangqiFormation
@@ -63,7 +63,7 @@ pro.getListFormation = function (msg, session, next) {
           fen: formations[i].fen,
           name: formations[i].name,
           turn: formations[i].turn,
-          detail: util.format('%s đi tiên, phải %s trong', formations[i].turn === consts.COLOR.WHITE ? 'đỏ' : 'đen', formations[i].win === 1 ? 'thắng' : 'hoà', formations[i].numMove)
+          detail: util.format('%s đi tiên, phải %s trong %s nước', formations[i].turn === consts.COLOR.WHITE ? 'đỏ' : 'đen', formations[i].win === 1 ? 'thắng' : 'hoà', formations[i].numMove)
         })
       }
       return next(null, {formations: result, offset: offset, length: formations.length, total: count});

@@ -55,7 +55,14 @@ pro.subBalance = function (opts, transaction, cb) {
       }
     })
   }else {
-    this.app.get('paymentService').subBalance(opts ,cb);
+    this.app.get('paymentService')
+      .subBalance(opts)
+      .then(function (res) {
+        return utils.invokeCallback(cb, null, res)
+      })
+      .catch(function (err) {
+        return utils.invokeCallback(cb, null, err)
+      })
   }
 };
 

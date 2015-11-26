@@ -231,7 +231,8 @@ Game.prototype.finishGame = function (result, uid) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     player.userInfo.elo = eloMap[i];
-    finishData[i].result.elo = eloMap[i]
+    finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    finishData[i].result.eloAfter = eloMap[i];
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -306,7 +307,7 @@ Table.prototype.getStatus = function (uid) {
     name : this.game.formationName,
     maxMove : this.game.maxMove - Math.floor(this.game.numMove / 2),
     id : this.game.id,
-    total : 2,
+    total : 129,
     status : this.formationMode
       ? uid === this.owner
         ? 1

@@ -220,6 +220,9 @@ Table.prototype.getStatus = function () {
   var boardStatus = this.game.game.getBoardStatus();
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove;
+  status.killed = {};
+  status.killed[consts.COLOR.WHITE] = boardStatus['killedWhiteCounter'];
+  status.killed[consts.COLOR.BLACK] = boardStatus['killedBlackCounter'];
   if(status.turn) {
     status.turn.banSquare = boardStatus.illegalMoves;
     if (this.status !== consts.BOARD_STATUS.NOT_STARTED){

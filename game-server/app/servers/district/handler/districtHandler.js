@@ -49,8 +49,8 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     },
     function (userInfo, done) {
       if (userInfo) {
-        user.elo = user['Achievement.elo'];
         user = userInfo;
+        user.elo = user['Achievement.elo'];
         user.frontendId = session.frontendId;
         self.app.get('boardService').getBoard({
           where: whereClause,

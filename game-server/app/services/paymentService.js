@@ -43,7 +43,7 @@ pro.subBalance = function (opts) {
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
-      .findOne({where: {id: uid}, attributes: ['id', 'gold', 'goldInGame']}, {transaction: t})
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return Promises.reject({ec: Code.USER_NOT_EXIST});
@@ -71,9 +71,13 @@ pro.subBalance = function (opts) {
         }
       })
       .cancellable()
-  })
+    })
     .then(function (results) {
       return Promises.resolve({ec: Code.OK, gold: goldAfter, subGold: goldSub})
+    })
+    .catch(function (err) {
+      console.log('subbalance err : ', err);
+      return Promises.resolve({ec : Code.FAIL});
     })
     .finally(function () {
       goldAfter = null;
@@ -198,7 +202,7 @@ pro.transfer = function (opts, cb) {
       return utils.invokeCallback(cb, null);
     })
     .catch(function (err) {
-      console.log('err : ',err)
+      console.log('err : ',err);
       return utils.invokeCallback(cb, err);
     })
 };
