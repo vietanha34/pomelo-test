@@ -26,17 +26,12 @@ TopupDao.topup = Promise.promisify(function topup(params, cb) {
     return utils.invokeCallback(cb, 'invalid param topup');
   }
 
-  utils.log('topup');
-
   try {
     if (params.gold > 0) {
       pomelo.app.rpc.manager.paymentRemote.addBalance({uid: params.uid}, params, function (e, res) {
         res = res || {};
         res.addGold = params.gold;
         res.uid = params.uid;
-        if (res.ec) {
-          e = 'topup ec: ' + res.ec;
-        }
         return utils.invokeCallback(cb, e, res);
       });
     }
@@ -46,9 +41,6 @@ TopupDao.topup = Promise.promisify(function topup(params, cb) {
         res = res || {};
         res.subGold = -params.gold;
         res.uid = params.uid;
-        if (res.ec) {
-          e = 'topup ec: ' + res.ec;
-        }
         return utils.invokeCallback(cb, e, res);
       });
     }

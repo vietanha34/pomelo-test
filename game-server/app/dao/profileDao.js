@@ -14,6 +14,7 @@ var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var moment = require('moment');
 var UserDao = require('./userDao');
+var ItemDao = require('./itemDao');
 var FriendDao = require('./friendDao');
 var request = require('request-promise').defaults({transform: true});
 
@@ -26,20 +27,25 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
   var properties = ['uid', 'username', 'fullname', 'avatar', 'statusMsg', 'birthday',
                     'sex', 'address', 'phone', 'email', 'accountType', 'exp', 'vipPoint'];
 
-  var user;
-  return UserDao.getUserProperties(uid, properties)
-    .then(function(userObj) {
-      userObj.avatar = utils.JSONParse(userObj.avatar, {id: 0});
-      var birthday = moment(userObj.birthday);
-      if (birthday && birthday.unix()>100)
-        userObj.birthday = birthday.format('YYYY-MM-DD');
-      else userObj.birthday = undefined;
+  var checkEffects = [
+    consts.ITEM_EFFECT.THE_VIP
+  ];
 
-      user = userObj;
-
-      return pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}});
+  return Promise.delay(0)
+    .then(function(){
+      return [
+        UserDao.getUserProperties(uid, properties),
+        pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}}),
+        ItemDao.checkEffect(uid, checkEffects)
+      ];
     })
-    .then(function(achievement) {
+    .spread(function(user, achievement, effects) {
+      user.avatar = utils.JSONParse(user.avatar, {id: 0});
+      var birthday = moment(user.birthday);
+      if (birthday && birthday.unix()>100)
+        user.birthday = birthday.format('YYYY-MM-DD');
+      else user.birthday = undefined;
+
       achievement = achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
       var max = 0;
@@ -59,6 +65,8 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       var vipPoint = user.vipPoint || 0;
       user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
       user.vipLevel = formula.calVipLevel(user.vipPoint);
+
+      user.vipLevel += (effects[consts.ITEM_EFFECT.THE_VIP]||0);
 
       return utils.invokeCallback(cb, null, user);
     })
@@ -194,8 +202,21 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
       }
       else {
         var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
-        return UserDao.getUserProperties(params.other, properties)
-          .then(function(user) {
+        var checkEffects = [
+          consts.ITEM_EFFECT.LEVEL,
+          consts.ITEM_EFFECT.THE_VIP,
+          consts.ITEM_EFFECT.CAM_KICK
+        ];
+
+        return Promise.delay(0)
+          .then(function(){
+            return [
+              UserDao.getUserProperties(params.other, properties),
+              FriendDao.checkFriendStatus(params.uid, params.other),
+              ItemDao.checkEffect(params.other, checkEffects)
+            ];
+          })
+          .spread(function(user, status, effects) {
             user = user || {};
             user.avatar = utils.JSONParse(user.avatar, {id: 0});
             var birthday = moment(user.birthday);
@@ -203,7 +224,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
               user.birthday = birthday.format('YYYY-MM-DD');
             else user.birthday = undefined;
 
-            user.eloLevel = code.ELO_LANGUAGE[formula.calEloLevel(max)];
+            user.eloLevel = formula.calEloLevel(max);
             var exp = user.exp;
             user.level = formula.calLevel(exp);
             user.exp = [exp, formula.calExp(user.level + 1)];
@@ -212,10 +233,11 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
             res.info = user;
 
             user = null;
-            return FriendDao.checkFriendStatus(params.uid, params.other);
-          })
-          .then(function(status) {
+
             res.friendStatus = status;
+            res.info.level += (effects[consts.ITEM_EFFECT.LEVEL]||0);
+            res.info.vipLevel += (effects[consts.ITEM_EFFECT.THE_VIP]||0);
+            res.camKick = (effects[consts.ITEM_EFFECT.CAM_KICK]||0);
             return utils.invokeCallback(cb, null, res);
           });
       }

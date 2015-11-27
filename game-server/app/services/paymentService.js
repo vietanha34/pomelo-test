@@ -100,8 +100,8 @@ pro.addBalance = function (opts, cb) {
     return Promises.reject({ec: Code.PAYMENT.ERROR_PARAM});
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
-      .AccUser
-      .findOne({where: {id: uid}, attributes: ['id', 'gold', 'goldInGame']}, {transaction: t})
+      .User
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return Promises.reject({ec: Code.USER_NOT_EXIST});

@@ -78,6 +78,8 @@
   "service.itemHandler.getShop" : 70,
   "service.itemHandler.getTrunk" : 71,
   "service.itemHandler.buy" : 72,
+  "service.dailyHandler.getData" : 73,
+  "service.dailyHandler.getGold" : 74,
   "service.profileHandler.getProfile" : 80,
   "service.profileHandler.getAchievement" : 81,
   "service.profileHandler.updateProfile" : 82,

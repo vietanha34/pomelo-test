@@ -254,8 +254,8 @@ module.exports = {
 
   WIN_LANGUAGE: {
     1: 'Thua',
-    2: 'Hòa',
-    3: 'Thắng'
+    0: 'Hòa',
+    2: 'Thắng'
   },
 
   VIP_LANGUAGE: {
@@ -309,5 +309,9 @@ module.exports = {
     BUY_SUCCESS: '%s vật phẩm thành công!',
     BUY: 'Mua',
     RENEW: 'Gia hạn'
+  },
+
+  DAILY_LANGUAGE: {
+    RECEICE_MONEY: 'Bạn vừa nhận được %s vàng'
   }
 };

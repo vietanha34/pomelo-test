@@ -31,7 +31,7 @@ formula.calExp = function calExp(level) {
 
 formula.calLevel = function calLevel(exp) {
   for (var i=0; i<formula.expArray.length; i++) {
-    if (exp < formula.expArray[i]) return i;
+    if (exp < formula.expArray[i]) return (i+1);
   }
   return i+Math.floor((exp-950650)/50000);
 };

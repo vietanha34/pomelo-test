@@ -448,7 +448,7 @@ utils.log = function(args) {
     var content = arguments[i];
     console.log(content);
     if (typeof content == 'object' && content !== null)
-      content = JSON.stringify(content);
+      content = JSON.stringify(content, null, 2);
     else if (typeof content != 'string' && content)
       content = content.toString();
     content = 'DUMP '+(i+1).toString()+': '+content;

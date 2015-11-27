@@ -14,7 +14,7 @@ var GameHistorySchema = new Schema({
   log: String,
   date: Number,
   createdAt: { type: Date, default: Date.now, expires: '60d' }
-}, { versionKey: false, id: false, _id: false, collection: 'GameHistory'});
+}, { versionKey: false, collection: 'GameHistory'});
 
 GameHistorySchema.index({ matchId: 1 });
 GameHistorySchema.index({ gameId: 1, uids: 1, date: 1 });

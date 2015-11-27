@@ -42,6 +42,7 @@ var TRANSACTION_LIST = 'transaction:list';
 var USER_GOLD = 'cothu:user_gold:%d';
 var USER_NOTIFY = 'cothu:user_notify:%d';
 var USER_EFFECT = 'cothu:user_effect:%d';
+var DAILY_CONFIG = 'cothu:daily_config';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
@@ -321,4 +322,8 @@ RedisKeyUtil.getUserNotifyKey = function getUserNotifyKey(uid) {
 
 RedisKeyUtil.getUserEffectKey = function getUserEffectKey(uid) {
   return util.format(USER_EFFECT, uid);
+};
+
+RedisKeyUtil.getDailyConfigKey = function getDailyConfigKey() {
+  return DAILY_CONFIG;
 };
