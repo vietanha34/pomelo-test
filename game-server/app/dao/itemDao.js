@@ -84,7 +84,9 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
 
           return utils.invokeCallback(cb, null, {
             msg: [code.ITEM_LANGUAGE.BUY_SUCCESS, type],
-            gold: topupResult.gold
+            gold: topupResult.gold,
+            itemId: itemId,
+            duration: (expiredAt-now)
           });
         });
     })

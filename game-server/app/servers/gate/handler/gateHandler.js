@@ -40,7 +40,7 @@ Handler.prototype.getServer = function (msg, session, next) {
         ec : Code.OK,
         host : res.clientHost,
         port : res.natPort ? res.natPort.toString() : res.clientPort.toString(),
-        //config : configService.getConfig(),
+        config : configService.getConfig(),
         idSession : idSession,
         key : key,
         msg : message,

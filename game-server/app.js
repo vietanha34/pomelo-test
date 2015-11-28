@@ -198,10 +198,17 @@ app.configure('production|development', 'chat|game', function () {
   app.set('chatService', new ChatService(app));
 });
 
-app.configure('production|development', 'manager|game|service|event|worker', function () {
+app.configure('production|development', 'manager|game|service|event', function () {
   var PaymentService = require('./app/services/paymentService');
   var paymentService = new PaymentService(app, {});
   app.set('paymentService', paymentService);
+});
+
+app.configure('production|development', 'gate|home|service|event|worker', function () {
+  var ConfigService = require('./app/services/configService');
+  var configService = new ConfigService(app);
+  configService.init();
+  app.set('configService', configService)
 });
 
 // start app

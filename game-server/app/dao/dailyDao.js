@@ -30,7 +30,7 @@ DailyDao.getData = function getData(uid, cb) {
     .then(function(result) {
       if (result[0]) throw new Error('received');
 
-      loginCount = result[1] || 0;
+      loginCount = result[1] || 1;
 
       return [
         redis.hgetallAsync(redisKeyUtil.getDailyConfigKey()),

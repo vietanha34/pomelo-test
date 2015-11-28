@@ -117,9 +117,13 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vipPoint: {
-      type: DataTypes. INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       defaultValue: '0'
+    },
+    lastLogin: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     classMethods: {

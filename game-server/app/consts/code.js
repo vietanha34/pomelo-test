@@ -297,7 +297,7 @@ module.exports = {
     //ACCEPT_FRIEND: '%s đã chấp nhận lời mời kết bạn của bạn',
     //ALREADY_FRIEND: 'Bạn và người chơi này đã là bạn bè rồi',
     CANCEL_BEFORE: 'Yêu cầu kết bạn đã bị hủy trước đó',
-    ACCEPT: 'Đồng ý',
+    ACCEPT: 'OK',
     REQUEST_TO_YOU: '%s vừa kết bạn, chúc mừng đã có thêm bạn mới',
     //REJECT_OK: 'Đã từ chối kết bạn',
     UNFRIEND_OK: 'Đã hủy bạn bè thành công',
