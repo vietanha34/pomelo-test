@@ -596,7 +596,8 @@ module.exports = {
       GO_FRIEND: 6,
       GO_TOPUP: 7,
       GO_TOP: 8,
-      GET_GOLD: 9
+      GET_GOLD: 9,
+      GO_CHAT: 10
     },
     SCOPE: {
       ALL: 99,
@@ -643,8 +644,7 @@ module.exports = {
     CAM_KICK: 2,
     SUA_THOI_GIAN: 3,
     KHOA_BAN: 4,
-    LEVEL5: 5,
-    LEVEL10: 6,
+    LEVEL: 5,
     CUOCX3: 7,
     CUOCX5: 8,
     THE_DAI_GIA: 9,

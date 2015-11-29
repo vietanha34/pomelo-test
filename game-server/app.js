@@ -116,7 +116,7 @@ app.configure('production|development', 'connector|gate', function(){
     });
 });
 
-app.configure('production|development|local', 'master|service|connector|manager|event', function () {
+app.configure('production|development|local', 'master|service|connector|manager|event|worker', function () {
   var EventPlugin = require('pomelo-event-plugin');
   app.use(EventPlugin, {
     event : {
@@ -155,7 +155,7 @@ app.configure('production|development|local', 'game', function () {
 });
 
 // config board
-app.configure('production|development|local', 'game|district|service|manager|master', function () {
+app.configure('production|development|local', 'game|district|service|manager|master|worker', function () {
   var BoardService = require('pomelo-board-plugin');
   app.use(BoardService, {
     board : {
@@ -186,7 +186,7 @@ app.configure('production|development|local', function () {
   }})
 });
 
-app.configure('production|development', 'home|district|game|connector|service', function () {
+app.configure('production|development', 'home|district|game|connector|service|worker', function () {
   var GameService = require('./app/services/gameService');
   var gameService = new GameService(app);
   gameService.init();
@@ -202,6 +202,13 @@ app.configure('production|development', 'manager|game|service|event', function (
   var PaymentService = require('./app/services/paymentService');
   var paymentService = new PaymentService(app, {});
   app.set('paymentService', paymentService);
+});
+
+app.configure('production|development', 'gate|home|service|event|worker', function () {
+  var ConfigService = require('./app/services/configService');
+  var configService = new ConfigService(app);
+  configService.init();
+  app.set('configService', configService)
 });
 
 // start app

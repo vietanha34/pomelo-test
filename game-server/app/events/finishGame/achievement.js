@@ -81,8 +81,10 @@ module.exports.process = function (app, type, param) {
       user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
 
-      user1Elo = param.users[user1Index]['eloAfter'];
-      user2Elo = param.users[user2Index]['eloAfter'];
+      user1Elo = param.users[user1Index].result['eloAfter'];
+      user2Elo = param.users[user2Index].result['eloAfter'];
+
+      utils.log(user1Index, param.users[user1Index], user1Elo);
 
       //var newElo = formula.calElo(param.users[0].result.type, achievements[user1Index][attr], achievements[user2Index][attr]);
       //
@@ -140,7 +142,7 @@ module.exports.process = function (app, type, param) {
     TopDao.add({
       uid: param.users[winIndex].uid,
       attr: 'exp',
-      point: param.users[winIndex]['exp']
+      point: param.users[winIndex].result['xp']
     });
   }
 };

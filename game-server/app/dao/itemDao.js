@@ -84,7 +84,9 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
 
           return utils.invokeCallback(cb, null, {
             msg: [code.ITEM_LANGUAGE.BUY_SUCCESS, type],
-            gold: topupResult.gold
+            gold: topupResult.gold,
+            itemId: itemId,
+            duration: (expiredAt-now)
           });
         });
     })
@@ -151,8 +153,6 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
     return utils.invokeCallback(cb, 'invalid param check effect');
   }
 
-  effects.sort();
-
   var hasVip = false;
   if (effects.indexOf(consts.ITEM_EFFECT.THE_VIP) >= 0) {
     hasVip = true;
@@ -160,12 +160,18 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
     effects.push(15);
   }
 
+  effects.sort();
+
+  var levelIndex = effects.indexOf(consts.ITEM_EFFECT.LEVEL);
+  if (levelIndex >= 0) {
+    effects.splice(levelIndex, 0, 6);
+  }
+
   var now = moment().unix();
   var effectKey = redisKeyUtil.getUserEffectKey(uid);
   return pomelo.app.get('redisInfo')
     .hmgetAsync(effectKey, effects)
     .then(function(results) {
-      utils.log(results);
       results = results || [];
       var effectObj = {};
       var n = hasVip ? results.length-3: results.length;
@@ -179,6 +185,12 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
           if (results[i+j-1] >= now)
             effectObj[consts.ITEM_EFFECT.THE_VIP] = j;
         }
+      }
+      if (levelIndex >= 0) {
+        if (results[levelIndex+1] >= now)
+          effectObj[consts.ITEM_EFFECT.LEVEL] = 10;
+        else if (results[levelIndex] >= now)
+          effectObj[consts.ITEM_EFFECT.LEVEL] = 5;
       }
 
       return utils.invokeCallback(cb, null, effectObj);

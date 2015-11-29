@@ -31,28 +31,6 @@ Handler.prototype.request = function request(msg, session, next) {
     });
 };
 
-Handler.prototype.accept = function accept(msg, session, next) {
-  FriendDao.accept(msg.uid, session.uid)
-    .then(function(res) {
-      return utils.invokeCallback(next, null, res);
-    })
-    .catch(function(e) {
-      console.error(e.stack || e);
-      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
-    });
-};
-
-Handler.prototype.reject = function reject(msg, session, next) {
-  FriendDao.reject(msg.uid, session.uid)
-    .then(function(res) {
-      return utils.invokeCallback(next, null, res);
-    })
-    .catch(function(e) {
-      console.error(e.stack || e);
-      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
-    });
-};
-
 Handler.prototype.getListFriend = function getListFriend(msg, session, next) {
   FriendDao.getFullList(session.uid, 0)
     .then(function(res) {

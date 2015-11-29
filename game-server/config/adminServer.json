@@ -42,6 +42,10 @@
   {
     "type": "auth",
     "token": "agarxhqb98rpajloaxn34ga8xrunpagkjwlaw3ruxnpaagl29w4rxn"
+  },
+  {
+    "type": "worker",
+    "token": "agarxhqb98rpajloaxn34ga8xrunpagkjwlaw3ruxnpaagl29w4rxn"
   }
 ]
 
