@@ -11,6 +11,7 @@ var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var Formula = require('../../../consts/formula');
+var messageService = require('../../../services/messageService');
 var exp = module.exports;
 
 exp.addEventFromBoard = function (board) {
@@ -165,8 +166,15 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('finishGame', function (data, disableLooseUser) {
+    var player;
     for (var i = 0, len = data.length; i < len; i ++){
       var user = data[i];
+      player = board.players.getPlayer(user.uid);
+      console.log('player.gold finishGame : ', player.gold, board.bet);
+      if (player.gold < board.bet){
+        // standUp
+        board.standUp(user.uid);
+      }
       if (user.result.type === consts.WIN_TYPE.WIN){
         board.score[user.color === consts.COLOR.WHITE ? 0 : 1] += 1
       }else if (user.result.type === consts.WIN_TYPE.LOSE && !disableLooseUser){
@@ -220,6 +228,11 @@ exp.addEventFromBoard = function (board) {
         board.timer.cancelJob(board.jobId)
       }
     }
+    var state = board.getBoardState(player.uid);
+    messageService.pushMessageToPlayer({ uid : player.uid, sid: player.userInfo.frontendId}, 'game.gameHandler.reloadBoard', state);
+    board.pushMessageWithOutUid(player.uid, 'district.districtHandler.leaveBoard', {
+      uid: player.uid
+    })
   });
 
   board.on('sitIn', function (player) {

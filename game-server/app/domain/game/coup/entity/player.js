@@ -72,7 +72,7 @@ Player.prototype.genStartMenu = function () {
   Player.super_.prototype.genStartMenu.call(this);
   if (!this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
-    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
+    this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
 

@@ -165,9 +165,8 @@ Game.prototype.finishGame = function (result, uid) {
   console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
-  var players = [];
+  var players = [], finishData = [];
   var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
-  var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
@@ -193,7 +192,6 @@ Game.prototype.finishGame = function (result, uid) {
         elo : player.userInfo.elo,
         xp : xp
       });
-
       finishData.push({
         uid : player.uid,
         result : {
@@ -237,15 +235,15 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  this.table.emit('finishGame', finishData);
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    player.userInfo.elo = eloMap[i];
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
+    player.userInfo.elo = eloMap[i];
+    console.log('finishData : ', finishData[i], player.userInfo.username);
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -260,6 +258,7 @@ Game.prototype.finishGame = function (result, uid) {
       force : true
     }, 1, function () {})
   }
+  this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({players: players}, true);
 };
 
@@ -268,6 +267,7 @@ function Table(opts) {
   this.looseUser = null;
   this.lockMode = opts.lockMode || [];
   this.removeMode = opts.removeMode || [];
+  this.lockModeDefault = opts.lockMode || [];
   if (this.hallId === consts.HALL_ID.LIET_CHAP) {
     this.allowLockMode = true;
   }
@@ -445,7 +445,14 @@ Table.prototype.demand = function (opts) {
           this.game.game.takeBack(this.game.previousChange);
           this.game.progress();
           return {};
-        } else {
+        }
+        else {
+          this.pushMessage('chat.chatHandler.send', {
+            from : uid,
+            targetType : consts.TARGET_TYPE.BOARD,
+            type : 0,
+            content : util.format('Người chơi %s từ chối xin hoãn', player.userInfo.fullname)
+          });
           otherPlayer.requestDelay = false;
           return {};
         }
@@ -478,6 +485,12 @@ Table.prototype.demand = function (opts) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
         } else {
+          this.pushMessage('chat.chatHandler.send', {
+            from : uid,
+            targetType : consts.TARGET_TYPE.BOARD,
+            type : 0,
+            content : util.format('Người chơi %s từ chối xin hoà', player.userInfo.fullname)
+          });
           otherPlayer.requestDraw = false;
         }
       } else {
@@ -498,6 +511,12 @@ Table.prototype.demand = function (opts) {
     default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
+};
+
+Table.prototype.resetDefault = function () {
+  Table.super_.prototype.resetDefault.call(this);
+  this.lockMode = this.lockModeDefault;
+  this.removeMode.splice(0, this.removeMode.length);
 };
 
 

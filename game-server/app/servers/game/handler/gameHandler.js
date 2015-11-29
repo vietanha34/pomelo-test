@@ -106,12 +106,7 @@ pro.standUp = function (msg, session, next) {
   }
 
   var res = board.standUp(session.uid);
-  if (!res.ec) {
-    messageService.pushMessageToPlayer(utils.getUids(session), 'game.gameHandler.reloadBoard', res);
-    board.pushMessageWithOutUid(uid, 'district.districtHandler.leaveBoard', {
-      uid: uid
-    })
-  } else {
+  if (res && res.ec) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
   }
 };
@@ -220,7 +215,8 @@ pro.invitePlayer = function (msg, session, next) {
     if (!!err) {
       logger.error(err);
       next(null, {msg: 'gui loi moi that bai'})
-    } else if (lodash.isArray(users)) {
+    }
+    else if (lodash.isArray(users)) {
       if (users.length > 0) {
         var uids = [];
         for (var i = 0, len = users.length; i < len; i++) {
@@ -245,7 +241,8 @@ pro.invitePlayer = function (msg, session, next) {
         next(null, {
           msg: "Đã gửi lời mời thành công đến người chơi khác"
         });
-      } else {
+      }
+      else {
         next(null, {
           msg: 'Không có người chơi nào để mời'
         })

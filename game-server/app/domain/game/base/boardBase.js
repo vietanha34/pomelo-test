@@ -45,6 +45,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.tableId = opts.boardId;
   this.bet = opts.bet || 0;
   this.roomId = opts.roomId;
+  this.level = opts.level;
   this.hallId = parseInt(opts.hallId);
   this.owner = '';
   this.base = opts.base;
@@ -173,7 +174,6 @@ var Board = function (opts, PlayerPool, Player) {
         changed = true;
         self.players.mapColor.reverse();
         self.score.reverse();
-        console.log('player.color : ', player.color, otherPlayer.color, self.players.mapColor);
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
@@ -483,6 +483,9 @@ pro.joinBoard = function (opts) {
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
     return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
   }
+  if (userInfo.level < this.level){
+    return {ec : 500, msg:'Bạn không đủ để vào bàn này'}
+  }
   var result = this.players.addPlayer(opts);
   console.log('result : ', result);
   if (result.ec == Code.OK) {
@@ -560,11 +563,12 @@ pro.getStatus = function () {
   };
   var player = this.players.getPlayer(this.turnUid);
   if (lodash.isNumber(this.jobId) && player){
+    var timeLeft = this.timer.getLeftTime(this.jobId);
     status.turn = {
       uid : this.turnUid,
       count : this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
-      time : [this.timer.getLeftTime(this.jobId),
-        player.totalTime,
+      time : [timeLeft,
+        player.totalTime - (player.turnTime - timeLeft),
         this.status === consts.BOARD_STATUS.NOT_STARTED ? 30000 + 4000 : this.turnTime
       ]
     };
@@ -656,7 +660,6 @@ pro.standUp = function (uid) {
     }
   }
   self.emit('standUp', player);
-  return self.getBoardState(uid);
 };
 
 /**
@@ -782,6 +785,9 @@ pro.getLocale = function (locale) {
 pro.ready = function (uid) {
   var player = this.players.getPlayer(uid);
   if (player) {
+    if(player.gold < this.bet){
+      return utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED);
+    }
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid !== this.owner) {
       player.Ready();
       player.status = consts.PLAYER_STATUS.READY;
@@ -946,12 +952,12 @@ pro.addJobReady = function (uid) {
     self.jobId = null;
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
-    boardState.msg = Code.ON_GAME.FA_NOT_READY;
-    self.pushStandUp(uid, {
-      uid: uid,
-      msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
-    });
-    self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+    //boardState.msg = Code.ON_GAME.FA_NOT_READY;
+    //self.pushStandUp(uid, {
+    //  uid: uid,
+    //  msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
+    //});
+    //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
   }, uid, 30000 + 4000);
 };
 
@@ -974,12 +980,12 @@ pro.addJobStart = function (uid) {
     self.jobId = null;
     var fullname = player.userInfo.fullname || player.userInfo.username;
     var boardState = self.standUp(uid);
-    boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
-    self.pushStandUp(uid, {
-      uid: uid,
-      msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
-    });
-    self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+    //boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
+    //self.pushStandUp(uid, {
+    //  uid: uid,
+    //  msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
+    //});
+    //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
   }, uid, 30000 + 4000);
 };
 

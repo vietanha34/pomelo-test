@@ -37,6 +37,7 @@ formula.calLevel = function calLevel(exp) {
 };
 
 formula.calElo = function calElo(type, user1Elo, user2Elo, gameId, bet) {
+  console.log('argument : ', arguments);
   gameId = gameId || 1;
   bet = bet || 0;
 

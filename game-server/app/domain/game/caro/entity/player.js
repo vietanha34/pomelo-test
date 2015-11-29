@@ -73,7 +73,7 @@ Player.prototype.reset = function () {
 Player.prototype.genStartMenu = function (guest) {
   Player.super_.prototype.genStartMenu.call(this);
   if (!guest){
-    this.menu.push(this.table.genMenu(consts.ACTION.SURRENDER));
+    this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };
 

@@ -197,14 +197,13 @@ Game.prototype.finishGame = function (result, uid) {
   var gameStatus = this.game.getBoardStatus();
   var winningLine = gameStatus.winningLines;
   this.table.finishGame();
-  this.table.emit('finishGame', finishData);
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    player.userInfo.elo = eloMap[i];
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
+    player.userInfo.elo = eloMap[i];
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -219,6 +218,7 @@ Game.prototype.finishGame = function (result, uid) {
       force : true
     }, 1, function () {})
   }
+  this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({players: players, line : winningLine}, true);
 };
 

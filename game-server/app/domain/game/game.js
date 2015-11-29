@@ -123,7 +123,7 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
         var opts = utils.clone(hallConfig);
         if (hallId === consts.HALL_ID.LIET_CHAP){
           opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
-          opts.removeMode = [consts.HANDICAP_MODE[Math.floor(Math.random() * consts.HANDICAP_MODE.length)]];
+          opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
         opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)];

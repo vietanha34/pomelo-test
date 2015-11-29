@@ -8,7 +8,7 @@ module.exports = {
     WINDOWPHONE : 2,
     JAVA : 3
   },
-  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid'],
+  JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp'],
 
   GAME_ID : {
     CO_TUONG : 1,

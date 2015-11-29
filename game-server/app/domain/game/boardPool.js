@@ -63,7 +63,6 @@ exp.create = function (params, cb) {
     })
     .spread(function (board, boardId) {
       if (board) {
-        console.log('boardId : ', boardId, board.roomId, gameId);
         boards[boardId] = board;
         if (!rooms[board.roomId]){
           rooms[board.roomId] = {};

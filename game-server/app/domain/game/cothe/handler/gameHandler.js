@@ -121,7 +121,6 @@ pro.changeFormation = function (msg, session, next) {
     })
 };
 
-
 pro.changeFormationMode = function (msg, session, next) {
   var board = session.board;
   var uid = session.uid;

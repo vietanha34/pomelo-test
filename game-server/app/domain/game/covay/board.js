@@ -107,7 +107,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 Game.prototype.progress = function () {
   var gameStatus = this.game.getBoardStatus();
-  console.log('gameStatus : ', gameStatus);
   if (gameStatus.isFinishedMatch){
     return this.finishGame(gameStatus.score);
   }else {
@@ -116,7 +115,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var winType = consts.WIN_TYPE.WIN;
   var xp;
   var turnColor = result ?
@@ -146,7 +144,7 @@ Game.prototype.finishGame = function (result, uid) {
         uid : player.uid,
         gold : subGold,
         result : winType,
-        score : result[colorString],
+        text : result[colorString],
         totalGold : player.gold,
         elo : 0,
         xp : xp
@@ -168,10 +166,10 @@ Game.prototype.finishGame = function (result, uid) {
       players.push({
         uid : player.uid,
         gold : addGold,
-        score : result[colorString],
         result : winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
         totalGold : player.gold,
         elo : 0,
+        text : result[colorString],
         xp : xp
       });
       finishData.push({
@@ -185,18 +183,17 @@ Game.prototype.finishGame = function (result, uid) {
       });
     }
   }
-  var gameStatus = this.game.getBoardStatus();
-  var winningLine = gameStatus.winningLines;
   this.table.finishGame();
-  this.table.emit('finishGame', finishData);
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].result.elo, players[1].result.elo);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].result.elo, players[1].result.elo, this.table.gameId, this.table.bet);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    this.table.players.getPlayer(players[i].uid).userInfo.elo = eloMap[i];
-    finishData[i].result.elo = eloMap[i]
+    finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    finishData[i].result.eloAfter = eloMap[i];
+    player.userInfo.elo = eloMap[i];
   }
-  this.table.pushFinishGame({ players : players, line : winningLine}, true);
+  this.table.emit('finishGame', finishData);
+  this.table.pushFinishGame({ players : players}, true);
 };
 
 function Table(opts) {
@@ -221,8 +218,8 @@ Table.prototype.getStatus = function () {
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove;
   status.killed = {};
-  status.killed[consts.COLOR.WHITE] = boardStatus['killedWhiteCounter'];
-  status.killed[consts.COLOR.BLACK] = boardStatus['killedBlackCounter'];
+  status.killed[1] = boardStatus['killedWhiteCounter'][0];
+  status.killed[-1] = boardStatus['killedBlackCounter'][0];
   if(status.turn) {
     status.turn.banSquare = boardStatus.illegalMoves;
     if (this.status !== consts.BOARD_STATUS.NOT_STARTED){
@@ -280,23 +277,23 @@ Table.prototype.action = function (uid, opts, cb) {
   if (opts.move){
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : player.menu});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : player.menu, uid : uid});
       otherPlayer = this.players.getPlayer(this.players.getOtherPlayer(player.uid));
-      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu});
-      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares});
+      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu, uid : uid});
+      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares});
+      this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
     }
   }else {
     var notifyMsg = util.format('Người chơi %s nhường lượt đi', player.userInfo.fullname);
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : player.menu, notifyMsg : notifyMsg});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : player.menu, notifyMsg : notifyMsg, uid : uid});
       otherPlayer = this.players.getPlayer(this.players.getOtherPlayer(player.uid));
-      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : otherPlayer.menu, notifyMsg : notifyMsg});
-      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg});
+      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : otherPlayer.menu, notifyMsg : notifyMsg, uid : uid});
+      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }else {
-      this.pushMessage('game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg});
+      this.pushMessage('game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }
   }
   this.game.progress();
@@ -358,17 +355,10 @@ Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
   Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
-    //if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-    //  var ownerPlayer = self.players.getPlayer(self.owner);
-    //  if (ownerPlayer.color === consts.COLOR.WHITE){
-    //    self.game.game.isWhiteTurn = true;
-    //  }else {
-    //    self.game.game.isWhiteTurn = false;
-    //  }
-    //  console.log('turnToMode : ');
-    //  var boardState = self.getBoardState(uid);
-    //  self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-    //}
+    if (lodash.isNumber(properties.color)){
+      var boardState = self.getBoardState(uid);
+      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+    }
     return utils.invokeCallback(cb, err, res)
   });
 };

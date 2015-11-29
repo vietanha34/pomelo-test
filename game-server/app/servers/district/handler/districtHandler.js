@@ -10,6 +10,7 @@ var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
+var Formula = require('../../../consts/formula');
 
 var LAYER_NUM_BOARD = 20;
 
@@ -51,6 +52,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       if (userInfo) {
         user = userInfo;
         user.elo = user['Achievement.elo'];
+        user.level = Formula.calLevel(user.exp);
         user.frontendId = session.frontendId;
         self.app.get('boardService').getBoard({
           where: whereClause,
@@ -121,6 +123,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
     function (userInfo, done) {
       if (userInfo) {
         var user = {
+          level: Formula.calLevel(userInfo.exp),
           gold: userInfo.gold,
           username: userInfo.username,
           uid: userInfo.uid,
@@ -293,6 +296,8 @@ Handler.prototype.getBoardList = function (msg, session, next) {
         gameId: gameId,
         roomId: roomId
       },
+      raw : true,
+      attributes : ['index', 'boardId', 'gameId', 'roomId', 'stt', 'numPlayer', 'bet', ['totalTime', 'turnTime'], ['password', 'lock'],'optional'],
       order: '`index` ASC'
     })
     .then(function (boards) {
@@ -309,7 +314,7 @@ Handler.prototype.getBoardList = function (msg, session, next) {
           numPlayer: board.numPlayer,
           bet: board.bet,
           turnTime: board.turnTime,
-          lock: board.password ? 1 : 0,
+          lock: board.lock ? 1 : 0,
           optional: utils.JSONParse(board.optional, {})
         });
       }
