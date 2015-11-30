@@ -359,7 +359,7 @@ UserDao.login = function (msg, cb) {
     .spread(function (user, created) {
       if (created) {
         // TODO push event register
-        var emitterConfig = self.app.get('emitterConfig');
+        var emitterConfig = pomelo.app.get('emitterConfig');
         pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
           uid : user.uid,
           username : user.username,
