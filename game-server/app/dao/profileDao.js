@@ -63,8 +63,8 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.elo = max;
       user.eloLevel = formula.calEloLevel(user.elo);
       var vipPoint = user.vipPoint || 0;
-      user.vipPoint = [vipPoint, formula.calVipLevel(formula.calVipLevel(vipPoint) + 1)];
-      user.vipLevel = formula.calVipLevel(user.vipPoint);
+      user.vipLevel = formula.calVipLevel(vipPoint);
+      user.vipPoint = [vipPoint, formula.calVipPoint(formula.calVipLevel(vipPoint) + 1)];
 
       user.vipLevel += (effects[consts.ITEM_EFFECT.THE_VIP]||0);
 
@@ -157,6 +157,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
         }
       })
       .catch(function(e) {
+        if (e.statusCode == 450) {
+          return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+        }
         console.error(e.stack || e);
         return utils.invokeCallback(cb, e.stack || e);
       });

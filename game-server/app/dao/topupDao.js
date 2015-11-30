@@ -63,7 +63,6 @@ TopupDao.topup = Promise.promisify(function topup(params, cb) {
  * @param cb
  */
 TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
-  utils.log('pushGoldAward', params);
   if (!params.uid || !params.gold || !params.type || !params.msg) {
     return utils.invokeCallback(cb, 'invalid param pushGoldAward');
   }
@@ -88,8 +87,8 @@ TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
     })
     .then(function(){
       return redis.hsetAsync(redisKeyUtil.getUserNotifyKey(params.uid), packageId, JSON.stringify({
-        title: title,
-        msg: msg
+        title: params.title,
+        msg: params.msg
       }));
     })
     .then(function(){
