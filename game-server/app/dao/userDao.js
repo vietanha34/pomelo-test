@@ -345,6 +345,7 @@ UserDao.login = function (msg, cb) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
         res.uid = res.id;
+        res.gold = 1000000;
         delete res['id'];
         return pomelo.app.get('mysqlClient')
           .User
