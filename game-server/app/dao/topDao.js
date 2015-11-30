@@ -42,8 +42,8 @@ TopDao.getTop = function getTop(uid, type, cb) {
   var uids = [];
   var inTop = true;
   var me = {rank: 1000};
-  var list = [];
-  var statuses = [];
+  var list;
+  var statuses;
 
   var processUsers = function() {
     if (type != code.TOP_TYPE.VIP && type != code.TOP_TYPE.GOLD) {
@@ -90,6 +90,8 @@ TopDao.getTop = function getTop(uid, type, cb) {
       }
     }
 
+    statuses = null;
+
     if (!inTop) {
       var rankAttr = attr+'Rank';
       return Top
@@ -127,17 +129,18 @@ TopDao.getTop = function getTop(uid, type, cb) {
       if (type == code.TOP_TYPE.GOLD)
         properties.push(attr);
 
-      return UserDao.getUsersPropertiesByUids(uids, properties);
-    })
-    .then(function(users) {
-      list = users || [];
       var statusService = pomelo.app.get('statusService');
-      return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true);
+      return [
+        UserDao.getUsersPropertiesByUids(uids, properties),
+        Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
+      ];
     })
-    .then(function(status) {
+    .spread(function(users, status) {
+      list = users || [];
       statuses = status || [];
-    })
-    .then(function() {
+      users = null;
+      status = null;
+      utils.log(statuses);
       return processUsers();
     })
     .catch(function(e) {

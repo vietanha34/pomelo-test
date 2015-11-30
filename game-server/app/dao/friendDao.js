@@ -22,7 +22,7 @@ var request = require('request-promise').defaults({transform: true});
  * @param cb
  */
 FriendDao.request = function request(fromId, toId, cb) {
-  if (!fromId || !toId) {
+  if (!fromId || !toId || fromId == toId) {
     return utils.invokeCallback(cb, 'invalid params friend request');
   }
 
@@ -142,6 +142,12 @@ FriendDao.getFriendList = function getFriendList(uid, limit, cb) {
   var friendKey = redisKeyUtil.getPlayerFriendKey(uid);
   var params = [friendKey, code.FRIEND_STATUS.FRIEND, code.FRIEND_STATUS.FRIEND, 'LIMIT', 0, limit];
   return redis.zrangebyscoreAsync(params)
+    .then(function(uids) {
+      uids.forEach(function(e, i) {
+        uids[i] = Number(uids[i]);
+      });
+      return utils.invokeCallback(cb, null, uids);
+    })
     .catch(function(e) {
       console.error(e.stack || e);
       return utils.invokeCallback(cb, null, []);
@@ -256,21 +262,20 @@ FriendDao.search = function search(params, cb) {
     })
     .then(function(friends) {
       for (i=0; i<list.length; i++) {
-        if (list[i].uid && friends.indexOf(list[i].uid) == -1) {
+        if (list[i].uid && friends.indexOf(list[i].uid) == -1 && list[i].uid != params.uid) {
           uids.push(list[i].uid);
           if (uids.length >= consts.MAX_FRIEND) break;
         }
       }
 
       var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'level'];
-      return UserDao.getUsersPropertiesByUids(uids, properties);
-    })
-    .then(function(userObjs) {
-      users = userObjs || [];
       var statusService = pomelo.app.get('statusService');
-      return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true);
+      return [
+        UserDao.getUsersPropertiesByUids(uids, properties),
+        Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
+      ];
     })
-    .then(function(statuses) {
+    .spread(function(users, statuses) {
       statuses = statuses || [];
       for (i = 0; i < users.length; i++) {
         if (!statuses[users[i].uid] || !statuses[users[i].uid].online)

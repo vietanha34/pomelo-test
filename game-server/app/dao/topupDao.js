@@ -63,6 +63,7 @@ TopupDao.topup = Promise.promisify(function topup(params, cb) {
  * @param cb
  */
 TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
+  utils.log('pushGoldAward', params);
   if (!params.uid || !params.gold || !params.type || !params.msg) {
     return utils.invokeCallback(cb, 'invalid param pushGoldAward');
   }

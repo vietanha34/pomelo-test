@@ -90,11 +90,11 @@ DailyDao.getGold = function getGold(uid, cb) {
         throw new Error('Lỗi cộng trừ tiền');
       }
 
-      pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 1);
+      pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', '1');
 
       return utils.invokeCallback(cb, null, {
         gold: Number(topupResult.gold) || 0,
-        msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, topupResult.gold.toString()]
+        msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, data.total.toString()]
       });
     })
     .catch(function(e) {

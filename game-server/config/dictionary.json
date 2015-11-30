@@ -80,6 +80,7 @@
   "service.itemHandler.buy" : 72,
   "service.dailyHandler.getData" : 73,
   "service.dailyHandler.getGold" : 74,
+  "service.feedbackHandler.send" : 75,
   "service.profileHandler.getProfile" : 80,
   "service.profileHandler.getAchievement" : 81,
   "service.profileHandler.updateProfile" : 82,
