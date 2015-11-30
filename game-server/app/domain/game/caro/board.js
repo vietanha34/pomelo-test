@@ -218,7 +218,7 @@ Game.prototype.finishGame = function (result, uid) {
       force : true
     }, 1, function () {})
   }
-  this.table.emit('finishGame', finishData);
+  this.table.emit('finishGame', finishData, true);
   this.table.pushFinishGame({players: players, line : winningLine}, true);
 };
 

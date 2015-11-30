@@ -176,7 +176,7 @@ exp.addEventFromBoard = function (board) {
         board.standUp(user.uid);
       }
       if (user.result.type === consts.WIN_TYPE.WIN){
-        board.score[user.color === consts.COLOR.WHITE ? 0 : 1] += 1
+        board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
       }else if (user.result.type === consts.WIN_TYPE.LOSE && !disableLooseUser){
         board.looseUser = user.uid;
       }
@@ -302,6 +302,16 @@ exp.addEventFromBoard = function (board) {
         board.pushMessage('game.gameHandler.setOwner', {owner: board.owner});
       }
     }
+  });
+
+  board.on('resetDefault', function () {
+    process.nextTick(function () {
+      board.pushMessage('changeBoardProperties', {
+        bet : board.bet,
+        turnTime : board.turnTime,
+        totalTime : board.totalTime
+      })
+    })
   })
 };
 

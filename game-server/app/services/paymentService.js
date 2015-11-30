@@ -97,14 +97,14 @@ pro.addBalance = function (opts, cb) {
   var uid = opts.uid;
   var goldAfter = 0;
   if (isNaN(gold) || gold < 0)
-    return Promises.reject({ec: Code.PAYMENT.ERROR_PARAM});
+    return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
       .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame']}, {transaction: t})
       .then(function (user) {
         if (!user) {
-          return Promises.reject({ec: Code.USER_NOT_EXIST});
+          return utils.invokeCallback(cb, null, {ec: Code.USER_NOT_EXIST});
         } else {
           goldAfter = user.gold + gold;
           var log = {
@@ -128,7 +128,7 @@ pro.addBalance = function (opts, cb) {
       if (opts.resultLogs && opts.resultLogs.length >= 1) {
         addResultLog(uid, opts.resultLogs);
       }
-      return Promises.resolve({ec: Code.PAYMENT.SUCCESS, gold: goldAfter});
+      return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.SUCCESS, gold: goldAfter});
     })
     .finally(function () {
       goldAfter = null;

@@ -116,7 +116,7 @@ Game.prototype.progress = function () {
 
 Game.prototype.finishGame = function (result, uid) {
   var winType = consts.WIN_TYPE.WIN;
-  var xp;
+  var xp, subGold, addGold, loseUser, winUser, toUid, winIndex, fromUid, loseIndex;
   var turnColor = result ?
       result.matchResult === 'trangThang'
         ? consts.COLOR.WHITE
@@ -137,12 +137,20 @@ Game.prototype.finishGame = function (result, uid) {
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
     if (player.uid === turnUid){
-      var subGold = player.subGold(bet);
       var colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
       xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.gameId, this.hallId) : 0;
+      if (winType === consts.WIN_TYPE.WIN){
+        winUser = player;
+        toUid = player.uid;
+        winIndex = i;
+      }else if (winType === consts.WIN_TYPE.LOSE){
+        fromUid = player.uid;
+        loseUser = player;
+        loseIndex = i;
+      }
       players.push({
         uid : player.uid,
-        gold : subGold,
+        gold : 0,
         result : winType,
         text : result[colorString],
         totalGold : player.gold,
@@ -159,13 +167,21 @@ Game.prototype.finishGame = function (result, uid) {
         }
       });
     }else {
-      var addGold = player.addGold(bet, true);
       colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
       var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      if (res === consts.WIN_TYPE.WIN){
+        toUid = player.uid;
+        winUser = player;
+        winIndex = i;
+      }else if (res === consts.WIN_TYPE.LOSE){
+        fromUid = player.uid;
+        loseUser = player;
+        loseIndex = i;
+      }
       players.push({
         uid : player.uid,
-        gold : addGold,
+        gold : 0,
         result : winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
         totalGold : player.gold,
         elo : 0,
@@ -191,6 +207,32 @@ Game.prototype.finishGame = function (result, uid) {
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
+  }
+  if (bet > 0){
+    subGold = loseUser.subGold(bet);
+    addGold = winUser.addGold(subGold, true);
+    players[winIndex].gold = addGold;
+    players[loseIndex].gold = -subGold;
+    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+      gold : bet,
+      fromUid : fromUid,
+      toUid : toUid,
+      tax : 5,
+      force : true
+    }, 1, function () {})
+  }
+  if (bet > 0){
+    subGold = loseUser.subGold(bet);
+    addGold = winUser.addGold(subGold, true);
+    players[winIndex].gold = addGold;
+    players[loseIndex].gold = -subGold;
+    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+      gold : bet,
+      fromUid : fromUid,
+      toUid : toUid,
+      tax : 5,
+      force : true
+    }, 1, function () {})
   }
   this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players}, true);

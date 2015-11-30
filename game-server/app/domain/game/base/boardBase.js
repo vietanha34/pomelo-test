@@ -341,7 +341,7 @@ pro.pushMessageWithOutUids = function (uids, route, msg) {
       pushUids.push(player.getUids())
     }
   }
-  logger.info("\n Push message without Uid : %j \n route :  %s \n message %j", uids, route, msg);
+  logger.info("\n Push message without Uids : %j \n route :  %s \n message %j", uids, route, msg);
   if (uids.length != 0) {
     messageService.pushMessageByUids(uids, route, msg)
   }
@@ -568,7 +568,7 @@ pro.getStatus = function () {
       uid : this.turnUid,
       count : this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
       time : [timeLeft,
-        player.totalTime - (player.turnTime - timeLeft),
+        player.totalTime - (this.turnTime - timeLeft),
         this.status === consts.BOARD_STATUS.NOT_STARTED ? 30000 + 4000 : this.turnTime
       ]
     };
@@ -702,7 +702,11 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
         self.players.unReadyAll();
         var otherPlayer = self.players.getOtherPlayer();
         if(otherPlayer){
-          self.addJobReady(otherPlayer);
+          if (dataChanged.bet && otherPlayer.gold < dataChanged.bet){
+            self.standUp(otherPlayer.uid);
+          }else {
+            self.addJobReady(otherPlayer);
+          }
         }
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];
         dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
@@ -1015,7 +1019,10 @@ pro.resetDefault = function () {
   this.minPlayer = 2;
   this.maxPlayer = 2;
   this.score = [0,0];
+  this.turnTime = this.turnTimeDefault;
+  this.totalTime = this.totalTimeDefault;
   this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null})
+  this.emit('resetDefault');
 };
 
 /**
