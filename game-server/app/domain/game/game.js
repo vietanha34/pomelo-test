@@ -133,6 +133,10 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
             opts.bet = 300 + Math.floor(i / 6) * 300;
             break;
           case consts.HALL_ID.BINH_DAN:
+            if (self.gameId === consts.GAME_ID.CO_TUONG){
+              opts.bet = 300 + Math.floor(i / 6) * 300;
+              break;
+            }
           case consts.HALL_ID.LIET_CHAP:
             opts.bet = 1000 + Math.floor(i / 6) * 400;
             break;

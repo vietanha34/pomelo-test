@@ -129,14 +129,14 @@ var Board = function (opts, PlayerPool, Player) {
         self.turnTime = turnTime;
         changed = true;
         dataChanged.turnTime = turnTime;
-        //dataUpdate.turnTime = turnTime;
+        dataUpdate.turnTime = turnTime / 1000;
       }
       if (totalTime && (self.configTotalTime.indexOf(totalTime) > -1)){
         console.log('update TurnTime :', totalTime);
         self.totalTime = totalTime;
         changed = true;
         dataChanged.totalTime = totalTime;
-        dataUpdate.turnTime = totalTime / 1000;
+        dataUpdate.totalTime = totalTime / 1000;
         self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
@@ -163,7 +163,6 @@ var Board = function (opts, PlayerPool, Player) {
         var otherPlayerUid = self.players.getOtherPlayer(player.uid);
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
         if (!color){ // color === 0
-          console.log('player.color : ', player.color, otherPlayer.color, self.players.mapColor);
           if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
           player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }else {
