@@ -8,9 +8,35 @@ var Promise = require('bluebird');
 var lodash = require('lodash');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
+var formula = require('../consts/formula');
 var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var NotifyDao = require('./notifyDao');
+var ItemDao = require('./itemDao');
+var UserDao = require('./userDao');
+
+HomeDao.defaultData = {
+  newCount: 0,
+  notifyCount: 0,
+  game : [
+    {gameId : 1, status : 1},
+    {gameId : 2, status : 1},
+    {gameId : 3, status : 1},
+    {gameId : 4, status : 1},
+    {gameId : 5, status : 1},
+    {gameId : 6, status : 1}
+  ],
+  userInfo: {
+    fullname: '',
+    avatar : {id: 0},
+    uid: 1,
+    gold: 0,
+    level: 1,
+    exp: [0,1000],
+    vipLevel: 0,
+    eloLevel: 0
+  }
+};
 
 /**
  *
@@ -18,7 +44,57 @@ var NotifyDao = require('./notifyDao');
  * @param cb
  */
 HomeDao.getHome = function getHome(params, cb) {
-  // todo
+  var data = utils.clone(HomeDao.defaultData);
+  data.userInfo.uid = params.uid;
+
+  var effects = [
+    consts.ITEM_EFFECT.LEVEL,
+    consts.ITEM_EFFECT.THE_VIP
+  ];
+
+  return Promise.props({
+    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
+    achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
+    effect: ItemDao.checkEffect(params.uid, effects)
+  })
+    .then(function(props) {
+      data.userInfo = props.userInfo;
+
+      data.userInfo.gold = data.userInfo.gold || 0;
+      data.userInfo.avatar = data.userInfo.avatar ? utils.JSONParse(data.userInfo.avatar, {id: 0}) : {id: 0};
+      var exp = data.userInfo.exp || 0;
+      data.userInfo.level = formula.calLevel(exp);
+      data.userInfo.exp = [exp, formula.calExp(data.userInfo.level + 1)];
+      data.userInfo.vipPoint = data.userInfo.vipPoint || 0;
+      data.userInfo.vipLevel = formula.calVipLevel(data.userInfo.vipPoint);
+
+      data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
+      data.userInfo.vipLevel += (props.effect[consts.ITEM_EFFECT.THE_VIP]||0);
+
+      props.achievement = props.achievement || {};
+      var list = Object.keys(consts.UMAP_GAME_NAME);
+      var max = 0;
+      var name, elo;
+      var gameId = 1;
+      for (var i=0; i<list.length; i++) {
+        name = consts.UMAP_GAME_NAME[list[i]];
+        elo = props.achievement[name+'Elo'] || 0;
+        if (elo && elo > max) {
+          max = elo;
+          gameId = list[i];
+        }
+      }
+
+      data.userInfo.eloLevel = formula.calEloLevel(max);
+
+      props = null;
+      return utils.invokeCallback(cb, null, data);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb, null, data);
+    });
 };
 
 /**

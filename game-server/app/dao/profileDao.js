@@ -95,11 +95,10 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
  */
 ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
   if (params.avatar) { // update avatar
-    var avatar = utils.JSONParse(params.avatar, null);
-    if (!uid || !avatar || !avatar.id || isNaN(avatar.id)) {
+    if (!uid || !params.avatar || !params.avatar.id || isNaN(params.avatar.id)) {
       return utils.invokeCallback(cb, 'invalid params update avatar');
     }
-    return UserDao.updateProperties(uid, {avatar: params.avatar})
+    return UserDao.updateProperties(uid, {avatar: JSON.stringify(params.avatar)})
       .then(function () {
         return utils.invokeCallback(cb, null, {});
       })

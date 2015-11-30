@@ -313,5 +313,9 @@ module.exports = {
 
   DAILY_LANGUAGE: {
     RECEICE_MONEY: 'Bạn vừa nhận được %s vàng'
+  },
+
+  FEEDBACK_LANGUAGE: {
+    SUCCESS: 'Cảm ơn bạn đã gửi góp ý'
   }
 };

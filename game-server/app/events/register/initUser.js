@@ -5,7 +5,9 @@
 var Config = require('../config');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
+var utils = require('../../util/utils');
 var consts = require('../../consts/consts');
+var TopupDao = require('../../dao/topupDao');
 
 module.exports.type = Config.TYPE.REGISTER;
 
@@ -30,10 +32,21 @@ module.exports.type = Config.TYPE.REGISTER;
  * @param param
  */
 module.exports.process = function (app, type, param) {
+  utils.log('REGISTER', param);
   if (!param.uid || !param.username) {
     console.error('wrong param register: ', param);
     return;
   }
+
+  setTimeout(function(){
+    TopupDao.pushGoldAward({
+      uid: param.uid,
+      type: 'REGISTER',
+      gold: 1000000,
+      msg: 'Bạn được tặng 1000000 vàng khi vào chơi cờ thủ bản beta mới. Số vàng của bạn sẽ được reset khi ra mắt bản chính thức.',
+      title: 'Tặng vàng tân thủ'
+    })
+  }, 2500);
 
   var Achievement = pomelo.app.get('mysqlClient').Achievement;
   Achievement
