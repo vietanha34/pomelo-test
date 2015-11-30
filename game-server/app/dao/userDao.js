@@ -344,10 +344,8 @@ UserDao.login = function (msg, cb) {
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
-        console.log('res  typeof : ', typeof res);
         res.uid = res.id;
         delete res['id'];
-        console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
           .User
           .findOrCreate({where: {uid: res.uid}, raw: true, defaults: res});
@@ -361,6 +359,16 @@ UserDao.login = function (msg, cb) {
     .spread(function (user, created) {
       if (created) {
         // TODO push event register
+        var emitterConfig = self.app.get('emitterConfig');
+        pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
+          uid : user.uid,
+          username : user.username,
+          platform : msg.platform,
+          deviceId : msg.deviceId,
+          version : msg.version,
+          extraData : msg.data,
+          ip : msg.ip
+        }, function () {});
       }
       return utils.invokeCallback(cb, null, user);
     })

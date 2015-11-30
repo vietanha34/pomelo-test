@@ -42,7 +42,10 @@
   },
   "production":{
     "connector": [
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.196", "frontend": true}
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3513, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true}
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
