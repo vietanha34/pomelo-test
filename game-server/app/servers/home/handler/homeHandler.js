@@ -28,7 +28,7 @@ var Handler = function (app) {
  * @param next
  */
 Handler.prototype.getHome = function (msg, session, next) {
-  HomeDao.getHome({uid: session.uid})
+  HomeDao.getHome({uid: session.uid, langVersion : msg.langVersion})
     .then(function(res) {
       utils.invokeCallback(next, null, res);
     })
