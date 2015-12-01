@@ -109,6 +109,7 @@
   "service.friendHandler.searchFriend" : 139,
   "service.newsHandler.getNews" : 160,
   "service.newsHandler.getList" : 161,
+  "service.newsHandler.getNewsByCate" : 162,
   "service.friendHandler.getRemainInvite" : 165,
   "service.friendHandler.inviteSocial" : 166,
   "service.friendHandler.unFriend" : 170,
