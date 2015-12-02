@@ -32,8 +32,8 @@ module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
   var theMoment = moment();
-  var startOfDay = theMoment.startOf('day').unix();
-  var startOfWeek = theMoment.startOf('isoweek').unix();
+  var startOfDay = theMoment.startOf('hour').unix(); // todo day
+  var startOfWeek = theMoment.startOf('day').unix(); // todo isoweek
   var now = theMoment.unix();
 
   UserDao.getUserProperties(param.uid, ['lastLogin'])

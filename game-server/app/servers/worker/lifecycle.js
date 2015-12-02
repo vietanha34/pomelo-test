@@ -5,19 +5,27 @@ var lodash = require('lodash');
 var utils = require('../../util/utils');
 var util = require('util');
 var DailyDao = require('../../dao/dailyDao');
+var PaymentDao = require('../../dao/paymentDao');
 
 module.exports.beforeStartup = function (app, cb) {
   cb();
 };
 
 module.exports.afterStartup = function (app, cb) {
-  utils.log('worker start');
+  var httpServer = app.get('httpServer');
+  if (httpServer) {
+    httpServer.start(cb);
+  }
+
   DailyDao.loadConfig();
-  cb();
+  PaymentDao.loadConfig();
 };
 
 module.exports.beforeShutdown = function (app, cb) {
-  utils.invokeCallback(cb);
+  var httpServer = app.get('httpServer');
+  if (httpServer) {
+    httpServer.stop(cb);
+  }
 };
 
 module.exports.afterStartAll = function (app) {
