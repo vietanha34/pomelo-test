@@ -2,6 +2,10 @@
  * Created by KienDT on 12/02/14.
  */
 
+var utils = require('../../../util/utils');
+var code = require('../../../consts/code');
+var NewsDao = require('../../../dao/newsDao');
+
 
 module.exports = function(app) {
   return new Handler(app);
@@ -11,22 +15,38 @@ var Handler = function(app) {
   this.app = app;
 };
 
-Handler.prototype.getNews = function (msg, session, next) {
-  newsDao.getNews(msg.id, function(e, result) {
-    if (e)
-      next(e.stack || e, {ec: 500 });
-    else
-      next(null, result);
-  });
+Handler.prototype.getList = function (msg, session, next) {
+  NewsDao.getList(session.uid, msg.cate)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, []);
+    });
 };
 
-Handler.prototype.getList = function (msg, session, next) {
-  newsDao.getList(msg.categoryId, msg.limit, msg.page, function(e, result) {
-    if (e)
-      next(e.stack || e, {ec: 500 });
-    else {
-      result.categoryId = msg.categoryId;
-      next(null, result);
-    }
-  });
+Handler.prototype.getNews = function (msg, session, next) {
+  NewsDao.getNews(session.uid, msg.id, 0)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, {});
+    });
+};
+
+Handler.prototype.getNewsByCate = function (msg, session, next) {
+  NewsDao.getNews(session.uid, msg.cate, 1)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, {});
+    });
 };

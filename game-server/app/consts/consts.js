@@ -652,5 +652,24 @@ module.exports = {
     BAN_CO_TOI: 11,
     VE_PHONG_THUONG: 12,
     THE_VIP: 13
+  },
+
+  NEWS_CATE: {
+    SU_KIEN: 1, // tab tin sự kiện
+    TIN_KM: 2, // tab tin KM
+    TIN_ADMIN: 3, // tab tin admin
+    CHINH_SACH_VIP: 4,
+    HUONG_DAN_VAT_PHAM: 5,
+    HUONG_DAN_CHUNG: 6,
+    DIEU_KHOAN: 7,
+    CARD: 8,
+    SMS: 9,
+    IAP: 10,
+    LUAT_CO_TUONG: 11,
+    LUAT_CO_UP: 12,
+    LUAT_CO_THE: 13,
+    LUAT_CO_VUA: 14,
+    LUAT_CO_CARO: 15,
+    LUAT_CO_VAY: 16
   }
 };
