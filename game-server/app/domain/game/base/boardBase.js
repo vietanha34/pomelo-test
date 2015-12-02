@@ -482,9 +482,9 @@ pro.joinBoard = function (opts) {
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
     return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
   }
-  if (userInfo.level < this.level){
-    return {ec : 500, msg:'Bạn không đủ để vào bàn này'}
-  }
+  //if (userInfo.level < this.level){
+  //  return {ec : 500, msg:'Bạn không đủ level để vào bàn này'}
+  //}
   var result = this.players.addPlayer(opts);
   console.log('result : ', result);
   if (result.ec == Code.OK) {

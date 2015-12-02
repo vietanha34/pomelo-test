@@ -1,7 +1,6 @@
-/*!
- * Pomelo -- consoleModule onlineUser
- * Copyright(c) 2012 fantasyni <fantasyni@163.com>
- * MIT Licensed
+/**
+ *
+ * @type {exports|module.exports}
  */
 var utils = require('../util/utils');
 var pomelo = require('pomelo');
@@ -49,7 +48,7 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
       var notifyCenterNotify = {
         popup_type: consts.POPUP_TYPE.NOTIFY_CENTER,
         title: msg.title || 'Bảo trì',
-        message: msg.message || 'Máy chủ sẽ được bảo trì sau ít phút nữa, người chơi vui lòng rời bàn khi ván chơi kết thúc',
+        message: msg.message || 'Máy chủ sẽ được bảo trì sau ít phút nữa, người chơi vui lòng rời bàn khi ván chơi kết thúc'
       };
       channelService.broadcast('connector', 'onNotify', dropDownNotify, {}, function (err, res) {
       });
