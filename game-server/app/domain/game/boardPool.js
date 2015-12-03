@@ -191,7 +191,6 @@ function check() {
       var roomKeys = Object.keys(rooms);
       for(var i = 0, len = roomKeys.length; i< len ; i ++){
         var key = roomKeys[i];
-        console.log('roomKey : ', rooms[key]);
         var progress = Math.floor(rooms[key] / 100 * 10);
         if (!progress && rooms[key]) progress += 1;
         pomelo.app.get('boardService').updateRoom({

@@ -64,6 +64,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.turnTime = opts.turnTime * 1000 || 180 * 1000;
   this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
   this.tax = opts.tax || 5;
+  this.tableType = 0; // loại bàn đá;
   this.score = [0,0];
   this.createdTime = Date.now();
   this.jobId = null;
@@ -89,17 +90,23 @@ var Board = function (opts, PlayerPool, Player) {
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
       var bet = properties.bet;
-      if (bet) {
+      if (bet && bet !== self.bet) {
         console.log('update bet : ', bet, self.configBet);
         var ownerPlayer = self.players.getPlayer(self.owner);
-        if (bet < self.configBet[0] || bet > self.configBet[1]){
+        var multi = 1;
+        if (ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)){
+          multi = 5;
+        }else if(ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)){
+          multi = 3;
+        }
+        if (bet < self.configBet[0] || bet > self.configBet[1] * multi) {
           return done({ec : Code.FAIL, msg : "mức tiền cược không đúng với khu vực"});
         }
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
         } else {
           self.bet = bet;
-          changed = true;
+          changed.push(util.format(' mức cược : %s', bet));
           dataChanged.bet = bet;
           dataUpdate.bet = bet;
         }
@@ -110,10 +117,17 @@ var Board = function (opts, PlayerPool, Player) {
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
       var lock = properties.password;
-      if (lodash.isString(lock)) {
+      if (lodash.isString(lock) && lock.length > 0){
+        var ownerPlayer = self.players.getPlayer(self.owner);
+        if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN)){
+          changed.push(' chủ bản không có vật phẩm khoá bàn chơi');
+          return done(null, properties, dataChanged, dataUpdate, changed);
+        }
+      }
+      if (lodash.isString(lock) && lock !== self.lock) {
         console.log('update password');
         self.lock = lock;
-        changed = true;
+        changed.push(' mật khẩu bàn chơi');
         dataChanged.password = lock;
         dataUpdate.password = lock;
       }
@@ -124,23 +138,40 @@ var Board = function (opts, PlayerPool, Player) {
       // TODO change turn Time
       var turnTime = properties.turnTime;
       var totalTime = properties.totalTime;
-      if (turnTime && (self.configTurnTime.indexOf(turnTime) > -1)){
+      var tableType = properties.tableType;
+      var ownerPlayer = self.players.getPlayer(self.owner);
+      if((turnTime !== self.turnTime || totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)){
+        changed.push(' ');
+        return done(null, properties, dataChanged, dataUpdate, changed);
+      }
+      if (turnTime && turnTime !== self.turnTime &&(self.configTurnTime.indexOf(turnTime) > -1)){
         console.log('update TurnTime :', turnTime);
         self.turnTime = turnTime;
-        changed = true;
+        changed.push(util.format(' thời gian 1 lượt đi: %s giây', turnTime /1000));
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime / 1000;
       }
-      if (totalTime && (self.configTotalTime.indexOf(totalTime) > -1)){
-        console.log('update TurnTime :', totalTime);
+      if (totalTime && self.totalTime !== totalTime &&(self.configTotalTime.indexOf(totalTime) > -1)){
+        console.log('update TotalTime :', totalTime);
         self.totalTime = totalTime;
-        changed = true;
+        changed.push(util.format(' thời gian tổng: %s phút', totalTime /1000/60));
         dataChanged.totalTime = totalTime;
         dataUpdate.totalTime = totalTime / 1000;
         self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
+      if(lodash.isNumber(tableType) && tableType !== self.tableType){
+        if(tableType && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[tableType])){
+
+        }else {
+          console.log('update tableType : ', tableType);
+          dataChanged.tableType = tableType;
+          changed.push(' ' + consts.TABLE_TYPE_NAME_MAP[tableType]);
+          self.tableType = tableType;
+        }
+      }
       return done(null, properties, dataChanged, dataUpdate, changed);
     },
+    // Thay đổi chủ bàn
     function (properties, dataChanged, dataUpdate, changed, done) {
       // changeOwner
       var owner = properties.owner;
@@ -148,7 +179,7 @@ var Board = function (opts, PlayerPool, Player) {
         self.players.getPlayer(self.owner).clearOwner();
         self.players.getPlayer(owner).setOwner();
         self.owner = owner;
-        changed = true;
+        //changed = true;
         dataChanged.owner = owner;
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
@@ -170,7 +201,7 @@ var Board = function (opts, PlayerPool, Player) {
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }
         dataChanged.color = player.color;
-        changed = true;
+        changed.push(' đổi màu quân');
         self.players.mapColor.reverse();
         self.score.reverse();
       }
@@ -482,9 +513,6 @@ pro.joinBoard = function (opts) {
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
     return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
   }
-  //if (userInfo.level < this.level){
-  //  return {ec : 500, msg:'Bạn không đủ level để vào bàn này'}
-  //}
   var result = this.players.addPlayer(opts);
   console.log('result : ', result);
   if (result.ec == Code.OK) {
@@ -493,6 +521,7 @@ pro.joinBoard = function (opts) {
       self.emit('joinBoard', self.players.getPlayer(uid));
     }
     var state = self.getBoardState(uid);
+    state.notifyMsg = result.notifyMsg
     console.log('state : ', state);
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
@@ -615,6 +644,7 @@ pro.getBoardInfo = function (finish) {
       matchId: this.game ? this.game.matchId : '',
       bet: this.bet,
       owner : this.owner,
+      tableType: this.tableType,
       gameType: this.gameType
     }
   } else {
@@ -631,6 +661,7 @@ pro.getBoardInfo = function (finish) {
       gameType: this.gameType,
       hallId : this.hallId,
       index : this.index,
+      tableType: this.tableType,
       bet  :this.bet,
       guest: this.players.guestIds.length
     }
@@ -687,17 +718,16 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
   properties = properties || {};
   var propertiesFunction = [
     function (done) {
-      return done(null, properties, {}, {}, false);
+      return done(null, properties, {}, {}, []);
     }
   ].concat(this.changePropertiesFunction, lodash.isArray(addFunction) ? addFunction : []);
   async.waterfall(propertiesFunction, function (err, properties, dataChanged, dataUpdate, changed) {
-    console.log('arguments : ', arguments);
     if (err) {
       return utils.invokeCallback(cb, err);
     } else {
       propertiesFunction.splice(0, propertiesFunction.length);
       console.log('dataChanged : ', changed, dataChanged, dataUpdate);
-      if (changed) {
+      if (changed.length > 0) {
         self.players.unReadyAll();
         var otherPlayer = self.players.getOtherPlayer();
         if(otherPlayer){
@@ -709,6 +739,7 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
         }
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];
         dataChanged.msg = [Code.ON_GAME.OWNER_CHANGE_BOARD_PROPERTIES, self.bet.toString()];
+        dataChanged.notifyMsg = 'Chủ bàn thay đổi - ' + changed.join(',');
         self.emit('setBoard', dataUpdate);
         self.pushMessageWithMenu('game.gameHandler.changeBoardProperties', dataChanged);
         return utils.invokeCallback(cb, null, dataChanged);
@@ -840,6 +871,10 @@ pro.kick = function (uid, cb) {
   if (!player) {
     // TODO change msg nguoi choi khong ton tai
     utils.invokeCallback(cb, null, utils.getError(Code.FAIL));
+    return
+  }
+  if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
+    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
     return
   }
   this.emit('kick', player);
@@ -1018,9 +1053,10 @@ pro.resetDefault = function () {
   this.minPlayer = 2;
   this.maxPlayer = 2;
   this.score = [0,0];
+  this.tableType = 0;
   this.turnTime = this.turnTimeDefault;
   this.totalTime = this.totalTimeDefault;
-  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null})
+  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null});
   this.emit('resetDefault');
 };
 

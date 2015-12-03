@@ -7,6 +7,7 @@ var utils = require('../../../util/utils.js');
 var Code = require('../../../consts/code');
 var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
+var ItemDao = require('../../../dao/itemDao');
 var async = require('async');
 
 
@@ -43,14 +44,31 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
     return utils.invokeCallback(cb, null, {data : utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   }
   logger.error('joinBoard : ', tableId, opts);
-  var state = board.joinBoard(opts);
-  if (state && !state.ec) {
-    utils.invokeCallback(cb, null,
-      {data: state, tableId: tableId, serverId: game.serverId, roomId: game.roomId});
-  }
-  else {
-    utils.invokeCallback(cb, null, {data: state})
-  }
+  ItemDao.checkEffect(opts.userInfo.uid,null)
+    .then(function (effect) {
+      console.log('effect : ', effect);
+      opts.effect = effect;
+      var state = board.joinBoard(opts);
+      if (state && !state.ec) {
+        return utils.invokeCallback(cb, null,
+          {data: state, tableId: tableId, serverId: game.serverId, roomId: game.roomId});
+      }
+      else {
+        return utils.invokeCallback(cb, null, {data: state})
+      }
+    })
+    .catch(function (err) {
+      opts.effect = {};
+      var state = board.joinBoard(opts);
+      if (state && !state.ec) {
+        return utils.invokeCallback(cb, null,
+          {data: state, tableId: tableId, serverId: game.serverId, roomId: game.roomId});
+      }
+      else {
+        return utils.invokeCallback(cb, null, {data: state})
+      }
+    })
+
 };
 
 /**

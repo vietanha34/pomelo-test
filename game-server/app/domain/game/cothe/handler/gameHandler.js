@@ -9,6 +9,7 @@ var lodash = require('lodash');
 var utils = require('../../../../util/utils');
 var async = require('async');
 var userDao = require('../../../../dao/userDao');
+var sh = require("shorthash");
 var util = require('util');
 var Promise = require('bluebird');
 
@@ -66,7 +67,9 @@ pro.getListFormation = function (msg, session, next) {
           detail: util.format('%s đi tiên, phải %s trong %s nước', formations[i].turn === consts.COLOR.WHITE ? 'đỏ' : 'đen', formations[i].win === 1 ? 'thắng' : 'hoà', formations[i].numMove)
         })
       }
-      return next(null, {formations: result, offset: offset, length: formations.length, total: count});
+      var str = JSON.stringify(result);
+      var version = sh.unique(str);
+      return next(null, {formations: result, offset: offset, length: formations.length, total: count, version : version});
     })
     .catch(function (err) {
       console.error('err: ', err);

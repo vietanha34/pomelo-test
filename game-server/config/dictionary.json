@@ -70,6 +70,7 @@
   "chat.chatHandler.mute" : 121,
   "chat.chatHandler.enable" : 122,
   "chat.chatHandler.addGift" : 123,
+  "chat.chatHandler.getChatLog" : 124,
   "service.miniGameHandler.getSpinAward" : 65,
   "service.miniGameHandler.spin" : 66,
   "service.miniGameHandler.buySpin" : 67,

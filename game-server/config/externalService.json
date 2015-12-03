@@ -4,6 +4,9 @@
       "url" : "http://stpk.cuamobi.com/upload.php",
       "secretKey": "pyLzHGQvxOuY"
     },
+    "charge_queue" : {
+      "url" : "amqp://10.2.10.19"
+    },
     "account" : {
       "authUrl" : "https://10.2.10.21:443",
       "loginUrl" : "/oauth/token/",
@@ -25,8 +28,11 @@
       "url" : "http://stpk.cuamobi.com/upload.php",
       "secretKey": "pyLzHGQvxOuY"
     },
+    "charge_queue" : {
+      "url" : "amqp://guest:payrabbit@v!@172.16.20.10"
+    },
     "account" : {
-      "authUrl" : "https://172.16.20.20:443",
+      "authUrl" : "https://10.2.10.21:443",
       "loginUrl" : "/oauth/token/",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",

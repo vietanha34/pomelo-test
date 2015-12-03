@@ -43,6 +43,8 @@ var USER_GOLD = 'cothu:user_gold:%d';
 var USER_NOTIFY = 'cothu:user_notify:%d';
 var USER_EFFECT = 'cothu:user_effect:%d';
 var DAILY_CONFIG = 'cothu:daily_config';
+var PAYMENT_CONFIG = 'cothu:payment_config';
+var USER_CHAT_LOG = 'cothu:{uid}:log';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
@@ -134,6 +136,15 @@ RedisKeyUtil.getRoomListKey = function (uid) {
 
 RedisKeyUtil.getUserMetadata = function (uid) {
   return USER_METADATA.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return uid;
+    }
+  );
+};
+
+RedisKeyUtil.getUserChatLog = function (uid) {
+  return USER_CHAT_LOG.replace(
     /\{(\w+)\}/g,
     function (u) {
       return uid;
@@ -326,4 +337,8 @@ RedisKeyUtil.getUserEffectKey = function getUserEffectKey(uid) {
 
 RedisKeyUtil.getDailyConfigKey = function getDailyConfigKey() {
   return DAILY_CONFIG;
+};
+
+RedisKeyUtil.getPaymentConfigKey = function getDailyConfigKey() {
+  return PAYMENT_CONFIG;
 };

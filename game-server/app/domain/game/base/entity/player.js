@@ -28,10 +28,14 @@ var util = require('util');
  * @property {Boolean} guest guest
  */
 var Player = function (opts) {
+  console.log('otpts : ', opts)
   this.userInfo = opts.userInfo || {};
   this.userInfo.sex = parseInt(this.userInfo.sex);
   this.userInfo.elo = parseInt(this.userInfo.elo);
   this.userInfo.title = Formula.calEloLevel(this.userInfo.elo);
+  this.effect = opts.effect;
+  var extraLevel = this.checkItems(consts.ITEM_EFFECT.LEVEL) || 0;
+  this.userInfo.level = this.userInfo.level + extraLevel;
   this.goldAfter = 0; // Số tiền sau của người dùng
   this.uid = opts.userInfo.uid;
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
@@ -263,6 +267,10 @@ Player.prototype.Ready = function () {
 
 Player.prototype.addItems = function (items) {
   // TODO handle cam kick, cam chat
+};
+
+Player.prototype.checkItems = function (item) {
+  return this.effect[item]
 };
 
 Player.prototype.startGame = function () {

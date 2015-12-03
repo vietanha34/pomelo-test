@@ -18,7 +18,6 @@ module.exports.afterStartup = function (app, cb) {
 module.exports.beforeShutdown = function (app, cb) {
   // do some operations before application shutdown down
   var game = app.game;
-  app.get('waitingService').clean();
   if (game) {
     game.stop();
   }

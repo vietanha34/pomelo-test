@@ -132,6 +132,7 @@ FriendDao.checkFriendStatus = function checkFriendStatus(fromId, toId, cb) {
 
 /**
  *
+ *
  * @param uid
  * @param limit
  * @param cb

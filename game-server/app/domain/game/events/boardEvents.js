@@ -102,6 +102,9 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
     //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
+    if(userInfo.guest){
+      board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
+    }
     // restart to default value
     if (board.players.length === 0) {
       board.resetDefault()
@@ -134,7 +137,8 @@ exp.addEventFromBoard = function (board) {
   });
 
 
-  board.on('startGame', function (userPlaying) {
+  board.on('startGame', function () {
+    pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.PLAY });
     //board.timer.stop();
   });
 
@@ -194,6 +198,7 @@ exp.addEventFromBoard = function (board) {
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
+    pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.NOT_STARTED });
     return data;
   });
 
@@ -263,6 +268,7 @@ exp.addEventFromBoard = function (board) {
       }
     });
   });
+
   /**
    * On Event setBoard
    * Bàn chơi sẽ emit sự kiện này khi có sự kiện yêu cầu thay đổi thuộc tính của bàn chơi Như :
@@ -306,7 +312,7 @@ exp.addEventFromBoard = function (board) {
 
   board.on('resetDefault', function () {
     process.nextTick(function () {
-      board.pushMessage('changeBoardProperties', {
+      board.pushMessage('game.gameHandler.changeBoardProperties', {
         bet : board.bet,
         turnTime : board.turnTime,
         totalTime : board.totalTime

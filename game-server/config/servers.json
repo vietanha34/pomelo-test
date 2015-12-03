@@ -51,7 +51,7 @@
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
     ],
     "gate": [
-      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 3010, "frontend": true}
+      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 6010, "frontend": true}
     ],
     "home": [
       {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
@@ -92,7 +92,7 @@
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
     ],
     "gate": [
-      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 3010, "frontend": true}
+      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 6010, "frontend": true}
     ],
     "game" : [
       {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},

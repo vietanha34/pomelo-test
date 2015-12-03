@@ -8,6 +8,7 @@ var channelUtil = require('../../../util/channelUtil');
 var utils = require('../../../util/utils');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var pomelo = require('pomelo');
+var Formula = require('../../../consts/formula');
 
 module.exports = function (app) {
 	return new Handler(app);
@@ -86,7 +87,7 @@ Handler.prototype.login = function (msg, session, next) {
 		function (done) {
 			session.set('fullname', player.fullname);
 			session.set('username', player.username);
-			session.set('level', player.level || 0);
+			session.set('level', Formula.calLevel(player.exp));
 			session.set('gold', player.gold);
 			session.set('sex', player.sex);
 			session.set('accessToken', msg.accessToken);
@@ -150,7 +151,8 @@ Handler.prototype.login = function (msg, session, next) {
         username : session.get('username'),
         fullname : session.get('fullname'),
         userId : session.uid,
-        gold : session.get('gold')
+        gold : session.get('gold'),
+				level: session.get('level')
       });
 		}
     emitData.resume = msg.resume;

@@ -84,7 +84,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var notifyMsg;
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
-  turnTime = turnTime >= 5000 ? turnTime : 5000;
   var isCheck = gameStatus.checkInfo.isKingInCheck
     ? { king : gameStatus.checkInfo.kingPosition, attack : gameStatus.checkInfo.attackerPositions}
     : undefined;
@@ -268,15 +267,10 @@ function Table(opts) {
     })
     .then(function (formation) {
       self.formation = formation;
-      console.log('formation : ', formation);
       self.game = new Game(self, formation);
     });
   //var self = this;
-  this.addFunction = [
-    //function (properties, dataChanged, dataUpdate, changed, done) {
-    //
-    //}
-  ]
+  this.addFunction = []
 }
 
 util.inherits(Table, BoardBase);
@@ -313,6 +307,7 @@ Table.prototype.getStatus = function (uid) {
         ? 1
         : 0
       : 0,
+    version: '123456',
     turn : this.game.firstTurn,
     color : consts.COLOR.WHITE,
     win : this.game.win
@@ -459,6 +454,7 @@ Table.prototype.changeFormation = function (formation, opts) {
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_FORMATION));
   this.players.unReadyAll();
   var boardState = this.getBoardState();
+  boardState.status.formation.change = 1;
   this.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
 };
 
@@ -507,9 +503,9 @@ Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
         var player = self.players.getPlayer(uid);
         player.removeMenu(consts.ACTION.CHANGE_SIDE);
         self.ready(uid);
-        var boardState = self.getBoardState(uid);
-        self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
       }
+      var boardState = self.getBoardState(uid);
+      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
     }
     return utils.invokeCallback(cb, err, dataChange)
   });
