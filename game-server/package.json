@@ -31,7 +31,11 @@
     "shortid": "^2.2.2",
     "uuid": "^2.0.1",
     "request-promise": "*",
-    "sequelize-redis-cache": "*"
+    "sequelize-redis-cache": "*",
+    "express": "*",
+    "body-parser": "*",
+    "multer": "*",
+    "rabbit.js": "*"
   },
   "devDependencies": {
     "should": "*",

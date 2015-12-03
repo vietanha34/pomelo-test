@@ -276,7 +276,7 @@ UserDao.getUsersPropertiesByUids = function (uids, properties, cb) {
 };
 
 
-UserDao.getUserIdByUsername = function (username) {
+UserDao.getUserIdByUsername = function (username, cb) {
   return pomelo.app.get('mysqlClient')
     .User
     .findOne({
@@ -286,6 +286,9 @@ UserDao.getUserIdByUsername = function (username) {
       attributes: ['uid'],
       raw: true
     })
+    .then(function(user) {
+      return utils.invokeCallback(cb, null, user);
+    });
 };
 
 /**
@@ -344,9 +347,11 @@ UserDao.login = function (msg, cb) {
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
+        console.log('res  typeof : ', typeof res);
         res.uid = res.id;
         res.gold = 1000000;
         delete res['id'];
+        console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
           .User
           .findOrCreate({where: {uid: res.uid}, raw: true, defaults: res});

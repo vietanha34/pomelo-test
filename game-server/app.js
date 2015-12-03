@@ -211,6 +211,14 @@ app.configure('production|development', 'gate|home|service|event|worker', functi
   app.set('configService', configService)
 });
 
+app.configure('production|development', 'worker', function () {
+  var HttpServer = require('./app/util/httpServer');
+  var httpServer = new HttpServer(app, {
+    routePath: app.getBase() + '/app/http'
+  });
+  app.set('httpServer', httpServer);
+});
+
 // start app
 app.start();
 

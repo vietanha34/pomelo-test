@@ -119,6 +119,9 @@ ItemDao.getItems = function getItems(uid, type, cb) {
         list[i]['itemId'] = list[i]['id'];
         list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
         list[i]['duration'] = Math.max(list[i]['expiredAt'] - moment().unix(), 0);
+        if (list[i]['duration']) {
+          list[i]['price1'] = Math.round(list[i]['price1'] * (1-ItemDao.CONFIG.RENEW_DISCOUNT));
+        }
         if (list[i]['discount']) {
           var discount = 1-(list[i]['discount']/100);
           list[i]['price1'] = Math.round(list[i]['price1'] * discount);
@@ -149,7 +152,10 @@ ItemDao.getItems = function getItems(uid, type, cb) {
  * @return effect object VD: {1: 1, 3: 1, 13: 2}
  */
 ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
-  if (!uid || !effects || !effects.length) {
+  if (!effects || !effects.length) {
+    effects = Object.keys(consts.ITEM_EFFECT).map(function(k){return consts.ITEM_EFFECT[k]});
+  }
+  if (!uid) {
     return utils.invokeCallback(cb, 'invalid param check effect');
   }
 

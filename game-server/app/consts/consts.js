@@ -564,7 +564,8 @@ module.exports = {
     CARD: 1,
     SMS: 2,
     IAP: 3,
-    BANK: 4
+    BANK: 4,
+    SUB: 5
   },
 
   SLEEP_TYPE : {

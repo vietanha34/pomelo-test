@@ -7,6 +7,7 @@ var moment = require('moment');
 var utils = require('../../../util/utils');
 var pomelo = require('pomelo');
 var DailyDao = require('../../../dao/dailyDao');
+var PaymentDao = require('../../../dao/paymentDao');
 
 module.exports = function(app) {
   return new Cron(app);
@@ -18,4 +19,8 @@ var cron = Cron.prototype;
 
 cron.loadDailyConfig = function (cronInfo) {
   DailyDao.loadConfig();
+};
+
+cron.loadPaymentConfig = function (cronInfo) {
+  PaymentDao.loadConfig();
 };

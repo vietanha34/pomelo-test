@@ -317,5 +317,9 @@ module.exports = {
 
   FEEDBACK_LANGUAGE: {
     SUCCESS: 'Cảm ơn bạn đã gửi góp ý'
+  },
+
+  PAYMENT_LANGUAGE: {
+    NOTICE: 'Thông báo nạp tiền'
   }
 };
