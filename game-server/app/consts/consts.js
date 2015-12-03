@@ -1,7 +1,7 @@
 module.exports = {
   PR_ID: 24,
   PARTNER_ID: 1,
-  CHARGE_SECRET_KEY: 'd68Ntm5Uzjhb',
+  CHARGE_SECRET_KEY: 'RqSOpZl3XUx5',
   PLATFORM_ENUM : {
     IOS : 0,
     ANDROID : 1,
@@ -10,6 +10,16 @@ module.exports = {
   },
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp'],
 
+  WAITING_LIST : {
+    TOTAL : 1,
+    FRIEND: 2
+  },
+
+  TABLE_TYPE_MAP_EFFECT : {
+    1 : 10,
+    2 : 11
+  },
+
   GAME_ID : {
     CO_TUONG : 1,
     CO_UP : 2,
@@ -17,6 +27,18 @@ module.exports = {
     CO_VUA : 4,
     CARO : 5,
     CO_VAY : 6
+  },
+
+  TABLE_TYPE : {
+    ROCK : 0,
+    IRON : 1,
+    DARK : 2
+  },
+
+  TABLE_TYPE_NAME_MAP : {
+    0 : 'bàn đá',
+    1 : 'bàn sắt',
+    2 : 'bàn tối'
   },
 
   HALL_ID : {
@@ -541,7 +563,8 @@ module.exports = {
     CARD: 1,
     SMS: 2,
     IAP: 3,
-    BANK: 4
+    BANK: 4,
+    SUB: 5
   },
 
   SLEEP_TYPE : {

@@ -21,7 +21,6 @@ PaymentDao.getExtra = function getExtra(params, cb) {
     PaymentDao.getPromotionSDK(params)
   ])
     .spread(function(config, sdkPromotions) {
-      utils.log(config, sdkPromotions);
       config.sms = config.sms || '';
       config.card = config.card || '';
       config.iap = config.iap || '';
@@ -34,7 +33,7 @@ PaymentDao.getExtra = function getExtra(params, cb) {
 
       sdkPromotions.forEach(function(promotion) {
         if (promotion.type && config[promotion.type]) {
-          config[promotion.type].unshift('+ % '+promotion.reason.vi);
+          config[promotion.type].unshift('+ '+promotion.percent+'% '+promotion.reason.vi);
         }
       });
 
@@ -105,7 +104,7 @@ PaymentDao.getPromotionSDK = function getPromotionSDK(user, cb) {
           promotions.push({
             percent: Number(percent) || 0,
             reason: utils.JSONParse(promotionObj.display, ''),
-            type: keys[i].split(':').pop()
+            type: key.split(':').pop()
           });
         });
     })

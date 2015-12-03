@@ -34,7 +34,8 @@
     "sequelize-redis-cache": "*",
     "express": "*",
     "body-parser": "*",
-    "multer": "*"
+    "multer": "*",
+    "rabbit.js": "*"
   },
   "devDependencies": {
     "should": "*",

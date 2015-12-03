@@ -63,7 +63,6 @@ var httpStart = function(cb) {
     });
   });
   this.app.listen(8889);
-  utils.log('http start');
   utils.invokeCallback(cb);
 };
 
