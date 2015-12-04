@@ -97,19 +97,28 @@ pro.addPlayer = function (opts) {
     return {ec: Code.OK, exists : true};
   }
   var data = {ec : Code.OK};
-  player = new self.Player ({
+  player = new self.Player({
+    effect : opts.effect || {},
     userInfo: userInfo,
     players: self,
     table: self.table
   });
   self.players[uid] = player;
-  if (player.gold < self.table.bet || self.length >= self.table.maxPlayer || player.level < self.table.level) {
+  if (player.gold < self.table.bet
+    || self.length >= self.table.maxPlayer
+    || (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))
+    || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG))
+  ) {
+
     if (player.gold < self.table.bet) {
       player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
-      data.msg = 'Bạn không đủ tiền để chơi bàn chơi này'
+      data.notifyMsg = 'Bạn không đủ tiền để chơi bàn chơi này'
     }
-    if (player.level < self.table.level){
-      data.msg = 'Bạn không đủ cấp độ để chơi bàn chơi này'
+    if (player.userInfo.level < self.table.level){
+      data.notifyMsg = 'Bạn không đủ cấp độ để chơi bàn chơi này'
+    }
+    if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){
+      data.notifyMsg = 'Bạn không có vật phẩm để chơi phòng miễn phí'
     }
     self.guestIds.push(player.uid);
     player.guest = true;
@@ -245,6 +254,12 @@ pro.sitIn = function (uid, slotId) {
   }
   if (player.gold < this.table.bet){
     return utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY)
+  }
+  if (player.userInfo.level < self.table.level){
+    return { ec: Code.FAIL, msg : 'Bạn không đủ cấp độ để chơi bàn chơi này'}
+  }
+  if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){
+    return { ec: Code.FAIL, msg : 'Bạn không có vật phẩm để chơi phòng miễn phí'};
   }
   if (slotId) {
     var index = self.checkSlotIdAvailable(slotId, uid);
@@ -637,7 +652,7 @@ pro.getGuest = function () {
       result.push({
         fullname : player.userInfo.fullname,
         gold : player.gold,
-        elo : player.elo || 0,
+        elo : player.userInfo.elo || 0,
         avatar : player.userInfo.avatar
       })
     }

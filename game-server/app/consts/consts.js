@@ -1,5 +1,6 @@
 module.exports = {
   PR_ID: 24,
+  APP_ID: 24,
   PARTNER_ID: 1,
   CHARGE_SECRET_KEY: 'RqSOpZl3XUx5',
   PLATFORM_ENUM : {

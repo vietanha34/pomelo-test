@@ -104,7 +104,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var notifyMsg;
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
-  turnTime = turnTime >= 5000 ? turnTime : 5000;
   var isCheck = gameStatus.checkInfo.isKingInCheck
     ? {king: gameStatus.checkInfo.kingPosition, attack: gameStatus.checkInfo.attackerPositions}
     : undefined;
@@ -278,24 +277,23 @@ function Table(opts) {
       // changeOwner
       if (!self.allowLockMode) return done(null, properties, dataChanged, dataUpdate, changed);
       var update = false;
-      if (lodash.isArray(properties.lock)) {
+      if (lodash.isArray(properties.lock) && lodash.isEqual(properties.lock.sort(), self.lockMode.sort())) {
         update = true;
         self.lockMode = properties.lock;
         self.game.game.lockModes = self.lockMode;
         dataChanged.lock = properties.lock;
       }
-      if (lodash.isArray(properties.remove)) {
+      if (lodash.isArray(properties.remove) && lodash.isEqual(properties.remove.sort(), self.removeMode.sort())) {
         self.removeMode = properties.remove;
         self.game.game.handicapModes = self.removeMode;
         dataChanged.remove = properties.remove;
         update = true;
       }
       if (update) {
-        changed = true;
+        changed.push(' cài đặt liệt chấp');
         //dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
         dataUpdate.optional = JSON.stringify({lock: properties.lock || [], remove: properties.remove || []});
       }
-      console.log('data Update lock : ', changed);
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
   ]
@@ -517,6 +515,7 @@ Table.prototype.resetDefault = function () {
   Table.super_.prototype.resetDefault.call(this);
   this.lockMode = this.lockModeDefault;
   this.removeMode.splice(0, this.removeMode.length);
+  this.emit('setBoard', {optional : JSON.stringify({lock: this.lockMode || [], remove: []}) });
 };
 
 

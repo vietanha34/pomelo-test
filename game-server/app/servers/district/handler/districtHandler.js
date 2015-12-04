@@ -3,6 +3,7 @@
  */
 var Code = require('../../../consts/code');
 var userDao = require('../../../dao/userDao');
+var friendDao = require('../../../dao/friendDao');
 var async = require('async');
 var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
@@ -189,19 +190,41 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
 Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   var waitingService = this.app.get('waitingService');
   var uid = session.uid;
-  var waitingData = {
-    attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
-    offset: 0,
-    length: 10
-  };
-  if (msg.type === 2) return next(null, { users : [], type : msg.type});
-  return waitingService.getList(waitingData)
-    .then(function (res) {
-      next(null, {users: res, type : msg.type});
-    })
-    .finally(function () {
-      msg = null;
-    });
+  if (msg.type === 2) {
+
+    friendDao.getFriendList(uid, consts.MAX_FRIEND)
+      .then(function (uids) {
+        var waitingData = {
+          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
+          offset: 0,
+          length: 20,
+          userId: {
+            $in : uids || []
+          }
+        };
+        return waitingService.getList(waitingData)
+          .then(function (res) {
+            next(null, {users: res, type : msg.type});
+          })
+          .finally(function () {
+            msg = null;
+          });
+      });
+    return next(null, {users: [], type: msg.type});
+  } else {
+    var waitingData = {
+      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
+      offset: 0,
+      length: 10
+    };
+    return waitingService.getList(waitingData)
+      .then(function (res) {
+        next(null, {users: res, type : msg.type});
+      })
+      .finally(function () {
+        msg = null;
+      });
+  }
 };
 
 Handler.prototype.getNumBoard = function (msg, session, next) {

@@ -17,14 +17,14 @@ MessageDao.getCountUnReadMessageByUid = function (opts, cb) {
   var uid = opts.uid;
   var fromId = opts.fromId; // from uid or from rid
   var fromKey = utils.getFromKey(targetType, fromId);
-  redisInfo.hget(redisKeyUtil.getUserMetadata(uid), fromKey, function (err, res) {
-    if (err) {
-      utils.invokeCallback(cb, err);
-    }
-    else {
-      utils.invokeCallback(cb, null, !isNaN(parseInt(res)) ? parseInt(res) : 0)
-    }
-  });
+  redisInfo.hgetAsync(redisKeyUtil.getUserMetadata(uid), fromKey)
+    .then(function (res) {
+      return utils.invokeCallback(cb, null, !isNaN(parseInt(res)) ? parseInt(res) : 0)
+    })
+    .catch(function (err) {
+      console.error(err);
+      return utils.invokeCallback(cb, null, 0);
+    })
 };
 
 MessageDao.getAllCountUnReadMessageByUid = function (uid, cb) {

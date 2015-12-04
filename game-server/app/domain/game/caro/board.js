@@ -81,7 +81,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var player = this.table.players.getPlayer(turnUid);
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
-  turnTime = turnTime >= 5000 ? turnTime : 5000;
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
     count : 1,

@@ -241,13 +241,12 @@ function Table(opts) {
     function (properties, dataChanged, dataUpdate, changed, done) {
       // changeOwner
       console.log('dataChanged : ', dataChanged);
-      if (lodash.isNumber(properties.showKill)){
+      if (lodash.isNumber(properties.showKill) && self.showKill !== (properties.showKill ? true : false)){
         self.showKill = properties.showKill ? true : false;
         self.game.game.hasShowKilled = self.showKill;
-        changed = true;
+        changed.push(properties.showKill ? ' hiển thị quân ăn' : ' không hiển thị quân ăn');
         dataChanged.showKill = self.showKill ? 1 : 0;
       }
-      console.log('dataChanged : ', dataChanged);
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
   ]

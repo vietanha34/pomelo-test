@@ -82,7 +82,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var notifyMsg;
   player.timeTurnStart = Date.now();
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
-  turnTime = turnTime >= 5000 ? turnTime : 5000;
   var isCheck = gameStatus.checkInfo.isKingInCheck
     ? { king : gameStatus.checkInfo.kingPosition, attack : gameStatus.checkInfo.attackerPositions}
     : undefined;

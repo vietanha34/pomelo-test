@@ -71,7 +71,7 @@ pro.changeBoardProperties = function (msg, session, next) {
   board.changeBoardProperties(msg, [], function (err, res) {
     if (err) {
       console.error(err);
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));
+      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec : err.ec || Code.FAIL, msg : err.msg || [Code.FAIL]});
     } else if (res.ec) {
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
     }
@@ -203,57 +203,61 @@ pro.invitePlayer = function (msg, session, next) {
       slotId: slotId
     });
     next(null, {
+      ec : Code.FAIL,
       msg: "Đã gửi lời mời thành công đến người chơi khác"
     });
     return
   }
   pomelo.app.get('waitingService').getRandomUser({
     gold: board.bet,
-    length: 1,
+    limit: 2,
     gameId: board.gameId
-  }, function (err, users) {
-    if (!!err) {
-      logger.error(err);
-      next(null, {msg: 'gui loi moi that bai'})
-    }
-    else if (lodash.isArray(users)) {
-      if (users.length > 0) {
-        var uids = [];
-        for (var i = 0, len = users.length; i < len; i++) {
-          uids.push(users[i].uid);
+  })
+    .then(function (users) {
+      if (lodash.isArray(users)) {
+        if (users.length > 0) {
+          var uids = [];
+          for (var i = 0, len = users.length; i < len; i++) {
+            uids.push(users[i].uid);
+          }
+          statusPlugin.pushByUids(uids, "game.gameHandler.invitePlayer", {
+            bet: bet,
+            id: id,
+            player1: {current: 1},
+            tableId: boardId,
+            player2: {
+              fname: fullname,
+              avatar: avatar,
+              gold: gold,
+              sex: sex
+            },
+            boardId: boardId,
+            gameId: gameId,
+            districtId: districtId,
+            slotId: slotId
+          });
+          next(null, {
+            notifyMsg: "Đã gửi lời mời thành công đến người chơi khác"
+          });
         }
-        statusPlugin.pushByUids(uids, "game.gameHandler.invitePlayer", {
-          bet: bet,
-          id: id,
-          player1: {current: 1},
-          tableId: boardId,
-          player2: {
-            fname: fullname,
-            avatar: avatar,
-            gold: gold,
-            sex: sex
-          },
-          boardId: boardId,
-          gameId: gameId,
-          districtId: districtId,
-          slotId: slotId
-        });
-        next(null, {
-          msg: "Đã gửi lời mời thành công đến người chơi khác"
-        });
+        else {
+          next(null, {
+            ec : Code.FAIL,
+            msg: 'Không có người chơi nào để mời'
+          })
+        }
       }
-      else {
-        next(null, {
-          msg: 'Không có người chơi nào để mời'
-        })
-      }
-    } else {
+    })
+    .catch(function (err) {
+      console.error(err);
       next(null, {
-        msg: 'Gui loi moi that bai'
-      })
-    }
-    session = null;
-  });
+        ec : Code.FAIL,
+        msg: "Gửi lời mời chơi thất bại"
+      });
+    })
+    .finally(function () {
+      session = null;
+    })
 };
 
 
@@ -373,8 +377,8 @@ pro.action = function (msg, session, next) {
     next(null);
     return
   }
-  if (board.turnUid !== uid){
-    messageService.pushMessageToPlayer(utils.getUids(session), route, { ec : 500, msg : 'Chưa đến lượt của bạn'});
+  if (board.turnUid !== uid) {
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Chưa đến lượt của bạn'});
     return next(null);
   }
   return board.action(uid, msg, function (err, res) {
@@ -411,13 +415,13 @@ pro.demand = function (msg, session, next) {
   next(null, board.demand(msg));
 };
 
-pro.getGuest = function (msg, session , next) {
+pro.getGuest = function (msg, session, next) {
   var board = session.board;
   if (!board) {
     next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
     return
   }
-  next(null, { guest : board.getGuest()});
+  next(null, {guest: board.getGuest()});
 };
 
 /**

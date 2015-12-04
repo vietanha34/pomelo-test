@@ -10,6 +10,7 @@ var pomelo = require('pomelo');
 var RoomDao = require('../dao/roomChatDao');
 var channelUtil = require('../util/channelUtil');
 var MessageDao = require('../dao/messageDao');
+var Promise = require('bluebird');
 //var HomeDao = require('../dao/homeDao');
 
 
@@ -113,8 +114,9 @@ pro.getMessages = function (opts, cb) {
       projection['_id'] = { '$lte' : msgId}
     }
   }
-  this.app.get('mongoClient').model('message').find(projection)
-    .sort({ date : -1})
+  this.app.get('mongoClient').model('message')
+    .find(projection)
+    .sort({ date : opts.reverse ? 1 : -1})
     .limit(length)
     .exec(cb)
 };
@@ -128,6 +130,18 @@ pro.sendMessageToPlayer = function (fromUid, targetUid, data) {
     else if (status.online) {
       pomelo.app.get('statusService').pushByUids([targetUid], 'chat.chatHandler.send', data);
     }
+    var redisClient = pomelo.app.get('redisInfo');
+    var promises = [];
+    console.log('lrem : ', redisKeyUtil.getUserChatLog(fromUid), 0, targetUid);
+    var multi = redisClient.multi();
+    promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(fromUid), 0, targetUid));
+    promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(targetUid), 0, fromUid));
+    promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(fromUid), targetUid));
+    promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(targetUid), fromUid));
+    Promise.all(promises)
+      .then(function (data) {
+        // TODO remove some data length
+      });
     MessageDao.countUnreadMessage({
       count : 1,
       targetType : consts.TARGET_TYPE.PERSON,
