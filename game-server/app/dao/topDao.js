@@ -86,6 +86,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
         }
         else {
           list.splice(i,1);
+          i--;
         }
       }
     }
@@ -140,7 +141,6 @@ TopDao.getTop = function getTop(uid, type, cb) {
       statuses = status || [];
       users = null;
       status = null;
-      utils.log(statuses);
       return processUsers();
     })
     .catch(function(e) {
