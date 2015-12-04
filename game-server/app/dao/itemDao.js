@@ -116,12 +116,17 @@ ItemDao.getItems = function getItems(uid, type, cb) {
     })
     .then(function(list) {
       for (var i=0; i<list.length; i++) {
-        list[i]['itemId'] = list[i]['id'];
-        list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
         list[i]['duration'] = Math.max(list[i]['expiredAt'] - moment().unix(), 0);
+        if (!list[i]['duration'] && type) {
+          list.splice(i, 1);
+          i--;
+          continue;
+        }
         if (list[i]['duration']) {
           list[i]['price1'] = Math.round(list[i]['price1'] * (1-ItemDao.CONFIG.RENEW_DISCOUNT));
         }
+        list[i]['itemId'] = list[i]['id'];
+        list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
         if (list[i]['discount']) {
           var discount = 1-(list[i]['discount']/100);
           list[i]['price1'] = Math.round(list[i]['price1'] * discount);
@@ -166,7 +171,7 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
     effects.push(15);
   }
 
-  effects.sort();
+  effects.sort(function(a,b){return a - b});
 
   var levelIndex = effects.indexOf(consts.ITEM_EFFECT.LEVEL);
   if (levelIndex >= 0) {
@@ -186,7 +191,6 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
           effectObj[effects[i]] = 1;
       }
       if (hasVip) {
-        effectObj[consts.ITEM_EFFECT.THE_VIP] = 0;
         for (var j=3; j>=1; j--) {
           if (results[i+j-1] >= now)
             effectObj[consts.ITEM_EFFECT.THE_VIP] = j;
@@ -198,6 +202,8 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
         else if (results[levelIndex] >= now)
           effectObj[consts.ITEM_EFFECT.LEVEL] = 5;
       }
+
+      utils.log('EFFECT: ', effectObj);
 
       return utils.invokeCallback(cb, null, effectObj);
     })
@@ -230,7 +236,7 @@ ItemDao.donateItem = function donateItem(uid, itemId, duration, cb) {
       where: {uid: uid, itemId: itemId}
     })
     .then(function(item) {
-      expiredAt = item ? Math.max(item.expiredAt||0, now) : 0;
+      expiredAt = item ? Math.max(item.expiredAt||0, now) : now;
       expiredAt += (duration*60);
       return mysql.UserItem
         .upsert({

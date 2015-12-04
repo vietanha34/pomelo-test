@@ -34,6 +34,7 @@ module.exports.type = Config.TYPE.REGISTER;
  * @param param
  */
 module.exports.process = function (app, type, param) {
+  utils.log('REGISTER', param);
   if (!param.uid || !param.username) {
     console.error('wrong param register: ', param);
     return;
@@ -52,7 +53,7 @@ module.exports.process = function (app, type, param) {
         bonus = globalConfig.USER_GOLD || 0;
         break;
       default :
-        bonus = 0;
+        bonus = globalConfig.USER_GOLD || 0;
         break;
     }
 

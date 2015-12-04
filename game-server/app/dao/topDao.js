@@ -224,7 +224,7 @@ TopDao.updateVip = function updateVip(params, cb) {
     })
     .then(function(count) {
       goldRank = (count||1000) + 1;
-      return Top.count({vipPoint: {$gt: params.update[params.gameName]}});
+      return Top.count({vipPoint: {$gt: params.update.vipPoint}});
     })
     .then(function(count) {
       var update = { goldRank: goldRank };
@@ -233,6 +233,6 @@ TopDao.updateVip = function updateVip(params, cb) {
     })
     .catch(function(e) {
       console.error(e.stack || e);
-      utils.log(e.stack || e);
+      utils.log('updateVIP err:', e.stack || e);
     });
 };

@@ -112,6 +112,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
  * @param cb
  */
 PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
+  utils.log('getPromotionByType', uid, type);
   if (!uid || !type) {
     return utils.invokeCallback(cb, null, 'invalid params get promotion');
   }
@@ -127,6 +128,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
       .execAsync()
   ])
     .spread(function(user, results) {
+      utils.log('getPromotionByType', user, results);
       var userInfo = results[0] || [];
       var vipLevel = formula.calVipLevel(user.vipPoint||0);
       var todaySms = Number(userInfo[0]) || 0;

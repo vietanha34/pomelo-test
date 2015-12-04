@@ -29,6 +29,7 @@ module.exports.type = Config.TYPE.TOPUP;
  */
 
 module.exports.process = function (app, type, param) {
+  utils.log('TOPUP',param);
   return UserDao.getUserProperties(param.uid, ['vipPoint'])
     .then(function(user) {
 
@@ -48,7 +49,7 @@ module.exports.process = function (app, type, param) {
         gold: param.gold,
         vipPoint: user.vipPoint
       };
-      return TopDao.updateVip(param.uid, updateParams);
+      return TopDao.updateVip({uid: param.uid, update: updateParams});
     })
     .catch(function(e) {
       console.error(e.stack || e);
