@@ -185,7 +185,7 @@ TopDao.add = function add(params, cb) {
 TopDao.updateGame = function updateGame(params, cb) {
   var mongoClient = pomelo.app.get('mongoClient');
   var Top = mongoClient.model('Top');
-  var goldRank = 1000;
+  var goldRank;
   Top.update({uid: params.uid}, params.update, {upsert: false})
     .then(function() {
       return Top.count({gold: {$gt: params.update.gold}})
@@ -199,6 +199,36 @@ TopDao.updateGame = function updateGame(params, cb) {
     .then(function(count) {
       var update = { goldRank: goldRank };
       update[params.gameName+'Rank'] = (count||1000) + 1;
+      return Top.update({uid: params.uid}, update);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+    });
+};
+
+/**
+ *
+ * @param params
+ *  uid
+ *  update
+ * @param cb
+ */
+TopDao.updateVip = function updateVip(params, cb) {
+  var mongoClient = pomelo.app.get('mongoClient');
+  var Top = mongoClient.model('Top');
+  var goldRank;
+  Top.update({uid: params.uid}, params.update, {upsert: false})
+    .then(function() {
+      return Top.count({gold: {$gt: params.update.gold}})
+    })
+    .then(function(count) {
+      goldRank = (count||1000) + 1;
+      return Top.count({vipPoint: {$gt: params.update[params.gameName]}});
+    })
+    .then(function(count) {
+      var update = { goldRank: goldRank };
+      update['vipPointRank'] = (count||1000) + 1;
       return Top.update({uid: params.uid}, update);
     })
     .catch(function(e) {

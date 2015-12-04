@@ -203,7 +203,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         return utils.invokeCallback(cb, null, res);
       }
       else {
-        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
+        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp','sex'];
         var checkEffects = [
           consts.ITEM_EFFECT.LEVEL,
           consts.ITEM_EFFECT.THE_VIP,

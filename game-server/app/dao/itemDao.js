@@ -208,6 +208,50 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
     });
 };
 
+/**
+ * Tặng vật phẩm
+ * @param uid
+ * @param itemId
+ * @param duration (phút)
+ * @param cb
+ */
+ItemDao.donateItem = function donateItem(uid, itemId, duration, cb) {
+  if (!uid || !itemId || !duration) {
+    return utils.invokeCallback(cb, 'invalid param donate item');
+  }
+
+  var now = moment().unix();
+  var mysql = pomelo.app.get('mysqlClient');
+  var expiredAt;
+
+  return mysql.UserItem
+    .findOne({
+      attributes: ['expiredAt'],
+      where: {uid: uid, itemId: itemId}
+    })
+    .then(function(item) {
+      expiredAt = item ? Math.max(item.expiredAt||0, now) : 0;
+      expiredAt += (duration*60);
+      return mysql.UserItem
+        .upsert({
+          uid: uid,
+          itemId: itemId,
+          updatedAt: now,
+          expiredAt: expiredAt
+        })
+    })
+    .then(function(result) {
+      pomelo.app.get('redisInfo').hset(redisKeyUtil.getUserEffectKey(uid), itemId, expiredAt);
+
+      return utils.invokeCallback(cb, null, expiredAt);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb, e.stack || e);
+    });
+};
+
 ItemDao.CONFIG = {
   RENEW_DISCOUNT: 0.2
 };

@@ -112,3 +112,7 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
 
   return exp;
 };
+
+formula.calVipPointByMoney = function calVipPointByMoney(money) {
+  return (money*(1+Math.sqrt(money/500000))/1000);
+};

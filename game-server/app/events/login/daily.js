@@ -43,7 +43,7 @@ module.exports.process = function (app, type, param) {
 
       var userKey = redisKeyUtil.getPlayerInfoKey(param.uid);
       var multi = pomelo.app.get('redisInfo').multi();
-      multi.hdel(userKey, 'dailyReceived');
+      multi.hdel([userKey, 'dailyReceived', 'todaySms', 'todaySms']);
 
       if (user.lastLogin <= startOfWeek)
         multi.hset(userKey, 'loginCount', '1');
