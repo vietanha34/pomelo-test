@@ -56,10 +56,10 @@ HomeDao.getHome = function getHome(params, cb) {
     userInfo: UserDao.getUserProperties(params.uid, ['uid', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
-    dailyReceived: pomelo.app.get('redisInfo').hget(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
+    dailyReceived: pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
   })
     .then(function(props) {
-      data.received = props.dailyReceived;
+      data.received = Number(props.dailyReceived) || 0;
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;
@@ -71,7 +71,7 @@ HomeDao.getHome = function getHome(params, cb) {
       data.userInfo.vipLevel = formula.calVipLevel(data.userInfo.vipPoint);
 
       data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
-      data.userInfo.vipLevel += (props.effect[consts.ITEM_EFFECT.THE_VIP]||0);
+      data.userInfo.vipLevel = Math.max(data.userInfo.vipLevel, (props.effect[consts.ITEM_EFFECT.THE_VIP]||0));
 
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);

@@ -42,7 +42,7 @@ DailyDao.getData = function getData(uid, cb) {
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
       var level = formula.calLevel(user.exp||0);
       var levelGold = (Number(config.firstLevel)||0) + (level-1)*(Number(config.levelStep)||0);
-      var vip = Math.max(formula.calVipLevel(user.vipPoint||0), effect[consts.ITEM_EFFECT.THE_VIP]);
+      var vip = Math.max(formula.calVipLevel(user.vipPoint||0), (effect[consts.ITEM_EFFECT.THE_VIP]||0));
       var vipPercent = Number(config['vip'+vip])||0;
       var total = Math.round((loginGold + levelGold) * (1+(vipPercent/100)));
 
