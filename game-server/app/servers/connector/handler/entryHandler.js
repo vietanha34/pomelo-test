@@ -152,7 +152,8 @@ Handler.prototype.login = function (msg, session, next) {
         fullname : session.get('fullname'),
         userId : session.uid,
         gold : session.get('gold'),
-				level: session.get('level')
+				level: session.get('level'),
+        avatar: session.get('avatar')
       });
 		}
     emitData.resume = msg.resume;

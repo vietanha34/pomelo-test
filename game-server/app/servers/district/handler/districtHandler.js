@@ -195,7 +195,7 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
     friendDao.getFriendList(uid, consts.MAX_FRIEND)
       .then(function (uids) {
         var waitingData = {
-          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
+          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
           offset: 0,
           length: 20,
           userId: {
@@ -204,6 +204,9 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
         };
         return waitingService.getList(waitingData)
           .then(function (res) {
+            for (var i = 0, len = res.length; i< len; i++){
+              res[i].avatar = utils.JSONParse(res[i].avatar, {});
+            }
             next(null, {users: res, type : msg.type});
           })
           .finally(function () {
@@ -213,12 +216,15 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
     return next(null, {users: [], type: msg.type});
   } else {
     var waitingData = {
-      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level'],
+      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
       offset: 0,
       length: 10
     };
     return waitingService.getList(waitingData)
       .then(function (res) {
+        for (var i = 0, len = res.length; i< len; i++){
+          res[i].avatar = utils.JSONParse(res[i].avatar, {});
+        }
         next(null, {users: res, type : msg.type});
       })
       .finally(function () {
@@ -275,7 +281,6 @@ Handler.prototype.getHall = function (msg, session, next) {
       }
       rooms = temp;
       var keys = Object.keys(rooms);
-      console.log('room after : ', rooms);
       var results = [];
       for (var i = 0, len = keys.length; i < len; i++) {
         var hallId = keys[i];

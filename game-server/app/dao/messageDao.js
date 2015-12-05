@@ -17,7 +17,7 @@ MessageDao.getCountUnReadMessageByUid = function (opts, cb) {
   var uid = opts.uid;
   var fromId = opts.fromId; // from uid or from rid
   var fromKey = utils.getFromKey(targetType, fromId);
-  redisInfo.hgetAsync(redisKeyUtil.getUserMetadata(uid), fromKey)
+  return redisInfo.hgetAsync(redisKeyUtil.getUserMetadata(uid), fromKey)
     .then(function (res) {
       return utils.invokeCallback(cb, null, !isNaN(parseInt(res)) ? parseInt(res) : 0)
     })

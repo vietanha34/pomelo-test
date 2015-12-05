@@ -114,6 +114,7 @@ exp.addEventFromBoard = function (board) {
       isFull : board.players.length >= board.maxPlayer ? 1 : 0
     });
     userInfo.userId = userInfo.uid;
+    userInfo.avatar = JSON.stringify(userInfo.avatar || {});
     pomelo.app.get('waitingService').add(userInfo);
     if (!userInfo.guest){
       board.looseUser = null;
@@ -136,10 +137,28 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('globalChannelService').destroyChannel(board.channelName);
   });
 
-
   board.on('startGame', function () {
     pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.PLAY });
-    //board.timer.stop();
+    var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK
+    var status = board.getStatus();
+    delete status['turn'];
+    board.game.logs = {
+      matchId : board.game.matchId,
+      info: {
+        index: board.index,
+        gameId: board.gameId,
+        hallId: board.hallId,
+        roomId: board.roomId,
+        turnTime: board.turnTime,
+        totalTime: board.totalTime,
+        bet: board.bet
+      },
+      status : status,
+      players : reserve ? board.game.playerPlayingId.reverse() : board.game.playerPlayingId,
+      timeStart : new Date(),
+      result : {}
+    };
+    board.game.actionLog = [];
   });
 
 
@@ -170,31 +189,42 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('finishGame', function (data, disableLooseUser) {
-    var player;
+    var player, winUid, loseUid;
     for (var i = 0, len = data.length; i < len; i ++){
       var user = data[i];
       player = board.players.getPlayer(user.uid);
-      console.log('player.gold finishGame : ', player.gold, board.bet);
       if (player.gold < board.bet){
         // standUp
         board.standUp(user.uid);
       }
       if (user.result.type === consts.WIN_TYPE.WIN){
+        winUid = user.uid;
         board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
-      }else if (user.result.type === consts.WIN_TYPE.LOSE && !disableLooseUser){
-        board.looseUser = user.uid;
+      }else if (user.result.type === consts.WIN_TYPE.LOSE){
+        if(!disableLooseUser){
+          board.looseUser = user.uid;
+        }
+        loseUid = user.uid;
       }
     }
     var otherPlayerUid = board.players.getOtherPlayer();
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)){
       board.addJobReady(otherPlayerUid);
     }
+    if(board.game.actionLog.length > 0){
+      board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
+    }
+    board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
+    if (winUid) board.game.logs.result['winner'] = winUid;
+    if (loseUid) board.game.logs.result['looser'] = loseUid;
+
     var logsData = {
       boardInfo : board.getBoardInfo(true),
       users : data,
       tax : 0,
       gameType : board.gameType,
-      timeShow : consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD
+      timeShow : consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD,
+      logs : board.game.logs
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
@@ -204,7 +234,6 @@ exp.addEventFromBoard = function (board) {
 
   /**
    * onEvent standUp
-   *
    *
    */
   board.on('standUp', function (player) {

@@ -100,7 +100,7 @@ var Board = function (opts, PlayerPool, Player) {
           multi = 3;
         }
         if (bet < self.configBet[0] || bet > self.configBet[1] * multi) {
-          return done({ec : Code.FAIL, msg : "mức tiền cược không đúng với khu vực"});
+          return done({ec : Code.FAIL, msg : util.format("Mức cược phải nằm trong khoảng từ %s đến %s Gold", self.configBet[0], self.configBet[1] * multi)});
         }
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done({ec: Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD})
@@ -141,7 +141,7 @@ var Board = function (opts, PlayerPool, Player) {
       var tableType = properties.tableType;
       var ownerPlayer = self.players.getPlayer(self.owner);
       if((turnTime !== self.turnTime || totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)){
-        changed.push(' ');
+        changed.push(' Phải có item Sửa thời gian mới thực hiện được chức năng này');
         return done(null, properties, dataChanged, dataUpdate, changed);
       }
       if (turnTime && turnTime !== self.turnTime &&(self.configTurnTime.indexOf(turnTime) > -1)){
@@ -197,11 +197,11 @@ var Board = function (opts, PlayerPool, Player) {
           if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
           player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }else {
+          changed.push(' đổi màu quân');
           player.color = color;
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
         }
         dataChanged.color = player.color;
-        changed.push(' đổi màu quân');
         self.players.mapColor.reverse();
         self.score.reverse();
       }
@@ -627,9 +627,11 @@ pro.getBoardState = function (uid) {
   var state = {
     info: this.getBoardInfo(),
     status: this.getStatus(uid),
-    players: this.players.getPlayerState(uid),
-    owner : this.owner
+    players: this.players.getPlayerState(uid)
   };
+  if(this.owner){
+    state['owner'] = this.owner;
+  }
   state.menu = this.players.getMenu(uid);
   return state
 };
@@ -729,12 +731,12 @@ pro.changeBoardProperties = function (properties, addFunction, cb) {
       console.log('dataChanged : ', changed, dataChanged, dataUpdate);
       if (changed.length > 0) {
         self.players.unReadyAll();
-        var otherPlayer = self.players.getOtherPlayer();
+        var otherPlayer = self.players.getPlayer(self.players.getOtherPlayer());
         if(otherPlayer){
           if (dataChanged.bet && otherPlayer.gold < dataChanged.bet){
             self.standUp(otherPlayer.uid);
           }else {
-            self.addJobReady(otherPlayer);
+            self.addJobReady(otherPlayer.uid);
           }
         }
         dataChanged.title = [Code.ON_GAME.OWNER, ownerName];

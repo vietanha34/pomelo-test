@@ -183,6 +183,7 @@ pro.invitePlayer = function (msg, session, next) {
   var fullname = session.get('fullname');
   var avatar = session.get('avatar');
   var sex = session.get('sex');
+  var level = session.get('level');
   var player = board.players.getPlayer(session.uid);
   var gold = player ? player.gold : 0;
   /** TODO tournament not play game **/
@@ -196,7 +197,8 @@ pro.invitePlayer = function (msg, session, next) {
         fname: fullname,
         avatar: avatar,
         gold: gold,
-        sex: sex
+        sex: sex,
+        level: level
       },
       gameId: gameId,
       districtId: districtId,
@@ -229,7 +231,8 @@ pro.invitePlayer = function (msg, session, next) {
               fname: fullname,
               avatar: avatar,
               gold: gold,
-              sex: sex
+              sex: sex,
+              level: level
             },
             boardId: boardId,
             gameId: gameId,

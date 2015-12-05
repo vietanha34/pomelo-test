@@ -317,16 +317,20 @@ Table.prototype.action = function (uid, opts, cb) {
     };
     var gameStatus = this.game.game.getBoardStatus();
     var actionResponse = { move : [opts.move], addLog : gameStatus.movesHistory3};
+    var actionLog = { move: [opts.move]};
     console.log('makeMoveResult : ', makeMoveResult);
     switch (makeMoveResult['specialType']){
       case 'batTotQuaDuong':
         actionResponse.remove = [makeMoveResult['removingSquare']];
+        actionLog.remove = [makeMoveResult['removingSquare']];
         break;
       case 'nhapThanh':
         actionResponse.move.push([makeMoveResult['removingSquare'],makeMoveResult['addingSquare'][0]]);
+        actionLog.move.push([makeMoveResult['removingSquare'],makeMoveResult['addingSquare'][0]]);
         break;
       case 'phongCap':
         actionResponse.promote = [[opts.move[1], opts.promote]];
+        actionLog.promote = [[opts.move[1], opts.promote]];
         break;
       default :
         break;
@@ -344,6 +348,7 @@ Table.prototype.action = function (uid, opts, cb) {
     }else {
       this.pushMessage('game.gameHandler.action', actionResponse);
     }
+    this.game.actionLog.push(actionLog);
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {
@@ -372,27 +377,33 @@ Table.prototype.demand = function (opts) {
   switch (opts.id){
     case consts.ACTION.DRAW:
       otherPlayerUid = this.players.getOtherPlayer(uid);
-      if (lodash.isNumber(opts.accept)){
+      if (lodash.isNumber(opts.accept)) {
         // trả lời request
         otherPlayer = this.players.getPlayer(otherPlayerUid);
-        if (opts.accept && otherPlayer.requestDraw){
+        if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        }else {
+        } else {
+          this.pushMessage('chat.chatHandler.send', {
+            from : uid,
+            targetType : consts.TARGET_TYPE.BOARD,
+            type : 0,
+            content : util.format('Người chơi %s từ chối xin hoà', player.userInfo.fullname)
+          });
           otherPlayer.requestDraw = false;
         }
-      }else {
+      } else {
         //request
-        if (player.timeDraw && this.game.numMove - player.timeDraw < 10){
-          return {ec : Code.FAIL};
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 10) {
+          return {ec: Code.FAIL};
         }
         player.xinHoa(this.game.numMove);
         this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
-          id : consts.ACTION.DRAW,
-          msg : "Đối thủ muốn xin hoà",
-          time : 10000
+          id: consts.ACTION.DRAW,
+          msg: "Đối thủ muốn xin hoà",
+          time: 10000
         });
-        return {menu : player.menu}
+        return {menu: player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:

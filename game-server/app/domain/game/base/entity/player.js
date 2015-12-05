@@ -270,6 +270,7 @@ Player.prototype.addItems = function (items) {
 };
 
 Player.prototype.checkItems = function (item) {
+  console.log('item : ', this.effect);
   return this.effect[item]
 };
 
