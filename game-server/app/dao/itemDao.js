@@ -317,7 +317,7 @@ ItemDao.onBuyItem = function onBuyItem(params) {
         vipLevel = Math.max(vipLevel, (effect[consts.ITEM_EFFECT.THE_VIP] || 0));
 
         HomeDao.pushInfo(params.uid, {
-          info: {
+          userInfo: {
             level: level,
             vipLevel: vipLevel
           }
