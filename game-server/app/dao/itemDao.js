@@ -32,7 +32,7 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
   }
 
   // lấy thông tin vật phẩm, kiểm tra tồn tại, kiểm tra hòm đồ
-  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, discount, u.expiredAt ' +
+  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, u.expiredAt ' +
                 'FROM Item AS i LEFT JOIN UserItem AS u ' +
                 'ON i.id = u.itemId AND u.uid = :uid ' +
                 'WHERE i.id = :itemId';
@@ -86,6 +86,9 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
             msg: [code.ITEM_LANGUAGE.BUY_SUCCESS, type],
             gold: topupResult.gold,
             itemId: itemId,
+            price1: item.price1*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
+            price2: item.price2*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
+            price3: item.price3*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
             duration: (expiredAt-now)
           });
         });
@@ -175,7 +178,7 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
 
   var levelIndex = effects.indexOf(consts.ITEM_EFFECT.LEVEL);
   if (levelIndex >= 0) {
-    effects.splice(levelIndex, 0, 6);
+    effects.splice(levelIndex+1, 0, 6);
   }
 
   var now = moment().unix();
@@ -192,8 +195,10 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
       }
       if (hasVip) {
         for (var j=3; j>=1; j--) {
-          if (results[i+j-1] >= now)
+          if (results[i+j-1] >= now) {
             effectObj[consts.ITEM_EFFECT.THE_VIP] = j;
+            break;
+          }
         }
       }
       if (levelIndex >= 0) {

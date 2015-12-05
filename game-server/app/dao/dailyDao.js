@@ -47,7 +47,7 @@ DailyDao.getData = function getData(uid, cb) {
       var total = Math.round((loginGold + levelGold) * (1+(vipPercent/100)));
 
       var data = {
-        label1: [config.label1, total.toString(), loginCount.toString()],
+        label1: [config.label1, total.toString(), (loginCount==1?'nhất':loginCount.toString())],
         label2: config.label2 || '',
         loginGold: loginGold,
         level: level,
@@ -61,9 +61,6 @@ DailyDao.getData = function getData(uid, cb) {
       return utils.invokeCallback(cb, null, data);
     })
     .catch(function(e) {
-      e = e.stack || e;
-      console.error(e);
-      utils.log(e);
       return utils.invokeCallback(cb, null, {received: 1});
     });
 };
@@ -98,9 +95,6 @@ DailyDao.getGold = function getGold(uid, cb) {
       });
     })
     .catch(function(e) {
-      e = e.stack || e;
-      console.error(e);
-      utils.log(e);
       return utils.invokeCallback(cb, e);
     });
 };

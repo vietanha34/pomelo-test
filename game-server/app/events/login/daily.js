@@ -32,13 +32,13 @@ module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
   var theMoment = moment();
-  var startOfDay = theMoment.startOf('hour').unix(); // todo day
-  var startOfWeek = theMoment.startOf('day').unix(); // todo isoweek
-  var now = theMoment.unix();
+  var startOfDay = moment().startOf('hour').unix(); // todo day
+  var startOfWeek = moment().startOf('day').unix(); // todo isoweek
 
   UserDao.getUserProperties(param.uid, ['lastLogin'])
     .then(function(user) {
-      UserDao.updateProperties(param.uid, {lastLogin: now});
+      user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 0;
+      UserDao.updateProperties(param.uid, {lastLogin: theMoment.format('YYYY-MM-DD HH:mm:ss')});
       if (!user.lastLogin || user.lastLogin >= startOfDay) return;
 
       var userKey = redisKeyUtil.getPlayerInfoKey(param.uid);
