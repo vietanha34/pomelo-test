@@ -96,6 +96,7 @@ TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
     })
     .catch(function(e){
       console.error(e.stack || e);
+      utils.log(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
     });
 };

@@ -7,7 +7,9 @@ var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
 var utils = require('../../util/utils');
 var consts = require('../../consts/consts');
+var code = require('../../consts/code');
 var TopupDao = require('../../dao/topupDao');
+var ItemDao = require('../../dao/itemDao');
 
 module.exports.type = Config.TYPE.REGISTER;
 
@@ -32,27 +34,49 @@ module.exports.type = Config.TYPE.REGISTER;
  * @param param
  */
 module.exports.process = function (app, type, param) {
+  utils.log('REGISTER', param);
   if (!param.uid || !param.username) {
     console.error('wrong param register: ', param);
     return;
   }
 
-  //setTimeout(function(){
-    //TopupDao.pushGoldAward({
-    //  uid: param.uid,
-    //  type: 'REGISTER',
-    //  gold: 1000000,
-    //  msg: 'Bạn được tặng 1000000 vàng khi vào chơi cờ thủ bản beta mới. Số vàng của bạn sẽ được reset khi ra mắt bản chính thức.',
-    //  title: 'Tặng vàng tân thủ'
-    //})
-  //}, 2500);
+  var userCount = param.userCount||1;
+
+  if (userCount == 1) {
+    var globalConfig = app.get('configService').getConfig();
+    var bonus;
+    switch (param.type) {
+      case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
+        bonus = globalConfig.FB_GOLD || 0;
+        break;
+      case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
+        bonus = globalConfig.USER_GOLD || 0;
+        break;
+      default :
+        bonus = globalConfig.USER_GOLD || 0;
+        break;
+    }
+
+    if (bonus) {
+      setTimeout(function () {
+        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14*1440));
+        TopupDao.pushGoldAward({
+          uid: param.uid,
+          type: 'REGISTER',
+          gold: bonus,
+          msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
+          title: code.REGISTER_LANGUAGE.BONUS_TITLE
+        })
+      }, 2500);
+    }
+  }
 
   var Achievement = pomelo.app.get('mysqlClient').Achievement;
   Achievement
     .create({
       uid: param.uid,
       username: param.username,
-      userCount: param.userCount||1
+      userCount: userCount
     })
     .catch(function(e) {
       console.error(e.stack || e);

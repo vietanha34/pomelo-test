@@ -32,7 +32,7 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
   }
 
   // lấy thông tin vật phẩm, kiểm tra tồn tại, kiểm tra hòm đồ
-  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, discount, u.expiredAt ' +
+  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, u.expiredAt ' +
                 'FROM Item AS i LEFT JOIN UserItem AS u ' +
                 'ON i.id = u.itemId AND u.uid = :uid ' +
                 'WHERE i.id = :itemId';
@@ -86,6 +86,9 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
             msg: [code.ITEM_LANGUAGE.BUY_SUCCESS, type],
             gold: topupResult.gold,
             itemId: itemId,
+            price1: item.price1*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
+            price2: item.price2*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
+            price3: item.price3*(1-ItemDao.CONFIG.RENEW_DISCOUNT),
             duration: (expiredAt-now)
           });
         });
@@ -116,12 +119,17 @@ ItemDao.getItems = function getItems(uid, type, cb) {
     })
     .then(function(list) {
       for (var i=0; i<list.length; i++) {
-        list[i]['itemId'] = list[i]['id'];
-        list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
         list[i]['duration'] = Math.max(list[i]['expiredAt'] - moment().unix(), 0);
+        if (!list[i]['duration'] && type) {
+          list.splice(i, 1);
+          i--;
+          continue;
+        }
         if (list[i]['duration']) {
           list[i]['price1'] = Math.round(list[i]['price1'] * (1-ItemDao.CONFIG.RENEW_DISCOUNT));
         }
+        list[i]['itemId'] = list[i]['id'];
+        list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
         if (list[i]['discount']) {
           var discount = 1-(list[i]['discount']/100);
           list[i]['price1'] = Math.round(list[i]['price1'] * discount);
@@ -166,11 +174,11 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
     effects.push(15);
   }
 
-  effects.sort();
+  effects.sort(function(a,b){return a - b});
 
   var levelIndex = effects.indexOf(consts.ITEM_EFFECT.LEVEL);
   if (levelIndex >= 0) {
-    effects.splice(levelIndex, 0, 6);
+    effects.splice(levelIndex+1, 0, 6);
   }
 
   var now = moment().unix();
@@ -186,10 +194,11 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
           effectObj[effects[i]] = 1;
       }
       if (hasVip) {
-        effectObj[consts.ITEM_EFFECT.THE_VIP] = 0;
         for (var j=3; j>=1; j--) {
-          if (results[i+j-1] >= now)
+          if (results[i+j-1] >= now) {
             effectObj[consts.ITEM_EFFECT.THE_VIP] = j;
+            break;
+          }
         }
       }
       if (levelIndex >= 0) {
@@ -199,12 +208,58 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
           effectObj[consts.ITEM_EFFECT.LEVEL] = 5;
       }
 
+      utils.log('EFFECT: ', effectObj);
+
       return utils.invokeCallback(cb, null, effectObj);
     })
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
       return utils.invokeCallback(cb, null, {});
+    });
+};
+
+/**
+ * Tặng vật phẩm
+ * @param uid
+ * @param itemId
+ * @param duration (phút)
+ * @param cb
+ */
+ItemDao.donateItem = function donateItem(uid, itemId, duration, cb) {
+  if (!uid || !itemId || !duration) {
+    return utils.invokeCallback(cb, 'invalid param donate item');
+  }
+
+  var now = moment().unix();
+  var mysql = pomelo.app.get('mysqlClient');
+  var expiredAt;
+
+  return mysql.UserItem
+    .findOne({
+      attributes: ['expiredAt'],
+      where: {uid: uid, itemId: itemId}
+    })
+    .then(function(item) {
+      expiredAt = item ? Math.max(item.expiredAt||0, now) : now;
+      expiredAt += (duration*60);
+      return mysql.UserItem
+        .upsert({
+          uid: uid,
+          itemId: itemId,
+          updatedAt: now,
+          expiredAt: expiredAt
+        })
+    })
+    .then(function(result) {
+      pomelo.app.get('redisInfo').hset(redisKeyUtil.getUserEffectKey(uid), itemId, expiredAt);
+
+      return utils.invokeCallback(cb, null, expiredAt);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb, e.stack || e);
     });
 };
 

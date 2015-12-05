@@ -84,8 +84,6 @@ module.exports.process = function (app, type, param) {
       user1Elo = param.users[user1Index].result['eloAfter'];
       user2Elo = param.users[user2Index].result['eloAfter'];
 
-      utils.log(user1Index, param.users[user1Index], user1Elo);
-
       //var newElo = formula.calElo(param.users[0].result.type, achievements[user1Index][attr], achievements[user2Index][attr]);
       //
       //user1Elo = newElo[0];

@@ -37,7 +37,6 @@ formula.calLevel = function calLevel(exp) {
 };
 
 formula.calElo = function calElo(type, user1Elo, user2Elo, gameId, bet) {
-  console.log('argument : ', arguments);
   gameId = gameId || 1;
   bet = bet || 0;
 
@@ -111,4 +110,8 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
   }
 
   return exp;
+};
+
+formula.calVipPointByMoney = function calVipPointByMoney(money) {
+  return Math.round(money*(1+Math.sqrt(money/500000))/1000);
 };

@@ -31,14 +31,11 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
     consts.ITEM_EFFECT.THE_VIP
   ];
 
-  return Promise.delay(0)
-    .then(function(){
-      return [
-        UserDao.getUserProperties(uid, properties),
-        pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}}),
-        ItemDao.checkEffect(uid, checkEffects)
-      ];
-    })
+  return Promise.all([
+      UserDao.getUserProperties(uid, properties),
+      pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}}),
+      ItemDao.checkEffect(uid, checkEffects)
+    ])
     .spread(function(user, achievement, effects) {
       user.avatar = utils.JSONParse(user.avatar, {id: 0});
       var birthday = moment(user.birthday);
@@ -203,21 +200,18 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         return utils.invokeCallback(cb, null, res);
       }
       else {
-        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp'];
+        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp','sex'];
         var checkEffects = [
           consts.ITEM_EFFECT.LEVEL,
           consts.ITEM_EFFECT.THE_VIP,
           consts.ITEM_EFFECT.CAM_KICK
         ];
 
-        return Promise.delay(0)
-          .then(function(){
-            return [
-              UserDao.getUserProperties(params.other, properties),
-              FriendDao.checkFriendStatus(params.uid, params.other),
-              ItemDao.checkEffect(params.other, checkEffects)
-            ];
-          })
+        return Promise.all([
+            UserDao.getUserProperties(params.other, properties),
+            FriendDao.checkFriendStatus(params.uid, params.other),
+            ItemDao.checkEffect(params.other, checkEffects)
+          ])
           .spread(function(user, status, effects) {
             user = user || {};
             user.avatar = utils.JSONParse(user.avatar, {id: 0});

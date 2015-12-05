@@ -86,6 +86,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
         }
         else {
           list.splice(i,1);
+          i--;
         }
       }
     }
@@ -140,7 +141,6 @@ TopDao.getTop = function getTop(uid, type, cb) {
       statuses = status || [];
       users = null;
       status = null;
-      utils.log(statuses);
       return processUsers();
     })
     .catch(function(e) {
@@ -185,7 +185,7 @@ TopDao.add = function add(params, cb) {
 TopDao.updateGame = function updateGame(params, cb) {
   var mongoClient = pomelo.app.get('mongoClient');
   var Top = mongoClient.model('Top');
-  var goldRank = 1000;
+  var goldRank;
   Top.update({uid: params.uid}, params.update, {upsert: false})
     .then(function() {
       return Top.count({gold: {$gt: params.update.gold}})
@@ -204,5 +204,35 @@ TopDao.updateGame = function updateGame(params, cb) {
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
+    });
+};
+
+/**
+ *
+ * @param params
+ *  uid
+ *  update
+ * @param cb
+ */
+TopDao.updateVip = function updateVip(params, cb) {
+  var mongoClient = pomelo.app.get('mongoClient');
+  var Top = mongoClient.model('Top');
+  var goldRank;
+  Top.update({uid: params.uid}, params.update, {upsert: false})
+    .then(function() {
+      return Top.count({gold: {$gt: params.update.gold}})
+    })
+    .then(function(count) {
+      goldRank = (count||1000) + 1;
+      return Top.count({vipPoint: {$gt: params.update.vipPoint}});
+    })
+    .then(function(count) {
+      var update = { goldRank: goldRank };
+      update['vipPointRank'] = (count||1000) + 1;
+      return Top.update({uid: params.uid}, update);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log('updateVIP err:', e.stack || e);
     });
 };
