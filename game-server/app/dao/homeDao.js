@@ -135,7 +135,7 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
     }
     else {
       pomelo.app.get('statusService')
-        .pushByUids([userId], 'home.homeHandler.updateHome', change, function (e, res) {
+        .pushByUids([uid], 'home.homeHandler.updateHome', change, function (e, res) {
           if (e) console.error(e);
         });
     }
