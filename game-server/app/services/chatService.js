@@ -64,7 +64,7 @@ pro.getMessage = function (msgId, cb) {
   this.app.get('mongoClient').model('message').findOne({ _id : msgId}, cb)
 };
 
-pro.getFirstMessage = function (opts, cb) {
+pro.getLastMessage = function (opts, cb) {
   var length = opts.length || 20;
   var target = opts.target;
   var from = opts.from;
@@ -83,6 +83,7 @@ pro.getFirstMessage = function (opts, cb) {
       ]
     }
   };
+  console.log('projection: ', projection);
   this.app.get('mongoClient').model('message').find(projection)
     .sort({ date : 1})
     .limit(length)
@@ -114,6 +115,7 @@ pro.getMessages = function (opts, cb) {
       projection['_id'] = { '$lte' : msgId}
     }
   }
+  console.log('projection: ', projection);
   this.app.get('mongoClient').model('message')
     .find(projection)
     .sort({ date : opts.reverse ? 1 : -1})

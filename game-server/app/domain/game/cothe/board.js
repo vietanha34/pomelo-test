@@ -269,7 +269,6 @@ function Table(opts) {
       self.formation = formation;
       self.game = new Game(self, formation);
     });
-  //var self = this;
   this.addFunction = []
 }
 

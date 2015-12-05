@@ -89,6 +89,8 @@ Game.prototype.init = function () {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500});
     this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
     this.table.pushMessage('game.gameHandler.action', {move: moveAfter});
+    this.actionLog.push({move: moveInit, sleep: 500});
+    this.actionLog.push({move: moveAfter});
   } else {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   }
@@ -396,6 +398,9 @@ Table.prototype.action = function (uid, opts, cb) {
     } else {
       this.pushMessage('game.gameHandler.action', {move: [opts.move], addLog: gameStatus.movesHistory3});
     }
+    this.game.actionLog.push({
+      move: [opts.move]
+    });
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   } else {

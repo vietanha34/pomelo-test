@@ -12,7 +12,7 @@ var MessageSchema = new Schema({
   from : { type : Number , default : ''},
   type : { type : Number, default : 1 },
   content : { type : String, default: ''},
-  date : { type : Date, default : Date.now},
+  date : { type : Date, default : Date.now()},
   status : { type : Number , default : 0},
   targetType : { type : Number, default : 2},
   read : { type : Array , default : []}

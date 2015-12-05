@@ -73,6 +73,7 @@ Handler.prototype.send = function (msg, session, next) {
         done({ec : Code.CHAT.FA_USER_NOT_FRIEND})
       }else
       if (targetType !== consts.TARGET_TYPE.BOARD && targetType !== consts.TARGET_TYPE.BOARD_GUEST) {
+        msg.date = new Date();
         self.chatService.createMessage(msg, done);
       }else {
         done (null, msg)
@@ -115,7 +116,8 @@ Handler.prototype.send = function (msg, session, next) {
 
 Handler.prototype.getHistory = function (msg, session, next) {
   var uid = session.uid;
-  msg.from = session.uid;
+  msg.from = parseInt(session.uid);
+  console.log('msg  : ', msg);
   pomelo.app.get('chatService').getMessages(msg, function (err, msgs) {
     if (err) {
       next(null, {ec: Code.FAIL})
@@ -137,15 +139,15 @@ Handler.prototype.getHistory = function (msg, session, next) {
 };
 
 Handler.prototype.getChatLog = function (msg, session, next) {
-  var uid = session.uid;
+  var uid = parseInt(session.uid);
   var redisClient = pomelo.app.get('redisInfo');
-  var getMessages = Promise.promisify(pomelo.app.get('chatService').getMessages, pomelo.app.get('chatService'));
+  var getMessages = Promise.promisify(pomelo.app.get('chatService').getLastMessage, pomelo.app.get('chatService'));
   redisClient.lrangeAsync(redisKeyUtil.getUserChatLog(uid), 0, 15)
     .map(function (targetUid) {
       console.log('targetUid : ', targetUid);
       return Promise.props({
         info : UserDao.getUserProperties(targetUid, ['uid', 'avatar', 'fullname','sex']),
-        msg : getMessages({length:1, from : uid, target: targetUid, reverse : 1}),// lastMessage
+        msg : getMessages({length:1, from : uid, target: parseInt(targetUid), reverse : 1}),// lastMessage
         count : MessageDao.getCountUnReadMessageByUid({ targetType : consts.TARGET_TYPE.PERSON, uid : uid, fromId : targetUid})
       })
     })

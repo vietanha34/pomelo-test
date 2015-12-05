@@ -344,6 +344,7 @@ Table.prototype.action = function (uid, opts, cb) {
     }else {
       this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
     }
+    this.game.actionLog.push({ move : [opts.move], id : boardStatus.hohohaha});
     this.game.progress(boardStatus);
     return utils.invokeCallback(cb, null, {});
   }else {
