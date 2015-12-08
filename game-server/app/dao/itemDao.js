@@ -227,8 +227,6 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
           effectObj[consts.ITEM_EFFECT.LEVEL] += 5;
       }
 
-      utils.log('EFFECT: ', effectObj);
-
       return utils.invokeCallback(cb, null, effectObj);
     })
     .catch(function(e) {

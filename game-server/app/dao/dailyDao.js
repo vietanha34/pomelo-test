@@ -47,7 +47,7 @@ DailyDao.getData = function getData(uid, cb) {
       var total = Math.round((loginGold + levelGold) * (1+(vipPercent/100)));
 
       var data = {
-        label1: [config.label1, total.toString(), (loginCount==1?'nhất':loginCount.toString())],
+        label1: [config.label1, total.toString(), (loginCount==1?'đầu tiên':('thứ '+loginCount.toString()))],
         label2: config.label2 || '',
         loginGold: loginGold,
         level: level,

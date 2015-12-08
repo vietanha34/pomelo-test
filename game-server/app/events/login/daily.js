@@ -32,8 +32,8 @@ module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
   var theMoment = moment();
-  var startOfDay = moment().startOf('hour').unix(); // todo day
-  var startOfWeek = moment().startOf('day').unix(); // todo isoweek
+  var startOfDay = moment().startOf('day').unix();
+  var startOfWeek = moment().startOf('isoweek').unix();
 
   UserDao.getUserProperties(param.uid, ['lastLogin'])
     .then(function(user) {
@@ -43,7 +43,7 @@ module.exports.process = function (app, type, param) {
 
       var userKey = redisKeyUtil.getPlayerInfoKey(param.uid);
       var multi = pomelo.app.get('redisInfo').multi();
-      multi.hdel([userKey, 'dailyReceived', 'todaySms', 'todaySms']);
+      multi.hdel([userKey, 'dailyReceived', 'todaySms', 'todayCard']);
 
       if (user.lastLogin <= startOfWeek)
         multi.hset(userKey, 'loginCount', '1');

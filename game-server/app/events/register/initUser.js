@@ -60,6 +60,7 @@ module.exports.process = function (app, type, param) {
     if (bonus) {
       setTimeout(function () {
         ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14*1440));
+        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14*1440));
         TopupDao.pushGoldAward({
           uid: param.uid,
           type: 'REGISTER',

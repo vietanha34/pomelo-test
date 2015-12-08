@@ -36,6 +36,13 @@ PaymentDao.getExtra = function getExtra(params, cb) {
         if (promotion.type && config[promotion.type]) {
           config[promotion.type].unshift('+ '+promotion.percent+'% '+promotion.reason.vi);
         }
+        else if (promotion.type == 'all') {
+          var txt = '+ '+promotion.percent+'% '+promotion.reason.vi;
+          config.sms.unshift(txt);
+          config.card.unshift(txt);
+          config.iap.unshift(txt);
+          config.sub.unshift(txt);
+        }
       });
 
       return utils.invokeCallback(cb, null, config);
@@ -93,11 +100,11 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
         promotion.bank['0'] += vipBonus;
       }
 
-        if (todaySms >= 3) promotion.sms['0'] += (Number(config.sms3) || 0);
-        else if (todaySms >= 2) promotion.sms['0'] += (Number(config.sms2) || 0);
+      if (todaySms >= 3) promotion.sms['0'] += (Number(config.sms3) || 0);
+      else if (todaySms >= 2) promotion.sms['0'] += (Number(config.sms2) || 0);
 
-        if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
-        else if (todayCard >= 2) promotion.card['0'] += (Number(config.card2) || 0);
+      if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
+      else if (todayCard >= 2) promotion.card['0'] += (Number(config.card2) || 0);
 
       return utils.invokeCallback(cb, null, promotion);
     })
@@ -169,7 +176,7 @@ PaymentDao.getPromotionSDK = function getPromotionSDK(user, cb) {
   var redisPayment = pomelo.app.get('redisPayment');
 
   var promotions = [];
-  var promotionKey = ['paymentsdk','promotion',1,3,'*'].join(':');
+  var promotionKey = ['paymentsdk','promotion',consts.PARTNER_ID,consts.PR_ID,'*'].join(':');
   return redisPayment.keysAsync(promotionKey)
     .each(function(key) {
       return redisPayment.hgetallAsync(key)

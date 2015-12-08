@@ -112,7 +112,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
       || (params.phone && !regexValid.validPhone(params.phone))
       || (params.email && !regexValid.validEmail(params.email))) {
-      return utils.invokeCallback(cb, 'invalid params update profile');
+      return utils.invokeCallback(cb, null, 'Thông tin sai định dạng. Bạn vui lòng nhập lại');
     }
 
     if (params.phone) params.phoneNumber = params.phone;
@@ -299,6 +299,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         }
 
         var i;
+        var log;
         for (i=0; i<list.length; i++) {
           if (!list[i].uids || list[i].uids.length != 2) continue;
           otherIndex = list[i].uids[0] == params.uid ? 1 : 0;
@@ -310,13 +311,16 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
               : (status==consts.WIN_TYPE.LOSE
                 ? consts.WIN_TYPE.WIN
                 : consts.WIN_TYPE.DRAW));
-          logs.push({
-            matchId: list[i].matchId,
+          logs.push();
+          log = {
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
             time: moment(list[i].createdAt).format('hh:mm DD/MM'),
             status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
-          });
+          };
+          if (params.gameId != consts.GAME_ID.CARO && params.gameId != consts.GAME_ID.CO_VAY) {
+            log['matchId'] = list[i].matchId;
+          }
           uids.push(list[i].uids[otherIndex]);
         }
 
