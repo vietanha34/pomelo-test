@@ -25,17 +25,18 @@ HomeDao.defaultData = {
     {gameId : 4, status : 1},
     {gameId : 5, status : 1},
     {gameId : 6, status : 1}
-  ],
-  userInfo: {
-    fullname: '',
-    avatar : {id: 0},
-    uid: 1,
-    gold: 0,
-    level: 1,
-    exp: [0,1000],
-    vipLevel: 0,
-    eloLevel: 0
-  }
+  ]
+};
+
+HomeDao.defaultUser = {
+  fullname: 'Chào bạn',
+  avatar : {id: 0},
+  uid: 1,
+  gold: 0,
+  level: 1,
+  exp: [0,10],
+  vipLevel: 0,
+  eloLevel: 0
 };
 
 /**
@@ -44,7 +45,8 @@ HomeDao.defaultData = {
  * @param cb
  */
 HomeDao.getHome = function getHome(params, cb) {
-  var data = utils.clone(HomeDao.defaultData);
+  var data = (params.update ? {} : utils.clone(HomeDao.defaultData));
+  data.userInfo = utils.clone(HomeDao.defaultUser);
   data.userInfo.uid = params.uid;
 
   var effects = [
@@ -89,7 +91,7 @@ HomeDao.getHome = function getHome(params, cb) {
 
       data.userInfo.eloLevel = formula.calEloLevel(max);
 
-      if (params.langVersion !== pomelo.app.get('gameService').langVersion){
+      if (!params.update && params.langVersion !== pomelo.app.get('gameService').langVersion){
         data.language = pomelo.app.get('gameService').language
       }
 

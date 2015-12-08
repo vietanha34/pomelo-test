@@ -35,7 +35,9 @@ Handler.prototype.getHome = function (msg, session, next) {
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
-      utils.invokeCallback(next, null, HomeDao.defaultData);
+      var defaultData = utils.clone(HomeDao.defaultData);
+      defaultData.userInfo = HomeDao.defaultUser;
+      utils.invokeCallback(next, null, defaultData);
     })
 };
 
@@ -45,5 +47,13 @@ Handler.prototype.getLanguage = function (msg, session, next) {
 };
 
 Handler.prototype.updateHome = function (msg, session, next) {
-  return next(null, {})
+  HomeDao.getHome({uid: session.uid, langVersion : msg.langVersion, update: true})
+    .then(function(res) {
+      utils.invokeCallback(next, null, res);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      utils.invokeCallback(next, null, {userInfo: HomeDao.defaultUser});
+    })
 };

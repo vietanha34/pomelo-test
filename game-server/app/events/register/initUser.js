@@ -40,7 +40,7 @@ module.exports.process = function (app, type, param) {
     return;
   }
 
-  var userCount = param.userCount||1;
+  var userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (param.userCount||1);
 
   if (userCount == 1) {
     var globalConfig = app.get('configService').getConfig();

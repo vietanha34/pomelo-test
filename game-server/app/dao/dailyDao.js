@@ -91,6 +91,7 @@ DailyDao.getGold = function getGold(uid, cb) {
 
       return utils.invokeCallback(cb, null, {
         gold: Number(topupResult.gold) || 0,
+        dailyReceived: 1,
         msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, topupResult.addGold.toString()]
       });
     })

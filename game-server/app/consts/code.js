@@ -237,7 +237,7 @@ module.exports = {
 
   COMMON_LANGUAGE: {
     ERROR: 'Chức năng đang bảo trì',
-    ADD_GOLD: 'Bạn vừa được cộng %s gold'
+    ADD_GOLD: 'Bạn vừa được cộng %s vàng'
   },
 
   ELO_LANGUAGE: {

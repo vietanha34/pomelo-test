@@ -1,6 +1,7 @@
 var formula = module.exports;
 var lodash = require('lodash');
 var consts = require('./consts');
+var utils = require('../util/utils');
 
 formula.eloArray = [1230,1900,2900];
 formula.calEloLevel = function calEloLevel(elo) {
@@ -44,8 +45,8 @@ formula.calElo = function calElo(type, user1Elo, user2Elo, gameId, bet) {
   user2Elo = Math.max((user2Elo||0), consts.MIN_ELO);
 
   if (bet >= 1000 && ((gameId == consts.GAME_ID.CARO || gameId == consts.GAME_ID.CO_VAY) || bet >= 3000)) {
-    var Aa = type == consts.WIN_TYPE.WIN ? 1 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 0);
-    var Ab = type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1);
+    var Aa = (type == consts.WIN_TYPE.WIN ? 1 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 0));
+    var Ab = (type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1));
     var Qa = Math.pow(10, user1Elo/400);
     var Qb = Math.pow(10, user2Elo/400);
     var sumQ = (Qa+Qb);
@@ -92,11 +93,11 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
     default:
 
       switch (hallId) {
-        case consts.HALL_ID.TAP_SU:
-          exp = 10;
+        case consts.HALL_ID.KIEN_TUONG:
+          exp = 80;
           break;
         case consts.HALL_ID.BINH_DAN:
-          exp = 20;
+          exp = 10;
           break;
         case consts.HALL_ID.CAO_THU:
           exp = 40;
