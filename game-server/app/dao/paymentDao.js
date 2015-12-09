@@ -12,6 +12,7 @@ var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var moment = require('moment');
 var UserDao = require('../dao/userDao');
+var ItemDao = require('../dao/itemDao');
 var PaymentDao = module.exports;
 
 PaymentDao.getExtra = function getExtra(params, cb) {
@@ -34,6 +35,13 @@ PaymentDao.getExtra = function getExtra(params, cb) {
       sdkPromotions.forEach(function(promotion) {
         if (promotion.type && config[promotion.type]) {
           config[promotion.type].unshift('+ '+promotion.percent+'% '+promotion.reason.vi);
+        }
+        else if (promotion.type == 'all') {
+          var txt = '+ '+promotion.percent+'% '+promotion.reason.vi;
+          config.sms.unshift(txt);
+          config.card.unshift(txt);
+          config.iap.unshift(txt);
+          config.sub.unshift(txt);
         }
       });
 
@@ -65,13 +73,15 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
     pomelo.app.get('redisInfo').multi()
       .hmget([redisKeyUtil.getPlayerInfoKey(uid), 'todaySms', 'todayCard'])
       .hgetall([redisKeyUtil.getDailyConfigKey()])
-      .execAsync()
+      .execAsync(),
+    ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP])
   ])
-    .spread(function(user, results) {
+    .spread(function(user, results, effect) {
       var userInfo = results[0] || [];
       var vipLevel = formula.calVipLevel(user.vipPoint||0);
-      var todaySms = Number(userInfo[0]) || 0;
-      var todayCard = Number(userInfo[1]) || 0;
+      vipLevel = Math.max(vipLevel,(effect[consts.ITEM_EFFECT.THE_VIP] || 0));
+      var todaySms = (Number(userInfo[0]) || 0) + 1;
+      var todayCard = (Number(userInfo[1]) || 0) + 1;
       var config = results[1] || {};
 
       if (!user.hasPay) {
@@ -83,18 +93,18 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
       }
 
       if (vipLevel) {
-        var vipBonus = (Number(config['card'+vipLevel] || 0) || 0);
+        var vipBonus = (Number(config['vip'+vipLevel] || 0) || 0);
         promotion.sms['0'] += vipBonus;
         promotion.card['0'] += vipBonus;
         promotion.iap['0'] += vipBonus;
         promotion.bank['0'] += vipBonus;
       }
 
-        if (todaySms >= 3) promotion.sms['0'] += (Number(config.sms3) || 0);
-        else if (todaySms >= 2) promotion.sms['0'] += (Number(config.sms2) || 0);
+      if (todaySms >= 3) promotion.sms['0'] += (Number(config.sms3) || 0);
+      else if (todaySms >= 2) promotion.sms['0'] += (Number(config.sms2) || 0);
 
-        if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
-        else if (todayCard>= 2) promotion.card['0'] += (Number(config.card2) || 0);
+      if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
+      else if (todayCard >= 2) promotion.card['0'] += (Number(config.card2) || 0);
 
       return utils.invokeCallback(cb, null, promotion);
     })
@@ -112,7 +122,6 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
  * @param cb
  */
 PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
-  utils.log('getPromotionByType', uid, type);
   if (!uid || !type) {
     return utils.invokeCallback(cb, null, 'invalid params get promotion');
   }
@@ -125,20 +134,21 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
     pomelo.app.get('redisInfo').multi()
       .hmget([redisKeyUtil.getPlayerInfoKey(uid), 'todaySms', 'todayCard'])
       .hgetall([redisKeyUtil.getDailyConfigKey()])
-      .execAsync()
+      .execAsync(),
+    ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP])
   ])
-    .spread(function(user, results) {
-      utils.log('getPromotionByType', user, results);
+    .spread(function(user, results, effect) {
       var userInfo = results[0] || [];
       var vipLevel = formula.calVipLevel(user.vipPoint||0);
-      var todaySms = Number(userInfo[0]) || 0;
-      var todayCard = Number(userInfo[1]) || 0;
+      vipLevel = Math.max(vipLevel,(effect[consts.ITEM_EFFECT.THE_VIP] || 0));
+      var todaySms = (Number(userInfo[0]) || 0) + 1;
+      var todayCard = (Number(userInfo[1]) || 0) + 1;
       var config = results[1] || {};
       var rate = 0;
 
       if (!user.hasPay) rate += (Number(config.firstTopup) || 0);
 
-      if (vipLevel) rate += (Number(config['card'+vipLevel] || 0) || 0);
+      if (vipLevel) rate += (Number(config['vip'+vipLevel] || 0) || 0);
 
       if (type == consts.TOPUP_TYPE.SMS) {
         if (todaySms >= 3) rate += (Number(config.sms3) || 0);
@@ -146,7 +156,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
       }
       else if (type == consts.TOPUP_TYPE.CARD) {
         if (todayCard >= 3) rate += (Number(config.card3) || 0);
-        else if (todayCard>= 2) rate += (Number(config.card2) || 0);
+        else if (todayCard >= 2) rate += (Number(config.card2) || 0);
       }
 
       return utils.invokeCallback(cb, null, rate);
@@ -166,7 +176,7 @@ PaymentDao.getPromotionSDK = function getPromotionSDK(user, cb) {
   var redisPayment = pomelo.app.get('redisPayment');
 
   var promotions = [];
-  var promotionKey = ['paymentsdk','promotion',1,3,'*'].join(':');
+  var promotionKey = ['paymentsdk','promotion',consts.PARTNER_ID,consts.PR_ID,'*'].join(':');
   return redisPayment.keysAsync(promotionKey)
     .each(function(key) {
       return redisPayment.hgetallAsync(key)

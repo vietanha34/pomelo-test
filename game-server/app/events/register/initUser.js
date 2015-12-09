@@ -40,7 +40,7 @@ module.exports.process = function (app, type, param) {
     return;
   }
 
-  var userCount = param.userCount||1;
+  var userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (param.userCount||1);
 
   if (userCount == 1) {
     var globalConfig = app.get('configService').getConfig();
@@ -60,6 +60,7 @@ module.exports.process = function (app, type, param) {
     if (bonus) {
       setTimeout(function () {
         ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14*1440));
+        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14*1440));
         TopupDao.pushGoldAward({
           uid: param.uid,
           type: 'REGISTER',

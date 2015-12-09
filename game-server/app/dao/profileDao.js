@@ -63,7 +63,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.vipLevel = formula.calVipLevel(vipPoint);
       user.vipPoint = [vipPoint, formula.calVipPoint(formula.calVipLevel(vipPoint) + 1)];
 
-      user.vipLevel += (effects[consts.ITEM_EFFECT.THE_VIP]||0);
+      user.vipLevel = Math.max(user.vipLevel, (effects[consts.ITEM_EFFECT.THE_VIP]||0));
 
       return utils.invokeCallback(cb, null, user);
     })
@@ -112,7 +112,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
       || (params.phone && !regexValid.validPhone(params.phone))
       || (params.email && !regexValid.validEmail(params.email))) {
-      return utils.invokeCallback(cb, 'invalid params update profile');
+      return utils.invokeCallback(cb, null, 'Thông tin sai định dạng. Bạn vui lòng nhập lại');
     }
 
     if (params.phone) params.phoneNumber = params.phone;
@@ -154,10 +154,12 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
         }
       })
       .catch(function(e) {
-        if (e.statusCode == 450) {
-          return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+        if (e.statusCode) {
+          var json = utils.JSONParse(e.error, {});
+          return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
         }
         console.error(e.stack || e);
+        utils.log(e.stack || e);
         return utils.invokeCallback(cb, e.stack || e);
       });
   }
@@ -232,7 +234,7 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
 
             res.friendStatus = status;
             res.info.level += (effects[consts.ITEM_EFFECT.LEVEL]||0);
-            res.info.vipLevel += (effects[consts.ITEM_EFFECT.THE_VIP]||0);
+            res.info.vipLevel = Math.max(res.info.vipLevel, (effects[consts.ITEM_EFFECT.THE_VIP]||0));
             res.camKick = (effects[consts.ITEM_EFFECT.CAM_KICK]||0);
             return utils.invokeCallback(cb, null, res);
           });
@@ -263,7 +265,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   params.page = params.page || 1;
   var perPage = params.perPage || consts.PROFILE.PER_PAGE;
   if (params.date) params.date = Number(moment(params.date).format('YYYYMMDD'));
-  else if (params.name) params.date = Number(moment().format('YYYYMMDD'));
+  //else if (params.name) params.date = Number(moment().format('YYYYMMDD'));
 
   var mongoClient = pomelo.app.get('mongoClient');
   var GameHistory = mongoClient.model('GameHistory');
@@ -272,7 +274,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   if (!params.name || params.name.length < 2) { // TH không tìm theo tên
     condition = {
       gameId: params.gameId,
-      uid: params.uid
+      uids: params.uid
     };
     if (params.date) condition.date = params.date;
     return GameHistory
@@ -280,7 +282,6 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
       .skip((params.page-1)*perPage)
       .limit(perPage+1)
       .sort({ createdAt: -1 })
-      .select({log: -1, date: -1})
       .lean()
       .then(function(list) {
         if (!list || !list.length) {
@@ -298,23 +299,33 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         }
 
         var i;
+        var log;
         for (i=0; i<list.length; i++) {
           if (!list[i].uids || list[i].uids.length != 2) continue;
           otherIndex = list[i].uids[0] == params.uid ? 1 : 0;
           status = (Number(list[i].status)||1);
-          status = otherIndex ? status : (status==3?1:(status==1?3:2));
-          logs.push({
-            matchId: list[i].matchId,
+          status = otherIndex
+            ? status
+            : (status==consts.WIN_TYPE.WIN
+              ? consts.WIN_TYPE.LOSE
+              : (status==consts.WIN_TYPE.LOSE
+                ? consts.WIN_TYPE.WIN
+                : consts.WIN_TYPE.DRAW));
+          logs.push();
+          log = {
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
             time: moment(list[i].createdAt).format('hh:mm DD/MM'),
             status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
-          });
+          };
+          if (params.gameId != consts.GAME_ID.CARO && params.gameId != consts.GAME_ID.CO_VAY) {
+            log['matchId'] = list[i].matchId;
+          }
           uids.push(list[i].uids[otherIndex]);
         }
 
         var Top = mongoClient.model('Top');
-        return Top.find({uid: {$in: uids}}).select({uid: 1, fullname: 1})
+        return Top.find({uid: {$in: uids}}).select({uid: 1, fullname: 1}).lean()
           .then(function(users) {
             users = users || [];
             var j;
@@ -325,6 +336,9 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
                 }
               }
             }
+
+            users = null;
+            list = null;
 
             return utils.invokeCallback(cb, null, {
               hasNext: hasNext,
@@ -342,14 +356,14 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
   else { // TH tìm theo tên
     condition = {
       gameId: params.gameId,
-      uid: params.uid,
-      date: params.date
+      uids: params.uid
     };
+    if (params.date) condition.date = params.date;
     return GameHistory
       .find(condition)
       .limit(500)
       .sort({ createdAt: -1 })
-      .select({log: -1, date: -1})
+      .lean()
       .then(function(list) {
         if (!list || !list.length) {
           return utils.invokeCallback(cb, null, {list: [], hasNext: 0, page: 1});
@@ -367,8 +381,10 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
             i--;
             continue;
           }
-          uid = list[i].uids.indexOf(params.uids);
-          uids.push(uid);
+          uid = list[i].uids.indexOf(params.uid) === 0 ? 1 : 0;
+          uid = list[i].uids[uid];
+          if (uids.indexOf(uid) == -1)
+            uids.push(uid);
         }
 
         var nameRegex = new RegExp(params.name, 'i');
@@ -380,8 +396,9 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
               {username: nameRegex},
               {fullname: nameRegex}
             ]
-          }).
-          select({uid: 1, fullname: 1})
+          })
+          .select({uid: 1, fullname: 1})
+          .lean()
           .then(function(users) {
             users = users || [];
             var j, count = 0;
@@ -394,7 +411,13 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
 
                   otherIndex = list[i].uids[0] == params.uid ? 1 : 0;
                   status = (Number(list[i].status)||1);
-                  status = otherIndex ? status : (status==3?1:(status==1?3:2));
+                  status = otherIndex
+                    ? status
+                    : (status==consts.WIN_TYPE.WIN
+                      ? consts.WIN_TYPE.LOSE
+                      : (status==consts.WIN_TYPE.LOSE
+                        ? consts.WIN_TYPE.WIN
+                        : consts.WIN_TYPE.DRAW));
                   logs.push({
                     matchId: list[i].matchId,
                     uid: list[i].uids[otherIndex] || 0,

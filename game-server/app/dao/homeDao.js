@@ -25,17 +25,18 @@ HomeDao.defaultData = {
     {gameId : 4, status : 1},
     {gameId : 5, status : 1},
     {gameId : 6, status : 1}
-  ],
-  userInfo: {
-    fullname: '',
-    avatar : {id: 0},
-    uid: 1,
-    gold: 0,
-    level: 1,
-    exp: [0,1000],
-    vipLevel: 0,
-    eloLevel: 0
-  }
+  ]
+};
+
+HomeDao.defaultUser = {
+  fullname: 'Chào bạn',
+  avatar : {id: 0},
+  uid: 1,
+  gold: 0,
+  level: 1,
+  exp: [0,10],
+  vipLevel: 0,
+  eloLevel: 0
 };
 
 /**
@@ -44,7 +45,8 @@ HomeDao.defaultData = {
  * @param cb
  */
 HomeDao.getHome = function getHome(params, cb) {
-  var data = utils.clone(HomeDao.defaultData);
+  var data = (params.update ? {} : utils.clone(HomeDao.defaultData));
+  data.userInfo = utils.clone(HomeDao.defaultUser);
   data.userInfo.uid = params.uid;
 
   var effects = [
@@ -56,10 +58,10 @@ HomeDao.getHome = function getHome(params, cb) {
     userInfo: UserDao.getUserProperties(params.uid, ['uid', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
-    dailyReceived: pomelo.app.get('redisInfo').hget(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
+    dailyReceived: pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
   })
     .then(function(props) {
-      data.received = props.dailyReceived;
+      data.received = Number(props.dailyReceived) || 0;
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;
@@ -71,7 +73,7 @@ HomeDao.getHome = function getHome(params, cb) {
       data.userInfo.vipLevel = formula.calVipLevel(data.userInfo.vipPoint);
 
       data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
-      data.userInfo.vipLevel += (props.effect[consts.ITEM_EFFECT.THE_VIP]||0);
+      data.userInfo.vipLevel = Math.max(data.userInfo.vipLevel, (props.effect[consts.ITEM_EFFECT.THE_VIP]||0));
 
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
@@ -89,7 +91,7 @@ HomeDao.getHome = function getHome(params, cb) {
 
       data.userInfo.eloLevel = formula.calEloLevel(max);
 
-      if (params.langVersion !== pomelo.app.get('gameService').langVersion){
+      if (!params.update && params.langVersion !== pomelo.app.get('gameService').langVersion){
         data.language = pomelo.app.get('gameService').language
       }
 
@@ -135,7 +137,7 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
     }
     else {
       pomelo.app.get('statusService')
-        .pushByUids([userId], 'home.homeHandler.updateHome', change, function (e, res) {
+        .pushByUids([uid], 'home.homeHandler.updateHome', change, function (e, res) {
           if (e) console.error(e);
         });
     }

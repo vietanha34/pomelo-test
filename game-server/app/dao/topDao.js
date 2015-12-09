@@ -45,72 +45,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
   var list;
   var statuses;
 
-  var processUsers = function() {
-    if (type != code.TOP_TYPE.VIP && type != code.TOP_TYPE.GOLD) {
-      list.forEach(function(user) {
-        user.point = top[user.uid] || 0;
-      });
-    }
-    else {
-      list.forEach(function(user) {
-        user.point = user[attr] || 0;
-      });
-    }
-
-    list.sort(function(a, b) {
-      return b.point - a.point;
-    });
-
-    for (var i = 0; i < list.length; i++) {
-      if (!statuses[list[i].uid] || !statuses[list[i].uid].online)
-        list[i].status = consts.ONLINE_STATUS.OFFLINE;
-      else if (!statuses[list[i].uid].board)
-        list[i].status = consts.ONLINE_STATUS.ONLINE;
-      else if (typeof statuses[list[i].uid].board == 'string') {
-        var tmp = statuses[list[i].uid].board.split(':');
-        list[i].status = tmp.length > 1
-          ? (Number(tmp[1]))
-          : consts.ONLINE_STATUS.ONLINE;
-        list[i].boardId = tmp[0];
-      }
-      else list[i].status = consts.ONLINE_STATUS.ONLINE;
-
-      list[i].avatar = utils.JSONParse(list[i].avatar, {id: 0});
-      list[i].vipLevel = formula.calVipLevel(Number(list[i].vipPoint) || 0);
-
-      if (list[i].uid == uid) {
-        me = utils.clone(list[i]);
-        if (inTop) {
-          list[i].isMe = 1;
-          me.rank = i+1;
-        }
-        else {
-          list.splice(i,1);
-          i--;
-        }
-      }
-    }
-
-    statuses = null;
-
-    if (!inTop) {
-      var rankAttr = attr+'Rank';
-      return Top
-        .findOne({uid: uid})
-        .select(rankAttr)
-        .lean()
-        .then(function(user) {
-          if (user && user[rankAttr])
-            me.rank = Number(user[rankAttr]);
-
-          return utils.invokeCallback(cb, null, {list: list, me: me});
-        });
-    }
-
-    return utils.invokeCallback(cb, null, {list: list, me: me});
-  };
-
-  return Top
+  var promise = Top
     .find()
     .limit(consts.TOP.PER_PAGE)
     .sort(sort)
@@ -148,6 +83,76 @@ TopDao.getTop = function getTop(uid, type, cb) {
       utils.log(e.stack || e);
       return processUsers();
     });
+
+  var processUsers = function() {
+    if (type != code.TOP_TYPE.VIP && type != code.TOP_TYPE.GOLD) {
+      list.forEach(function(user) {
+        user.point = top[user.uid] || 0;
+      });
+    }
+    else {
+      list.forEach(function(user) {
+        user.point = user[attr] || 0;
+      });
+    }
+
+    list.sort(function(a, b) {
+      return b.point - a.point;
+    });
+
+    for (var i = 0; i < list.length; i++) {
+      if (!statuses[list[i].uid] || !statuses[list[i].uid].online)
+        list[i].status = consts.ONLINE_STATUS.OFFLINE;
+      else if (!statuses[list[i].uid].board)
+        list[i].status = consts.ONLINE_STATUS.ONLINE;
+      else if (typeof statuses[list[i].uid].board == 'string') {
+        var tmp = statuses[list[i].uid].board.split(':');
+        list[i].status = tmp.length > 1
+          ? (Number(tmp[1]))
+          : consts.ONLINE_STATUS.ONLINE;
+        list[i].boardId = statuses[list[i].uid].board;
+      }
+      else list[i].status = consts.ONLINE_STATUS.ONLINE;
+
+      list[i].avatar = utils.JSONParse(list[i].avatar, {id: 0});
+      list[i].vipLevel = formula.calVipLevel(Number(list[i].vipPoint) || 0);
+
+      if (list[i].uid == uid) {
+        me = utils.clone(list[i]);
+        if (inTop) {
+          list[i].isMe = 1;
+          me.rank = i+1;
+        }
+        else {
+          list.splice(i,1);
+          i--;
+        }
+      }
+    }
+
+    statuses = null;
+
+    if (!inTop) {
+      var rankAttr = attr+'Rank';
+      var select = {};
+      select[rankAttr] = 1;
+      return Top
+        .findOne({uid: uid})
+        .select(select)
+        .lean()
+        .then(function(user) {
+          if (user && user[rankAttr])
+            me.rank = Number(user[rankAttr]);
+          else me.rank = 1000;
+
+          return utils.invokeCallback(cb, null, {list: list, me: me});
+        });
+    }
+
+    return utils.invokeCallback(cb, null, {list: list, me: me});
+  };
+
+  return promise;
 };
 
 /**
@@ -234,5 +239,31 @@ TopDao.updateVip = function updateVip(params, cb) {
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log('updateVIP err:', e.stack || e);
+    });
+};
+
+/**
+ *
+ * @param params
+ *  uid
+ *  update
+ * @param cb
+ */
+TopDao.updateGold = function updateVip(params, cb) {
+  var mongoClient = pomelo.app.get('mongoClient');
+  var Top = mongoClient.model('Top');
+  var goldRank;
+  Top.update({uid: params.uid}, params.update, {upsert: false})
+    .then(function() {
+      return Top.count({gold: {$gt: params.update.gold}})
+    })
+    .then(function(count) {
+      goldRank = (count||1000) + 1;
+      var update = { goldRank: goldRank };
+      return Top.update({uid: params.uid}, update);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log('updateGold err:', e.stack || e);
     });
 };
