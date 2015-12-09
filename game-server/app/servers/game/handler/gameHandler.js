@@ -68,7 +68,7 @@ pro.changeBoardProperties = function (msg, session, next) {
     return
   }
 
-  board.changeBoardProperties(msg, [], function (err, res) {
+  board.changeBoardProperties(parseInt(session.uid), msg, [], function (err, res) {
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec : err.ec || Code.FAIL, msg : err.msg || [Code.FAIL]});
@@ -216,11 +216,12 @@ pro.invitePlayer = function (msg, session, next) {
     gameId: board.gameId
   })
     .then(function (users) {
+      console.log('invite User : ', users);
       if (lodash.isArray(users)) {
         if (users.length > 0) {
           var uids = [];
           for (var i = 0, len = users.length; i < len; i++) {
-            uids.push(users[i].uid);
+            uids.push(users[i].userId);
           }
           statusPlugin.pushByUids(uids, "game.gameHandler.invitePlayer", {
             bet: bet,

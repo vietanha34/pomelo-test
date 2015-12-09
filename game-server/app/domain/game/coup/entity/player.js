@@ -56,6 +56,7 @@ Player.prototype.xinHoa = function (numMove) {
 Player.prototype.move = function (numMove) {
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
   if (this.disableDraw && numMove - this.timeDraw >= 10 && this.numDraw > 0){
+    this.disableDraw = false;
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     return true
   }

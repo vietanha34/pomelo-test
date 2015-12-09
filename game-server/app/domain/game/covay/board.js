@@ -47,12 +47,12 @@ Game.prototype.init = function () {
     var index = Math.round(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  console.log('looser');
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   if(turnPlayer.color !== consts.COLOR.BLACK){
     var colorMap = this.table.players.changeColor(turnPlayer.uid, consts.COLOR.BLACK);
   }
-  this.game.isWhiteTurn = false;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -75,7 +75,7 @@ Game.prototype.init = function () {
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
-  var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+  var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.BLACK : consts.COLOR.WHITE;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
   player.timeTurnStart = Date.now();
@@ -106,6 +106,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 Game.prototype.progress = function () {
   var gameStatus = this.game.getBoardStatus();
+  console.log('gameStatus : ' , gameStatus);
   if (gameStatus.isFinishedMatch){
     return this.finishGame(gameStatus.score);
   }else {
@@ -142,7 +143,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (winType === consts.WIN_TYPE.LOSE){
+      }else if (winType === consts.WIN_TYPE.LOSE || winType === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -199,13 +200,16 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].result.elo, players[1].result.elo, this.table.gameId, this.table.bet);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    players[i].title  = Formula.calEloLevel(eloMap[i]);
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
+    console.log('finishData : ', finishData[i], player.userInfo.username);
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -387,15 +391,15 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+  Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
     if (lodash.isNumber(properties.color)){
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);

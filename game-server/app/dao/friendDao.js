@@ -7,6 +7,7 @@ var pomelo = require('pomelo');
 var Promise = require('bluebird');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
+var formula = require('../consts/formula');
 var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
@@ -168,7 +169,7 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
   return redis.zrangeAsync(params)
     .then(function(list) {
       if (!list || !list.length) {
-        return utils.invokeCallback(cb, null, {list: []});
+        return utils.invokeCallback(cb, null, []);
       }
 
       var uids = [];
@@ -178,7 +179,7 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
         FriendStatuses[list[i]] = (Number(list[i+1]));
       }
 
-      var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'level'];
+      var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'exp'];
       return UserDao.getUsersPropertiesByUids(uids, properties)
         .then(function(users) {
           users = users || [];
@@ -196,26 +197,27 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
                   users[i].status = tmp.length > 1
                     ? (Number(tmp[1]))
                     : consts.ONLINE_STATUS.ONLINE;
-                  users[i].boardId = tmp[0];
+                  users[i].boardId = statuses[users[i].uid].board;
                 }
                 else users[i].status = consts.ONLINE_STATUS.ONLINE;
 
                 users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
                 users[i].friendStatus = FriendStatuses[users[i].uid] || 0;
+                users[i].level = formula.calLevel(users[i].exp);
               }
 
               //users.sort(function(a, b) {
               //  return a.friendStatus - b.friendStatus;
               //});
 
-              return utils.invokeCallback(cb, null, {list: users});
+              return utils.invokeCallback(cb, null, users);
             });
         });
     })
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
-      return utils.invokeCallback(cb, null, {list: []});
+      return utils.invokeCallback(cb, null, []);
     });
 };
 
@@ -268,7 +270,7 @@ FriendDao.search = function search(params, cb) {
         }
       }
 
-      var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'level'];
+      var properties = ['uid', 'fullname', 'avatar', 'sex', 'gold', 'statusMsg', 'exp'];
       var statusService = pomelo.app.get('statusService');
       return [
         UserDao.getUsersPropertiesByUids(uids, properties),
@@ -287,11 +289,12 @@ FriendDao.search = function search(params, cb) {
           users[i].status = tmp.length > 1
             ? (Number(tmp[1]))
             : consts.ONLINE_STATUS.ONLINE;
-          users[i].boardId = tmp[0];
+          users[i].boardId = statuses[users[i].uid].board;
         }
         else users[i].status = consts.ONLINE_STATUS.ONLINE;
 
         users[i].avatar = utils.JSONParse(users[i].avatar, {id: 0});
+        users[i].level = formula.calLevel(users[i].exp);
       }
 
       users.sort(function(a, b) {

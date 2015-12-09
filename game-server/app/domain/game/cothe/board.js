@@ -95,6 +95,10 @@ Game.prototype.setOnTurn = function (gameStatus) {
       notifyMsg = 'Bạn chiếu dai thêm một nước nữa sẽ bị xử thua';
     } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && !gameStatus.warnings.sapBiChieuHet) {
       notifyMsg = 'Bạn đuổi dai thêm một nước nữa sẽ bị xử thua';
+    } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && gameStatus.warnings.sapBiChieuHet) {
+      notifyMsg = 'Bạn đuổi dai thêm một nước nữa, ván đấu sẽ được xử hoà';
+    } else if (gameStatus.warnings.khongTienTrien >= 34) {
+      notifyMsg = 'Còn vài nước nữa. Nếu không tiến triển, ván đấu sẽ bị xử hoà'
     }
   }
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
@@ -223,11 +227,12 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    players[i].title  = Formula.calEloLevel(eloMap[i]);
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
@@ -298,7 +303,7 @@ Table.prototype.getStatus = function (uid) {
   }
   status.formation = {
     name : this.game.formationName,
-    maxMove : this.game.maxMove - Math.floor(this.game.numMove / 2),
+    maxMove : this.game.maxMove - Math.ceil(this.game.numMove / 2),
     id : this.game.id,
     total : 129,
     status : this.formationMode
@@ -492,10 +497,10 @@ Table.prototype.ready = function (uid) {
 };
 
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, dataChange) {
+  Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, dataChange) {
     console.log('cothe dataChange : ', dataChange);
     if (dataChange && !dataChange.ec){
       if (lodash.isNumber(dataChange.color)){

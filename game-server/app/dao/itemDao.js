@@ -6,11 +6,15 @@ var pomelo = require('pomelo');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var code = require('../consts/code');
+var formula = require('../consts/formula');
 var Promise = require('bluebird');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var moment = require('moment');
 var TopupDao = require('../dao/topupDao');
+var TopDao = require('../dao/topDao');
+var UserDao = require('../dao/userDao');
+var HomeDao = require('../dao/homeDao');
 var ItemDao = module.exports;
 
 ItemDao.durationMap = {
@@ -32,7 +36,7 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
   }
 
   // lấy thông tin vật phẩm, kiểm tra tồn tại, kiểm tra hòm đồ
-  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, u.expiredAt ' +
+  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, effect, u.expiredAt ' +
                 'FROM Item AS i LEFT JOIN UserItem AS u ' +
                 'ON i.id = u.itemId AND u.uid = :uid ' +
                 'WHERE i.id = :itemId';
@@ -68,15 +72,26 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
 
       // thêm vào hòm đồ
       var expiredAt = Math.max(item.expiredAt||0, now) + (duration*86400);
-      return mysql.UserItem
-        .upsert({
-          uid: uid,
-          itemId: itemId,
-          updatedAt: now,
-          expiredAt: expiredAt
-        })
-        .then(function(result) {
-          pomelo.app.get('redisInfo').hset(redisKeyUtil.getUserEffectKey(uid), itemId, expiredAt);
+      return Promise.all([
+        mysql.UserItem
+          .upsert({
+            uid: uid,
+            itemId: itemId,
+            updatedAt: now,
+            expiredAt: expiredAt
+          }),
+        pomelo.app.get('redisInfo').hsetAsync(redisKeyUtil.getUserEffectKey(uid), item.effect, expiredAt)
+      ])
+        .then(function() {
+
+          ItemDao.onBuyItem({
+            uid: uid,
+            item: item,
+            duration: duration,
+            expiredAt: expiredAt,
+            price: topupResult.subGold,
+            goldAfter: topupResult.gold
+          });
 
           var type = (item.expiredAt && item.expiredAt >= now)
             ? code.ITEM_LANGUAGE.RENEW
@@ -126,7 +141,10 @@ ItemDao.getItems = function getItems(uid, type, cb) {
           continue;
         }
         if (list[i]['duration']) {
-          list[i]['price1'] = Math.round(list[i]['price1'] * (1-ItemDao.CONFIG.RENEW_DISCOUNT));
+          var durationDiscount = (1-ItemDao.CONFIG.RENEW_DISCOUNT);
+          list[i]['price1'] = Math.round(list[i]['price1'] * durationDiscount);
+          list[i]['price2'] = Math.round(list[i]['price2'] * durationDiscount);
+          list[i]['price3'] = Math.round(list[i]['price3'] * durationDiscount);
         }
         list[i]['itemId'] = list[i]['id'];
         list[i]['image'] = utils.JSONParse(list[i]['image'], {id: 0});
@@ -137,8 +155,8 @@ ItemDao.getItems = function getItems(uid, type, cb) {
           list[i]['price3'] = Math.round(list[i]['price3'] * discount);
         }
         var dayPrice = list[i]['price1']/3;
-        list[i]['save7'] = Math.round((dayPrice - list[i]['price2']/7)/dayPrice*100);
-        list[i]['save30'] = Math.round((dayPrice - list[i]['price3']/30)/dayPrice*100);
+        list[i]['save7'] = Math.max(Math.round((dayPrice - list[i]['price2']/7)/dayPrice*100),0);
+        list[i]['save30'] = Math.max(Math.round((dayPrice - list[i]['price3']/30)/dayPrice*100),0);
       }
 
       lodash.sortBy(list, 'rank');
@@ -202,13 +220,12 @@ ItemDao.checkEffect = function checkEffect(uid, effects, cb) {
         }
       }
       if (levelIndex >= 0) {
+        effectObj[consts.ITEM_EFFECT.LEVEL] = 0;
         if (results[levelIndex+1] >= now)
-          effectObj[consts.ITEM_EFFECT.LEVEL] = 10;
-        else if (results[levelIndex] >= now)
-          effectObj[consts.ITEM_EFFECT.LEVEL] = 5;
+          effectObj[consts.ITEM_EFFECT.LEVEL] += 10;
+        if (results[levelIndex] >= now)
+          effectObj[consts.ITEM_EFFECT.LEVEL] += 5;
       }
-
-      utils.log('EFFECT: ', effectObj);
 
       return utils.invokeCallback(cb, null, effectObj);
     })
@@ -261,6 +278,54 @@ ItemDao.donateItem = function donateItem(uid, itemId, duration, cb) {
       utils.log(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
     });
+};
+
+/**
+ *
+ * @param params
+ * * uid
+ * * item (obj)
+ * * duration (day)
+ * * expiredAt
+ * * price
+ * * goldAfter
+ */
+ItemDao.onBuyItem = function onBuyItem(params) {
+  TopDao.updateGold({
+    uid: params.uid,
+    update: {gold: params.goldAfter}
+  });
+
+  var effects = [
+    consts.ITEM_EFFECT.LEVEL,
+    consts.ITEM_EFFECT.LEVEL + 1,
+    consts.ITEM_EFFECT.THE_VIP,
+    consts.ITEM_EFFECT.THE_VIP + 1,
+    consts.ITEM_EFFECT.THE_VIP + 2
+  ];
+  if (effects.indexOf(params.item.effect) >= 0) {
+    Promise.all([
+      ItemDao.checkEffect(params.uid, [consts.ITEM_EFFECT.LEVEL, consts.ITEM_EFFECT.THE_VIP]),
+      UserDao.getUserProperties(params.uid, ['exp', 'vipPoint'])
+    ])
+      .spread(function(effect, user) {
+        var level = formula.calLevel(user.exp || 0);
+        level += (effect[consts.ITEM_EFFECT.LEVEL] || 0);
+        var vipLevel = formula.calVipLevel(user.vipPoint || 0);
+        vipLevel = Math.max(vipLevel, (effect[consts.ITEM_EFFECT.THE_VIP] || 0));
+
+        HomeDao.pushInfo(params.uid, {
+          userInfo: {
+            level: level,
+            vipLevel: vipLevel
+          }
+        });
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+      })
+  }
 };
 
 ItemDao.CONFIG = {

@@ -147,7 +147,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE){
+      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -205,11 +205,12 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    players[i].title  = Formula.calEloLevel(eloMap[i]);
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
@@ -289,7 +290,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
     }
   }
 };
@@ -313,10 +314,10 @@ Table.prototype.startGame = function (uid, cb) {
   }
 };
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+  Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
     if (properties.color){
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
@@ -361,32 +362,38 @@ Table.prototype.demand = function (opts) {
   switch (opts.id){
     case consts.ACTION.DRAW:
       otherPlayerUid = this.players.getOtherPlayer(uid);
-      if (lodash.isNumber(opts.accept)){
+      if (lodash.isNumber(opts.accept)) {
         // trả lời request
         otherPlayer = this.players.getPlayer(otherPlayerUid);
-        if (opts.accept && otherPlayer.requestDraw){
+        if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        }else {
+        } else {
+          this.pushMessage('chat.chatHandler.send', {
+            from : uid,
+            targetType : consts.TARGET_TYPE.BOARD,
+            type : 0,
+            content : util.format('Người chơi %s từ chối xin hoà', player.userInfo.fullname)
+          });
           otherPlayer.requestDraw = false;
         }
-      }else {
+      } else {
         //request
-        if (player.timeDraw && this.game.numMove - player.timeDraw < 10){
-          return {ec : Code.FAIL};
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 10) {
+          return {ec: Code.FAIL};
         }
         player.xinHoa(this.game.numMove);
         this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
-          id : consts.ACTION.DRAW,
-          msg : "Đối thủ muốn xin hoà",
-          time : 10000
+          id: consts.ACTION.DRAW,
+          msg: "Đối thủ muốn xin hoà",
+          time: 10000
         });
-        return {menu : player.menu}
+        return {menu: player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 

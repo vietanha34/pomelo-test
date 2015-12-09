@@ -82,10 +82,10 @@ pro.getLastMessage = function (opts, cb) {
         { target : target, from : from}
       ]
     }
-  };
+  }
   console.log('projection: ', projection);
   this.app.get('mongoClient').model('message').find(projection)
-    .sort({ date : 1})
+    .sort({ date : -1})
     .limit(length)
     .exec(cb);
 };
@@ -100,7 +100,7 @@ pro.getMessages = function (opts, cb) {
     var projection = {
       $or : [
         { from :targetUid, target : fromUid},
-        { target : fromUid, from : targetUid}
+        { target : targetUid, from : fromUid}
       ]
     };
   }else {

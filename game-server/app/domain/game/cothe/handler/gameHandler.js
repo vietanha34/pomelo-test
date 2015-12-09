@@ -169,7 +169,7 @@ pro.changeBoardProperties = function (msg, session, next) {
     return
   }
 
-  board.changeBoardProperties(msg, [], function (err, res) {
+  board.changeBoardProperties(parseInt(session.uid), msg, [], function (err, res) {
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(err.ec || Code.FAIL));

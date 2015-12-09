@@ -21,7 +21,7 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} userInfo Đối tượng lưu trữ thông tin người chơi
    * @for BoardBase
    */
-  board.on('joinBoard', function (player) {
+  board.on('joinBoard', function (player, clearJobReady) {
     pomelo.app.get('globalChannelService').add(board.channelName, player.uid, player.userInfo.frontendId);
     pomelo.app.get('statusService').addBoard(player.uid, board.tableId);
     var channel = board.getChannel();
@@ -47,7 +47,7 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
-    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
+    if (!clearJobReady && !player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
       board.addJobReady(player.uid)
     }
   });
@@ -139,7 +139,7 @@ exp.addEventFromBoard = function (board) {
 
   board.on('startGame', function () {
     pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.PLAY });
-    var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK
+    var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
     var status = board.getStatus();
     delete status['turn'];
     board.game.logs = {

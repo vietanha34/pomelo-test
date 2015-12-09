@@ -28,7 +28,7 @@ MessageSchema.methods = {
       content : this.content,
       targetType : this.targetType,
       target : this.target,
-      date : this.date.getTime()
+      date : Math.round(this.date.getTime() / 1000)
     }
   }
 };
