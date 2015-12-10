@@ -9,6 +9,7 @@ var utils = require('../../../util/utils');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
+var ItemDao = require('../../../dao/itemDao');
 
 module.exports = function (app) {
 	return new Handler(app);
@@ -74,7 +75,6 @@ Handler.prototype.login = function (msg, session, next) {
         return
       }
       player = user;
-      player.uid = user.uid;
       kickUser(self.app, user.uid, done);
 		},
 		function (done) {
@@ -84,7 +84,11 @@ Handler.prototype.login = function (msg, session, next) {
 				dtId: msg.dtid
 			}, done);
 		},
-		function (done) {
+    // check effect
+    function (done) {
+      ItemDao.checkEffect(player.uid, [consts.ITEM_EFFECT.LUAN_CO], done)
+    },
+		function (items, done) {
 			session.set('fullname', player.fullname);
 			session.set('username', player.username);
 			session.set('level', Formula.calLevel(player.exp));
@@ -92,8 +96,8 @@ Handler.prototype.login = function (msg, session, next) {
 			session.set('sex', player.sex);
 			session.set('accessToken', msg.accessToken);
 			session.set('avatar', player.avatar);
+      session.set('effect', items);
 			session.set('platform', msg.platform);
-			session.set('ip', loginIp);
 			session.on('closed', onUserLeave.bind(null, self.app));
 			session.pushAll(done)
 		}

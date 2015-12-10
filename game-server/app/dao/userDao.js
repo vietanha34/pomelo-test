@@ -342,7 +342,8 @@ UserDao.updateProperties = function (uid, opts, cb) {
 UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
-  return accountService
+  var user, created;
+  var promise =  accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
       res = utils.JSONParse(res, {});
@@ -362,9 +363,19 @@ UserDao.login = function (msg, cb) {
         })
       }
     })
-    .spread(function (user, created) {
+    .spread(function (u, c) {
+      user = u;
+      created = c;
+      console.log('user : ', u, c);
       if (created) {
         // TODO push event register
+        return accountService.getInitBalance(msg);
+      }else {
+        return Promise.resolve()
+      }
+    })
+    .then(function (balance) {
+      if (created){
         var emitterConfig = pomelo.app.get('emitterConfig');
         pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
           uid : user.uid,
@@ -373,16 +384,21 @@ UserDao.login = function (msg, cb) {
           deviceId : msg.deviceId,
           version : msg.version,
           extraData : msg.data,
-          ip : msg.ip
+          type : user.accountType,
+          ip : msg.ip,
+          userCount : balance ? balance.count || 1 : 1
         }, function () {});
+        return utils.invokeCallback(cb, null, user);
+      }else {
+        return utils.invokeCallback(cb, null, user);
       }
-      return utils.invokeCallback(cb, null, user);
     })
+    .cancellable()
     .catch(function (err) {
       console.error('err : ', err);
       return utils.invokeCallback(cb, err);
-    })
-
+    });
+    return promise
 };
 
 var findFullnameAvailable = function (fullname, num) {

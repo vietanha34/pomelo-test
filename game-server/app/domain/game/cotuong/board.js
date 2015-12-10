@@ -89,6 +89,7 @@ Game.prototype.init = function () {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500});
     this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
     this.table.pushMessage('game.gameHandler.action', {move: moveAfter});
+    this.actionLog = [];
     this.actionLog.push({move: moveInit, sleep: 500});
     this.actionLog.push({move: moveAfter});
   } else {
@@ -179,7 +180,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE){
+      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -236,11 +237,12 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    players[i].title  = Formula.calEloLevel(eloMap[i]);
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
@@ -279,19 +281,20 @@ function Table(opts) {
       // changeOwner
       if (!self.allowLockMode) return done(null, properties, dataChanged, dataUpdate, changed);
       var update = false;
-      if (lodash.isArray(properties.lock) && lodash.isEqual(properties.lock.sort(), self.lockMode.sort())) {
+      if (lodash.isArray(properties.lock) && !lodash.isEqual(properties.lock.sort(), self.lockMode.sort())) {
         update = true;
         self.lockMode = properties.lock;
         self.game.game.lockModes = self.lockMode;
         dataChanged.lock = properties.lock;
       }
-      if (lodash.isArray(properties.remove) && lodash.isEqual(properties.remove.sort(), self.removeMode.sort())) {
+      if (lodash.isArray(properties.remove) && !lodash.isEqual(properties.remove.sort(), self.removeMode.sort())) {
         self.removeMode = properties.remove;
         self.game.game.handicapModes = self.removeMode;
         dataChanged.remove = properties.remove;
         update = true;
       }
       if (update) {
+        console.log('cài đặt liệt chấp : ', self.game.game.lockModes, self.game.game.handicapModes);
         changed.push(' cài đặt liệt chấp');
         //dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
         dataUpdate.optional = JSON.stringify({lock: properties.lock || [], remove: properties.remove || []});
@@ -343,7 +346,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED) {
     var index = this.game.playerPlayingId.indexOf(uid);
     if (index > -1) {
-      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
     }
   }
 };
@@ -461,7 +464,7 @@ Table.prototype.demand = function (opts) {
         }
       } else {
         if (otherPlayerUid !== this.turnUid) {
-          return {ec: Code.FAIL};
+          return {ec: Code.FAIL, msg : "Chưa đến lượt bạn xin hoãn"};
         }
         //request
         if (player.timeDelay && this.game.numMove - player.timeDelay < 20) {
@@ -512,7 +515,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 
@@ -524,10 +527,10 @@ Table.prototype.resetDefault = function () {
 };
 
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+  Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
     if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color) {
       var ownerPlayer = self.players.getPlayer(self.owner);
       if (ownerPlayer.color === consts.COLOR.WHITE) {

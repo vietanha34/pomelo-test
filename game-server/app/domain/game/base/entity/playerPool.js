@@ -130,7 +130,12 @@ pro.addPlayer = function (opts) {
     if (slotIndex > -1) {
       // add new player
       self.playerSeat[slotIndex] = player.uid;
-      player.color = this.mapColor[slotIndex];
+      var otherPlayer = self.getPlayer(self.getOtherPlayer(player.uid));
+      if(otherPlayer){
+        player.color = otherPlayer.color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE
+      }else {
+        player.color = consts.COLOR.WHITE;
+      }
       self.length = lodash.compact(self.playerSeat).length;
       data.newPlayer = true;
       if (!self.table.owner) {
@@ -270,7 +275,12 @@ pro.sitIn = function (uid, slotId) {
     var result = {};
     utils.arrayRemove(self.guestIds, uid);
     self.playerSeat[index] = uid;
-    player.color = this.mapColor[index];
+    var otherPlayer = self.getPlayer(self.getOtherPlayer(player.uid));
+    if(otherPlayer){
+      player.color = otherPlayer.color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE
+    }else {
+      player.color = consts.COLOR.WHITE;
+    }
     player.guest = false;
     player.genMenu();
     if (!self.table.owner) {
@@ -609,7 +619,6 @@ pro.changeColor = function (uid, color) {
     player.color = color;
     mapColor[player.uid] = color;
     var otherPlayer = this.getPlayer(this.getOtherPlayer(uid));
-    this.mapColor.reverse();
     if(otherPlayer){
       otherPlayer.color = color === consts.COLOR.WHITE ? consts.COLOR.BLACK : consts.COLOR.WHITE;
       mapColor[otherPlayer.uid] = otherPlayer.color;

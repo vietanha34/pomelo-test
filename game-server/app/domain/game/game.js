@@ -129,16 +129,16 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
         opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)];
         opts.turnTime = 3 * 60;
         switch (hallId){
-          case consts.HALL_ID.TAP_SU:
-            opts.bet = 300 + Math.floor((i-1) / 6) * 300;
+          case consts.HALL_ID.KIEN_TUONG:
+            opts.bet = 3000 + Math.floor((i-1) / 6) * 2000;
             break;
           case consts.HALL_ID.BINH_DAN:
-            if (self.gameId === consts.GAME_ID.CO_TUONG){
-              opts.bet = 300 + Math.floor((i-1) / 6) * 300;
-              break;
-            }
+            //if (self.gameId === consts.GAME_ID.CO_TUONG){
+            //}
+            opts.bet = 300 + Math.floor((i-1) / 6) * 300;
+            break;
           case consts.HALL_ID.LIET_CHAP:
-            opts.bet = 1000 + Math.floor((i-1) / 6) * 500;
+            opts.bet = 1000 + Math.floor((i-1) / 6) * 300;
             break;
           case consts.HALL_ID.CAO_THU:
             opts.bet = 1000 + Math.floor((i-1) / 6) * 1000;

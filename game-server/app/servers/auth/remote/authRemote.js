@@ -22,12 +22,12 @@ var AuthRemote = function (app) {
  * @param cb
  */
 AuthRemote.prototype.login = function (msg, cb) {
-  userDao
+  return userDao
     .login(msg)
     .then(function (res) {
-      utils.invokeCallback(cb, null, res);
+      return utils.invokeCallback(cb, null, res);
     })
     .catch(function (err) {
-      utils.invokeCallback(cb, err);
+      return utils.invokeCallback(cb, err);
     })
 };

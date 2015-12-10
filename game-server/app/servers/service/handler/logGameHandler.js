@@ -42,13 +42,13 @@ Handler.prototype.getGameLog = function (msg, session, next) {
     })
     .then(function (players) {
       for (var i = 0, len = players.length; i< len; i++){
-        players['avatar'] = utils.JSONParse(players['avatar'], {});
-        players['level'] = Formula.calLevel(players['exp']);
-        players['elo'] = players['Achievement.elo'];
-        players['label'] = Formula.calEloLevel(players['Achievement.elo']);
-        players['color'] = i ? consts.COLOR.BLACK : consts.COLOR.WHITE;
-        delete players['exp'];
-        delete players['Achievement.elo'];
+        players[i]['avatar'] = utils.JSONParse(players['avatar'], {});
+        players[i]['level'] = Formula.calLevel(players['exp']);
+        players[i]['elo'] = players['Achievement.elo'];
+        players[i]['label'] = Formula.calEloLevel(players['Achievement.elo']);
+        players[i]['color'] = i ? consts.COLOR.BLACK : consts.COLOR.WHITE;
+        delete players[i]['exp'];
+        delete players[i]['Achievement.elo'];
       }
       logs.players = players;
       return next(null, logs);

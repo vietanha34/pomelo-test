@@ -29,8 +29,8 @@ var util = require('util');
 var Player = function (opts) {
   Player.super_.call(this, opts);
   this.color = opts.color;
-  this.totalTime  = opts.totalTime;
-  this.totalTimeDefault = opts.totalTime;
+  this.totalTime  = opts.totalTime || 15 * 60 * 1000;
+  this.totalTimeDefault = opts.totalTime || 15 * 60 * 1000;
   this.timeTurnStart = Date.now();
   this.numDelay = 2;
   this.timeDraw = 0; // nước đi xin hoà

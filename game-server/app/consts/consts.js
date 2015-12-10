@@ -32,13 +32,13 @@ module.exports = {
 
   TABLE_TYPE : {
     ROCK : 0,
-    IRON : 1,
+    WOOD : 1,
     DARK : 2
   },
 
   TABLE_TYPE_NAME_MAP : {
     0 : 'bàn đá',
-    1 : 'bàn sắt',
+    1 : 'bàn gỗ',
     2 : 'bàn tối'
   },
 
@@ -47,7 +47,8 @@ module.exports = {
     TAP_SU : 2,
     BINH_DAN : 3,
     CAO_THU : 4,
-    LIET_CHAP : 5
+    LIET_CHAP : 5,
+    KIEN_TUONG : 6
   },
 
 
@@ -199,14 +200,14 @@ module.exports = {
     1 : {
       id : 1,
       name : 'lockPawn1',
-      before :  [75, 106],
-      after :  [88, 93]
+      before :  [75, 114],
+      after :  [88, 101]
     },
     2 : {
       id : 2,
       name : 'lockPawn3',
-      before :  [73, 108],
-      after : [86, 95]
+      before :  [73, 112],
+      after : [86, 99]
     },
     3 : {
       id : 3,
@@ -217,26 +218,26 @@ module.exports = {
     4 : {
       id : 4,
       name : 'lockPawn7',
-      before : [69, 112],
-      after : [82, 99]
+      before : [69, 108],
+      after : [82, 95]
     },
     5 : {
       id : 5,
       name : 'lockPawn9',
-      before : [67, 114],
-      after : [80, 101]
+      before : [67, 106],
+      after : [80, 93]
     },
     6 : {
       id : 6,
       name : 'lockHorse2',
-      before : [35, 146],
-      after :  [35, 146]
+      before : [35, 152],
+      after :  [35, 152]
     },
     7 : {
       id : 7,
       name : 'lockHorse8',
-      before :  [29, 152],
-      after :  [29, 152]
+      before :  [29, 146],
+      after :  [29, 146]
     }
   },
 

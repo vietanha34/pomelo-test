@@ -150,7 +150,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE){
+      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -208,16 +208,17 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result.type, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+    players[i].title  = Formula.calEloLevel(eloMap[i]);
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
   }
-  if (bet > 0){
+  if (bet > 0 && loseUser && winUser){
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;
@@ -281,7 +282,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
     }
   }
 };
@@ -340,7 +341,7 @@ Table.prototype.action = function (uid, opts, cb) {
       this.timer.cancelJob(this.jobId);
     }
     var player = this.players.getPlayer(uid);
-    var result = player.move();
+    var result = player.move(this.game.numMove);
     if (result){
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', utils.merge_options(actionResponse, { menu : player.menu}));
@@ -408,15 +409,15 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 
 
-Table.prototype.changeBoardProperties = function (properties, addFunction, cb) {
+Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var uid = properties.uid;
   var self = this;
-  Table.super_.prototype.changeBoardProperties.call(this, properties, this.addFunction, function (err, res) {
+  Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
     if (lodash.isNumber(properties.color)){
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);

@@ -7,6 +7,7 @@ var async = require('async');
 var utils = require('../../../util/utils');
 var code = require('../../../consts/code');
 var ItemDao = require('../../../dao/itemDao');
+var consts = require('../../../consts/consts');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -43,7 +44,14 @@ Handler.prototype.getTrunk = function (msg, session, next) {
 Handler.prototype.buy = function (msg, session, next) {
   ItemDao.buy(session.uid, msg.itemId, msg.duration)
     .then(function(result) {
-      return utils.invokeCallback(next, null, result);
+      utils.invokeCallback(next, null, result);
+      return ItemDao.checkEffect(session.uid, [consts.ITEM_EFFECT.LUAN_CO])
+    })
+    .then(function (effect) {
+      if(effect[consts.ITEM_EFFECT.LUAN_CO]){
+        session.set('effect', effect);
+        session.pushAll();
+      }
     })
     .catch(function(e) {
       console.error(e.stack || e);

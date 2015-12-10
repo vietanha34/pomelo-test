@@ -25,7 +25,9 @@ var Handler = function (app, chatService) {
 Handler.prototype.send = function (msg, session, next) {
   var self = this;
   var uid = session.uid;
+  var fullname = session.get('fullname');
   var uids = { uid : session.uid, sid : session.frontendId};
+  var effect = session.get('effect');
   var route = msg.__route__;
   var sendDate = msg.date || Date.now();
   next();
@@ -58,9 +60,11 @@ Handler.prototype.send = function (msg, session, next) {
           break;
         case consts.TARGET_TYPE.BOARD_GUEST:
           if (tableId) {
+            if (!effect[consts.ITEM_EFFECT.LUAN_CO]){
+              return done({ec: Code.FAIL, msg : 'Bạn cần có vật phẩm luận cờ để có thể tán gẫu trong bàn chơi'})
+            }
             done(null, true)
           } else {
-            console.log('Người chơi đang k ở trong bàn chơi : ', tableId);
             done({ec: Code.FAIL, msg : 'Bạn đang không ở trong bàn chơi'})
           }
           break;
@@ -83,10 +87,10 @@ Handler.prototype.send = function (msg, session, next) {
       var data = {
         msgId: message._id,
         from: uid,
-        fname : msg.fname,
+        fullname : fullname,
         type: message.type || 0,
         content: message.content,
-        date: sendDate || Date.now(),
+        date: sendDate || Math.round(Date.now() / 1000),
         target: message.target,
         targetType: message.targetType,
         status: 0
@@ -108,7 +112,7 @@ Handler.prototype.send = function (msg, session, next) {
     }
   ], function (err) {
     if (err) {
-      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, utils.getError(err.ec || Code.FAIL));
+      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, { ec : err.ec || Code.FAIL, msg: err.msg || [Code.FAIL] });
     }
     msg = null;
   });
@@ -130,8 +134,8 @@ Handler.prototype.getHistory = function (msg, session, next) {
       next(null, { msg : results});
       MessageDao.unCountUnreadMessage({
         targetType: consts.TARGET_TYPE.PERSON,
-        uid: uid,
-        fromId: uid
+        uid: msg.from,
+        fromId: msg.target
       });
       msg = null;
     }

@@ -34,16 +34,27 @@ MessageDao.getAllCountUnReadMessageByUid = function (uid, cb) {
       utils.invokeCallback(cb, err);
     }
     else {
-      for (var key in res ){
+      for (var key in res) {
         var splitData = key.split('|');
         res[splitData[0]] = {
           numMsg: !isNaN(parseInt(res[key])) ? parseInt(res[key]) : 0,
-          targetType : splitData[1] || consts.TARGET_TYPE.PERSON
+          targetType: splitData[1] || consts.TARGET_TYPE.PERSON
         }
       }
       utils.invokeCallback(cb, null, res)
     }
   });
+};
+
+MessageDao.getNumPlayerUnReadMessage = function (uid, cb) {
+  var redisInfo = pomelo.app.get('redisInfo');
+  return redisInfo.hlenAsync(redisKeyUtil.getUserMetadata(uid))
+    .then(function (len) {
+      return utils.invokeCallback(cb, null, len || 0)
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, null, 0)
+    })
 };
 
 
@@ -83,7 +94,7 @@ MessageDao.countUnreadMessage = function (opts, cb) {
   });
 };
 
-MessageDao.unCountUnreadMessage = function (opts,cb) {
+MessageDao.unCountUnreadMessage = function (opts, cb) {
   var targetType = opts.targetType || consts.TARGET_TYPE.PERSON;
   var uid = opts.uid;
   var fromId = opts.fromId; // from uid or from rid

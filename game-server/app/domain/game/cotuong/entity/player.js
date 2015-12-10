@@ -73,9 +73,11 @@ Player.prototype.move = function (numMove) {
     this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
     return true
   }else if (this.disableDelay && numMove - this.timeDelay >= 20 && this.numDelay > 0){
+    this.disableDelay = false;
     this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
     return true
   }if (this.disableDraw && numMove - this.timeDraw >= 10 && this.numDraw > 0){
+    this.disableDraw = false;
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     return true
   }

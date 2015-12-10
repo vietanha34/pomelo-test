@@ -39,8 +39,14 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     numPlayer: {
       $lt: 2
     },
-    gameId: gameId
+    gameId: gameId,
+    password : {
+      $eq : null
+    }
   };
+  if(msg.roomId){
+    whereClause['roomId'] = msg.roomId
+  }
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
   if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var tableId;
@@ -53,8 +59,17 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       if (userInfo) {
         user = userInfo;
         user.elo = user['Achievement.elo'];
-        user.level = Formula.calLevel(user.exp);
+        user.level = Formula.calLevel(user.exp) || 0;
         user.frontendId = session.frontendId;
+        whereClause['level'] = {
+          $lte : user.level,
+        };
+        whereClause['bet'] = {
+          $and : {
+            $lte : user.gold,
+            $gte : 0
+          }
+        };
         self.app.get('boardService').getBoard({
           where: whereClause,
           limit: 1,
@@ -84,6 +99,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         session.pushAll();
         // TODO handle
       }
+      done()
       next(null, result.data);
     }
   ], function (err) {

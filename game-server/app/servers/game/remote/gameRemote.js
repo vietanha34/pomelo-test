@@ -98,7 +98,7 @@ GameRemote.prototype.createBoard = function (gameId, opts, cb) {
 GameRemote.prototype.changeBoardProperties = function (boardId, msg, cb ) {
   var game = this.app.game;
   var board = game.getBoard(boardId);
-  board.changeBoardProperties(msg,false, function (err, res) {
+  board.changeBoardProperties(board.owner, msg,false, function (err, res) {
     utils.invokeCallback(cb, err, res);
   })
 };
