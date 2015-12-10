@@ -77,7 +77,7 @@ pro.management = function (logs, cb) {
     }
     self.app.rpc.event.eventRemote.emit(null, self.app.get('emitterConfig').FINISH_GAME , logs, function () {});
   });
-  if ([consts.GAME_ID.CO_TUONG, consts.GAME_ID.CO_UP, consts.GAME_ID.CO_VUA].indexOf(logs.boardInfo.gameId) > -1){
+  if ([consts.GAME_ID.CO_TUONG, consts.GAME_ID.CO_UP, consts.GAME_ID.CO_VUA, consts.GAME_ID.CO_THE].indexOf(logs.boardInfo.gameId) > -1){
     var GameLog = this.app.get('mongoClient').model('GameLog');
     console.log(logs.logs);
     var log = new GameLog(logs.logs);

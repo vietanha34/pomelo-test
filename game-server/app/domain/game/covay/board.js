@@ -30,6 +30,7 @@ function Game(table) {
   this.legalMoves = {};
   this.isCheck = {};
   this.numMove = 0;
+  this.numChange = 0;
   this.previousMove = null;
 }
 
@@ -93,13 +94,8 @@ Game.prototype.setOnTurn = function (gameStatus) {
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
   this.table.jobId = this.table.timer.addJob(function (uid) {
-    var player = self.table.players.getPlayer(uid);
-    if (player.numAutoChangeTurn >= 2){
-      self.finishGame(consts.WIN_TYPE.LOSE, uid);
-    }else {
-      player.numAutoChangeTurn += 1;
-      self.table.action(uid, {});
-    }
+    console.trace('turn covay')
+    self.table.action(uid, {});
   }, turnUid, turnTime + 2000);
 };
 
@@ -119,9 +115,9 @@ Game.prototype.finishGame = function (result, uid) {
   var xp, subGold, addGold, loseUser, winUser, toUid, winIndex, fromUid, loseIndex;
   var turnColor = result ?
       result.matchResult === 'trangThang'
-        ? consts.COLOR.WHITE
+        ? consts.COLOR.BLACK
         : result.matchResult === 'denThang'
-          ? consts.COLOR.BLACK
+          ? consts.COLOR.WHITE
           : undefined
         : undefined;
 
@@ -137,7 +133,7 @@ Game.prototype.finishGame = function (result, uid) {
   for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
     if (player.uid === turnUid){
-      var colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
+      var colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.gameId, this.hallId) : 0;
       if (winType === consts.WIN_TYPE.WIN){
         winUser = player;
@@ -154,20 +150,20 @@ Game.prototype.finishGame = function (result, uid) {
         result : winType,
         text : result[colorString],
         totalGold : player.gold,
-        elo : 0,
+        elo : player.userInfo.elo,
         xp : xp
       });
       finishData.push({
         uid : player.uid,
         result : {
-          type : result,
+          type : winType,
           color : player.color,
           elo : 0,
           xp : xp
         }
       });
     }else {
-      colorString = player.color === consts.COLOR.WHITE ? 'white' : 'black';
+      colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
       if (res === consts.WIN_TYPE.WIN){
@@ -182,16 +178,16 @@ Game.prototype.finishGame = function (result, uid) {
       players.push({
         uid : player.uid,
         gold : 0,
-        result : winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
+        result : res,
         totalGold : player.gold,
-        elo : 0,
+        elo : player.userInfo.elo,
         text : result[colorString],
         xp : xp
       });
       finishData.push({
         uid : player.uid,
         result : {
-          type : result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN,
+          type : res ,
           color : player.color,
           elo : 0,
           xp : xp
@@ -224,19 +220,6 @@ Game.prototype.finishGame = function (result, uid) {
       force : true
     }, 1, function () {})
   }
-  if (bet > 0){
-    subGold = loseUser.subGold(bet);
-    addGold = winUser.addGold(subGold, true);
-    players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
-    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
-      gold : bet,
-      fromUid : fromUid,
-      toUid : toUid,
-      tax : 5,
-      force : true
-    }, 1, function () {})
-  }
   this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players}, true);
 };
@@ -245,7 +228,7 @@ function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
   this.game = new Game(this);
-  this.addFunction = []
+  this.addFunction = [];
 }
 
 util.inherits(Table, BoardBase);
@@ -263,8 +246,8 @@ Table.prototype.getStatus = function () {
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove;
   status.killed = {};
-  status.killed[1] = boardStatus['killedWhiteCounter'][0];
-  status.killed[-1] = boardStatus['killedBlackCounter'][0];
+  status.killed[-1] = boardStatus['killedWhiteCounter'][0];
+  status.killed[1] = boardStatus['killedBlackCounter'][0];
   if(status.turn) {
     status.turn.banSquare = boardStatus.illegalMoves;
     if (this.status !== consts.BOARD_STATUS.NOT_STARTED){
@@ -284,7 +267,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(consts.WIN_TYPE.LOSE, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
     }
   }
 };
@@ -314,7 +297,7 @@ Table.prototype.action = function (uid, opts, cb) {
   var remove = this.game.game.makeMove(opts.move);
   this.game.numMove += 1;
   var player = this.players.getPlayer(uid);
-  var id = player.color === consts.COLOR.WHITE ? 1 : -1;
+  var id = player.color === consts.COLOR.WHITE ? -1 : 1;
   var result = player.move(this.game.numMove);
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
@@ -324,8 +307,8 @@ Table.prototype.action = function (uid, opts, cb) {
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : player.menu, uid : uid});
       otherPlayer = this.players.getPlayer(this.players.getOtherPlayer(player.uid));
-      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu, uid : uid});
       this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
+      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu, uid : uid});
     }else {
       this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
     }
@@ -391,7 +374,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
 };
 

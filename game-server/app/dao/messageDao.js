@@ -102,17 +102,10 @@ MessageDao.unCountUnreadMessage = function (opts, cb) {
   var redisInfo = pomelo.app.get('redisInfo');
   var multi = redisInfo.multi();
   multi.hget(redisKeyUtil.getUserMetadata(uid), fromKey);
-  multi.hget(redisKeyUtil.getPlayerInfoKey(uid), 'chatCount');
   multi.exec(function (err, res) {
     if (res && !isNaN(parseInt(res[0]))) {
-      var count = parseInt(res[0]);
-      var totalCount = !isNaN(parseInt(res[1])) ? parseInt(res[1]) : 0;
       var multi = redisInfo.multi();
       multi.hdel(redisKeyUtil.getUserMetadata(uid), fromKey);
-      if (count && totalCount > 0) {
-        totalCount -= 1;
-      }
-      multi.hset(redisKeyUtil.getPlayerInfoKey(uid), 'chatCount', totalCount || 0);
       multi.exec(cb);
     }
   })

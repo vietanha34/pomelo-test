@@ -17,7 +17,8 @@ var fs = require('fs');
  */
 module.exports = function (params, boardId, cb) {
   var gameConfig = pomelo.app.get('gameConfig');
-  return pomelo.app.get('boardService').addBoard(params, boardId)
+  return pomelo.app.get('boardService')
+    .addBoard(params, boardId)
     .then(function (res) {
       var board, Board;
       if (res) {

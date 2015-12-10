@@ -366,8 +366,7 @@ UserDao.login = function (msg, cb) {
     .spread(function (u, c) {
       user = u;
       created = c;
-      console.log('user : ', u, c);
-      if (created) {
+      if (created) {  
         // TODO push event register
         return accountService.getInitBalance(msg);
       }else {

@@ -72,9 +72,9 @@ Player.prototype.reset = function () {
   this.timeDraw = 0; // nước đi xin hoãn;
 };
 
-Player.prototype.genStartMenu = function (guest) {
+Player.prototype.genStartMenu = function () {
   Player.super_.prototype.genStartMenu.call(this);
-  if (!guest){
+  if (!this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_TURN,{ disable : 1}));
     this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }

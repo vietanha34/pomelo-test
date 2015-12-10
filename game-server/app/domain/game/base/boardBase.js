@@ -355,8 +355,8 @@ pro.pushMessageWithOutUids = function (uids, route, msg) {
     }
   }
   logger.info("\n Push message without Uids : %j \n route :  %s \n message %j", uids, route, msg);
-  if (uids.length != 0) {
-    messageService.pushMessageByUids(uids, route, msg)
+  if (pushUids.length != 0) {
+    messageService.pushMessageByUids(pushUids, route, msg)
   }
 };
 
@@ -492,20 +492,17 @@ pro.joinBoard = function (opts) {
   var userInfo = opts.userInfo;
   var uid = userInfo.uid;
   var self = this;
-  console.log('this.lock : ', this.lock, opts.password);
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
     return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
   }
   var result = this.players.addPlayer(opts);
-  console.log('result : ', result);
   if (result.ec == Code.OK) {
     if (result.newPlayer) {
       console.log('emit joinBoard :');
       self.emit('joinBoard', self.players.getPlayer(uid));
     }
     var state = self.getBoardState(uid);
-    state.notifyMsg = result.notifyMsg
-    console.log('state : ', state);
+    state.notifyMsg = result.notifyMsg;
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
     }else {
@@ -1032,6 +1029,16 @@ pro.addJobStart = function (uid) {
   }, uid, 30000 + 4000);
 };
 
+pro.cancelJob = function () {
+  if (this.jobId){
+    this.timer.cancelJob(this.jobId);
+    this.pushMessage('onTurn', {
+      uid : -10,
+      count : 0
+    })
+  }
+};
+
 pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
   if ((this.gameType === consts.GAME_TYPE.TOURNAMENT && this.numMatchPlay >= this.matchTurn)|| this.isMaintenance) {
     if (this.isMaintenance) {
@@ -1061,7 +1068,7 @@ pro.resetDefault = function () {
   this.tableType = 1;
   this.turnTime = this.turnTimeDefault;
   this.totalTime = this.totalTimeDefault;
-  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null});
+  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null, totalTime : this.totalTime, turnTime : this.turnTime});
   this.emit('resetDefault');
 };
 

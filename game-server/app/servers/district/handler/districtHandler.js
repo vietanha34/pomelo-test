@@ -62,12 +62,12 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         user.level = Formula.calLevel(user.exp) || 0;
         user.frontendId = session.frontendId;
         whereClause['level'] = {
-          $lte : user.level,
+          $lte : user.level
         };
         whereClause['bet'] = {
           $and : {
             $lte : user.gold,
-            $gte : 0
+            $gt : 0
           }
         };
         self.app.get('boardService').getBoard({
@@ -206,10 +206,11 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
 Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   var waitingService = this.app.get('waitingService');
   var uid = session.uid;
+  var tableId = session.get('tableId');
   if (msg.type === 2) {
-
     friendDao.getFriendList(uid, consts.MAX_FRIEND)
       .then(function (uids) {
+        console.log('uids : ', uids);
         var waitingData = {
           attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
           offset: 0,
@@ -229,7 +230,6 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
             msg = null;
           });
       });
-    return next(null, {users: [], type: msg.type});
   } else {
     var waitingData = {
       attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],

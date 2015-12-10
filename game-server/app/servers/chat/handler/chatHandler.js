@@ -29,7 +29,7 @@ Handler.prototype.send = function (msg, session, next) {
   var uids = { uid : session.uid, sid : session.frontendId};
   var effect = session.get('effect');
   var route = msg.__route__;
-  var sendDate = msg.date || Date.now();
+  var sendDate = msg.date || Math.round(Date.now() /1000);
   next();
   if (!msg.content && !msg.target && !msg.type) {
     messageService.pushMessageToPlayer(uids, msg.__route__, { ec : Code.FAIL, msg : 'invalid params'});
@@ -134,8 +134,8 @@ Handler.prototype.getHistory = function (msg, session, next) {
       next(null, { msg : results});
       MessageDao.unCountUnreadMessage({
         targetType: consts.TARGET_TYPE.PERSON,
-        uid: msg.from,
-        fromId: msg.target
+        uid: msg.target,
+        fromId: msg.from
       });
       msg = null;
     }
