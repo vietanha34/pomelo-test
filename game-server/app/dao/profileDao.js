@@ -112,7 +112,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       || (params.sex && [0, 1, 2].indexOf(params.sex) < 0)
       || (params.phone && !regexValid.validPhone(params.phone))
       || (params.email && !regexValid.validEmail(params.email))) {
-      return utils.invokeCallback(cb, null, 'Thông tin sai định dạng. Bạn vui lòng nhập lại');
+      return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'Thông tin sai định dạng. Bạn vui lòng nhập lại' });
     }
 
     if (params.phone) params.phoneNumber = params.phone;
@@ -126,10 +126,11 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       resolveWithFullResponse: true
     })
       .then(function(response) {
+        utils.log(response.statusCode, response.body);
         if (response && response.statusCode == 200) {
           if (params.oldPassword && params.password) {
             var json = utils.JSONParse(response.body);
-            if (!json || json.changePassword) {
+            if (!json || !json.changePassword) {
               // doi mat khau khong thanh cong
               return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
             }
@@ -175,7 +176,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
 ProfileDao.getAchievement = function getAchievement(params, cb) {
   var res = {list: []};
   return pomelo.app.get('mysqlClient').Achievement
-    .findOne({where: {uid: params.uid}})
+    .findOne({where: {uid: params.other||params.uid}})
     .then(function(achievement) {
       achievement = achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
@@ -303,7 +304,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
         for (i=0; i<list.length; i++) {
           if (!list[i].uids || list[i].uids.length != 2) continue;
           otherIndex = list[i].uids[0] == params.uid ? 1 : 0;
-          status = (Number(list[i].status)||1);
+          status = (Number(list[i].status)||0);
           status = otherIndex
             ? status
             : (status==consts.WIN_TYPE.WIN
@@ -311,16 +312,16 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
               : (status==consts.WIN_TYPE.LOSE
                 ? consts.WIN_TYPE.WIN
                 : consts.WIN_TYPE.DRAW));
-          logs.push();
           log = {
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
             time: moment(list[i].createdAt).format('hh:mm DD/MM'),
-            status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status]
+            status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status.toString()]
           };
           if (params.gameId != consts.GAME_ID.CARO && params.gameId != consts.GAME_ID.CO_VAY) {
             log['matchId'] = list[i].matchId;
           }
+          logs.push(log);
           uids.push(list[i].uids[otherIndex]);
         }
 

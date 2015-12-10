@@ -238,7 +238,6 @@ TopDao.updateVip = function updateVip(params, cb) {
     })
     .catch(function(e) {
       console.error(e.stack || e);
-      utils.log('updateVIP err:', e.stack || e);
     });
 };
 
@@ -264,6 +263,5 @@ TopDao.updateGold = function updateVip(params, cb) {
     })
     .catch(function(e) {
       console.error(e.stack || e);
-      utils.log('updateGold err:', e.stack || e);
     });
 };
