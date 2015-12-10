@@ -253,9 +253,9 @@ module.exports = {
   },
 
   WIN_LANGUAGE: {
-    1: 'Thua',
+    1: 'Thắng',
     0: 'Hòa',
-    2: 'Thắng'
+    2: 'Thua'
   },
 
   VIP_LANGUAGE: {

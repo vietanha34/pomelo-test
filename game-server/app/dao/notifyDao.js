@@ -24,7 +24,6 @@ var lodash = require('lodash');
  * @param cb
  */
 NotifyDao.push = function topup(params, cb) {
-  utils.log('NotifyDao.push', params);
   if ((!params.type && params.type!==0) || !params.title) {
     return utils.invokeCallback(cb, 'invalid param push notify');
   }

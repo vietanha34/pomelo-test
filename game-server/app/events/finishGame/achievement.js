@@ -81,8 +81,8 @@ module.exports.process = function (app, type, param) {
       user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
 
-      user1Elo = param.users[user1Index].result['eloAfter'];
-      user2Elo = param.users[user2Index].result['eloAfter'];
+      user1Elo = param.users[0].result['eloAfter'];
+      user2Elo = param.users[1].result['eloAfter'];
 
       //var newElo = formula.calElo(param.users[0].result.type, achievements[user1Index][attr], achievements[user2Index][attr]);
       //
@@ -92,8 +92,8 @@ module.exports.process = function (app, type, param) {
       achievements[user1Index][attr] = user1Elo;
       achievements[user2Index][attr] = user2Elo;
 
-      achievements[user1Index][gameName+typeMap[param.users[user1Index].result.type]] += 1;
-      achievements[user2Index][gameName+typeMap[param.users[user2Index].result.type]] += 1;
+      achievements[user1Index][gameName+typeMap[param.users[0].result.type]] += 1;
+      achievements[user2Index][gameName+typeMap[param.users[1].result.type]] += 1;
 
       achievements[0].save().then(function(e) {
         if (e) console.error(e.stack || e);

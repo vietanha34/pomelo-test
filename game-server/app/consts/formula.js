@@ -49,9 +49,8 @@ formula.calElo = function calElo(type, user1Elo, user2Elo, gameId, bet) {
     var Ab = (type == consts.WIN_TYPE.WIN ? 0 : (type == consts.WIN_TYPE.DRAW ? 0.5 : 1));
     var Qa = Math.pow(10, user1Elo/400);
     var Qb = Math.pow(10, user2Elo/400);
-    var sumQ = (Qa+Qb);
-    var Ea = Qa / sumQ;
-    var Eb = Qb / sumQ;
+    var Ea = Qa / (Qa+Qb);
+    var Eb = 1 - Ea;
     var Ka = formula.calK(user1Elo);
     var Kb = formula.calK(user2Elo);
 

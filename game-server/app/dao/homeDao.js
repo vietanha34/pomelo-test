@@ -55,7 +55,7 @@ HomeDao.getHome = function getHome(params, cb) {
   ];
 
   return Promise.props({
-    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
+    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
     dailyReceived: pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')

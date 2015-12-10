@@ -27,10 +27,10 @@ PaymentDao.getExtra = function getExtra(params, cb) {
       config.iap = config.iap || '';
       config.sub = config.sub || '';
 
-      config.sms = config.sms.split("\n");
-      config.card = config.card.split("\n");
-      config.iap = config.iap.split("\n");
-      config.sub = config.sub.split("\n");
+      config.sms = config.sms.split("\r\n");
+      config.card = config.card.split("\r\n");
+      config.iap = config.iap.split("\r\n");
+      config.sub = config.sub.split("\r\n");
 
       sdkPromotions.forEach(function(promotion) {
         if (promotion.type && config[promotion.type]) {
@@ -150,7 +150,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
 
       if (vipLevel) rate += (Number(config['vip'+vipLevel] || 0) || 0);
 
-      if (type == consts.TOPUP_TYPE.SMS) {
+      if (type == consts.TOPUP_TYPE.SMS || type == consts.TOPUP_TYPE.IAP) {
         if (todaySms >= 3) rate += (Number(config.sms3) || 0);
         else if (todaySms >= 2) rate += (Number(config.sms2) || 0);
       }
