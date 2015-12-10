@@ -35,6 +35,7 @@ NewsDao.getList = function getList(uid, cate, cb) {
         cate: cate,
         status: 1
       },
+      order: [['updatedAt', 'DESC']],
       limit: NewsDao.CONFIG.LIMIT,
       raw: true
     })

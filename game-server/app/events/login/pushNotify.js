@@ -48,6 +48,7 @@ module.exports.process = function (app, type, param) {
   pomelo.app.get('redisService')
     .hgetallAsync(userNotifyKey)
     .then(function(notify) {
+      if (!notify) return;
       var keys = Object.keys(notify);
       var notifyObj;
       for (var i=0; i<keys.length; i++) {

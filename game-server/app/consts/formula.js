@@ -3,7 +3,7 @@ var lodash = require('lodash');
 var consts = require('./consts');
 var utils = require('../util/utils');
 
-formula.eloArray = [1230,1900,2900];
+formula.eloArray = [1300,1900,2900];
 formula.calEloLevel = function calEloLevel(elo) {
   for (var i=0; i<formula.eloArray.length; i++) {
     if (elo < formula.eloArray[i]) return i;
