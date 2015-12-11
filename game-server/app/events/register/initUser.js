@@ -45,7 +45,7 @@ module.exports.process = function (app, type, param) {
   if (userCount == 1) {
     var globalConfig = app.get('configService').getConfig();
 
-    if (globalConfig.IS_REVIEW && param.platform && param.platform == consts.PLATFORM_ENUM.IOS)
+    if (globalConfig.IS_REVIEW)
       return;
 
     var bonus;
