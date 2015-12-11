@@ -53,6 +53,7 @@ Game.prototype.init = function () {
   if (color !== consts.COLOR.WHITE){
     this.game.isWhiteTurn = false;
   }
+  this.firstTurn = this.turn;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);

@@ -55,6 +55,7 @@ Game.prototype.init = function () {
   if (color !== consts.COLOR.WHITE){
     this.game.isWhiteTurn = false;
   }
+  this.firstTurn = turnPlayer.uid;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -191,7 +192,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE){
+      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -222,7 +223,7 @@ Game.prototype.finishGame = function (result, uid) {
         toUid = player.uid;
         winUser = player;
         winIndex = i;
-      }else if (res === consts.WIN_TYPE.LOSE){
+      }else if (res === consts.WIN_TYPE.LOSE || res === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -454,7 +455,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 

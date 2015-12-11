@@ -48,6 +48,7 @@ Game.prototype.init = function () {
     var index = Math.round(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  this.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   console.log('Người chơi đi trước : ', turnPlayer.userInfo.username, turnPlayer.color);

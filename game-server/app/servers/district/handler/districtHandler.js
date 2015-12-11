@@ -212,12 +212,14 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
       .then(function (uids) {
         console.log('uids : ', uids);
         var waitingData = {
+          where : {
+            userId: {
+              $in : uids || []
+            }
+          },
           attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
           offset: 0,
-          length: 20,
-          userId: {
-            $in : uids || []
-          }
+          length: 20
         };
         return waitingService.getList(waitingData)
           .then(function (res) {

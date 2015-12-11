@@ -47,7 +47,7 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
-    if (!clearJobReady && !player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
+    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
       if (board.gameId === consts.GAME_ID.CO_THE){
         if (!board.formationMode){
           board.addJobReady(player.uid);
@@ -221,6 +221,9 @@ exp.addEventFromBoard = function (board) {
     }
     if(board.game.actionLog.length > 0){
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
+    }
+    if (board.firstUid !== data[0].uid){
+      data.reverse();
     }
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
     if (winUid) board.game.logs.result['winner'] = winUid;

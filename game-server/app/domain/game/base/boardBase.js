@@ -66,6 +66,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.tax = opts.tax || 5;
   this.tableType = 1; // loại bàn đá;
   this.score = [0,0];
+  this.firstUid = null;
   this.createdTime = Date.now();
   this.jobId = null;
   this.timeStart = Date.now();
@@ -1034,7 +1035,8 @@ pro.cancelJob = function () {
     this.timer.cancelJob(this.jobId);
     this.pushMessage('onTurn', {
       uid : -10,
-      count : 0
+      count : 0,
+      time : [0,0,0]
     })
   }
 };
@@ -1068,7 +1070,7 @@ pro.resetDefault = function () {
   this.tableType = 1;
   this.turnTime = this.turnTimeDefault;
   this.totalTime = this.totalTimeDefault;
-  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null, totalTime : this.totalTime, turnTime : this.turnTime});
+  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null, totalTime : this.totalTime / 1000, turnTime : this.turnTime /1000});
   this.emit('resetDefault');
 };
 
