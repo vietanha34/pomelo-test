@@ -4,10 +4,10 @@ module.exports = {
   PARTNER_ID: 1,
   CHARGE_SECRET_KEY: 'RqSOpZl3XUx5',
   PLATFORM_ENUM : {
-    IOS : 0,
-    ANDROID : 1,
-    WINDOWPHONE : 2,
-    JAVA : 3
+    IOS : 1,
+    ANDROID : 2,
+    WINDOWPHONE : 3,
+    JAVA : 4
   },
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp'],
 

@@ -41,7 +41,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
   var top = {};
   var uids = [];
   var inTop = true;
-  var me = {rank: 1000};
+  var me = {rank: 0};
   var list;
   var statuses;
 
@@ -143,7 +143,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
         .then(function(user) {
           if (user && user[rankAttr])
             me.rank = Number(user[rankAttr]);
-          else me.rank = 1000;
+          else me.rank = 0;
 
           return utils.invokeCallback(cb, null, {list: list, me: me});
         });

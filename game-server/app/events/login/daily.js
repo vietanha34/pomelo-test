@@ -35,6 +35,8 @@ module.exports.process = function (app, type, param) {
   var startOfDay = moment().startOf('day').unix();
   var startOfWeek = moment().startOf('isoweek').unix();
 
+  utils.log('daily', startOfDay, startOfWeek);
+
   UserDao.getUserProperties(param.uid, ['lastLogin'])
     .then(function(user) {
       user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 0;
