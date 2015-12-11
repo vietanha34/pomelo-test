@@ -61,7 +61,8 @@ HomeDao.getHome = function getHome(params, cb) {
     dailyReceived: pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
   })
     .then(function(props) {
-      data.received = Number(props.dailyReceived) || 0;
+      var globalConfig = pomelo.app.get('configService').getConfig();
+      data.received = (globalConfig.IS_REVIEW ? 1 : (props.dailyReceived || 0));
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;

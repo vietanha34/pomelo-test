@@ -31,18 +31,22 @@ module.exports.type = Config.TYPE.LOGIN;
 module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
-  //setTimeout(function(){
-  //  NotifyDao.push({
-  //    type: consts.NOTIFY.TYPE.MARQUEE,
-  //    title: 'Chào mừng!',
-  //    msg: 'Chào mừng bạn đã đến Cờ Thủ phiên bản mới, hấp dẫn hơn!',
-  //    buttonLabel: '',
-  //    command: {target: consts.NOTIFY.TARGET.NORMAL},
-  //    scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-  //    users: [param.uid],
-  //    image:  {id: 0}
-  //  });
-  //}, 3000);
+  var globalConfig = pomelo.app.get('configService').getConfig();
+
+  if (globalConfig.IS_REVIEW) {
+    setTimeout(function () {
+      NotifyDao.push({
+        type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+        title: 'Chào mừng!',
+        msg: 'Chào mừng bạn đã đến Cờ Thủ phiên bản mới!',
+        buttonLabel: 'OK',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+        users: [param.uid],
+        image: {id: 0}
+      });
+    }, 3000);
+  }
 
   var userNotifyKey = redisKeyUtil.getUserNotifyKey(param.uid);
   pomelo.app.get('redisService')
