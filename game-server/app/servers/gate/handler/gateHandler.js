@@ -24,6 +24,9 @@ Handler.prototype.getServer = function (msg, session, next) {
     next(null, utils.getError(Code.GATE.FA_NO_CODE_AVAILABLE));
     return;
   }
+  if (msg.versionCode !== 10122015){
+    next(null, { ec: Code.FAIL, msg : "Chương trình beta cờ thủ đã kết thúc. Bạn có thể cập nhật phần mềm để có những tính năng mới nhất"})
+  }
   var link, type, message;
   var idSession = uuid.v4();
   var key = shortId.generate();

@@ -350,7 +350,6 @@ UserDao.login = function (msg, cb) {
       if (res && !res.ec) {
         console.log('res  typeof : ', typeof res);
         res.uid = res.id;
-        res.gold = 1000000;
         userData = res;
         delete res['id'];
         console.log('res : ', res);
