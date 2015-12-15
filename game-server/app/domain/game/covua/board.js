@@ -49,6 +49,7 @@ Game.prototype.init = function () {
     var index = Math.round(Math.random());
     this.turn = this.playerPlayingId[index];
   }
+  this.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   if(turnPlayer.color !== consts.COLOR.WHITE){
@@ -409,7 +410,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
 };
 

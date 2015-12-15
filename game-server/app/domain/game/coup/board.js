@@ -44,6 +44,7 @@ Game.prototype.init = function () {
   }else {
     this.turn = this.playerPlayingId[index];
   }
+  this.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
@@ -393,7 +394,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
   }
 };
 
@@ -410,12 +411,16 @@ Table.prototype.reset = function () {
   this.game = new Game(this);
 };
 
-Table.prototype.xinThua = function () {
-
-};
-
-Table.prototype.xinHoa = function () {
-
+Table.prototype.joinBoard = function (opts) {
+  var state = Table.super_.prototype.joinBoard.call(this, opts);
+  if (!state.ec){
+    if (this.showKill){
+      state.notifyMsg = 'Cờ úp luật hiện quân ăn'
+    }else {
+      state.notifyMsg = 'Cờ úp luật không hiện quân ăn'
+    }
+  }
+  return state
 };
 
 module.exports = Table;

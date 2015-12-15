@@ -37,15 +37,15 @@ Handler.prototype.getGameLog = function (msg, session, next) {
       gameId = match.info['gameId'];
       var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
       return Promise.map(match.players, function (uid) {
-        return UserDao.getUserAchievementProperties(uid, ['uid', 'avatar', 'fullname', 'exp'], [[eloKey, 'elo']])
+        return UserDao.getUserAchievementProperties(uid, ['uid', 'avatar', 'fullname', 'exp', 'gold'], [[eloKey, 'elo']])
       })
     })
     .then(function (players) {
       for (var i = 0, len = players.length; i< len; i++){
-        players[i]['avatar'] = utils.JSONParse(players['avatar'], {});
-        players[i]['level'] = Formula.calLevel(players['exp']);
-        players[i]['elo'] = players['Achievement.elo'];
-        players[i]['label'] = Formula.calEloLevel(players['Achievement.elo']);
+        players[i]['avatar'] = utils.JSONParse(players[i]['avatar'], {});
+        players[i]['level'] = Formula.calLevel(players[i]['exp']);
+        players[i]['elo'] = players[i]['Achievement.elo'];
+        players[i]['title'] = Formula.calEloLevel(players[i]['Achievement.elo']);
         players[i]['color'] = i ? consts.COLOR.BLACK : consts.COLOR.WHITE;
         delete players[i]['exp'];
         delete players[i]['Achievement.elo'];

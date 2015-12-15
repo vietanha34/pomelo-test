@@ -55,6 +55,7 @@ Game.prototype.init = function () {
   if (color !== consts.COLOR.WHITE){
     this.game.isWhiteTurn = false;
   }
+  this.firstTurn = turnPlayer.uid;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -133,19 +134,41 @@ Game.prototype.progress = function () {
       return this.finishGame(consts.WIN_TYPE.LOSE, this.whiteUid);
     }
   }
-
+  var turn = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   if (gameStatus.matchResult){
     switch (result){
       case consts.WIN_TYPE.WIN:
+        if(turn === this.firstTurn){
+          this.finishGame(result);
+        }else {
+          this.finishGame(consts.WIN_TYPE.LOSE);
+        }
         break;
       case consts.WIN_TYPE.LOSE:
+        if(turn !== this.firstTurn){
+          this.finishGame(result);
+        }else {
+          this.finishGame(consts.WIN_TYPE.WIN);
+        }
         break;
       case consts.WIN_TYPE.DRAW:
+        if (this.win === result){
+          if (turn === this.firstTurn){
+            this.finishGame(consts.WIN_TYPE.WIN);
+          }else {
+            this.finishGame(consts.WIN_TYPE.LOSE)
+          }
+        }else {
+          if (turn === this.firstTurn){
+            this.finishGame(consts.WIN_TYPE.LOSE);
+          }else {
+            this.finishGame(consts.WIN_TYPE.WIN)
+          }
+        }
         break;
       default:
-        break;
+        return this.finishGame(result);
     }
-    return this.finishGame(result);
   }else {
     return this.setOnTurn(gameStatus);
   }
@@ -169,7 +192,7 @@ Game.prototype.finishGame = function (result, uid) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE){
+      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -200,7 +223,7 @@ Game.prototype.finishGame = function (result, uid) {
         toUid = player.uid;
         winUser = player;
         winIndex = i;
-      }else if (res === consts.WIN_TYPE.LOSE){
+      }else if (res === consts.WIN_TYPE.LOSE || res === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -376,6 +399,10 @@ Table.prototype.action = function (uid, opts, cb) {
     }else {
       this.pushMessage('game.gameHandler.action', { move : [opts.move], uid : uid, addLog : gameStatus.movesHistory3});
     }
+    this.game.actionLog.push({
+      move: [opts.move],
+      uid : uid
+    });
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {
@@ -428,7 +455,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
   }
 };
 
@@ -451,6 +478,7 @@ Table.prototype.changeFormation = function (formation, opts) {
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.READY));
     console.log('otherPlayerId : ', otherPlayerUid, otherPlayer.menu);
+    this.addJobReady(otherPlayer.uid);
   }
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
   ownerPlayer.removeMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE);
@@ -460,6 +488,14 @@ Table.prototype.changeFormation = function (formation, opts) {
   var boardState = this.getBoardState();
   boardState.status.formation.change = 1;
   this.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
+};
+
+Table.prototype.joinBoard = function (opts) {
+  var state = Table.super_.prototype.joinBoard.call(this, opts);
+  if(!state.ec && !this.formationMode && state.status && state.status.formation){
+    state.status.formation.change = 1;
+  }
+  return state
 };
 
 Table.prototype.selectFormationMode = function () {
@@ -477,6 +513,7 @@ Table.prototype.selectFormationMode = function () {
     otherPlayer.removeMenu(consts.ACTION.CHANGE_SIDE);
     otherPlayer.removeMenu(consts.ACTION.READY);
   }
+  this.cancelJob();
   // todo push cho người chơi khác biết là chủ bàn đang chọn thế
   return { menu : ownerPlayer.menu };
 };
@@ -494,6 +531,35 @@ Table.prototype.ready = function (uid) {
     player.removeMenu(consts.ACTION.CHANGE_SIDE);
   }
   return { menu : player.menu}
+};
+
+Table.prototype.addJobSelectFormation = function (uid) {
+    var self = this;
+    if (this.jobId){
+      this.timer.cancelJob(this.jobId);
+    }
+    this.pushMessage('onTurn', {
+      uid : uid,
+      count : 0,
+      time : [2 * 60 * 1000, this.totalTime, 2 * 60 * 1000]
+    });
+    this.turnUid = uid;
+    this.jobId = this.timer.addJob(function (uid) {
+      var player = self.players.getPlayer(uid);
+      if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || self.owner !== player.uid){
+        return
+      }
+      self.jobId = null;
+      self.standUp(uid);
+      var state = self.getBoardState(this.owner);
+      self.pushMessageToPlayer(this.owner, 'game.gameHandler.reloadBoard', state);
+      //boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
+      //self.pushStandUp(uid, {
+      //  uid: uid,
+      //  msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
+      //});
+      //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+    }, uid, 2 * 60 * 1000 + 4000);
 };
 
 

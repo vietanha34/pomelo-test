@@ -14,6 +14,7 @@ var lodash = require('lodash');
 var UserDao = require('./userDao');
 var HomeDao = require('./homeDao');
 var NotifyDao = require('./notifyDao');
+var MessageDao = require('./messageDao');
 var request = require('request-promise').defaults({transform: true});
 
 /**
@@ -92,8 +93,14 @@ FriendDao.reject = function reject(fromId, toId, cb) {
         return redis.multi()
           .zrem(fromKey, toId)
           .zrem(toKey, fromId)
+          .lrem(redisKeyUtil.getUserChatLog(fromId), 0, toId)
           .execAsync()
           .then(function() {
+            MessageDao.unCountUnreadMessage({
+              targetType: consts.TARGET_TYPE.PERSON,
+              uid: fromId,
+              fromId: toId
+            });
             return utils.invokeCallback(cb, null, {msg: code.FRIEND_LANGUAGE.UNFRIEND_OK, uid: toId});
           });
       }

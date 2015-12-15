@@ -62,9 +62,9 @@ Player.prototype.reset = function () {
   this.timeDraw = 0; // nước đi xin hoãn;
 };
 
-Player.prototype.genMenu = function (guest) {
+Player.prototype.genMenu = function () {
   Player.super_.prototype.genMenu.call(this);
-  if (!guest){
+  if (!this.guest){
     if (this.table.owner === this.uid){
       if (this.table.formationMode){
         this.removeMenu(consts.ACTION.START_GAME);
@@ -93,9 +93,9 @@ Player.prototype.genMenu = function (guest) {
   }
 };
 
-Player.prototype.genStartMenu = function (guest) {
+Player.prototype.genStartMenu = function () {
   Player.super_.prototype.genStartMenu.call(this);
-  if (!guest){
+  if (!this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }
 };

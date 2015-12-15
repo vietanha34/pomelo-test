@@ -125,6 +125,7 @@ pro.addPlayer = function (opts) {
     data.newPlayer = true;
     data.guest = true;
     result = data;
+    player.genMenu();
   } else {
     var slotIndex = self.getSlotAvailable(slotId, uid);
     if (slotIndex > -1) {

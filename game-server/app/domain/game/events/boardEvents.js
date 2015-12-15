@@ -21,7 +21,7 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} userInfo Đối tượng lưu trữ thông tin người chơi
    * @for BoardBase
    */
-  board.on('joinBoard', function (player, clearJobReady) {
+  board.on('joinBoard', function (player) {
     pomelo.app.get('globalChannelService').add(board.channelName, player.uid, player.userInfo.frontendId);
     pomelo.app.get('statusService').addBoard(player.uid, board.tableId);
     var channel = board.getChannel();
@@ -47,8 +47,16 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
-    if (!clearJobReady && !player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
-      board.addJobReady(player.uid)
+    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
+      if (board.gameId === consts.GAME_ID.CO_THE){
+        if (!board.formationMode){
+          board.addJobReady(player.uid);
+        }else if (board.owner !== player.uid && !player.guest){
+          board.addJobSelectFormation(board.owner);
+        }
+      }else {
+        board.addJobReady(player.uid)
+      }
     }
   });
 
@@ -200,7 +208,7 @@ exp.addEventFromBoard = function (board) {
       if (user.result.type === consts.WIN_TYPE.WIN){
         winUid = user.uid;
         board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
-      }else if (user.result.type === consts.WIN_TYPE.LOSE){
+      }else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP){
         if(!disableLooseUser){
           board.looseUser = user.uid;
         }
@@ -213,6 +221,9 @@ exp.addEventFromBoard = function (board) {
     }
     if(board.game.actionLog.length > 0){
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
+    }
+    if (board.firstUid !== data[0].uid){
+      data.reverse();
     }
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
     if (winUid) board.game.logs.result['winner'] = winUid;

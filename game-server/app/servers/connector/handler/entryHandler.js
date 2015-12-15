@@ -151,14 +151,16 @@ Handler.prototype.login = function (msg, session, next) {
 				type: type,
 				tableId: ''
 			});
-			self.app.get('waitingService').add({
+			var waitingData = {
         username : session.get('username'),
         fullname : session.get('fullname'),
         userId : session.uid,
         gold : session.get('gold'),
-				level: session.get('level'),
+        level: session.get('level'),
         avatar: session.get('avatar')
-      });
+      };
+      console.log('waitingData : ', waitingData);
+			self.app.get('waitingService').add(waitingData);
 		}
     emitData.resume = msg.resume;
     var emitterConfig = self.app.get('emitterConfig');

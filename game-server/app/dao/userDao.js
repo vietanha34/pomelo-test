@@ -342,7 +342,7 @@ UserDao.updateProperties = function (uid, opts, cb) {
 UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
-  var user, created;
+  var user, created, userData;
   var promise =  accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
@@ -350,7 +350,7 @@ UserDao.login = function (msg, cb) {
       if (res && !res.ec) {
         console.log('res  typeof : ', typeof res);
         res.uid = res.id;
-        res.gold = 1000000;
+        userData = res;
         delete res['id'];
         console.log('res : ', res);
         return pomelo.app.get('mysqlClient')
@@ -366,12 +366,22 @@ UserDao.login = function (msg, cb) {
     .spread(function (u, c) {
       user = u;
       created = c;
-      console.log('user : ', u, c);
-      if (created) {
+      if (created) {  
         // TODO push event register
         return accountService.getInitBalance(msg);
       }else {
-        return Promise.resolve()
+        return pomelo.app.get('mysqlClient')
+          .User
+          .update({
+            fullname : userData.fullname,
+            phone: userData.phoneNumber,
+            email: userData.email,
+            birthday : userData.birthday,
+            avatar : userData.avatar ? JSON.stringify({ id : userData.uid, version : userData.avatarVersion}) : null,
+            distributorId : userData.dtId
+          }, {
+            where : { uid : userData.uid}
+          })
       }
     })
     .then(function (balance) {
