@@ -419,10 +419,7 @@ module.exports = {
     REGISTER: 42,
     DAILY: 43,
     LEVEL_UP: 44,
-    ENTER_BOARD: 45,
-    LEAVE_BOARD: 46,
     PLAY_GAME: 47,
-    ADD_BOARD : 48,
     UNKNOWN: 99
   },
 
