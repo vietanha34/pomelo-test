@@ -115,7 +115,7 @@ pro.addBalance = function (opts, cb) {
             , opts: opts
             , cmd: 'addGold'
           };
-          pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
+          pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           return user.updateAttributes({
             gold: user.gold + gold,
             goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
