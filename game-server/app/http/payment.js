@@ -13,8 +13,10 @@ module.exports = function(app) {
     if (!data) return res.json({ ec:0, data: {}, extra: {}}).end();
     UserDao.getUserPropertiesByUsername(data.username, ['uid','distributorId'])
       .then(function(user) {
-        user.username = data.username;
-        user.dtId = user.distributorId;
+        user = user || {};
+        user.uid = user.uid || 1;
+        user.username = data.username || '';
+        user.dtId = user.distributorId || 1;
 
         return [
           PromotionDao.getPromotion(user.uid),
