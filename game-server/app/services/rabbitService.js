@@ -159,13 +159,13 @@ function ProcessTopup(app, msg, numberRetry) {
         }
       ]);
     }
-    var uid;
+    var userId;
     async.waterfall([
       function (done) {
         UserDao.getUserIdByUsername(data.username, done);
       },
-      function (user, done) {
-        uid = user.uid;
+      function (uid, done) {
+        userId = uid;
         if (!uid) {
           data.msg = 'uid not found';
           logging(data, false);
@@ -181,7 +181,7 @@ function ProcessTopup(app, msg, numberRetry) {
         PaymentDao.getPromotionByType(uid, type, function (err, myPromotion) {
           logger.info('myPromotion: ', myPromotion);
           var rate = myPromotion || 0;
-          done(null, uid, rate);
+          done(null, userId, rate);
         });
       },
       function (uid, bonusPercent, done) {
@@ -209,14 +209,14 @@ function ProcessTopup(app, msg, numberRetry) {
         msg: 'Bạn vừa nạp thành công ' + data.promotionMoney + ' vàng',
         buttonLabel: 'OK',
         scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-        users: [uid],
+        users: [userId],
         gold: results.gold,
         image:  consts.NOTIFY.IMAGE.GOLD
       });
 
       var emitterConfig = pomelo.app.get('emitterConfig');
       pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.TOPUP, {
-        uid: uid,
+        uid: userId,
         topupType: data.methodType,
         money: data.money,
         gold: data.promotionMoney,
