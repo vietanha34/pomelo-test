@@ -381,7 +381,7 @@ UserDao.login = function (msg, cb) {
             phone: userData.phoneNumber,
             email: userData.email,
             birthday : userData.birthday,
-            avatar : userData.avatar ? JSON.stringify({ id : userData.uid, version : userData.avatarVersion}) : null,
+            avatar : u.avatar ? u.avatar : userData.avatar ? JSON.stringify({ id : userData.uid, version : userData.avatarVersion}) : null,
             distributorId : userData.dtId
           }, {
             where : { uid : userData.uid}

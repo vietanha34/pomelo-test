@@ -18,7 +18,7 @@
     "pomelo-board-plugin": "git+ssh://git@git.vgame.us:root/pomelo-board-plugin.git",
     "pomelo-data-plugin": "*",
     "pomelo-event-plugin": "git+ssh://git@git.vgame.us:root/pomelo-event-plugin.git",
-    "pomelo-globalChannel-plugin": "git+ssh://git@git.vgame.us:root/pomelo-globalchannel-plugin.git",
+    "pomelo-globalchannel-plugin": "git+ssh://git@git.vgame.us:root/pomelo-globalchannel-plugin.git",
     "pomelo-loader": ">=0.0.6",
     "pomelo-logger": "0.1.6",
     "pomelo-notifysms-plugin": "git+ssh://git@git.vgame.us:root/pomelo-notifysms-plugin.git",

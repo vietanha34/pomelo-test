@@ -7,6 +7,7 @@ var code = require('../consts/code');
 var PromotionDao = require('../dao/paymentDao');
 var UserDao = require('../dao/userDao');
 var Promise = require('bluebird');
+var pomelo = require('pomelo');
 
 module.exports = function(app) {
   app.post('/payment/promotion', function(req, res) {
@@ -38,9 +39,10 @@ module.exports = function(app) {
     if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
     UserDao.getUserIdByUsername(data.uname)
       .then(function (uid) {
-        return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid)
+        return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid, null)
       })
       .then(function (status) {
+        console.log('status : ', status);
         if (status.online) {
           return Promise.reject({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới'})
         } else {
@@ -54,6 +56,7 @@ module.exports = function(app) {
         return res.json(result).end();
       })
       .catch(function (err) {
+        console.error(err);
         res.json({msg: err.msg || 'có lỗi xảy ra', code : err.code || 99}).end()
       })
       .finally(function () {
