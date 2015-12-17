@@ -199,7 +199,7 @@ function ProcessTopup(app, msg, numberRetry) {
       }
     ], function (err, results) {
       if (err) {
-        logger.error("message : %s , stack : %s ", err.message, err.stack||e);
+        logger.error("message : %s , stack : %s ", err.message, err.stack||err);
         return logging(data, false);
       }
 
