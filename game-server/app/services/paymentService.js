@@ -70,7 +70,6 @@ pro.subBalance = function (opts) {
           }, {transaction: t});
         }
       })
-      .cancellable()
     })
     .then(function (results) {
       return Promises.resolve({ec: Code.OK, gold: goldAfter, subGold: goldSub})
@@ -122,7 +121,6 @@ pro.addBalance = function (opts, cb) {
           }, {transaction: t})
         }
       })
-      .cancellable();
   })
     .then(function () {
       if (opts.resultLogs && opts.resultLogs.length >= 1) {

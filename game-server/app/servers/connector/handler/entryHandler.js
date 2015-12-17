@@ -60,6 +60,8 @@ Handler.prototype.login = function (msg, session, next) {
 	var player, boardId;
   var type = msg.type;
 	var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
+  msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
+  var version = '' + msg.versionCode.slice(4,10) + msg.versionCode.slice(2,4) + msg.versionCode.slice(0,2);
 	msg.ip = loginIp;
 	var maintenance = this.app.get('maintenance');
 	async.waterfall([
@@ -98,6 +100,7 @@ Handler.prototype.login = function (msg, session, next) {
 			session.set('avatar', player.avatar);
       session.set('effect', items);
 			session.set('platform', msg.platform);
+      session.set('version', version);
 			session.on('closed', onUserLeave.bind(null, self.app));
 			session.pushAll(done)
 		}

@@ -24,7 +24,9 @@ Handler.prototype.getServer = function (msg, session, next) {
     next(null, utils.getError(Code.GATE.FA_NO_CODE_AVAILABLE));
     return;
   }
-  if (msg.versionCode !== 10122015){
+  msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
+  var version = '' + msg.versionCode.slice(4,10) + msg.versionCode.slice(2,4) + msg.versionCode.slice(0,2);
+  if (version < '20151210' && this.app.get('beta')){
     next(null, { ec: Code.FAIL, msg : "Chương trình beta cờ thủ đã kết thúc. Bạn có thể cập nhật phần mềm để có những tính năng mới nhất"})
   }
   var link, type, message;

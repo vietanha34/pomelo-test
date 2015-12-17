@@ -88,22 +88,6 @@ pro.standUp = function (msg, session, next) {
     });
     return
   }
-  var uid = session.uid;
-
-  if (msg.confirm && board.status !== consts.BOARD_STATUS.NOT_STARTED && board.players.availablePlayer.indexOf(uid) > -1) {
-    var checkLeaveBoard = board.checkLeaveBoard(uid);
-    if (checkLeaveBoard) {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, checkLeaveBoard);
-      return
-    }
-    var moneyPunish = board.getPunishMoney(uid);
-    if (moneyPunish) {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm: utils.getMessage(Code.ON_GAME.FA_STAND_UP_WITH_MONEY, [moneyPunish])});
-    } else {
-      messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {confirm: Code.ON_GAME.FA_STAND_UP});
-    }
-    return
-  }
 
   var res = board.standUp(session.uid);
   if (res && res.ec) {
@@ -386,6 +370,7 @@ pro.action = function (msg, session, next) {
     return next(null);
   }
   return board.action(uid, msg, function (err, res) {
+    console.log('boardAction : ', res);
     if (err) {
       console.log(err);
       board.pushMessageToPlayer(uid, route, utils.getError(Code.FAIL));

@@ -39,6 +39,7 @@ function Game(table, opts) {
   this.formationName = opts.name;
   this.win = opts.win;
   this.previousMove = null;
+  this.gameStatus = this.game.getBoardStatus();
 }
 
 Game.prototype.close = function () {
@@ -74,8 +75,8 @@ Game.prototype.init = function () {
   }
   this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   this.table.emit('startGame', this.playerPlayingId);
-  var gameStatus = this.game.getBoardStatus();
-  this.setOnTurn(gameStatus);
+  this.gameStatus = this.game.getBoardStatus();
+  this.setOnTurn(this.gameStatus);
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
@@ -98,8 +99,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
       notifyMsg = 'Bạn đuổi dai thêm một nước nữa sẽ bị xử thua';
     } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && gameStatus.warnings.sapBiChieuHet) {
       notifyMsg = 'Bạn đuổi dai thêm một nước nữa, ván đấu sẽ được xử hoà';
-    } else if (gameStatus.warnings.khongTienTrien >= 34) {
-      notifyMsg = 'Còn vài nước nữa. Nếu không tiến triển, ván đấu sẽ bị xử hoà'
     }
   }
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
@@ -120,7 +119,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 
 Game.prototype.progress = function () {
-  var gameStatus = this.game.getBoardStatus();
+  var gameStatus = this.gameStatus;
   var result = gameStatus.matchResult === 'thuaRoi'
     ? consts.WIN_TYPE.LOSE
     : gameStatus.matchResult === 'thangRoi'
@@ -311,7 +310,7 @@ Table.prototype.pushFinishGame = function (msg, finish) {
 
 Table.prototype.getStatus = function (uid) {
   var status = Table.super_.prototype.getStatus.call(this);
-  var boardStatus = this.game.game.getBoardStatus();
+  var boardStatus = this.game.gameStatus;
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove || undefined;
   status.isCheck = boardStatus.checkInfo.isKingInCheck
@@ -327,6 +326,7 @@ Table.prototype.getStatus = function (uid) {
   status.formation = {
     name : this.game.formationName,
     maxMove : this.game.maxMove - Math.ceil(this.game.numMove / 2),
+    maxDefMove : this.game.maxMove,
     id : this.game.id,
     total : 129,
     status : this.formationMode
@@ -389,9 +389,10 @@ Table.prototype.action = function (uid, opts, cb) {
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }
-    var gameStatus = this.game.game.getBoardStatus();
     var player = this.players.getPlayer(uid);
     var result = player.move();
+    this.game.gameStatus = this.game.game.getBoardStatus();
+    var gameStatus = this.game.gameStatus;
     if (result){
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, uid : uid, addLog : gameStatus.movesHistory3});
@@ -477,7 +478,6 @@ Table.prototype.changeFormation = function (formation, opts) {
   if (otherPlayer) {
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.READY));
-    console.log('otherPlayerId : ', otherPlayerUid, otherPlayer.menu);
     this.addJobReady(otherPlayer.uid);
   }
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
@@ -487,6 +487,7 @@ Table.prototype.changeFormation = function (formation, opts) {
   this.players.unReadyAll();
   var boardState = this.getBoardState();
   boardState.status.formation.change = 1;
+  this.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
   this.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
 };
 
@@ -512,6 +513,7 @@ Table.prototype.selectFormationMode = function () {
   if (otherPlayer) {
     otherPlayer.removeMenu(consts.ACTION.CHANGE_SIDE);
     otherPlayer.removeMenu(consts.ACTION.READY);
+    this.pushMessageToPlayer(otherPlayer.uid, "undefined", { menu : otherPlayer.menu})
   }
   this.cancelJob();
   // todo push cho người chơi khác biết là chủ bàn đang chọn thế
@@ -531,6 +533,26 @@ Table.prototype.ready = function (uid) {
     player.removeMenu(consts.ACTION.CHANGE_SIDE);
   }
   return { menu : player.menu}
+};
+
+Table.prototype.standUp = function (uid) {
+  var currentOwner = this.owner;
+  var result = Table.super_.prototype.standUp.call(this, uid);
+  if (currentOwner === uid && this.formationMode && this.owner != uid){
+    this.pushMessageToPlayer(this.owner,  'game.gameHandler.changeFormationMode', {})
+  }
+  return result
+};
+
+Table.prototype.leaveBoard = function (uid) {
+  var currentOwner = this.owner;
+  var result = Table.super_.prototype.leaveBoard.call(this, uid);
+  if (result && !result.ec){
+    if (currentOwner === uid && this.formationMode && this.owner !== uid){
+      this.pushMessageToPlayer(this.owner,  'game.gameHandler.changeFormationMode', {})
+    }
+  }
+  return result
 };
 
 Table.prototype.addJobSelectFormation = function (uid) {
@@ -553,12 +575,6 @@ Table.prototype.addJobSelectFormation = function (uid) {
       self.standUp(uid);
       var state = self.getBoardState(this.owner);
       self.pushMessageToPlayer(this.owner, 'game.gameHandler.reloadBoard', state);
-      //boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
-      //self.pushStandUp(uid, {
-      //  uid: uid,
-      //  msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
-      //});
-      //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
     }, uid, 2 * 60 * 1000 + 4000);
 };
 

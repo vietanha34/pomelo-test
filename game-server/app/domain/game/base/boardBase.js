@@ -179,15 +179,19 @@ var Board = function (opts, PlayerPool, Player) {
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
         if (!color){ // color === 0
           changed.push(' đổi bên');
-          if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
-          player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+          if (!self.formationMode){
+            if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+            player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+            dataChanged.color = player.color;
+            self.score.reverse();
+          }
         }else {
           changed.push(' đổi màu quân');
           player.color = color;
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+          dataChanged.color = player.color;
+          self.score.reverse();
         }
-        dataChanged.color = player.color;
-        self.score.reverse();
       }
       return done(null, properties, dataChanged, dataUpdate, changed);
     }
@@ -494,7 +498,11 @@ pro.joinBoard = function (opts) {
   var uid = userInfo.uid;
   var self = this;
   if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
-    return utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
+    var err = utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
+    err.tableId = this.tableId;
+    err.gameId = this.gameId;
+    err.roomId = this.roomId ;
+    return err;
   }
   var result = this.players.addPlayer(opts);
   if (result.ec == Code.OK) {
@@ -660,6 +668,9 @@ pro.standUp = function (uid) {
   //if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now() && !force && this.players.availablePlayer.indexOf(uid) > -1) {
   //  return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000) + 1])
   //}
+  if (typeof self.clearPlayer == 'function') {
+    self.clearPlayer(uid);
+  }
   var player = self.players.getPlayer(uid);
   if (player) {
     player.reset();

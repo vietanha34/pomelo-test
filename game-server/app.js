@@ -104,6 +104,10 @@ app.configure('production|development|local', function () {
   }
 });
 
+app.configure('production', function () {
+  app.set('beta', true);
+});
+
 // app configuration
 app.configure('production|development', 'connector|gate', function(){
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');

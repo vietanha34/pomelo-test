@@ -287,7 +287,11 @@ UserDao.getUserIdByUsername = function (username, cb) {
       raw: true
     })
     .then(function(user) {
-      return utils.invokeCallback(cb, null, user);
+      if (user){
+        return utils.invokeCallback(cb, null, user.uid);
+      }else {
+        return utils.invokeCallback(cb, {msg : "Không tìm thấy người chơi"})
+      }
     });
 };
 
@@ -409,6 +413,13 @@ UserDao.login = function (msg, cb) {
       return utils.invokeCallback(cb, err);
     });
     return promise
+};
+
+UserDao.loginWithUsername = function (msg, cb) {
+  return pomelo
+    .app
+    .get('accountService')
+    .loginWithUsername(msg)
 };
 
 var findFullnameAvailable = function (fullname, num) {

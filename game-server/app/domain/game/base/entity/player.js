@@ -129,7 +129,6 @@ Player.prototype.clearOwner = function () {
  * @returns {{username: *, uid: *, level: *, money: *, status: *, avartarid: (*|number)}}
  */
 Player.prototype.getState = function (uid) {
-  console.log('totalTime : ', this.totalTime);
   return {
     fullname : this.userInfo.fullname,
     uid : this.uid,
@@ -281,7 +280,7 @@ Player.prototype.startGame = function () {
 
 Player.prototype.unReady = function () {
   this.ready = false;
-  this.pushMenu(this.table.genMenu(consts.ACTION.READY))
+  this.genMenu();
 };
 
 module.exports = Player;

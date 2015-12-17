@@ -61,7 +61,8 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         user.elo = user['Achievement.elo'];
         user.level = Formula.calLevel(user.exp) || 0;
         user.frontendId = session.frontendId;
-        whereClause['level'] = {
+        user.version = session.get('version');
+          whereClause['level'] = {
           $lte : user.level
         };
         whereClause['bet'] = {
@@ -112,7 +113,6 @@ Handler.prototype.quickPlay = function (msg, session, next) {
 };
 
 Handler.prototype.joinBoard = function (msg, session, next) {
-  console.log('msg : ', msg);
   var uid = session.uid;
   var tableId = msg.tableId;
   var maintenance = this.app.get('maintenance');
@@ -134,7 +134,6 @@ Handler.prototype.joinBoard = function (msg, session, next) {
   async.waterfall([
     function (done) {
       // TODO get userInfo
-      //userDao.getUserProperties(uid, consts.JOIN_BOARD_PROPERTIES, done);
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
     },
     function (userInfo, done) {
@@ -148,6 +147,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           sex: userInfo.sex,
           avatar: userInfo.avatar,
           elo : userInfo['Achievement.elo'] || 0,
+          version : session.get('version'),
           frontendId: session.frontendId
         };
         self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)

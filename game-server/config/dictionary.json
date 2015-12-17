@@ -132,5 +132,6 @@
   "onNotify" : 210,
   "onMission" : 211,
   "onMarquee" : 212,
-  "onUpdateGuest" : 213
+  "onUpdateGuest" : 213,
+  "undefined" : 10000
 }
