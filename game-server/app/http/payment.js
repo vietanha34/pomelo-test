@@ -8,14 +8,16 @@ var PromotionDao = require('../dao/paymentDao');
 var UserDao = require('../dao/userDao');
 var Promise = require('bluebird');
 
-module.exports = function (app) {
-  app.post('/payment/promotion', function (req, res) {
+module.exports = function(app) {
+  app.post('/payment/promotion', function(req, res) {
     var data = utils.JSONParse(req.body.data);
-    if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-    UserDao.getUserPropertiesByUsername(data.username, ['uid', 'distributorId'])
-      .then(function (user) {
-        user.username = data.username;
-        user.dtId = user.distributorId;
+    if (!data) return res.json({ ec:0, data: {}, extra: {}}).end();
+    UserDao.getUserPropertiesByUsername(data.username, ['uid','distributorId'])
+      .then(function(user) {
+        user = user || {};
+        user.uid = user.uid || 1;
+        user.username = data.username || '';
+        user.dtId = user.distributorId || 1;
 
         return [
           PromotionDao.getPromotion(user.uid),

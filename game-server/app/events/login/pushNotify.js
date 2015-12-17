@@ -49,7 +49,7 @@ module.exports.process = function (app, type, param) {
   }
 
   var userNotifyKey = redisKeyUtil.getUserNotifyKey(param.uid);
-  pomelo.app.get('redisService')
+  pomelo.app.get('redisCache')
     .hgetallAsync(userNotifyKey)
     .then(function(notify) {
       if (!notify) return;

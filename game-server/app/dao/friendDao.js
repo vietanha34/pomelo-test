@@ -28,7 +28,7 @@ FriendDao.request = function request(fromId, toId, cb) {
     return utils.invokeCallback(cb, 'invalid params friend request');
   }
 
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   var fromKey = redisKeyUtil.getPlayerFriendKey(fromId);
   var toKey = redisKeyUtil.getPlayerFriendKey(toId);
 
@@ -83,7 +83,7 @@ FriendDao.reject = function reject(fromId, toId, cb) {
     return utils.invokeCallback(cb, 'invalid params friend reject');
   }
 
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   var fromKey = redisKeyUtil.getPlayerFriendKey(fromId);
   var toKey = redisKeyUtil.getPlayerFriendKey(toId);
 
@@ -126,7 +126,7 @@ FriendDao.checkFriendStatus = function checkFriendStatus(fromId, toId, cb) {
     return utils.invokeCallback(cb, 'invalid params checkFriendStatus');
   }
 
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   var fromKey = redisKeyUtil.getPlayerFriendKey(fromId);
   return redis.zscoreAsync(fromKey, toId)
     .then(function(score) {
@@ -145,7 +145,7 @@ FriendDao.checkFriendStatus = function checkFriendStatus(fromId, toId, cb) {
  * @param cb
  */
 FriendDao.getFriendList = function getFriendList(uid, limit, cb) {
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   limit = limit || consts.MAX_FRIEND;
   var friendKey = redisKeyUtil.getPlayerFriendKey(uid);
   var params = [friendKey, code.FRIEND_STATUS.FRIEND, code.FRIEND_STATUS.FRIEND, 'LIMIT', 0, limit];
@@ -169,7 +169,7 @@ FriendDao.getFriendList = function getFriendList(uid, limit, cb) {
  * @param cb
  */
 FriendDao.getFullList = function getFullList(uid, limit, cb) {
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   limit = limit || (consts.MAX_FRIEND);
   var friendKey = redisKeyUtil.getPlayerFriendKey(uid);
   var params = [friendKey, 0, limit, 'WITHSCORES'];

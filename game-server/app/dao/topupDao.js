@@ -71,7 +71,7 @@ TopupDao.pushGoldAward = function pushGoldAward(params, cb) {
 
   var packageId = params.type+':'+Date.now()+lodash.random(0,1000);
 
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
   return redis.hsetAsync(redisKeyUtil.getUserGoldKey(params.uid), packageId, params.gold)
     .then(function(){
       return NotifyDao.push({
@@ -112,7 +112,7 @@ TopupDao.getGoldAward = function getGoldAward(uid, packageId, cb) {
     return utils.invokeCallback(cb, 'invalid params getGoldAward')
   }
 
-  var redis = pomelo.app.get('redisService');
+  var redis = pomelo.app.get('redisCache');
 
   return redis.hgetAsync(redisKeyUtil.getUserGoldKey(uid), packageId)
     .then(function(gold){
