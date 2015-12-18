@@ -142,8 +142,7 @@ function ProcessTopup(app, msg, numberRetry) {
         function (done) {
           UserDao.getUserIdByUsername(data.username, done);
         },
-        function (user, done) {
-          var uid = user.uid;
+        function (uid, done) {
           if (uid) {
             NotifyDao.push({
               type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
