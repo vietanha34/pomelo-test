@@ -45,34 +45,33 @@ module.exports.process = function (app, type, param) {
   if (userCount == 1) {
     var globalConfig = app.get('configService').getConfig();
 
-    if (globalConfig.IS_REVIEW)
-      return;
+    if (!globalConfig.IS_REVIEW) {
+      var bonus;
+      switch (param.type) {
+        case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
+          bonus = globalConfig.FB_GOLD || 0;
+          break;
+        case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
+          bonus = globalConfig.USER_GOLD || 0;
+          break;
+        default :
+          bonus = globalConfig.USER_GOLD || 0;
+          break;
+      }
 
-    var bonus;
-    switch (param.type) {
-      case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
-        bonus = globalConfig.FB_GOLD || 0;
-        break;
-      case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
-        bonus = globalConfig.USER_GOLD || 0;
-        break;
-      default :
-        bonus = globalConfig.USER_GOLD || 0;
-        break;
-    }
-
-    if (bonus) {
-      setTimeout(function () {
-        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14*1440));
-        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14*1440));
-        TopupDao.pushGoldAward({
-          uid: param.uid,
-          type: 'REGISTER',
-          gold: bonus,
-          msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
-          title: code.REGISTER_LANGUAGE.BONUS_TITLE
-        })
-      }, 2500);
+      if (bonus) {
+        setTimeout(function () {
+          ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14 * 1440));
+          ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
+          TopupDao.pushGoldAward({
+            uid: param.uid,
+            type: 'REGISTER',
+            gold: bonus,
+            msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
+            title: code.REGISTER_LANGUAGE.BONUS_TITLE
+          })
+        }, 2500);
+      }
     }
   }
 
