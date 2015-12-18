@@ -43,7 +43,7 @@ pro.subBalance = function (opts) {
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
-      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame']}, {transaction: t})
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return Promises.reject({ec: Code.USER_NOT_EXIST});
@@ -63,10 +63,10 @@ pro.subBalance = function (opts) {
             , opts: opts
             , cmd: 'subGold'
           };
+          console.log('user.gold : ', user.gold -gold);
           pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           return user.updateAttributes({
-            gold: user.gold - gold,
-            goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.ADD_BOARD ? user.goldInGame + gold : user.goldInGame
+            gold: user.gold - gold
           }, {transaction: t});
         }
       })

@@ -69,16 +69,20 @@
       {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
     ],
     "district" : [
-      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
+      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
+      {"id": "district-server-2", "host" : "127.0.0.1", "port" : 3651}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
+      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
+      {"id": "manager-server-2", "host" : "127.0.0.1", "port" : 3751}
     ],
     "event" : [
-      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960}
+      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960},
+      {"id" : "event-server-2", "host" : "127.0.0.1", "port" : 3961}
     ],
     "service" : [
-      {"id" : "service-server-1", "host" : "127.0.0.1", "port" : 3950}
+      {"id" : "service-server-1", "host" : "127.0.0.1", "port" : 3950},
+      {"id" : "service-server-2", "host" : "127.0.0.1", "port" : 3951}
     ],
     "worker" : [
       {"id": "worker-server-1", "host" : "127.0.0.1", "port" : 3760}
