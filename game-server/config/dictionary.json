@@ -23,10 +23,11 @@
   "district.districtHandler.leaveBoard" : 32,
   "game.gameHandler.reloadBoard" : 33,
   "service.missionHandler.getMissionsGlobal" : 40,
-  "service.missionHandler.doMissionGlobal" : 41,
+  "service.missionHandler.doMission" : 41,
   "service.missionHandler.getAwardGlobal" : 42,
   "service.missionHandler.getMissions" : 43,
   "service.missionHandler.getAward" : 44,
+  "service.missionHandler.inviteSocial" : 166,
   "game.gameHandler.standUp" : 50,
   "game.gameHandler.changeBoardProperties" : 51,
   "game.gameHandler.ready" : 52,
@@ -113,7 +114,6 @@
   "service.newsHandler.getList" : 161,
   "service.newsHandler.getNewsByCate" : 162,
   "service.friendHandler.getRemainInvite" : 165,
-  "service.friendHandler.inviteSocial" : 166,
   "service.friendHandler.unFriend" : 170,
   "service.topHandler.getTop" : 171,
   "service.paymentHandler.getPaymentMethod" : 150,
@@ -132,5 +132,6 @@
   "onNotify" : 210,
   "onMission" : 211,
   "onMarquee" : 212,
-  "onUpdateGuest" : 213
+  "onUpdateGuest" : 213,
+  "undefined" : 10000
 }
