@@ -8,6 +8,7 @@
 
 var utils = require('../util/utils');
 var code = require('../consts/code');
+var consts = require('../consts/consts');
 var PromotionDao = require('../dao/paymentDao');
 var UserDao = require('../dao/userDao');
 var Promise = require('bluebird');
@@ -47,10 +48,59 @@ module.exports = function(app) {
 
   app.get('/experience', function (req, res) {
     var data = req.query;
-    if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-    var gameId = data.game_id;
+    if (!data || !data.uname || !data.game_id)
+      return res.json({ec: 99, data: {}, message: "tham số không đúng"}).end();
     var username = data.uname;
-    return UserDao.getUserPropertiesByUsername(username, [''])
+    var gameId = consts.MAP_GAME_ID_OLD_VERSION[data.game_id] || 1;
+
+    var gameName = (consts.UMAP_GAME_NAME[gameId] || 'tuong');
+    var attr = gameName + 'Elo';
+    var Achievement = pomelo.app.get('mysqlClient').Achievement;
+    var uid, exp, elo;
+
+    return UserDao.getUserPropertiesByUsername(username, ['uid','exp'])
+      .then(function(user) {
+        if (!user || !user.uid) {
+          throw new Error('user không tồn tại');
+        }
+
+        uid = user.uid;
+        exp = user.exp;
+
+        return Achievement
+          .findOne({
+            where: {uid: uid},
+            attributes: ['uid', attr, gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']
+          });
+      })
+      .then(function(achievement) {
+        var operators = [UserDao.updateProperties(uid, {exp: Number(exp + (Number(data.xp) || 0))})];
+
+        if (achievement) {
+          achievement[attr] += (Number(data.elo) || 0);
+          achievement[gameName + 'Win'] += (Number(data.win) || 0);
+          achievement[gameName + 'Lose'] += (Number(data.lose) || 0);
+          achievement[gameName + 'Draw'] += (Number(data.draw) || 0);
+          achievement[gameName + 'GiveUp'] += (Number(data.giveup) || 0);
+
+          elo = Number(achievement[attr]);
+          operators.push(achievement.save());
+        }
+
+        return Promise.all(operators);
+      })
+      .spread(function(r1, r2) {
+        //var update = {};
+        //update[gameName] = elo;
+        return res.json({ec: 0, data: "", message: "cập nhật thành công"}).end();
+      })
+      .catch(function (err) {
+        console.log('err : ', err);
+        res.json({message: err.message || 'có lỗi xảy ra', code : 99}).end()
+      })
+      .finally(function () {
+
+      })
   });
 
   app.get('/bank', function (req, res) {
