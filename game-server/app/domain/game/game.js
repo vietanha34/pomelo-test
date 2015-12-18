@@ -119,7 +119,7 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
   return pomelo.app.get('boardService')
     .addRoom(opts)
     .then(function () {
-      for (var i = 1; i <= 72; i++) {
+      for (var i = 1; i <= 51; i++) {
         var opts = utils.clone(hallConfig);
         if (hallId === consts.HALL_ID.LIET_CHAP){
           opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];

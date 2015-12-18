@@ -104,6 +104,10 @@ app.configure('production|development|local', function () {
   }
 });
 
+app.configure('production', function () {
+  app.set('beta', true);
+});
+
 // app configuration
 app.configure('production|development', 'connector|gate', function(){
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');
@@ -198,7 +202,7 @@ app.configure('production|development', 'chat|game', function () {
   app.set('chatService', new ChatService(app));
 });
 
-app.configure('production|development', 'manager|game|service|event', function () {
+app.configure('production|development', 'manager|game|service|event|worker|http', function () {
   var PaymentService = require('./app/services/paymentService');
   var paymentService = new PaymentService(app, {});
   app.set('paymentService', paymentService);

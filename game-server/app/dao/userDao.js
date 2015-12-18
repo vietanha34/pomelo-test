@@ -233,7 +233,7 @@ UserDao.getUserAchievementProperties = function (uid, properties, achiProperties
       attributes: properties,
       include: [{
         model: pomelo.app.get('mysqlClient').Achievement,
-        attributes : achiProperties
+        attributes: achiProperties
       }],
       raw: true
     })
@@ -286,8 +286,16 @@ UserDao.getUserIdByUsername = function (username, cb) {
       attributes: ['uid'],
       raw: true
     })
-    .then(function(user) {
-      return utils.invokeCallback(cb, null, user);
+    .then(function (user) {
+      if (user) {
+        return utils.invokeCallback(cb, null, user.uid);
+      } else {
+        return utils.invokeCallback(cb, {
+          msg: "Không tìm thấy người chơi",
+          code: 15,
+          message: "Người chơi không tồn tại"
+        })
+      }
     });
 };
 
@@ -343,7 +351,7 @@ UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
   var user, created, userData;
-  var promise =  accountService
+  var promise = accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
       res = utils.JSONParse(res, {});
@@ -366,40 +374,44 @@ UserDao.login = function (msg, cb) {
     .spread(function (u, c) {
       user = u;
       created = c;
-      if (created) {  
+      if (created) {
         // TODO push event register
         return accountService.getInitBalance(msg);
-      }else {
+      } else {
         return pomelo.app.get('mysqlClient')
           .User
           .update({
-            fullname : userData.fullname,
+            fullname: userData.fullname,
             phone: userData.phoneNumber,
             email: userData.email,
-            birthday : userData.birthday,
-            avatar : userData.avatar ? JSON.stringify({ id : userData.uid, version : userData.avatarVersion}) : null,
-            distributorId : userData.dtId
+            birthday: userData.birthday,
+            avatar: u.avatar ? u.avatar : userData.avatar ? JSON.stringify({
+              id: userData.uid,
+              version: userData.avatarVersion
+            }) : null,
+            distributorId: userData.dtId
           }, {
-            where : { uid : userData.uid}
+            where: {uid: userData.uid}
           })
       }
     })
     .then(function (balance) {
-      if (created){
+      if (created) {
         var emitterConfig = pomelo.app.get('emitterConfig');
         pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
-          uid : user.uid,
-          username : user.username,
-          platform : msg.platform,
-          deviceId : msg.deviceId,
-          version : msg.version,
-          extraData : msg.data,
-          type : user.accountType,
-          ip : msg.ip,
-          userCount : balance ? balance.count || 1 : 1
-        }, function () {});
+          uid: user.uid,
+          username: user.username,
+          platform: msg.platform,
+          deviceId: msg.deviceId,
+          version: msg.version,
+          extraData: msg.data,
+          type: user.accountType,
+          ip: msg.ip,
+          userCount: balance ? balance.count || 1 : 1
+        }, function () {
+        });
         return utils.invokeCallback(cb, null, user);
-      }else {
+      } else {
         return utils.invokeCallback(cb, null, user);
       }
     })
@@ -408,8 +420,164 @@ UserDao.login = function (msg, cb) {
       console.error('err : ', err);
       return utils.invokeCallback(cb, err);
     });
-    return promise
+  return promise
 };
+
+UserDao.loginWithUsername = function (msg, cb) {
+  return Promise.delay(0)
+    .then(function () {
+      return pomelo.app.get('redisInfo')
+        .hgetAsync('cothu:' + msg.username, 'passwd');
+    })
+    .then(function (passwd) {
+      if (passwd) {
+        if (passwd === msg.password) {
+          return utils.invokeCallback(cb, null, {code: 0})
+        } else {
+          return utils.invokeCallback(cb, null, {code: 11, message: "Sai mật khẩu", data: {}})
+        }
+      } else {
+        return pomelo
+          .app
+          .get('accountService')
+          .loginWithUsername(msg)
+      }
+    })
+    .then(function (result) {
+      console.log('result accountService : ', result);
+      if (result) {
+        if (!result.code) {
+          pomelo.app.get('redisInfo')
+            .hmset('cothu:' + msg.username, {passwd: msg.password});
+        }
+        return utils.invokeCallback(cb, null, result)
+      }
+    })
+    .catch(function (err) {
+      console.log('err : ', err);
+      return utils.invokeCallback(cb, null, {code: 99, msg: 'Có lỗi xảy ra'});
+    })
+};
+
+UserDao.changePassword = function (msg, cb) {
+
+};
+
+UserDao.loginViaApp = function (msg, cb) {
+  return pomelo
+    .app
+    .get('accountService')
+    .loginViaApp({
+      data : msg.data,
+      spId : msg.spid,
+      dtId : msg.dtId,
+      deviceId : msg.deviceId,
+      ip : msg.ip,
+      platform: msg.platform
+    })
+    .then(function (result) {
+      console.log('loginViaApp result : ', result );
+      if (result && !result.code){
+        return pomelo
+          .app.get('mysqlClient')
+          .User
+          .findOrCreate({where: {uid: result.extra.userId}, raw: true, defaults: {
+            uid: result.extra.userId,
+            username : result.extra.username,
+            fullname: result.extra.username,
+            phone: msg.phone || '',
+            email: msg.email || '',
+            avatar: null,
+            accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
+            distributorId: msg.dtid || 1
+          }})
+          .spread(function (user, created) {
+            var firstLogin = 0;
+            if (created){
+              var emitterConfig = pomelo.app.get('emitterConfig');
+              pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
+                uid: user.uid,
+                username: user.username,
+                platform: msg.platform,
+                deviceId: msg.deviceid,
+                version: msg.version,
+                extraData: msg.data,
+                type: user.accountType,
+                ip: msg.ip,
+                userCount: 1
+              }, function () {
+              });
+              firstLogin = 1;
+            }
+            return utils.invokeCallback(cb, null, {code : 0, message: '', data: {}, extra: { firstLogin : firstLogin}})
+          })
+      }else{
+        return utils.invokeCallback(cb, null, result)
+      }
+    })
+
+};
+
+UserDao.createUser = function (msg, cb) {
+  return pomelo
+    .app
+    .get('accountService')
+    .createUser({
+      username: msg.uname,
+      password: msg.pass,
+      dtId: msg.dtid,
+      spId: msg.spId,
+      gold: msg.money,
+      platform: msg.platform,
+      deviceId: msg.deviceId,
+      email: msg.email,
+      secretKey: 't-$u15zfgi_3&_6ot9+s_-qlcdfon@f7',
+      client_id: 'cothuV2@thudojsc',
+      client_secret: '7r3hEvclrCXYAMzzXI79uyYuahcJhCgNnxmCtPnfalrlYMwDiODGloZoNcOa2IZJre1X9PayYJWqUdQjD5u6qEePDk9TeNw8'
+    })
+    .then(function (result) {
+      if (result) {
+        // result ok -> tạo mới tài khoản
+        return pomelo
+          .app.get('mysqlClient')
+          .User
+          .create({
+            uid: result.userId,
+            username : msg.uname,
+            fullname: msg.uname,
+            phone: msg.phone || '',
+            email: msg.email || '',
+            avatar: null,
+            accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
+            distributorId: msg.dtid || 1
+          });
+      }
+    })
+    .then(function (user) {
+      if (user){
+        var emitterConfig = pomelo.app.get('emitterConfig');
+        pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
+          uid: user.uid,
+          username: user.username,
+          platform: msg.platform,
+          deviceId: msg.deviceid,
+          version: msg.version,
+          extraData: msg.data,
+          type: user.accountType,
+          ip: msg.ip,
+          userCount: 1
+        }, function () {
+        });
+        return utils.invokeCallback(cb, null, {code : 0, message: '', data:{}})
+      }
+    })
+    .catch(function (err) {
+      console.log('err : ', err);
+      return utils.invokeCallback(cb, null, { message: "Không thể tạo mới đc user", code:1, data :''})
+    })
+};
+
+
 
 var findFullnameAvailable = function (fullname, num) {
   num = num || 0;

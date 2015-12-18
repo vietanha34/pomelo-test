@@ -31,6 +31,7 @@ function Game(table) {
   this.legalMoves = {};
   this.isCheck = {};
   this.numMove = 0;
+  this.gameStatus = this.game.getBoardStatus();
   this.previousMove = null;
 }
 
@@ -41,7 +42,6 @@ Game.prototype.close = function () {
 Game.prototype.init = function () {
   var i;
   this.table.timer.stop();
-  //this.game.startGame();
   this.table.status = consts.BOARD_STATUS.PLAY;
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
@@ -72,8 +72,8 @@ Game.prototype.init = function () {
   }
   this.table.pushMessageWithMenu('game.gameHandler.startGame', {color : colorMap});
   this.table.emit('startGame', this.playerPlayingId);
-  var gameStatus = this.game.getBoardStatus();
-  this.setOnTurn(gameStatus);
+  this.gameStatus = this.game.getBoardStatus();
+  this.setOnTurn(this.gameStatus);
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
@@ -110,8 +110,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
-  console.log('setOnTurn with turnTime : ', turnTime);
-  console.log('addTurnTime : ', turnTime);
   this.table.jobId = this.table.timer.addJob(function (uid) {
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
   }, turnUid, turnTime + 2000);
@@ -119,14 +117,13 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 
 Game.prototype.progress = function () {
-  var gameStatus = this.game.getBoardStatus();
+  var gameStatus = this.gameStatus;
   if (gameStatus.matchResult){
     var result = gameStatus.matchResult === 'thuaRoi'
       ? consts.WIN_TYPE.LOSE
       : gameStatus.matchResult === 'thangRoi'
         ? consts.WIN_TYPE.WIN
         : consts.WIN_TYPE.DRAW;
-    console.log('gameStatus : ', gameStatus);
     return this.finishGame(result);
   }else {
     return this.setOnTurn(gameStatus);
@@ -257,7 +254,7 @@ Table.prototype.pushFinishGame = function (msg, finish) {
 
 Table.prototype.getStatus = function () {
   var status = Table.super_.prototype.getStatus.call(this);
-  var boardStatus = this.game.game.getBoardStatus();
+  var boardStatus = this.game.gameStatus;
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove || undefined;
   status.isCheck = boardStatus.checkInfo.isKingInCheck
@@ -318,6 +315,7 @@ Table.prototype.action = function (uid, opts, cb) {
       killed : killed ? [[opts.move[1],killed]] : undefined
     };
     var gameStatus = this.game.game.getBoardStatus();
+    this.game.gameStatus = gameStatus;
     var actionResponse = { move : [opts.move], addLog : gameStatus.movesHistory3};
     var actionLog = { move: [opts.move]};
     console.log('makeMoveResult : ', makeMoveResult);

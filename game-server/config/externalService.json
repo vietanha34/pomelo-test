@@ -1,8 +1,8 @@
 {
   "development": {
     "avatarServer": {
-      "url" : "http://stpk.cuamobi.com/upload.php",
-      "secretKey": "pyLzHGQvxOuY"
+      "url": "https://rsct.vgame.us/upload.php",
+      "upload_secret": "sWUYu2RxJ5fw"
     },
     "charge_queue" : {
       "url" : "amqp://10.2.10.19"
@@ -10,6 +10,9 @@
     "account" : {
       "authUrl" : "https://10.2.10.21:443",
       "loginUrl" : "/oauth/token/",
+      "loginWithUser" : "/api/login",
+      "loginViaApp" : "/api/loginViaApp",
+      "createUser" : "/api/signup",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",
       "getGameProfile" : "/api/user/getGameProfile",
@@ -25,8 +28,8 @@
   },
   "production": {
     "avatarServer": {
-      "url" : "http://stpk.cuamobi.com/upload.php",
-      "secretKey": "pyLzHGQvxOuY"
+      "url": "https://rsct.vgame.us/upload.php",
+      "upload_secret": "sWUYu2RxJ5fw"
     },
     "charge_queue" : {
       "url" : "amqp://guest:payrabbit@v!@172.16.20.10"
@@ -34,6 +37,9 @@
     "account" : {
       "authUrl" : "https://10.2.10.21:443",
       "loginUrl" : "/oauth/token/",
+      "loginWithUser" : "/api/login",
+      "loginViaApp" : "/api/loginViaApp",
+      "createUser" : "/api/signup",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",
       "getGameProfile" : "/api/user/getGameProfile",
@@ -53,7 +59,7 @@
       "secretKey": "pyLzHGQvxOuY"
     },
     "account" : {
-      "auth_url" : "https://172.16.20.20:443",
+      "auth_url" : "https://172.16.20.42:443",
       "login_url" : "/oauth/token/",
       "getBalanceInit" : "/api/user/initBalance",
       "playGame" : "/api/user/play",

@@ -1,25 +1,25 @@
 id,gameId,hallId,numRoom,hint,exp,goldMin,goldMax,level
 11,1,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-13,1,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",15,300, 100000,0
-14,1,4,2,"Phòng chơi dành cho các cao thủ",40,1000, 1000000,10
-15,1,5,2,"Khu vực có chức năng liệt/chấp, dành cho các cao thủ",25,1000,50000,3
+13,1,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+14,1,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+15,1,5,2,"Khu vực có chức năng liệt/chấp, dành cho các cao thủ",7,1000,200000,3
 21,2,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-23,2,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",10,300,30000,0
-24,2,4,2,"Phòng chơi dành cho các cao thủ",40,1000,100000,10
-26,2,6,2,"Phòng chơi dành cho các đại cao thủ",80,3000,5000000,15
+23,2,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+24,2,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+26,2,6,2,"Phòng chơi dành cho các đại cao thủ",30,10000,5000000,20
 31,3,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-33,3,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",10,300,30000,0
-34,3,4,2,"Phòng chơi dành cho các cao thủ",40,1000,100000,10
-36,3,6,2,"Phòng chơi dành cho các đại cao thủ",80,3000,5000000,15
+33,3,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+34,3,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+36,3,6,2,"Phòng chơi dành cho các đại cao thủ",30,10000,5000000,20
 41,4,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-43,4,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",10,300,30000,0
-44,4,4,2,"Phòng chơi dành cho các cao thủ",40,1000,100000,10
-46,4,6,2,"Phòng chơi dành cho các đại cao thủ",80,3000,5000000,15
+43,4,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+44,4,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+46,4,6,2,"Phòng chơi dành cho các đại cao thủ",30,10000,5000000,20
 51,5,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-53,5,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",10,300,30000,0
-54,5,4,2,"Phòng chơi dành cho các cao thủ",40,1000,100000,10
-56,5,6,2,"Phòng chơi dành cho các đại cao thủ",80,3000,5000000,15
+53,5,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+54,5,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+56,5,6,2,"Phòng chơi dành cho các đại cao thủ",30,10000,5000000,20
 61,6,1,2,"Khu vực chơi miễn phí dành cho tất cả mọi người và không được tính điểm thưởng",0,0, 0,0
-63,6,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",10,300,30000,0
-64,6,4,2,"Phòng chơi dành cho các cao thủ",40,1000,100000,10
-66,6,6,2,"Phòng chơi dành cho các đại cao thủ",80,3000,5000000,15
+63,6,3,2,"Phòng bình dân nơi các cờ thủ bốn phương tụ họp và giao lưu",5,500, 200000,0
+64,6,4,2,"Phòng chơi dành cho các cao thủ",10,3000, 1000000,10
+66,6,6,2,"Phòng chơi dành cho các đại cao thủ",30,10000,5000000,20

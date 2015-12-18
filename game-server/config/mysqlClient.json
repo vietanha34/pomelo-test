@@ -7,6 +7,7 @@
     "username": "root",
     "password": "Aq2bF8L9JYNY",
     "timezone": "+07:00",
+    "log" : false,
     "pool": {
       "max": 100,
       "min": 0,

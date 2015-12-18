@@ -30,6 +30,7 @@ function Game(table) {
   this.legalMoves = {};
   this.isCheck = {};
   this.numMove = 0;
+  this.gameStatus = this.game.getBoardStatus();
   this.previousMove = null;
 }
 
@@ -51,7 +52,6 @@ Game.prototype.init = function () {
   this.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
-  console.log('Người chơi đi trước : ', turnPlayer.userInfo.username, turnPlayer.color);
   if (turnPlayer.color !== consts.COLOR.WHITE) {
     this.game.isWhiteTurn = false;
   } else {
@@ -97,11 +97,12 @@ Game.prototype.init = function () {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
   }
   this.table.emit('startGame', this.playerPlayingId);
-  var gameStatus = this.game.getBoardStatus();
-  this.setOnTurn(gameStatus);
+  this.gameStatus = this.game.getBoardStatus();
+  this.setOnTurn(this.gameStatus);
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
+  console.log('gameStatus : ', gameStatus);
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
@@ -141,8 +142,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     isCheck: isCheck
   });
   this.table.turnUid = player.uid;
-  console.log('setOnTurn with turnTime : ', turnTime);
-  console.log('addTurnTime : ', turnTime);
+  console.log('addTurnTime : ', turnTime, player.uid);
   this.table.jobId = this.table.timer.addJob(function (uid) {
     console.log('Job finish : ', uid);
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
@@ -151,7 +151,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 
 Game.prototype.progress = function () {
-  var gameStatus = this.game.getBoardStatus();
+  var gameStatus = this.gameStatus;
   if (gameStatus.matchResult) {
     var result = gameStatus.matchResult === 'thuaRoi'
       ? consts.WIN_TYPE.LOSE
@@ -316,7 +316,7 @@ Table.prototype.pushFinishGame = function (msg, finish) {
 
 Table.prototype.getStatus = function () {
   var status = Table.super_.prototype.getStatus.call(this);
-  var boardStatus = this.game.game.getBoardStatus();
+  var boardStatus = this.game.gameStatus;
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove || undefined;
   status.isCheck = boardStatus.checkInfo.isKingInCheck
@@ -385,7 +385,8 @@ Table.prototype.action = function (uid, opts, cb) {
     if (this.jobId) {
       this.timer.cancelJob(this.jobId);
     }
-    var gameStatus = this.game.game.getBoardStatus();
+    this.game.gameStatus = this.game.game.getBoardStatus();
+    var gameStatus = this.game.gameStatus;
     var player = this.players.getPlayer(uid);
     var result = player.move(this.game.numMove);
     if (result) {
@@ -408,7 +409,8 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   } else {
-    return utils.invokeCallback(cb, null, {ec: Code.FAIL})
+    console.log('legalMove : ', legal, opts);
+    return utils.invokeCallback(cb, null, {ec: Code.FAIL, msg : 'Đánh sai'})
   }
 };
 
@@ -450,6 +452,7 @@ Table.prototype.demand = function (opts) {
             isMinus: 1
           });
           this.game.game.takeBack(this.game.previousChange);
+          this.game.gameStatus = this.game.game.getBoardStatus();
           this.game.progress();
           return {};
         }
@@ -524,6 +527,10 @@ Table.prototype.resetDefault = function () {
   Table.super_.prototype.resetDefault.call(this);
   this.lockMode = this.lockModeDefault;
   this.removeMode.splice(0, this.removeMode.length);
+  this.game.game.lockModes = this.lockMode;
+  this.game.game.handicapModes = this.removeMode;
+  this.game.game.turnToMode();
+  this.game.gameStatus = this.game.game.getBoardStatus();
   this.emit('setBoard', {optional : JSON.stringify({lock: this.lockMode || [], remove: []}) });
 };
 
@@ -539,8 +546,8 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
       } else {
         self.game.game.isWhiteTurn = false;
       }
-      console.log('turnToMode : ');
       self.game.game.turnToMode();
+      self.game.gameStatus = self.game.game.getBoardStatus();
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
     }

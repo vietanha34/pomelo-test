@@ -29,6 +29,7 @@ function Game(table) {
   this.whiteUid = null;
   this.playerPlayingId = [];
   this.numMove = 0;
+  this.gameStatus = this.game.getBoardStatus();
 }
 
 Game.prototype.close = function () {
@@ -48,7 +49,6 @@ Game.prototype.init = function () {
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
-  console.log('this.turn : ', this.turn, color);
   if (color !== consts.COLOR.WHITE){
     this.game.isWhiteTurn = false;
   }else {
@@ -71,8 +71,8 @@ Game.prototype.init = function () {
   }
   this.table.emit('startGame', this.playerPlayingId);
   this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
-  var gameStatus = this.game.getBoardStatus();
-  this.setOnTurn(gameStatus);
+  this.gameStatus = this.game.getBoardStatus();
+  this.setOnTurn(this.gameStatus);
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
@@ -117,7 +117,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
 
 
 Game.prototype.progress = function () {
-  var gameStatus = this.game.getBoardStatus();
+  var gameStatus = this.gameStatus;
   if (gameStatus.matchResult){
     var result = gameStatus.matchResult === 'thuaRoi'
       ? consts.WIN_TYPE.LOSE
@@ -270,7 +270,7 @@ Table.prototype.getBoardInfo = function (finish) {
 
 Table.prototype.getStatus = function () {
   var status = Table.super_.prototype.getStatus.call(this);
-  var boardStatus = this.game.game.getBoardStatus();
+  var boardStatus = this.game.gameStatus;
   status.board = boardStatus.piecePositions;
   status.previous = boardStatus.prevMove || undefined;
   status.isCheck = boardStatus.checkInfo.isKingInCheck
@@ -333,6 +333,7 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.game.makeMove(opts.move[0], opts.move[1]);
     this.game.numMove += 1;
     var boardStatus = this.game.game.getBoardStatus();
+    this.game.gameStatus = boardStatus;
     //this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
