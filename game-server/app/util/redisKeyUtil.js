@@ -45,6 +45,11 @@ var USER_EFFECT = 'cothu:user_effect:%d';
 var DAILY_CONFIG = 'cothu:daily_config';
 var PAYMENT_CONFIG = 'cothu:payment_config';
 var USER_CHAT_LOG = 'cothu:{uid}:log';
+var MISSION = 'cothu:mission:%d';
+var ALL_MISSION = 'cothu:all_mission';
+var MISSION_PROGRESS = 'cothu:mission_progress:%d';
+var MISSION_STATUS = 'cothu:mission_status:%d';
+var INVITE_SOCIAL = 'cothu:invite_social:%d';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
@@ -341,4 +346,24 @@ RedisKeyUtil.getDailyConfigKey = function getDailyConfigKey() {
 
 RedisKeyUtil.getPaymentConfigKey = function getDailyConfigKey() {
   return PAYMENT_CONFIG;
+};
+
+RedisKeyUtil.getMissionKey = function getMissionKey(missionId) {
+  return util.format(MISSION, missionId);
+};
+
+RedisKeyUtil.getAllMissionKey = function getAllMissionKey() {
+  return ALL_MISSION;
+};
+
+RedisKeyUtil.getMissionProgressKey = function getMissionProgressKey(uid) {
+  return util.format(MISSION_PROGRESS, uid);
+};
+
+RedisKeyUtil.getMissionStatusKey = function getMissionStatusKey(uid) {
+  return util.format(MISSION_STATUS, uid);
+};
+
+RedisKeyUtil.getInviteSocialKey = function getInviteSocialKey(uid) {
+  return util.format(INVITE_SOCIAL, uid);
 };

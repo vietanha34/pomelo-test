@@ -326,5 +326,10 @@ module.exports = {
   REGISTER_LANGUAGE: {
     BONUS_TITLE: 'Chào mừng bạn đến với game Cờ Thủ',
     BONUS: 'Bạn được tặng %s vàng và 2 tuần sử dụng miễn phí vé phòng thường và vật phẩm luận cờ'
+  },
+
+  MISSION_LANGUAGE: {
+    TITLE: 'Hoàn thành nhiệm vụ',
+    MSG: 'Bạn được cộng %s khi hoàn thành nhiệm vụ "%s"'
   }
 };

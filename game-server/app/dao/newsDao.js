@@ -2,7 +2,6 @@
  * Created by vietanha34 on 9/23/15.
  */
 
-var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
@@ -49,7 +48,7 @@ NewsDao.getList = function getList(uid, cate, cb) {
     .catch(function(e) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
-      return utils.invokeCallback(cb, null, {list: []});
+      return utils.invokeCallback(cb, null, {ec: 0});
     });
 };
 
