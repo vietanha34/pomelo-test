@@ -340,6 +340,28 @@ UserDao.updateProperties = function (uid, opts, cb) {
     })
 };
 
+UserDao.isExist = function (username, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .findOne({
+      where : {
+        username : username
+      },
+      attributes : ['uid'],
+      raw : true
+    })
+    .then(function (user) {
+      if (user){
+        return utils.invokeCallback(cb, null, {userid : user.uid})
+      }else {
+        return utils.invokeCallback(cb, null, false);
+      }
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, null, false);
+    })
+
+};
 
 /**
  * Login user
@@ -459,8 +481,10 @@ UserDao.loginWithUsername = function (msg, cb) {
     })
 };
 
-UserDao.changePassword = function (msg, cb) {
-
+UserDao.updateProfile = function (username,msg, cb) {
+  msg.username = username;
+  return pomelo.app.get('accountService')
+    .updateProfile(msg);
 };
 
 UserDao.loginViaApp = function (msg, cb) {

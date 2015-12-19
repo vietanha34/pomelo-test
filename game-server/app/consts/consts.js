@@ -9,6 +9,16 @@ module.exports = {
     WINDOWPHONE : 3,
     JAVA : 4
   },
+
+  MAP_GAME_ID_OLD_VERSION : {
+    20 : 5,
+    21 : 1,
+    22 : 2,
+    23 : 6,
+    24 : 3,
+    25 : 4
+  },
+
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp'],
 
   WAITING_LIST : {
