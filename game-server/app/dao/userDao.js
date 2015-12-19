@@ -471,6 +471,8 @@ UserDao.loginWithUsername = function (msg, cb) {
         if (!result.code) {
           pomelo.app.get('redisInfo')
             .hmset('cothu:' + msg.username, {passwd: msg.password});
+          pomelo.app.get('redisInfo')
+            .expire('cothu:' + data.uname, 60 * 60 *24);
         }
         return utils.invokeCallback(cb, null, result)
       }

@@ -371,7 +371,15 @@ var changePassword = function (req, res) {
       passwordMd5 : MD5(data.newpass)
     })
     .then(function (result) {
-
+      if (result && result[0]){
+        pomelo.app.get('redisInfo')
+          .hset('cothu:' + data.uname, 'passwd', data.newpass);
+        pomelo.app.get('redisInfo')
+          .expire('cothu:' + data.uname, 60 * 60 *24);
+        return res.json({ code : 0, message: "Đổi mật khẩu thành công", data : { newpass : data.newpass}})
+      }else {
+        return res.json({ code : 1, message: "Không thể cập nhật được mật khẩu", data : {}});
+      }
     });
 };
 
@@ -381,8 +389,12 @@ var banUser = function (req, res) {
   return UserDao.updateProfile(data.uname, {
     status : 2
   })
-  .then(function (result) {
-      console.log('result banUser : ', result);
+    .then(function (result) {
+      if (result && result[0]){
+        return res.json({ code : 0, message: "Khoá người chơi thành công", data : { newpass : data.newpass}})
+      }else {
+        return res.json({ code : 1, message: "Người chơi không tồn tại", data : {}});
+      }
     })
 };
 
@@ -405,8 +417,12 @@ var activeUser = function (req, res) {
   return UserDao.updateProfile(data.uname, {
     status : 1
   })
-  .then(function (result) {
-
+    .then(function (result) {
+      if (result && result[0]){
+        return res.json({ code : 0, message: "Mở khoá người chơi thành công", data : { newpass : data.newpass}})
+      }else {
+        return res.json({ code : 1, message: "Người chơi không tồn tại", data : {}});
+      }
     })
 };
 

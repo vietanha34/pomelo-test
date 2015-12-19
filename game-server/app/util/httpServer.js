@@ -45,11 +45,9 @@ var httpStart = function(cb) {
   // will print stacktrace
   if (this.app.get('env') === 'development') {
     this.app.use(function(err, req, res, next) {
+      console.log(err);
       res.status(err.status || 500);
-      res.render('error', {
-        message: err.message,
-        error: err
-      });
+      res.json({ message : err.message})
     });
   }
 
@@ -57,10 +55,7 @@ var httpStart = function(cb) {
   // no stacktraces leaked to user
   this.app.use(function(err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: {}
-    });
+    res.json({ message : err.message})
   });
   this.app.listen(8889);
   utils.invokeCallback(cb);
