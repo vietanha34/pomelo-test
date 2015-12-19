@@ -35,6 +35,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     },
+    tuongXp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
     theWin: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
@@ -52,6 +56,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     theElo: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
+    theXp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     },
@@ -75,6 +83,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     },
+    upXp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
     vayWin: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
@@ -92,6 +104,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vayElo: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
+    vayXp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     },
@@ -115,6 +131,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     },
+    caroXp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
     vuaWin: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: '0'
@@ -132,6 +152,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: '0'
     },
     vuaElo: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      defaultValue: consts.DEFAULT_ELO
+    },
+    vuaXp: {
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: consts.DEFAULT_ELO
     }

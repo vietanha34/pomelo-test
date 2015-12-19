@@ -1,14 +1,10 @@
 /**
- * Created by vietanha34 on 12/18/15.
- */
-
-/**
- * Created by bi on 4/27/15.
+ * Created by bi on 12/19/15.
  */
 
 var utils = require('../util/utils');
 var code = require('../consts/code');
-var PromotionDao = require('../dao/paymentDao');
+var Consts = require('../consts/consts');
 var UserDao = require('../dao/userDao');
 var Promise = require('bluebird');
 var pomelo = require('pomelo');
@@ -45,12 +41,118 @@ module.exports = function(app) {
     }
   });
 
+  app.get('/experience/update', function (req, res) {
+    var data = req.query;
+    if (!data) return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
+    var gameId = data.game_id;
+    var username = data.uname || '';
+    var xp = data.xp || 0;
+    var win = data.win || 0;
+    var lose = data.lose || 0;
+    var draw = data.draw || 0;
+    var giveUp = data.giveup || 0;
+    var elo = data.elo || 0;
+
+    if (!Consts.GAME_MAP_ID[gameId] || !username) {
+      return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
+    }
+    UserDao
+      .getUserIdByUsername(username)
+      .then(function (uid) {
+        if (!uid) {
+          return res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
+        }
+        var db = pomelo.app.get('mysqlClient');
+        db
+          .Achievement
+          .findOne({
+            where: {
+              uid: uid
+            }
+          })
+          .then(function (user) {
+            if (!user) {
+              return res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
+            }
+            var update = {};
+            var gameName = Consts.GAME_MAP_ID[gameId];
+            update[gameName + 'Xp'] = db.sequelize.literal(gameName + 'Xp + ' + xp);
+            update[gameName + 'Win'] = db.sequelize.literal(gameName + 'Win + ' + win);
+            update[gameName + 'Lose'] = db.sequelize.literal(gameName + 'Lose + ' + lose);
+            update[gameName + 'Draw'] = db.sequelize.literal(gameName + 'Draw + ' + draw);
+            update[gameName + 'Elo'] = db.sequelize.literal(gameName + 'Elo + ' + elo);
+            update[gameName + 'GiveUp'] = db.sequelize.literal(gameName + 'GiveUp + ' + giveUp);
+            user
+              .updateAttributes(update)
+              .catch(function (err) {
+                console.error(err);
+              });
+            res.json({
+              code: code.ACCOUNT_OLD.OK,
+              data: '',
+              message: ''
+            })
+          })
+          .catch(function (err) {
+            console.error(err);
+            res.status(500).end();
+          })
+      })
+      .catch(function (err) {
+        console.error(err);
+        res.status(500).end();
+      });
+  });
+
   app.get('/experience', function (req, res) {
     var data = req.query;
-    if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-    var gameId = data.game_id;
-    var username = data.uname;
-    return UserDao.getUserPropertiesByUsername(username, [''])
+    if (!data) return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
+    var username = data.uname || '';
+    UserDao
+      .getUserIdByUsername(username)
+      .then(function (uid) {
+        pomelo
+          .app
+          .get('mysqlClient')
+          .Achievement
+          .findOne({
+            where: {
+              uid: uid
+            },
+            raw: true
+          })
+          .then(function (record) {
+            if (record) {
+              var keys = Object.keys(Consts.GAME_MAP_ID);
+              var exp = [];
+              for (var i = 0 ; i < keys.length; i++) {
+                var gameId = keys[i];
+                var gameName = Consts.GAME_MAP_ID[gameId];
+                exp.push({
+                  game_id: gameId,
+                  xp: record[gameName + 'Xp'],
+                  win: record[gameName + 'Win'],
+                  lose: record[gameName + 'Lose'],
+                  draw: record[gameName + 'Draw'],
+                  elo: record[gameName + 'Elo'],
+                  giveup: record[gameName + 'GiveUp'],
+                  expert: 0
+                });
+              }
+              res.json(exp);
+            } else {
+              res.json({});
+            }
+          })
+          .catch(function (err) {
+            console.error(err);
+            res.status(500).end();
+          });
+      })
+      .catch(function (err) {
+        console.error(err);
+        res.status(500).end();
+      });
   });
 
 
@@ -60,26 +162,64 @@ module.exports = function(app) {
 
   app.get('/bank', function (req, res) {
     var data = req.query;
-    if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
+    var response = {
+      code: code.ACCOUNT_OLD.FAIL,
+      data: null,
+      extra: {},
+      message: null
+    };
+    if (!data) return res.json(response).end();
     var api = data.api;
-    var uname = data.uname;
-    var gold = data.gold;
+    var uname = data.uname || '';
+    var gold = parseInt(data.gold || 0);
+    if (!uname || !gold || gold < 0) {
+      return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
+    }
     var opts = {
       gold : gold
     };
-    var method = api === 'bank.subgold' ? 'subBalance' : 'addBalance';
     UserDao.getUserIdByUsername(uname)
       .then(function (uid) {
         opts.uid = uid;
-        return pomelo.app.get('paymentService')[method](opts, function (err, result) {
-          if (err){
-            res.json({code : 99, message : "Có lỗi xảy ra", data:{}});
-          }else if (result.ec === code.OK){
-            res.json({code : 0, message: '', data:{}});
-          }else {
-            res.json({code: 1, message: "Cộng trừ tiền thất bại", data: {}})
-          }
-        })
+        if (api === 'bank.subgold') {
+          pomelo
+            .app
+            .get('paymentService')
+            .subBalance(opts)
+            .then(function (bank) {
+              console.log('paymentService: ', bank);
+              if (bank && bank.ec === code.OK) {
+                response.code = code.ACCOUNT_OLD.OK;
+                response.extra = {
+                  currentMoney: bank.gold
+                };
+                response.data = bank;
+                return res.json(response);
+              }
+              res.json(response);
+            })
+            .catch(function (err) {
+              console.error(err);
+              res.json(response);
+            })
+        } else {
+          pomelo
+            .app
+            .get('paymentService')
+            .addBalance(opts, function (err, bank) {
+              console.log('paymentService: ', err, bank);
+              if (bank && bank.ec === code.OK) {
+                response.code = code.ACCOUNT_OLD.OK;
+                response.extra = {
+                  currentMoney: bank.gold
+                };
+                response.data = bank;
+                return res.json(response);
+              }
+              if (err) console.error(err);
+              res.json(response);
+            });
+        }
       })
       .catch(function (err) {
         console.log('err : ', err);
