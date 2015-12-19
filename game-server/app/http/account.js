@@ -35,6 +35,10 @@ module.exports = function(app) {
         changePassword(req, res);
         break;
       case 'acc.forgot':
+        res.status(500).json({msg: "có lỗi xảy ra"});
+        break;
+      case 'acc.logout':
+        logout(req, res);
         break;
       default:
         res.status(500).json({msg: "có lỗi xảy ra"})
@@ -362,11 +366,13 @@ var loginViaApp = function (req, res) {
 var changePassword = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
-  return UserDao.updateProfile(data.uname, {
-    passwordMd5 : MD5(data.newpass)
-  })
-  .then(function (result) {
+  UserDao
+    .updateProfile(data.uname, {
+      passwordMd5 : MD5(data.newpass)
     })
+    .then(function (result) {
+
+    });
 };
 
 var banUser = function (req, res) {
@@ -402,6 +408,10 @@ var activeUser = function (req, res) {
   .then(function (result) {
 
     })
+};
+
+var logout = function (req, res) {
+  res.json({code: code.ACCOUNT_OLD.OK});
 };
 
 var forgotPass = function (req, res) {
