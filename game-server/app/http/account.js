@@ -53,6 +53,11 @@ module.exports = function(app) {
     return UserDao.getUserPropertiesByUsername(username, [''])
   });
 
+
+  app.get('/profile', getProfile);
+
+  app.get('/expProfile', getExpProfile);
+
   app.get('/bank', function (req, res) {
     var data = req.query;
     if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
@@ -154,6 +159,7 @@ var getProfile = function (req, res) {
       return res.json(user).end();
     })
     .catch(function (err) {
+      console.log(err);
       return res.json({}).end();
     })
 };
@@ -169,6 +175,7 @@ var getExpProfile = function (req, res) {
       return res.json(user).end();
     })
     .catch(function (err) {
+      console.log(err);
       return res.json({}).end();
     })
 };
