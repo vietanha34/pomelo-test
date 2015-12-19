@@ -148,8 +148,9 @@ var login = function (req, res) {
 var getProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return UserDao.getUserPropertiesByUsername(data.uname, ['username', 'gold', 'money2', 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['deviceId','deviceid'], ['createdAt', 'regDate'], ['updatedAt', 'lastupdate']])
+  return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['deviceId','deviceid'], ['createdAt', 'regDate'], ['updatedAt', 'lastupdate']])
     .then(function (user) {
+      if (!user) return res.status(500).end();
       user.money = 0;
       user.pass = '';
       user.ban = 0;
@@ -160,7 +161,7 @@ var getProfile = function (req, res) {
     })
     .catch(function (err) {
       console.log(err);
-      return res.json({}).end();
+      return res.status(500).end();
     })
 };
 
@@ -169,6 +170,7 @@ var getExpProfile = function (req, res) {
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
   return UserDao.getUserPropertiesByUsername(data.uname, ['uid', 'statusMsg', 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
     .then(function (user) {
+      if (!user) return res.status(500).end();
       user.maxxp = Formula.calExp(user.level + 1);
       user.timeplay = 0;
       user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
@@ -176,7 +178,7 @@ var getExpProfile = function (req, res) {
     })
     .catch(function (err) {
       console.log(err);
-      return res.json({}).end();
+      res.status(500).end();
     })
 };
 

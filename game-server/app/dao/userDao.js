@@ -550,7 +550,7 @@ UserDao.createUser = function (msg, cb) {
       username: msg.uname,
       password: msg.pass,
       dtId: msg.dtid,
-      spId: msg.spId,
+      spId: msg.spId || msg.spid,
       gold: msg.money,
       platform: msg.platform,
       deviceId: msg.deviceId,
