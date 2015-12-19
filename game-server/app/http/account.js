@@ -292,7 +292,7 @@ var login = function (req, res) {
         } else {
           // add user login in old version
           pomelo.app.get('redisInfo')
-            .zadd('onlineUser:oldVersion', data.uname, Date.now());
+            .zadd('onlineUser:oldVersion', Date.now(), data.uname);
           return res.json({code:0, message: "", data: {uname:data.uname}, extra : { firstLogin : 0, dt_id :1}}).end();
         }
       }
@@ -313,8 +313,8 @@ var getProfile = function (req, res) {
     .hgetallAsync('cothu:profile:' + data.uname)
     .then(function (dataString) {
       if (dataString){
-        var data = utils.JSONParse(dataString, {});
-        return Promise.resolve(data);
+        var user = utils.JSONParse(dataString, {});
+        return Promise.resolve(user);
       }else {
         return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
           .then(function (user) {
@@ -326,7 +326,7 @@ var getProfile = function (req, res) {
             user['lastupdate'] = moment(user['lastupdate']).unix();
             user['regDate'] = moment(user['regDate']).unix();
             pomelo.app.get('redisInfo').hmset('cothu:profile:' + data.uname, user);
-            pomelo.app.get('redisInfo').expire( 60 * 30);
+            pomelo.app.get('redisInfo').expire('cothu:profile:' + data.uname, 60 * 30);
             return Promise.resolve(user);
           })
       }
@@ -348,12 +348,13 @@ var getExpProfile = function (req, res) {
     .getAsync('cothu:expProfile:' + data.uname)
     .then(function (dataString) {
       if (dataString){
-        var data = utils.JSONParse(dataString, {});
-        return Promise.resolve(data);
+        var user  = utils.JSONParse(dataString, {});
+        return Promise.resolve(user);
       }else {
         return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
           .then(function (user) {
             if (!user) return res.status(500).end();
+            user.address = user.address || '';
             user.maxxp = Formula.calExp(user.level + 1) || 0;
             user.totalxp = user.totalxp || 0;
             user.timeplay = 0;
@@ -367,7 +368,7 @@ var getExpProfile = function (req, res) {
             user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
             var dataCache = JSON.stringify(user);
             pomelo.app.get('redisInfo').set('cothu:expProfile:' + data.uname, dataCache);
-            pomelo.app.get('redisInfo').expire( 60 * 30);
+            pomelo.app.get('redisInfo').expire('cothu:expProfile:' + data.uname, 60 * 30);
             return Promise.resolve(user);
           })
       }
@@ -408,7 +409,7 @@ var changePassword = function (req, res) {
     .then(function (result) {
       if (result && result[0]){
         pomelo.app.get('redisInfo')
-          .hset('cothu:' + data.uname, 'passwd', data.newpass);
+          .hset('cothu:' + data.uname, 'passwd', MD5(data.newpass));
         pomelo.app.get('redisInfo')
           .expire('cothu:' + data.uname, 60 * 60 *24);
         return res.json({ code : 0, message: "Đổi mật khẩu thành công", data : { newpass : data.newpass}})

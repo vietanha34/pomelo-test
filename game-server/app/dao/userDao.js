@@ -373,37 +373,34 @@ UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
   var user, created, userData;
-  var promise =
-    pomelo.app.get('redisInfo')
-    .zrank('onlineUser:oldVersion')
-    .then(function (rank) {
-        if (!lodash.isNumber(rank)){
-          return accountService
-            .getUserProfile(msg.accessToken)
-        }else {
-          // đã đăng nhập trên tài khoản mới
-          Promise.reject({
-            ec: Code.FAIL,
-            msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
-          })
-        }
-      })
+  var promise = accountService
+    .getUserProfile(msg.accessToken)
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
-        console.log('res  typeof : ', typeof res);
+
         res.uid = res.id;
         userData = res;
         delete res['id'];
-        console.log('res : ', res);
-        return pomelo.app.get('mysqlClient')
-          .User
-          .findOrCreate({where: {uid: res.uid}, raw: true, defaults: res});
+        return pomelo.app.get('redisInfo')
+          .zrankAsync('onlineUser:oldVersion', res.username);
       } else {
-        Promise.reject({
+        return Promise.reject({
           ec: Code.FAIL,
           msg: 'Có lỗi xảy ra'
         })
+      }
+    })
+    .then(function (rank) {
+      if (lodash.isNumber(rank)){
+        return Promise.reject({
+          ec: Code.FAIL,
+          msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
+        })
+      }else {
+        return pomelo.app.get('mysqlClient')
+          .User
+          .findOrCreate({where: {uid: userData.uid}, raw: true, defaults: userData});
       }
     })
     .spread(function (u, c) {
@@ -485,7 +482,7 @@ UserDao.loginWithUsername = function (msg, cb) {
           pomelo.app.get('redisInfo')
             .hmset('cothu:' + msg.username, {passwd: msg.password});
           pomelo.app.get('redisInfo')
-            .expire('cothu:' + data.uname, 60 * 60 *24);
+            .expire('cothu:' + msg.username, 60 * 60 *24);
         }
         return utils.invokeCallback(cb, null, result)
       }
