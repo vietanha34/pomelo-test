@@ -63,8 +63,8 @@ pro.subBalance = function (opts) {
             , opts: opts
             , cmd: 'subGold'
           };
-          console.log('user.gold : ', user.gold -gold);
           pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
+          updateGoldInCache(opts.username, user.gold - gold);
           return user.updateAttributes({
             gold: user.gold - gold
           }, {transaction: t});
@@ -115,6 +115,7 @@ pro.addBalance = function (opts, cb) {
             , cmd: 'addGold'
           };
           pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
+          updateGoldInCache(opts.username, user.gold + gold);
           return user.updateAttributes({
             gold: user.gold + gold,
             goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
@@ -244,6 +245,19 @@ pro.syncBalance = function (opts, cb) {
           })
       }
     });
+};
+
+
+var updateGoldInCache = function (username, gold) {
+  var key = 'cothu:profile:'+username;
+  return pomelo.app.get('redisInfo')
+    .exists(key)
+    .then(function (exist) {
+      if (exist){
+        return pomelo.app.get('redisInfo')
+          .hsetAsync(key, 'money2', gold)
+      }
+    })
 };
 
 

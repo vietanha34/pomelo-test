@@ -373,8 +373,21 @@ UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
   var user, created, userData;
-  var promise = accountService
-    .getUserProfile(msg.accessToken)
+  var promise =
+    pomelo.app.get('redisInfo')
+    .zrank('onlineUser:oldVersion')
+    .then(function (rank) {
+        if (!lodash.isNumber(rank)){
+          return accountService
+            .getUserProfile(msg.accessToken)
+        }else {
+          // đã đăng nhập trên tài khoản mới
+          Promise.reject({
+            ec: Code.FAIL,
+            msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
+          })
+        }
+      })
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {

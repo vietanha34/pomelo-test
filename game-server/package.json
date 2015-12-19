@@ -36,7 +36,8 @@
     "express": "*",
     "body-parser": "*",
     "multer": "*",
-    "rabbit.js": "*"
+    "rabbit.js": "*",
+    "bcrypt": "0.8.5"
   },
   "devDependencies": {
     "benchmark": "*",

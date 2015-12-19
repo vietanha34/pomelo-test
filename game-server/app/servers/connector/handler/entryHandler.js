@@ -126,7 +126,7 @@ Handler.prototype.login = function (msg, session, next) {
 	], function (err) {
 		if (!!err) {
 			console.error(err);
-			return next(null, {ec: err.ec || Code.FAIL, msg: utils.getMessage(err.ec || Code.FAIL)});
+			return next(null, {ec: err.ec || Code.FAIL, msg: err.msg || utils.getMessage(err.ec || Code.FAIL)});
 		}
 		var emitData = {
 			uid: session.uid,

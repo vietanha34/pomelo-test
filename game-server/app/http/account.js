@@ -11,6 +11,7 @@ var pomelo = require('pomelo');
 var moment = require('moment');
 var Formula = require('../consts/formula');
 var MD5 = require('MD5');
+var encrypt = require('../util/encrypt');
 
 module.exports = function(app) {
   app.get('/acc', function (req, res) {
@@ -193,7 +194,8 @@ module.exports = function(app) {
       return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
     }
     var opts = {
-      gold : gold
+      gold : gold,
+      username : uname
     };
     UserDao.getUserIdByUsername(uname)
       .then(function (uid) {
@@ -272,7 +274,6 @@ var login = function (req, res) {
       })
     })
     .then(function (result) {
-      console.log('result : ', result);
       if (result && !result.code){
         return UserDao.getUserIdByUsername(data.uname)
       }else {
@@ -289,6 +290,9 @@ var login = function (req, res) {
         if (status.online) {
           return Promise.reject({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
         } else {
+          // add user login in old version
+          pomelo.app.get('redisInfo')
+            .zadd('onlineUser:oldVersion', data.uname, Date.now());
           return res.json({code:0, message: "", data: {uname:data.uname}, extra : { firstLogin : 0, dt_id :1}}).end();
         }
       }
@@ -305,41 +309,71 @@ var login = function (req, res) {
 var getProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
+  return pomelo.app.get('redisInfo')
+    .hgetallAsync('cothu:profile:' + data.uname)
+    .then(function (dataString) {
+      if (dataString){
+        var data = utils.JSONParse(dataString, {});
+        return Promise.resolve(data);
+      }else {
+        return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
+          .then(function (user) {
+            if (!user) return res.status(500).end();
+            user.money = 0;
+            user.pass = '';
+            user.ban = 0;
+            user.idcard  = '';
+            user['lastupdate'] = moment(user['lastupdate']).unix();
+            user['regDate'] = moment(user['regDate']).unix();
+            pomelo.app.get('redisInfo').hmset('cothu:profile:' + data.uname, user);
+            pomelo.app.get('redisInfo').expire( 60 * 30);
+            return Promise.resolve(user);
+          })
+      }
+    })
     .then(function (user) {
-      if (!user) return res.status(500).end();
-      user.money = 0;
-      user.pass = '';
-      user.ban = 0;
-      user.idcard  = '';
-      user['lastupdate'] = moment(user['lastupdate']).unix();
-      user['regDate'] = moment(user['regDate']).unix();
-      return res.json(user).end();
+      res.json(user).end();
     })
     .catch(function (err) {
       console.log(err);
-      return res.status(500).end();
+      res.status(500).end();
     })
+
 };
 
 var getExpProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
+  return pomelo.app.get('redisInfo')
+    .getAsync('cothu:expProfile:' + data.uname)
+    .then(function (dataString) {
+      if (dataString){
+        var data = utils.JSONParse(dataString, {});
+        return Promise.resolve(data);
+      }else {
+        return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
+          .then(function (user) {
+            if (!user) return res.status(500).end();
+            user.maxxp = Formula.calExp(user.level + 1) || 0;
+            user.totalxp = user.totalxp || 0;
+            user.timeplay = 0;
+            user.fnchange = 0;
+            user.vpchange = 0;
+            user.avatarid = 112;
+            user.avatarexpire = 0;
+            user.img = 'http://cms.gviet.vn/assets/file/ico/486.png';
+            user.clandate = '';
+            user.uid = '';
+            user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
+            var dataCache = JSON.stringify(user);
+            pomelo.app.get('redisInfo').set('cothu:expProfile:' + data.uname, dataCache);
+            pomelo.app.get('redisInfo').expire( 60 * 30);
+            return Promise.resolve(user);
+          })
+      }
+    })
     .then(function (user) {
-      if (!user) return res.status(500).end();
-      user.maxxp = Formula.calExp(user.level + 1) || 0;
-      user.totalxp = user.totalxp || 0;
-      user.timeplay = 0;
-      user.fnchange = 0;
-      user.vpchange = 0;
-      user.avatarid = 112;
-      user.avatarexpire = 0;
-      user.img = 'http://cms.gviet.vn/assets/file/ico/486.png';
-      user.clandate = '';
-      user.uid = '';
-      user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
-      return res.json(user).end();
+      res.json(user).end();
     })
     .catch(function (err) {
       console.log(err);
@@ -368,7 +402,8 @@ var changePassword = function (req, res) {
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   UserDao
     .updateProfile(data.uname, {
-      passwordMd5 : MD5(data.newpass)
+      passwordMd5 : MD5(data.newpass),
+      password : encrypt.cryptPassword(data.newpass)
     })
     .then(function (result) {
       if (result && result[0]){
@@ -427,6 +462,10 @@ var activeUser = function (req, res) {
 };
 
 var logout = function (req, res) {
+  var data = req.query;
+  if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
+  pomelo.app.get('redisInfo')
+    .zrem('onlineUser:oldVersion', data.uname);
   res.json({code: code.ACCOUNT_OLD.OK});
 };
 
