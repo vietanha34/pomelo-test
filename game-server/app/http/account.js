@@ -89,7 +89,11 @@ module.exports = function(app) {
             update[gameName + 'Win'] = db.sequelize.literal(' ' + gameName + 'Win + ' + win);
             update[gameName + 'Lose'] = db.sequelize.literal(' ' + gameName + 'Lose + ' + lose);
             update[gameName + 'Draw'] = db.sequelize.literal(' ' + gameName + 'Draw + ' + draw);
-            update[gameName + 'Elo'] = db.sequelize.literal(' '  + gameName + 'Elo + ' + elo);
+            if (user[gameName + 'Elo'] + elo < 500) {
+              update[gameName + 'Elo'] = 500
+            } else {
+              update[gameName + 'Elo'] = db.sequelize.literal(' '  + gameName + 'Elo + ' + elo);
+            }
             update[gameName + 'GiveUp'] = db.sequelize.literal(' ' + gameName + 'GiveUp + ' + giveUp);
             user
               .updateAttributes(update)
