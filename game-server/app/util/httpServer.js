@@ -3,6 +3,7 @@ var fs = require('fs');
 var path = require('path');
 var utils = require('./utils');
 var bodyParser = require('body-parser');
+var pomelo = require('pomelo');
 
 module.exports = function(app, opts) {
   return new Http(app, opts);
@@ -57,7 +58,8 @@ var httpStart = function(cb) {
     res.status(err.status || 500);
     res.json({ message : err.message})
   });
-  this.app.listen(8889);
+  var currentServer = pomelo.app.curServer;
+  this.app.listen(currentServer.httpPort || 8889);
   utils.invokeCallback(cb);
 };
 
