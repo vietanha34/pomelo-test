@@ -703,5 +703,13 @@ module.exports = {
     LUAT_CO_VUA: 14,
     LUAT_CO_CARO: 15,
     LUAT_CO_VAY: 16
+  },
+  GAME_MAP_ID: {
+    20: 'caro',
+    21: 'tuong',
+    22: 'up',
+    23: 'vay',
+    24: 'the',
+    25: 'vua'
   }
 };
