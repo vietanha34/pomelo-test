@@ -74,14 +74,23 @@ module.exports = function(app) {
             if (!user) {
               return res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
             }
+            if (xp) {
+              UserDao
+                .updateProperties(uid, {
+                  exp : db.sequelize.literal(' exp + ' + xp)
+                })
+                .catch(function (err) {
+                  console.error(err);
+                })
+            }
             var update = {};
             var gameName = Consts.GAME_MAP_ID[gameId];
-            update[gameName + 'Xp'] = db.sequelize.literal(gameName + 'Xp + ' + xp);
-            update[gameName + 'Win'] = db.sequelize.literal(gameName + 'Win + ' + win);
-            update[gameName + 'Lose'] = db.sequelize.literal(gameName + 'Lose + ' + lose);
-            update[gameName + 'Draw'] = db.sequelize.literal(gameName + 'Draw + ' + draw);
-            update[gameName + 'Elo'] = db.sequelize.literal(gameName + 'Elo + ' + elo);
-            update[gameName + 'GiveUp'] = db.sequelize.literal(gameName + 'GiveUp + ' + giveUp);
+            update[gameName + 'Xp'] = db.sequelize.literal(' ' + gameName + 'Xp + ' + xp);
+            update[gameName + 'Win'] = db.sequelize.literal(' ' + gameName + 'Win + ' + win);
+            update[gameName + 'Lose'] = db.sequelize.literal(' ' + gameName + 'Lose + ' + lose);
+            update[gameName + 'Draw'] = db.sequelize.literal(' ' + gameName + 'Draw + ' + draw);
+            update[gameName + 'Elo'] = db.sequelize.literal(' '  + gameName + 'Elo + ' + elo);
+            update[gameName + 'GiveUp'] = db.sequelize.literal(' ' + gameName + 'GiveUp + ' + giveUp);
             user
               .updateAttributes(update)
               .catch(function (err) {
