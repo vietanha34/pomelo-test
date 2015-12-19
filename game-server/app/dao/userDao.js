@@ -549,7 +549,7 @@ UserDao.createUser = function (msg, cb) {
     .createUser({
       username: msg.uname,
       password: msg.pass,
-      dtId: msg.dtid,
+      dtId: msg.dtid || msg.dtId,
       spId: msg.spId || msg.spid,
       gold: msg.money,
       platform: msg.platform,
@@ -573,7 +573,9 @@ UserDao.createUser = function (msg, cb) {
             email: msg.email || '',
             avatar: null,
             accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
-            distributorId: msg.dtid || 1
+            distributorId: msg.dtid || msg.dtId || 1,
+            deviceId: msg.deviceId || msg.deviceid,
+            spId: msg.spid || msg.spId || ''
           });
       }
     })
@@ -584,7 +586,7 @@ UserDao.createUser = function (msg, cb) {
           uid: user.uid,
           username: user.username,
           platform: msg.platform,
-          deviceId: msg.deviceid,
+          deviceId: msg.deviceid || msg.deviceId,
           version: msg.version,
           extraData: msg.data,
           type: user.accountType,

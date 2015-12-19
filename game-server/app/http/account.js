@@ -148,7 +148,7 @@ var login = function (req, res) {
 var getProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['deviceId','deviceid'], ['createdAt', 'regDate'], ['updatedAt', 'lastupdate']])
+  return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
     .then(function (user) {
       if (!user) return res.status(500).end();
       user.money = 0;
@@ -168,11 +168,19 @@ var getProfile = function (req, res) {
 var getExpProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return UserDao.getUserPropertiesByUsername(data.uname, ['uid', 'statusMsg', 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
+  return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
     .then(function (user) {
       if (!user) return res.status(500).end();
-      user.maxxp = Formula.calExp(user.level + 1);
+      user.maxxp = Formula.calExp(user.level + 1) || 0;
+      user.totalxp = user.totalxp || 0;
       user.timeplay = 0;
+      user.fnchange = 0;
+      user.vpchange = 0;
+      user.avatarid = 112;
+      user.avatarexpire = 0;
+      user.img = 'http://cms.gviet.vn/assets/file/ico/486.png';
+      user.clandate = '';
+      user.uid = '';
       user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
       return res.json(user).end();
     })
