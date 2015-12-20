@@ -293,9 +293,16 @@ var login = function (req, res) {
           return Promise.reject({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
         } else {
           // add user login in old version
-          pomelo.app.get('redisInfo')
+          pomelo
+            .app
+            .get('redisInfo')
             .zadd('onlineUser:oldVersion', Date.now(), data.uname);
-          return res.json({code:0, message: "", data: {uname:data.uname}, extra : { firstLogin : 0, dt_id :1}}).end();
+          return res.json({
+            code: 0,
+            message: "",
+            data: { uname: data.uname },
+            extra : { firstLogin : 0, dt_id :1}
+          });
         }
       } else {
         res.json({code: code.ACCOUNT_OLD.ERROR});
@@ -313,13 +320,14 @@ var login = function (req, res) {
 var getProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return pomelo.app.get('redisInfo')
+  return pomelo
+    .app
+    .get('redisInfo')
     .hgetallAsync('cothu:profile:' + data.uname)
-    .then(function (dataString) {
-      if (dataString){
-        var user = utils.JSONParse(dataString, {});
-        return Promise.resolve(user);
-      }else {
+    .then(function (profile) {
+      if (profile){
+        return Promise.resolve(profile);
+      } else {
         return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
           .then(function (user) {
             if (!user) return res.status(500).end();
@@ -342,19 +350,19 @@ var getProfile = function (req, res) {
       console.log(err);
       res.status(500).end();
     })
-
 };
 
 var getExpProfile = function (req, res) {
   var data = req.query;
   if (!data) return res.json({ec: 0, data: {}, extra: {}}).end();
-  return pomelo.app.get('redisInfo')
+  return pomelo
+    .app
+    .get('redisInfo')
     .getAsync('cothu:expProfile:' + data.uname)
-    .then(function (dataString) {
-      if (dataString){
-        var user  = utils.JSONParse(dataString, {});
-        return Promise.resolve(user);
-      }else {
+    .then(function (profile) {
+      if (profile){
+        return Promise.resolve(profile);
+      } else {
         return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
           .then(function (user) {
             if (!user) return res.status(500).end();
@@ -378,7 +386,7 @@ var getExpProfile = function (req, res) {
       }
     })
     .then(function (user) {
-      res.json(user).end();
+      res.json(user);
     })
     .catch(function (err) {
       console.log(err);
