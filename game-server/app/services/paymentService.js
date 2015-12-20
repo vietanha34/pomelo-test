@@ -249,12 +249,16 @@ pro.syncBalance = function (opts, cb) {
 
 
 var updateGoldInCache = function (username, gold) {
-  var key = 'cothu:profile:'+username;
-  return pomelo.app.get('redisInfo')
-    .exists(key)
+  var key = 'cothu:profile:' + username;
+  return pomelo
+    .app
+    .get('redisInfo')
+    .existsAsync(key)
     .then(function (exist) {
       if (exist){
-        return pomelo.app.get('redisInfo')
+        return pomelo
+          .app
+          .get('redisInfo')
           .hsetAsync(key, 'money2', gold)
       }
     })
