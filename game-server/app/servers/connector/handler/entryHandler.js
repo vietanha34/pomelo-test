@@ -167,8 +167,12 @@ Handler.prototype.login = function (msg, session, next) {
 		}
     emitData.resume = msg.resume;
     var emitterConfig = self.app.get('emitterConfig');
-    self.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGIN, emitData, function () {});
-		player = null;
+    try {
+      self.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGIN, emitData, function () {});
+    } catch (err) {
+      console.error(err);
+    }
+    player = null;
 		msg = null;
 	})
 };
