@@ -3,6 +3,8 @@ var fs = require('fs');
 var path = require('path');
 var utils = require('./utils');
 var bodyParser = require('body-parser');
+var timeout = require('connect-timeout');
+var morgan = require('morgan');
 var pomelo = require('pomelo');
 
 module.exports = function(app, opts) {
@@ -20,6 +22,8 @@ var Http = function(app, opts) {
   this.app = express();
   this.app.use(bodyParser.json()); // for parsing application/json
   this.app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+  this.app.use(timeout('3s'));
+  this.app.use(morgan('dev'));
   fs.readdirSync(this.routePath).forEach(function(file) {
     var route= path.join(self.routePath , file);
     require(route)(self.app);

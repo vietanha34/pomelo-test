@@ -37,7 +37,7 @@
       "url" : "amqp://guest:payrabbit@v!@172.16.20.10"
     },
     "account" : {
-      "authUrl" : "https://10.2.10.21:443",
+      "authUrl" : "https://172.16.20.42:443",
       "loginUrl" : "/oauth/token/",
       "loginWithUser" : "/api/login",
       "loginViaApp" : "/api/loginViaApp",
