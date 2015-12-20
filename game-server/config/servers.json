@@ -42,53 +42,53 @@
   },
   "production":{
     "connector": [
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.48", "frontend": true},
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true},
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3513, "clientHost" :  "123.30.235.48", "frontend": true},
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true}
+      {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3513, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true}
     ],
     "auth" : [
-      {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
+      {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3250}
     ],
     "gate": [
-      {"id": "gate-server-1", "host": "127.0.0.1", "clientPort": 6010, "frontend": true}
+      {"id": "gate-server-1", "host": "172.16.20.40", "clientPort": 6010, "frontend": true}
     ],
     "home": [
-      {"id": "home-server-1", "host": "127.0.0.1", "port": 3450 },
-      {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
+      {"id": "home-server-1", "host": "172.16.20.40", "port": 3450 },
+      {"id": "home-server-2", "host": "172.16.20.40", "port": 3451 }
     ],
     "game" : [
-      {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},
-      {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
-      {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1},
-      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2},
-      {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
-      {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
+      {"id": "game-server-30" , "host" : "172.16.20.40", "port" : 3830, "gameId" : 3},
+      {"id": "game-server-50" , "host" : "172.16.20.40", "port" : 3850, "gameId" : 5},
+      {"id": "game-server-10" , "host" : "172.16.20.40", "port" : 3810, "gameId" : 1},
+      {"id": "game-server-20" , "host" : "172.16.20.40", "port" : 3820, "gameId" : 2},
+      {"id": "game-server-40" , "host" : "172.16.20.40", "port" : 3840, "gameId" : 4},
+      {"id": "game-server-60" , "host" : "172.16.20.40", "port" : 3860, "gameId" : 6}
     ],
     "chat" : [
-      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
+      {"id": "chat-server-1", "host": "172.16.20.40", "port": 3550}
     ],
     "district" : [
-      {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650},
-      {"id": "district-server-2", "host" : "127.0.0.1", "port" : 3651}
+      {"id": "district-server-1", "host" : "172.16.20.40", "port" : 3650},
+      {"id": "district-server-2", "host" : "172.16.20.40", "port" : 3651}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750},
-      {"id": "manager-server-2", "host" : "127.0.0.1", "port" : 3751}
+      {"id": "manager-server-1", "host" : "172.16.20.40", "port" : 3750},
+      {"id": "manager-server-2", "host" : "172.16.20.40", "port" : 3751}
     ],
     "event" : [
-      {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960},
-      {"id" : "event-server-2", "host" : "127.0.0.1", "port" : 3961}
+      {"id" : "event-server-1", "host" : "172.16.20.40", "port" : 3960},
+      {"id" : "event-server-2", "host" : "172.16.20.40", "port" : 3961}
     ],
     "service" : [
-      {"id" : "service-server-1", "host" : "127.0.0.1", "port" : 3950},
-      {"id" : "service-server-2", "host" : "127.0.0.1", "port" : 3951}
+      {"id" : "service-server-1", "host" : "172.16.20.40", "port" : 3950},
+      {"id" : "service-server-2", "host" : "172.16.20.40", "port" : 3951}
     ],
     "worker" : [
-      {"id": "worker-server-1", "host" : "127.0.0.1", "port" : 3760, "httpPort": 9000},
-      {"id": "worker-server-2", "host" : "127.0.0.1", "port" : 3761, "httpPort": 9001},
-      {"id": "worker-server-3", "host" : "127.0.0.1", "port" : 3762, "httpPort": 9002},
-      {"id": "worker-server-4", "host" : "127.0.0.1", "port" : 3763, "httpPort": 9003}
+      {"id": "worker-server-1", "host" : "172.16.10.28", "port" : 3760, "httpPort": 9000},
+      {"id": "worker-server-2", "host" : "172.16.10.28", "port" : 3761, "httpPort": 9001},
+      {"id": "worker-server-3", "host" : "172.16.10.28", "port" : 3762, "httpPort": 9002},
+      {"id": "worker-server-4", "host" : "172.16.10.28", "port" : 3763, "httpPort": 9003}
     ]
   },
   "local":{
