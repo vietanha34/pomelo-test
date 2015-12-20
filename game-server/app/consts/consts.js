@@ -30,6 +30,15 @@ module.exports = {
     CO_VAY : 6
   },
 
+  MAP_GAME_ID_OLD_VERSION : {
+    20 : 5,
+    21 : 1,
+    22 : 2,
+    23 : 6,
+    24 : 3,
+    25 : 4
+  },
+
   TABLE_TYPE : {
     ROCK : 0,
     WOOD : 1,
