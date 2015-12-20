@@ -283,6 +283,8 @@ var login = function (req, res) {
     .then(function (uid) {
       if (uid){
         return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid, null)
+      } else {
+        res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
       }
     })
     .then(function (status) {
@@ -295,6 +297,8 @@ var login = function (req, res) {
             .zadd('onlineUser:oldVersion', Date.now(), data.uname);
           return res.json({code:0, message: "", data: {uname:data.uname}, extra : { firstLogin : 0, dt_id :1}}).end();
         }
+      } else {
+        res.json({code: code.ACCOUNT_OLD.ERROR});
       }
     })
     .catch(function (err) {
