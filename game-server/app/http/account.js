@@ -294,7 +294,7 @@ var login = function (req, res) {
     .then(function (status) {
       if (status){
         if (status.online) {
-          return Promise.reject({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
+          return Promise.reject({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
         } else {
           // add user login in old version
           pomelo
@@ -312,7 +312,7 @@ var login = function (req, res) {
                   }
                 });
               }
-              res.json({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
+              res.json({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
             });
         }
       } else {
