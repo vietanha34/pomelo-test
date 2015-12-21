@@ -305,7 +305,7 @@ var login = function (req, res) {
                 return res.json({
                   code: 0,
                   message: "",
-                  data: { uname: data.uname },
+                  data: { uname: this.uname },
                   extra : {
                     firstLogin : 0,
                     dt_id :1 //TODO: change distributor ID
@@ -313,7 +313,7 @@ var login = function (req, res) {
                 });
               }
               res.json({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
-            });
+            }.bind({uname: data.uname}));
         }
       } else {
         res.json({code: code.ACCOUNT_OLD.ERROR});
