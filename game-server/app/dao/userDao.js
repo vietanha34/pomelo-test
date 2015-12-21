@@ -586,7 +586,8 @@ UserDao.createUser = function (msg, cb) {
       if (result) {
         // result ok -> tạo mới tài khoản
         return pomelo
-          .app.get('mysqlClient')
+          .app
+          .get('mysqlClient')
           .User
           .create({
             uid: result.userId,
@@ -600,10 +601,17 @@ UserDao.createUser = function (msg, cb) {
             deviceId: msg.deviceId || msg.deviceid,
             spId: msg.spid || msg.spId || ''
           });
+      } else {
+        console.error('createUser: ', result);
+        return utils.invokeCallback(cb, null, {
+          code: 1,
+          message: "Không thể tạo mới đc user",
+          data: ''
+        })
       }
     })
     .then(function (user) {
-      if (user){
+      if (user) {
         var emitterConfig = pomelo.app.get('emitterConfig');
         pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
           uid: user.uid,
@@ -618,20 +626,31 @@ UserDao.createUser = function (msg, cb) {
         }, function () {
         });
         return utils.invokeCallback(cb, null, {code : 0, message: '', data:{}})
+      } else {
+        console.error('createUser: ', result);
+        return utils.invokeCallback(cb, null, {
+          code: 1,
+          message: "Không thể tạo mới đc user",
+          data: ''
+        })
       }
     })
     .catch(function (err) {
-      console.log('err : ', err);
-      return utils.invokeCallback(cb, null, { message: "Không thể tạo mới đc user", code:1, data :''})
+      console.log('createUser: ', err);
+      return utils.invokeCallback(cb, null, {
+        code: 1,
+        message: "Không thể tạo mới đc user",
+        data: ''
+      })
     })
 };
-
-
 
 var findFullnameAvailable = function (fullname, num) {
   num = num || 0;
   var name = num > 0 ? fullname + ' ' + num : fullname;
-  return pomelo.app.get('mysqlClient')
+  return pomelo
+    .app
+    .get('mysqlClient')
     .User
     .count({
       where: {
@@ -649,4 +668,3 @@ var findFullnameAvailable = function (fullname, num) {
       return name
     })
 };
-

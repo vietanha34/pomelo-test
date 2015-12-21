@@ -261,6 +261,10 @@ var register = function (req, res) {
     .then(function (result) {
       res.json(result).end();
     })
+    .catch(function (err) {
+      console.error(err);
+      res.json({code: code.ACCOUNT_OLD.ERROR});
+    })
 };
 
 var login = function (req, res) {
@@ -296,13 +300,20 @@ var login = function (req, res) {
           pomelo
             .app
             .get('redisInfo')
-            .zadd('onlineUser:oldVersion', Date.now(), data.uname);
-          return res.json({
-            code: 0,
-            message: "",
-            data: { uname: data.uname },
-            extra : { firstLogin : 0, dt_id :1}
-          });
+            .zadd('onlineUser:oldVersion', Date.now(), data.uname, function (e, r) {
+              if (r) {
+                return res.json({
+                  code: 0,
+                  message: "",
+                  data: { uname: data.uname },
+                  extra : {
+                    firstLogin : 0,
+                    dt_id :1 //TODO: change distributor ID
+                  }
+                });
+              }
+              res.json({ code : 12, msg : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
+            });
         }
       } else {
         res.json({code: code.ACCOUNT_OLD.ERROR});
