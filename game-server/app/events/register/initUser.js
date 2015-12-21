@@ -40,42 +40,7 @@ module.exports.process = function (app, type, param) {
     return;
   }
 
-  var userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (param.userCount||1);
-
-  if (userCount == 1) {
-    var globalConfig = app.get('configService').getConfig();
-
-    if (!globalConfig.IS_REVIEW) {
-      var bonus;
-      switch (param.type) {
-        case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
-          bonus = globalConfig.FB_GOLD || 0;
-          break;
-        case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
-          bonus = globalConfig.USER_GOLD || 0;
-          break;
-        default :
-          bonus = globalConfig.USER_GOLD || 0;
-          break;
-      }
-
-      if (bonus) {
-        setTimeout(function () {
-          ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14 * 1440));
-          ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
-          TopupDao.pushGoldAward({
-            uid: param.uid,
-            type: 'REGISTER',
-            gold: bonus,
-            msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
-            title: code.REGISTER_LANGUAGE.BONUS_TITLE
-          })
-        }, 2500);
-      }
-    }
-  }
-
-  var Achievement = pomelo.app.get('mysqlClient').Achievement;
+  var Achievement = mysql.Achievement;
   Achievement
     .create({
       uid: param.uid,
@@ -84,5 +49,61 @@ module.exports.process = function (app, type, param) {
     })
     .catch(function(e) {
       console.error(e.stack || e);
+    });
+
+  var mysql = pomelo.app.get('mysqlClient');
+  var query = 'SELECT COUNT(uid) AS `count` FROM ' +
+                '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
+                  'UNION ' +
+                'SELECT uid FROM UserDevice WHERE ip = :ip) T';
+
+  mysql.sequelize
+    .query(query, {
+      replacements: {ip: param.ip, deviceId: param.deviceId},
+      type: mysql.sequelize.QueryTypes.SELECT,
+      raw: true
+    })
+    .then(function(user) {
+      utils.log(query, user);
+      var userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : ((user.count||0) + 1);
+
+      mysql.sequelize.query('INSERT INTO UserDevice VALUES(:uid, :deviceId, :ip)', {
+        replacements: {uid: param.uid, ip: param.ip, deviceId: param.deviceId},
+        type: mysql.sequelize.QueryTypes.INSERT,
+        raw: true
+      });
+
+      if (userCount == 1) {
+        var globalConfig = app.get('configService').getConfig();
+
+        if (!globalConfig.IS_REVIEW) {
+          var bonus;
+          switch (param.type) {
+            case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
+              bonus = globalConfig.FB_GOLD || 0;
+              break;
+            case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
+              bonus = globalConfig.USER_GOLD || 0;
+              break;
+            default :
+              bonus = globalConfig.USER_GOLD || 0;
+              break;
+          }
+
+          if (bonus) {
+            setTimeout(function () {
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (14 * 1440));
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
+              TopupDao.pushGoldAward({
+                uid: param.uid,
+                type: 'REGISTER',
+                gold: bonus,
+                msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
+                title: code.REGISTER_LANGUAGE.BONUS_TITLE
+              })
+            }, 2500);
+          }
+        }
+      }
     });
 };
