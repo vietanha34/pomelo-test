@@ -372,7 +372,7 @@ UserDao.isExist = function (username, cb) {
 UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
-  var user, created, userData;
+  var user, created, userData, username;
   var promise = accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
@@ -382,7 +382,10 @@ UserDao.login = function (msg, cb) {
         res.uid = res.id;
         userData = res;
         delete res['id'];
-        return pomelo.app.get('redisInfo')
+        username = res.username;
+        return pomelo
+          .app
+          .get('redisInfo')
           .zrankAsync('onlineUser:oldVersion', res.username);
       } else {
         return Promise.reject({
@@ -392,7 +395,15 @@ UserDao.login = function (msg, cb) {
       }
     })
     .then(function (rank) {
-      if (lodash.isNumber(rank)){
+      if (lodash.isNumber(rank)) {
+        if (username) {
+          pomelo
+            .app
+            .get('redisInfo')
+            .RPUSH('list:requireLogin:newVersion', username, function (e, r) {
+              if (e) console.error(e);
+            })
+        }
         return Promise.reject({
           ec: Code.FAIL,
           msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
