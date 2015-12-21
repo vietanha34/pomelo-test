@@ -54,8 +54,8 @@ module.exports.process = function (app, type, param) {
       raw: true
     })
     .then(function(user) {
-      utils.log(query, user);
-      var userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : ((user.count||0) + 1);
+      var userCount = (user && user[0]) ? (user[0].count) : 0;
+      userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (userCount + 1);
 
       var Achievement = mysql.Achievement;
       Achievement
