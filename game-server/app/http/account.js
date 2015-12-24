@@ -301,7 +301,7 @@ var login = function (req, res) {
             .app
             .get('redisInfo')
             .zadd('onlineUser:oldVersion', Date.now(), data.uname, function (e, r) {
-              if (r) {
+              if (!e) {
                 return res.json({
                   code: 0,
                   message: "",
@@ -310,9 +310,10 @@ var login = function (req, res) {
                     firstLogin : 0,
                     dt_id :1 //TODO: change distributor ID
                   }
-                });
+                }).end();
+              }else {
+                return res.json({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}}).end();
               }
-              res.json({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
             }.bind({uname: data.uname}));
         }
       } else {

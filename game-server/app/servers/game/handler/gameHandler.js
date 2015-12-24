@@ -365,7 +365,8 @@ pro.action = function (msg, session, next) {
     next(null);
     return
   }
-  if (board.turnUid !== uid) {
+  console.log('turnUid : ', board.turnUid, uid);
+  if (board.turnUid !== uid || board.status === consts.BOARD_STATUS.NOT_STARTED) {
     messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Không phải lượt của bạn'});
     return next(null);
   }
