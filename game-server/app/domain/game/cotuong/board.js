@@ -102,7 +102,6 @@ Game.prototype.init = function () {
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
-  console.log('gameStatus : ', gameStatus);
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
@@ -115,7 +114,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.isCheck = isCheck;
   this.legalMoves = gameStatus.legalMoves;
   if (Object.keys(gameStatus.warnings).length > 0) {
-    console.log('gameStatus.warning : ', gameStatus.warnings);
     if (Object.keys(gameStatus.warnings.sapChieuDai).length > 0) {
       notifyMsg = 'Bạn chiếu dai thêm một nước nữa sẽ bị xử thua';
     } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && !gameStatus.warnings.sapBiChieuHet) {
@@ -142,9 +140,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     isCheck: isCheck
   });
   this.table.turnUid = player.uid;
-  console.log('addTurnTime : ', turnTime, player.uid);
   this.table.jobId = this.table.timer.addJob(function (uid) {
-    console.log('Job finish : ', uid);
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
   }, turnUid, turnTime + 2000);
 };
@@ -292,7 +288,6 @@ function Table(opts) {
         update = true;
       }
       if (update) {
-        console.log('cài đặt liệt chấp : ', self.game.game.lockModes, self.game.game.handicapModes);
         changed.push(' cài đặt liệt chấp');
         //dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
         dataUpdate.optional = JSON.stringify({lock: properties.lock || [], remove: properties.remove || []});
