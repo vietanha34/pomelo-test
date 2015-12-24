@@ -366,7 +366,7 @@ pro.action = function (msg, session, next) {
     return
   }
   if (board.turnUid !== uid) {
-    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Chưa đến lượt của bạn'});
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Không phải lượt của bạn'});
     return next(null);
   }
   return board.action(uid, msg, function (err, res) {

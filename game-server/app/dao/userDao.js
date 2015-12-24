@@ -627,7 +627,6 @@ UserDao.createUser = function (msg, cb) {
         });
         return utils.invokeCallback(cb, null, {code : 0, message: '', data:{}})
       } else {
-        console.error('createUser: ', result);
         return utils.invokeCallback(cb, null, {
           code: 1,
           message: "Không thể tạo mới đc user",

@@ -7,7 +7,7 @@
       "type": "file",
       "filename": "${opts:base}/logs/con-log-${opts:serverId}.log",
       "pattern": "connector",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
         "type": "basic"
       },
@@ -17,7 +17,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/rpc-log-${opts:serverId}.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
         "type": "basic"
       },
@@ -27,7 +27,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/forward-log-${opts:serverId}.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
         "type": "basic"
       },
@@ -37,7 +37,7 @@
     {
      "type": "file",
      "filename": "${opts:base}/logs/rpc-debug-${opts:serverId}.log",
-     "maxLogSize": 1048576,
+     "maxLogSize": 10485760,
      "layout": {
       "type": "basic"
      },
@@ -47,7 +47,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/crash.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
         "type": "basic"
       },
@@ -57,7 +57,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/admin.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
           "type": "basic"
         }
@@ -67,7 +67,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/pomelo-${opts:serverId}.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
           "type": "basic"
         }
@@ -77,7 +77,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/pomelo-admin.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
           "type": "basic"
         }
@@ -87,7 +87,7 @@
     {
       "type": "file",
       "filename": "${opts:base}/logs/pomelo-rpc.log",
-      "maxLogSize": 1048576,
+      "maxLogSize": 10485760,
       "layout": {
           "type": "basic"
         }

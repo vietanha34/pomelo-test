@@ -165,7 +165,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [], finishData = [];
@@ -239,7 +238,6 @@ Game.prototype.finishGame = function (result, uid) {
   }
   this.table.finishGame();
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-  console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -247,7 +245,6 @@ Game.prototype.finishGame = function (result, uid) {
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
-    console.log('finishData : ', finishData[i], player.userInfo.username);
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -357,15 +354,8 @@ Table.prototype.startGame = function (uid, cb) {
   var self = this;
   if (code == Code.OK) {
     this.game.playerPlayingId = this.players.playerSeat;
-    this.transaction(this.game.playerPlayingId, this.game.matchId, function (err, res) {
-      if (res) {
-        utils.invokeCallback(cb);
-        self.game.init();
-      } else {
-        self.game.close();
-        utils.invokeCallback(cb, null, {ec: 500, msg: 'Lỗi trong quá trình khởi tạo ván chơi, xin vui lòng thử lại'})
-      }
-    });
+    utils.invokeCallback(cb);
+    self.game.init();
     this.emit('startGame', this.game.playerPlayingId);
   } else {
     return utils.invokeCallback(cb, null, utils.merge_options(utils.getError(code), {menu: this.players.getPlayer(uid).menu}))
@@ -409,7 +399,6 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   } else {
-    console.log('legalMove : ', legal, opts);
     return utils.invokeCallback(cb, null, {ec: Code.FAIL, msg : 'Đánh sai'})
   }
 };
