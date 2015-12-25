@@ -40,6 +40,9 @@ module.exports.process = function (app, type, param) {
     return;
   }
 
+  param.ip = param.ip || 'ip';
+  param.deviceId = param.deviceId || 'deviceId';
+
   var mysql = pomelo.app.get('mysqlClient');
 
   var query = 'SELECT COUNT(uid) AS `count` FROM ' +
