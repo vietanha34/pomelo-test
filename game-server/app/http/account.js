@@ -13,10 +13,10 @@ var Formula = require('../consts/formula');
 var MD5 = require('MD5');
 var encrypt = require('../util/encrypt');
 
-module.exports = function(app) {
+module.exports = function (app) {
   app.get('/acc', function (req, res) {
     var data = req.query;
-    switch (data.api){
+    switch (data.api) {
       case 'acc.create':
         register(req, res);
         break;
@@ -40,6 +40,12 @@ module.exports = function(app) {
         break;
       case 'acc.logout':
         logout(req, res);
+        break;
+      case 'acc.update':
+        updateProfile(req, res);
+        break;
+      case 'acc.update_vipPoint':
+        updateVippoint(req, res);
         break;
       default:
         res.status(500).json({msg: "có lỗi xảy ra"})
@@ -82,7 +88,7 @@ module.exports = function(app) {
             if (xp) {
               UserDao
                 .updateProperties(uid, {
-                  exp : db.sequelize.literal(' exp + ' + xp)
+                  exp: db.sequelize.literal(' exp + ' + xp)
                 })
                 .catch(function (err) {
                   console.error(err);
@@ -97,7 +103,7 @@ module.exports = function(app) {
             if (user[gameName + 'Elo'] + elo < 500) {
               update[gameName + 'Elo'] = 500
             } else {
-              update[gameName + 'Elo'] = db.sequelize.literal(' '  + gameName + 'Elo + ' + elo);
+              update[gameName + 'Elo'] = db.sequelize.literal(' ' + gameName + 'Elo + ' + elo);
             }
             update[gameName + 'GiveUp'] = db.sequelize.literal(' ' + gameName + 'GiveUp + ' + giveUp);
             user
@@ -143,7 +149,7 @@ module.exports = function(app) {
             if (record) {
               var keys = Object.keys(Consts.GAME_MAP_ID);
               var exp = [];
-              for (var i = 0 ; i < keys.length; i++) {
+              for (var i = 0; i < keys.length; i++) {
                 var gameId = keys[i];
                 var gameName = Consts.GAME_MAP_ID[gameId];
                 exp.push({
@@ -194,8 +200,8 @@ module.exports = function(app) {
       return res.json({code: code.ACCOUNT_OLD.WRONG_PARAM});
     }
     var opts = {
-      gold : gold,
-      username : uname
+      gold: gold,
+      username: uname
     };
     UserDao.getUserIdByUsername(uname)
       .then(function (uid) {
@@ -242,7 +248,7 @@ module.exports = function(app) {
       })
       .catch(function (err) {
         console.log('err : ', err);
-        res.json({msg: err.msg || 'có lỗi xảy ra', code : 99}).end()
+        res.json({msg: err.msg || 'có lỗi xảy ra', code: 99}).end()
       })
       .finally(function () {
 
@@ -278,23 +284,23 @@ var login = function (req, res) {
       })
     })
     .then(function (result) {
-      if (result && !result.code){
+      if (result && !result.code) {
         return UserDao.getUserIdByUsername(data.uname)
-      }else {
+      } else {
         res.json(result).end();
       }
     })
     .then(function (uid) {
-      if (uid){
+      if (uid) {
         return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid, null)
       } else {
         res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
       }
     })
     .then(function (status) {
-      if (status){
+      if (status) {
         if (status.online) {
-          return Promise.reject({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}})
+          return Promise.reject({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}})
         } else {
           // add user login in old version
           pomelo
@@ -305,14 +311,14 @@ var login = function (req, res) {
                 return res.json({
                   code: 0,
                   message: "",
-                  data: { uname: this.uname },
-                  extra : {
-                    firstLogin : 0,
-                    dt_id :1 //TODO: change distributor ID
+                  data: {uname: this.uname},
+                  extra: {
+                    firstLogin: 0,
+                    dt_id: 1 //TODO: change distributor ID
                   }
                 }).end();
-              }else {
-                return res.json({ code : 1, message : 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data :{}}).end();
+              } else {
+                return res.json({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}}).end();
               }
             }.bind({uname: data.uname}));
         }
@@ -322,7 +328,7 @@ var login = function (req, res) {
     })
     .catch(function (err) {
       console.log(err);
-      res.json({message: err.message || 'có lỗi xảy ra', code : err.code || 99, data : {}}).end()
+      res.json({message: err.message || 'có lỗi xảy ra', code: err.code || 99, data: {}}).end()
     })
     .finally(function () {
       data = null;
@@ -337,7 +343,7 @@ var getProfile = function (req, res) {
     .get('redisInfo')
     .hgetallAsync('cothu:profile:' + data.uname)
     .then(function (profile) {
-      if (profile){
+      if (profile) {
         return Promise.resolve(profile);
       } else {
         return UserDao.getUserPropertiesByUsername(data.uname, ['username', ['gold', 'money2'], 'phone', 'email', ['distributorId', 'dt_id'], ['spId', 'sp_id'], ['updatedAt', 'lastupdate']])
@@ -346,7 +352,7 @@ var getProfile = function (req, res) {
             user.money = 0;
             user.pass = '';
             user.ban = 0;
-            user.idcard  = '';
+            user.idcard = '';
             user['lastupdate'] = moment(user['lastupdate']).unix();
             user['regDate'] = moment(user['regDate']).unix();
             pomelo.app.get('redisInfo').hmset('cothu:profile:' + data.uname, user);
@@ -372,10 +378,10 @@ var getExpProfile = function (req, res) {
     .get('redisInfo')
     .getAsync('cothu:expProfile:' + data.uname)
     .then(function (profile) {
-      if (profile){
+      if (profile) {
         return Promise.resolve(profile);
       } else {
-        return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday' ,['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex','gender']])
+        return UserDao.getUserPropertiesByUsername(data.uname, ['uid', ['statusMsg', 'status'], 'address', 'fullname', 'birthday', ['exp', 'totalxp'], ['vipPoint', 'vpoint'], ['sex', 'gender']])
           .then(function (user) {
             if (!user) return res.status(500).end();
             user.address = user.address || '';
@@ -418,7 +424,7 @@ var loginViaApp = function (req, res) {
     })
     .catch(function (err) {
       console.log('err: ', err);
-      res.json({code:99, message:'có lỗi xảy ra'}).end()
+      res.json({code: 99, message: 'có lỗi xảy ra'}).end()
     })
 };
 
@@ -427,18 +433,18 @@ var changePassword = function (req, res) {
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   UserDao
     .updateProfile(data.uname, {
-      passwordMd5 : MD5(data.newpass),
-      password : encrypt.cryptPassword(data.newpass)
+      passwordMd5: MD5(data.newpass),
+      password: encrypt.cryptPassword(data.newpass)
     })
     .then(function (result) {
-      if (result && result[0]){
+      if (result && result[0]) {
         pomelo.app.get('redisInfo')
           .hset('cothu:' + data.uname, 'passwd', MD5(data.newpass));
         pomelo.app.get('redisInfo')
-          .expire('cothu:' + data.uname, 60 * 60 *24);
-        return res.json({ code : 0, message: "Đổi mật khẩu thành công", data : { newpass : data.newpass}})
-      }else {
-        return res.json({ code : 1, message: "Không thể cập nhật được mật khẩu", data : {}});
+          .expire('cothu:' + data.uname, 60 * 60 * 24);
+        return res.json({code: 0, message: "Đổi mật khẩu thành công", data: {newpass: data.newpass}})
+      } else {
+        return res.json({code: 1, message: "Không thể cập nhật được mật khẩu", data: {}});
       }
     });
 };
@@ -447,13 +453,13 @@ var banUser = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   return UserDao.updateProfile(data.uname, {
-    status : 2
+    status: 2
   })
     .then(function (result) {
-      if (result && result[0]){
-        return res.json({ code : 0, message: "Khoá người chơi thành công", data : { newpass : data.newpass}})
-      }else {
-        return res.json({ code : 1, message: "Người chơi không tồn tại", data : {}});
+      if (result && result[0]) {
+        return res.json({code: 0, message: "Khoá người chơi thành công", data: {newpass: data.newpass}})
+      } else {
+        return res.json({code: 1, message: "Người chơi không tồn tại", data: {}});
       }
     })
 };
@@ -463,10 +469,10 @@ var existUser = function (req, res) {
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   return UserDao.isExist(data.uname)
     .then(function (data) {
-      if(data){
-        return res.json({code: 14, message:'', data:data});
-      }else {
-        return res.json({code : 0, message :"user không tồn tại", data : {}})
+      if (data) {
+        return res.json({code: 14, message: '', data: data});
+      } else {
+        return res.json({code: 0, message: "user không tồn tại", data: {}})
       }
     })
 };
@@ -475,13 +481,13 @@ var activeUser = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   return UserDao.updateProfile(data.uname, {
-    status : 1
+    status: 1
   })
     .then(function (result) {
-      if (result && result[0]){
-        return res.json({ code : 0, message: "Mở khoá người chơi thành công", data : { newpass : data.newpass}})
-      }else {
-        return res.json({ code : 1, message: "Người chơi không tồn tại", data : {}});
+      if (result && result[0]) {
+        return res.json({code: 0, message: "Mở khoá người chơi thành công", data: {newpass: data.newpass}})
+      } else {
+        return res.json({code: 1, message: "Người chơi không tồn tại", data: {}});
       }
     })
 };
@@ -494,16 +500,46 @@ var logout = function (req, res) {
   res.json({code: code.ACCOUNT_OLD.OK});
 };
 
+
+var updateVippoint = function (req, res) {
+  var data = req.query;
+  if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
+  UserDao
+    .getUserIdByUsername(data.uname)
+    .then(function (uid) {
+      var mysqlClient = pomelo.app.get('mysqlClient');
+      return mysqlClient
+        .User.update({
+          vipPoint: mysqlClient.sequelize.literal('vipPoint + ' + parseInt(data.vipPoint))
+        }, {
+          where: {
+            uid: uid
+          }
+        });
+    })
+    .then(function () {
+      return res.json({ code : 1, data : {}, message: ''})
+    })
+    .catch(function (err) {
+      console.log(err);
+      res.json({code : 0, data : {}, message: ''})
+    });
+};
+
 var forgotPass = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   pomelo
     .app.get('accountService')
     .forgotPassword({
-      username : data.uname,
-      phoneNumber : data.phone
+      username: data.uname,
+      phoneNumber: data.phone
     })
     .then(function (result) {
 
     })
 };
+
+var updateProfile = function (req, res) {
+
+}
