@@ -1,40 +1,45 @@
-/* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('News', {
+  return sequelize.define('Mission', {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       primaryKey : true,
       autoIncrement : true
     },
-    cate: {
-      type: DataTypes.INTEGER(4).UNSIGNED,
-      allowNull: true,
-      index: true
-    },
-    title: {
+    name: {
       type: DataTypes.STRING(511),
       allowNull: true
     },
-    content: {
-      type: DataTypes.TEXT,
-      allowNull: true
+    type: {
+      type: DataTypes.INTEGER(4).UNSIGNED,
+      allowNull: true,
+      defaultValue: 1
+    },
+    gold: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+      defaultValue: 0
+    },
+    exp: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+      defaultValue: 0
+    },
+    rank: {
+      type: DataTypes.INTEGER(4).UNSIGNED,
+      allowNull: true,
+      defaultValue: 0
     },
     status: {
       type: DataTypes.INTEGER(4).UNSIGNED,
       allowNull: true,
       defaultValue: 1
     },
-    isHot: {
-      type: DataTypes.INTEGER(4).UNSIGNED,
+    progress: {
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
-      defaultValue: 0
-    },
-    isNews: {
-      type: DataTypes.INTEGER(4).UNSIGNED,
-      allowNull: true,
-      defaultValue: 0
+      defaultValue: 1
     }
   }, {
     classMethods: {
@@ -42,10 +47,11 @@ module.exports = function(sequelize, DataTypes) {
         // associations can be defined here
       }
     },
-    tableName : 'News',
+    timestamps: false,
+    tableName : 'Mission',
     indexes:[
       {
-        columns:["cate","status",'updatedAt']
+        columns:["status","rank"]
       }
     ]
   });

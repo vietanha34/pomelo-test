@@ -62,7 +62,7 @@ HomeDao.getHome = function getHome(params, cb) {
   })
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
-      data.received = (globalConfig.IS_REVIEW ? 1 : (props.dailyReceived || 0));
+      data.received = (globalConfig.IS_REVIEW ? 1 : (Number(props.dailyReceived) || 0));
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;

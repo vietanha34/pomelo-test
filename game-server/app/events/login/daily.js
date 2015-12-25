@@ -35,8 +35,6 @@ module.exports.process = function (app, type, param) {
   var startOfDay = moment().startOf('day').unix();
   var startOfWeek = moment().startOf('isoweek').unix();
 
-  utils.log('daily', startOfDay, startOfWeek);
-
   UserDao.getUserProperties(param.uid, ['lastLogin'])
     .then(function(user) {
       user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 0;
@@ -52,7 +50,12 @@ module.exports.process = function (app, type, param) {
       else
         multi.hincrby(userKey, 'loginCount', 1);
 
-      multi.exec();
+      multi.exec(function(e) {
+        if (e) {
+          console.error(e.stack || e);
+          utils.log(e.stack || e);
+        }
+      });
     })
     .catch(function(e) {
       console.error(e.stack || e);
