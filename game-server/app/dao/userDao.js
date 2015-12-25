@@ -590,6 +590,7 @@ UserDao.createUser = function (msg, cb) {
           .get('mysqlClient')
           .User
           .create({
+            gold : msg.money2 || 0,
             uid: result.userId,
             username : msg.uname,
             fullname: msg.uname,
