@@ -65,7 +65,7 @@ module.exports = function(app) {
 
       if (msg.image) msg.image = utils.JSONParse(msg.image);
       if (msg.command) msg.command = utils.JSONParse(msg.command);
-      if (msg.buttonLabel) msg.buttonLabel = utils.JSONParse(msg.buttonLabel);
+      if (msg.button) msg.button = utils.JSONParse(msg.button);
       if (msg.users) msg.users = utils.JSONParse(msg.users);
       msg.command.target = parseInt(msg.command.target);
       if (!msg.command.target) msg.command.target = 0;
