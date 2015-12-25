@@ -596,6 +596,7 @@ UserDao.createUser = function (msg, cb) {
             phone: msg.phone || '',
             email: msg.email || '',
             avatar: null,
+            platform : msg.platform,
             accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
             distributorId: msg.dtid || msg.dtId || 1,
             deviceId: msg.deviceId || msg.deviceid,
