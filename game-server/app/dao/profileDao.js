@@ -159,7 +159,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       .catch(function(e) {
         if (e.statusCode) {
           var json = utils.JSONParse(e.error, {});
-          return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+          return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : json.msg ? json.msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
         }
         console.error(e.stack || e);
         utils.log(e.stack || e);

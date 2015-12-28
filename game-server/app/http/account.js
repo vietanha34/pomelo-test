@@ -36,7 +36,10 @@ module.exports = function (app) {
         changePassword(req, res);
         break;
       case 'acc.forgot':
-        res.status(500).json({msg: "có lỗi xảy ra"});
+        forgot(req, res);
+        break;
+      case 'acc.forgot_pass':
+        forgotPass(req, res);
         break;
       case 'acc.logout':
         logout(req, res);
@@ -356,7 +359,7 @@ var getProfile = function (req, res) {
             user['lastupdate'] = moment(user['lastupdate']).unix();
             user['regDate'] = moment(user['regDate']).unix();
             pomelo.app.get('redisInfo').hmset('cothu:profile:' + data.uname, user);
-            pomelo.app.get('redisInfo').expire('cothu:profile:' + data.uname, 60 * 30);
+            pomelo.app.get('redisInfo').expire('cothu:profile:' + data.uname, 60 * 10);
             return Promise.resolve(user);
           })
       }
@@ -398,7 +401,7 @@ var getExpProfile = function (req, res) {
             user.birthday = user.birthday ? '0000-00-00' : moment(user.birthday).format('YYYY-MM-DD');
             var dataCache = JSON.stringify(user);
             pomelo.app.get('redisInfo').set('cothu:expProfile:' + data.uname, dataCache);
-            pomelo.app.get('redisInfo').expire('cothu:expProfile:' + data.uname, 60 * 30);
+            pomelo.app.get('redisInfo').expire('cothu:expProfile:' + data.uname, 60 * 10);
             return Promise.resolve(user);
           })
       }
@@ -438,10 +441,6 @@ var changePassword = function (req, res) {
     })
     .then(function (result) {
       if (result && result[0]) {
-        pomelo.app.get('redisInfo')
-          .hset('cothu:' + data.uname, 'passwd', MD5(data.newpass));
-        pomelo.app.get('redisInfo')
-          .expire('cothu:' + data.uname, 60 * 60 * 24);
         return res.json({code: 0, message: "Đổi mật khẩu thành công", data: {newpass: data.newpass}})
       } else {
         return res.json({code: 1, message: "Không thể cập nhật được mật khẩu", data: {}});
@@ -457,7 +456,7 @@ var banUser = function (req, res) {
   })
     .then(function (result) {
       if (result && result[0]) {
-        return res.json({code: 0, message: "Khoá người chơi thành công", data: {newpass: data.newpass}})
+        return res.json({code: 0, message: "Khoá người chơi thành công", data: {}})
       } else {
         return res.json({code: 1, message: "Người chơi không tồn tại", data: {}});
       }
@@ -518,28 +517,101 @@ var updateVippoint = function (req, res) {
         });
     })
     .then(function () {
-      return res.json({ code : 1, data : {}, message: ''})
+      return res.json({code: 1, data: {}, message: ''})
     })
     .catch(function (err) {
       console.log(err);
-      res.json({code : 0, data : {}, message: ''})
+      res.json({code: 0, data: {}, message: ''})
     });
 };
 
 var forgotPass = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
-  pomelo
-    .app.get('accountService')
-    .forgotPassword({
-      username: data.uname,
-      phoneNumber: data.phone
+  var newPass;
+  UserDao.getUserPropertiesByUsername(data.uname, ['email'])
+    .then(function (user) {
+      if (!user) {
+        return Promise.reject({code: 10, message: 'Tên đăng nhập không hợp lệ', data: {}});
+      }
+      if (user.email === data.email) {
+        newPass = utils.uid(6);
+        return UserDao.updateProfile(data.uname, {
+          passwordMd5: MD5(newPass),
+          password: encrypt.cryptPassword(newPass)
+        })
+      } else {
+        return Promise.reject({code: 1, message: "Email không chính xác hoặc không hợp lệ", data: {}})
+      }
     })
     .then(function (result) {
+      return res.json({code: 0, message: '', data: {pass: newPass}});
+    })
+    .catch(function (err) {
+      return res.json({code: err.code || 99, data: {}, message: ''})
+    })
+};
 
+var forgot = function (req, res) {
+  var data = req.query;
+  if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
+  var newPass;
+  UserDao.getUserPropertiesByUsername(data.uname, ['phone'])
+    .then(function (user) {
+      if (!user) {
+        return Promise.reject({code: 10, message: 'Tên đăng nhập không hợp lệ', data: {}});
+      }
+      if (user.phone === data.phone) {
+        newPass = utils.uid(6);
+        return UserDao.updateProfile(data.uname, {
+          passwordMd5: MD5(newPass),
+          password: encrypt.cryptPassword(newPass)
+        })
+      } else {
+        return Promise.reject({code: 13, message: "Số điện thoại không hợp lệ", data: {}})
+      }
+    })
+    .then(function (result) {
+      return res.json({code: 0, message: '', data: {pass: newPass}});
+    })
+    .catch(function (err) {
+      console.error(err);
+      return res.json({code: err.code || 99, data: {}, message: err.message || 'Có lỗi xảy ra'})
     })
 };
 
 var updateProfile = function (req, res) {
+  var data = req.query;
+  if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
+  var update = {}, updateAccount = {};
+  if (data.gender) update.sex = updateAccount.sex = data.gender;
+  if (data.address) update.address = updateAccount.address = new Buffer(data.address, 'base64').toString('utf8');
+  if (data.status) update.statusMsg = new Buffer(data.status, 'base64').toString('utf8');
+  if (data.fullname) update.fullname = updateAccount.fullname = new Buffer(data.fullname, 'base64').toString('utf8');
+  if (data.phone) update.phone = updateAccount.phoneNumber = data.phone;
+  if (data.deviceid) update.deviceId = updateAccount.deviceId = data.deviceid;
+  if (data.email) update.email = updateAccount.email = data.email;
+  if (data.birthday) { update.birthday = moment(data.birthday, 'YYYY-MM-DD').toDate(); updateAccount.birthday = data.birthday};
 
-}
+  UserDao
+    .getUserIdByUsername(data.uname)
+    .then(function (uid) {
+      var mysqlClient = pomelo.app.get('mysqlClient');
+      return [mysqlClient
+        .User.update(update, {
+          where: {
+            uid: uid
+          }
+        }), UserDao.updateUserProfile(uid, updateAccount)];
+    })
+    .spread(function () {
+      return res.json({code: 0, data: {}, message: ''})
+    })
+    .catch(function (err) {
+      console.log(err);
+      res.json({code: 99, data: {}, message: 'Có lỗi xảy ra'})
+    })
+    .finally(function () {
+      data = null;
+    })
+};

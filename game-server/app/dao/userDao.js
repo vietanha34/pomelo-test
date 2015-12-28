@@ -504,10 +504,22 @@ UserDao.loginWithUsername = function (msg, cb) {
     })
 };
 
-UserDao.updateProfile = function (username,msg, cb) {
+UserDao.updateProfile = function (username, msg) {
   msg.username = username;
+  if (msg.passwordMd5){
+    pomelo.app.get('redisInfo')
+      .hset('cothu:' + msg.username, 'passwd', msg.passwordMd5);
+    pomelo.app.get('redisInfo')
+      .expire('cothu:' + msg.username, 60 * 60 * 24);
+  }
   return pomelo.app.get('accountService')
     .updateProfile(msg);
+};
+
+UserDao.updateUserProfile = function (uid, msg) {
+  msg.userId = uid;
+  return pomelo.app.get('accountService')
+    .updateUserProfile(msg);
 };
 
 UserDao.loginViaApp = function (msg, cb) {
