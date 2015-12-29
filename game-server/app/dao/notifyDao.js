@@ -17,7 +17,7 @@ var lodash = require('lodash');
  *  title
  *  msg
  *  image
- *  button
+ *  buttonLabel
  *  command
  *  scope
  *  users
