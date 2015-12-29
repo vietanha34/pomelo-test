@@ -41,6 +41,9 @@ exp.addEventFromBoard = function (board) {
         isFull : board.players.length >= board.maxPlayer ? 1 : 0
       });
       board.pushOnJoinBoard(player.uid);
+      if (player.uid === board.owner){
+        board.timeStart = Date.now();
+      }
     }else {
       pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
       board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
