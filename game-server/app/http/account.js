@@ -6,6 +6,7 @@ var utils = require('../util/utils');
 var code = require('../consts/code');
 var Consts = require('../consts/consts');
 var UserDao = require('../dao/userDao');
+var TopDao = require('../dao/topDao');
 var Promise = require('bluebird');
 var pomelo = require('pomelo');
 var moment = require('moment');
@@ -53,6 +54,53 @@ module.exports = function (app) {
       default:
         res.status(500).json({msg: "có lỗi xảy ra"})
     }
+  });
+
+  app.get('/top', function(req, res) {
+    var param = req.query;
+    var type = 99;
+    var gameId = param.gameid || 20;
+    if (param.api == 'top.famous') {
+      type = Consts.MAP_GAME_ID_OLD_VERSION[gameId] || 1;
+    }
+    else if (param.api == 'top.rich') {
+      type = 100;
+    }
+
+    UserDao
+      .getUserIdByUsername(param.uname)
+      .then(function (uid) {
+        if (!uid) {
+          return res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
+        }
+
+        return TopDao.getTop(uid, type)
+          .then(function(data) {
+            var ret = [];
+            data.list.forEach(function(item) {
+              ret.push({
+                uname: item.fullname,
+                money: item.point,
+                money2: item.point,
+                maxxp: item.point,
+                totalxp: item.point,
+                avatarid: 0,
+                status: item.statusMsg || '',
+                vpoint: item.point
+              });
+            });
+
+            return res.json({
+              code: code.ACCOUNT_OLD.OK,
+              data: ret,
+              message: data.me.rank
+            })
+          });
+      })
+      .catch(function (e) {
+        console.error(e.stack || e);
+        res.status(500).end();
+      });
   });
 
   app.get('/experience/update', function (req, res) {
@@ -114,11 +162,21 @@ module.exports = function (app) {
               .catch(function (err) {
                 console.error(err);
               });
+
             res.json({
               code: code.ACCOUNT_OLD.OK,
               data: '',
               message: ''
-            })
+            });
+
+            var mongoClient = pomelo.app.get('mongoClient');
+            var Top = mongoClient.model('Top');
+            var topUpdate = {};
+            topUpdate[gameName] = elo;
+            Top.update({uid: uid}, {$inc: topUpdate}, {upsert: false})
+              .catch(function (err) {
+                console.error(err);
+              });
           })
           .catch(function (err) {
             console.error(err);
