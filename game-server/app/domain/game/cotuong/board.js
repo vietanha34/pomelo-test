@@ -57,6 +57,7 @@ Game.prototype.init = function () {
   } else {
     this.game.isWhiteTurn = true;
   }
+  this.game.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -318,8 +319,11 @@ Table.prototype.getStatus = function () {
   status.lock = this.game.game.lockSquares;
   status.remove = this.game.game.handicapSquares;
   status.log = boardStatus.movesHistory2;
-  status.detail = '' + this.game.firstTurn === consts.COLOR.WHITE ? 'đỏ' : 'đen' + ' đi tiên';
-  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
+  if (this.game.firstTurn){
+    status.detail = '' + this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên';
+  }else {
+    status.detail = '';
+  }  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   if (status.turn) {
     if (this.game.isCheck && this.game.isCheck.king) status.turn.isCheck = this.game.isCheck;
     status.turn.moves = this.game.legalMoves;
@@ -435,6 +439,7 @@ Table.prototype.demand = function (opts) {
             rollBack: 1,
             isMinus: 1
           });
+          this.rollbackMove = this.game.numMove;
           this.game.game.takeBack(this.game.previousChange);
           this.game.gameStatus = this.game.game.getBoardStatus();
           this.game.progress();
@@ -451,7 +456,7 @@ Table.prototype.demand = function (opts) {
           return {};
         }
       } else {
-        if (otherPlayerUid !== this.turnUid) {
+        if (otherPlayerUid !== this.turnUid || this.rollbackMove === this.game.numMove) {
           return {ec: Code.FAIL, msg : "Chưa đến lượt bạn xin hoãn"};
         }
         //request
@@ -504,6 +509,7 @@ Table.prototype.demand = function (opts) {
     case consts.ACTION.SURRENDER:
     default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      return {};
   }
 };
 

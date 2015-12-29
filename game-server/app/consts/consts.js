@@ -10,15 +10,6 @@ module.exports = {
     JAVA : 4
   },
 
-  MAP_GAME_ID_OLD_VERSION : {
-    20 : 5,
-    21 : 1,
-    22 : 2,
-    23 : 6,
-    24 : 3,
-    25 : 4
-  },
-
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp'],
 
   WAITING_LIST : {
@@ -416,10 +407,11 @@ module.exports = {
     ALL_IN: 2000,
     SHOW_DOWN: 2000,
     TIMEOUT_START : 30 * 1000,
-    SIT_OUT_TIMEOUT: 3 * 60 * 1000,
+    SIT_OUT_TIMEOUT: 10 * 60 * 1000,
     GAME_IDLE: 60 * 1000 * 10,
     GAME_STUCK: 60 * 10 * 1000,
-    SIT_OUT_LEAVE: 5 * 60 * 1000,
+    SIT_OUT_LEAVE: 30 * 60 * 1000,
+    BOARD_NOT_START :3 * 60 * 1000,
     TIMEOUT_LEAVE_BOARD: 2000,
     LAYER_TIME : 4000,
     DELTA_TIME : 5000,

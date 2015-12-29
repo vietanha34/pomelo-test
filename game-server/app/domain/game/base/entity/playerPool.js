@@ -104,18 +104,20 @@ pro.addPlayer = function (opts) {
     table: self.table
   });
   self.players[uid] = player;
+  var slotIndex = self.getSlotAvailable(slotId, uid);
   if (player.gold < self.table.bet
     || self.length >= self.table.maxPlayer
     || (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))
     || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG))
   ) {
-
-    if (player.gold < self.table.bet) {
-      player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
-      data.notifyMsg = 'Bạn không đủ tiền để chơi bàn chơi này'
-    }
-    if (player.userInfo.level < self.table.level){
-      data.notifyMsg = 'Bạn không đủ cấp độ để chơi bàn chơi này'
+    if (slotIndex > -1){
+      if (player.gold < self.table.bet) {
+        player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
+        data.notifyMsg = 'Bạn không đủ tiền để chơi bàn chơi này'
+      }
+      if (player.userInfo.level < self.table.level){
+        data.notifyMsg = 'Bạn không đủ cấp độ để chơi bàn chơi này'
+      }
     }
     if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){
       data.notifyMsg = 'Bạn không có vật phẩm để chơi phòng miễn phí'
@@ -127,7 +129,6 @@ pro.addPlayer = function (opts) {
     result = data;
     player.genMenu();
   } else {
-    var slotIndex = self.getSlotAvailable(slotId, uid);
     if (slotIndex > -1) {
       // add new player
       self.playerSeat[slotIndex] = player.uid;

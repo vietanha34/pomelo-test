@@ -12,6 +12,7 @@ var moment = require('moment');
 var Formula = require('../consts/formula');
 var MD5 = require('MD5');
 var encrypt = require('../util/encrypt');
+var RegexValid = require('../util/regexValid');
 
 module.exports = function (app) {
   app.get('/acc', function (req, res) {
@@ -605,6 +606,7 @@ var updateProfile = function (req, res) {
         }), UserDao.updateUserProfile(uid, updateAccount)];
     })
     .spread(function () {
+      UserDao.deleteCache(data.uname);
       return res.json({code: 0, data: {}, message: ''})
     })
     .catch(function (err) {

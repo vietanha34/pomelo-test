@@ -28,7 +28,6 @@ var util = require('util');
  * @property {Boolean} guest guest
  */
 var Player = function (opts) {
-  console.log('otpts : ', opts)
   this.userInfo = opts.userInfo || {};
   this.userInfo.sex = parseInt(this.userInfo.sex);
   this.userInfo.elo = parseInt(this.userInfo.elo);
@@ -210,6 +209,7 @@ Player.prototype.reset = function () {
   this.ready = false;
   this.deltaMoney = 0;
   this.totalTax = 0;
+  this.timeAction = Date.now();
   this.moneyLogs.splice(0,this.moneyLogs.length);
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
   this.menu.splice(0, this.menu.length);
@@ -257,6 +257,10 @@ Player.prototype.pushMenu = function (menu) {
   }else {
     this.menu.push(menu);
   }
+};
+
+Player.prototype.move = function () {
+  this.timeAction = Date.now();
 };
 
 Player.prototype.Ready = function () {

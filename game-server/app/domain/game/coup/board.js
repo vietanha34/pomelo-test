@@ -54,6 +54,7 @@ Game.prototype.init = function () {
   }else {
     this.game.isWhiteTurn = true;
   }
+  this.game.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (var i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -277,7 +278,11 @@ Table.prototype.getStatus = function () {
     ? { king : boardStatus.checkInfo.kingPosition, attack : boardStatus.checkInfo.attackerPositions}
     : undefined;
   status.score  = this.score;
-  console.log('killed : ', boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
+  if (this.game.firstTurn){
+    status.detail = '' + this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên - ' + this.showKill ? 'hiện quân' : 'không hiện quân';
+  }else {
+    status.detail = '';
+  }
   status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
   status.log = boardStatus.movesHistory2;
   if(status.turn){
@@ -389,6 +394,7 @@ Table.prototype.demand = function (opts) {
     case consts.ACTION.SURRENDER:
     default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      return {};
   }
 };
 

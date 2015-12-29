@@ -67,6 +67,7 @@ Player.prototype.xinHoa = function (numMove) {
 };
 
 Player.prototype.move = function (numMove) {
+  Player.super_.prototype.move.call(this);
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
   if (!this.firstMove){
     this.firstMove = true;

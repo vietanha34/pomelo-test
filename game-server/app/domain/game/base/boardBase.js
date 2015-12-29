@@ -428,36 +428,29 @@ pro.pushLeaveBoard = function (uid, data) {
  * clear player if timeout
  *
  * @param player
- * @param cb
+ * @param msg
  */
-pro.playerTimeout = function (player, cb) {
+pro.playerTimeout = function (player, msg) {
   logger.info('\n %s auto leaveBoard ', player.uid);
   var self = this;
   this.emit('kick', player);
-  this.leaveBoard(player.uid, true, function (err, uids) {
-    if (err) {
-      logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-    } else if (uids && !uids.ec) {
-      messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
-        uid: uids.uid, msg: Code.ON_GAME.FA_TIME_OUT
-      });
-      if (!uids.guest) {
-        self.pushLeaveBoard(uids.uid, {uid: uids.uid});
-      }
-      utils.invokeCallback(cb);
-    }
+  var uids = this.leaveBoard(player.uid);
+  messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
+    uid: uids.uid, notifyMsg: msg || Code.ON_GAME.FA_TIME_OUT
   });
+  if (!uids.guest) {
+    self.pushLeaveBoard(uids.uid, {uid: uids.uid});
+  }
 };
 
 pro.isAlive = function () {
   if (!this.players) {
     return false;
   }
-  //this.clearIdlePlayer();
+  this.clearIdlePlayer();
   if (this.base) {
     return true
   }
-  return !(this.players.length === 0 || this.status === consts.BOARD_STATUS.NOT_STARTED && (Date.now() - this.timeStart) > consts.TIME.GAME_IDLE)
 };
 
 
@@ -472,8 +465,17 @@ pro.clearIdlePlayer = function () {
     if (playerSeat.indexOf(player.uid) > -1) {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
-    if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_TIMEOUT && ((this.status !== consts.BOARD_STATUS.NOT_STARTED) || this.status === consts.BOARD_STATUS.NOT_STARTED)) {
-      this.playerTimeout(player);
+    if (player.guest){
+      if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_LEAVE){
+        this.playerTimeout(player);
+      }
+      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START){
+        this.playerTimeout(player);
+      }
+    }else {
+      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START){
+        this.playerTimeout(player);
+      }
     }
   }
   if (playerSeat.length > 0) {
@@ -600,6 +602,7 @@ pro.setOwner = function () {
   }
   this.owner = owner;
   if (owner) {
+    this.timeStart = Date.now();
     this.players.getPlayer(owner).setOwner();
   }
   return owner
@@ -993,7 +996,7 @@ pro.addJobReady = function (uid) {
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [30000, this.totalTime, 30000]
+    time : [20000, this.totalTime, 20000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -1003,7 +1006,7 @@ pro.addJobReady = function (uid) {
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 30000 + 4000);
+  }, uid, 20000 + 2000);
 };
 
 pro.addJobStart = function (uid) {
@@ -1014,7 +1017,7 @@ pro.addJobStart = function (uid) {
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [30000, this.totalTime, 30000]
+    time : [20000, this.totalTime, 20000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -1024,7 +1027,7 @@ pro.addJobStart = function (uid) {
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 30000 + 4000);
+  }, uid, 20000 + 2000);
 };
 
 pro.cancelJob = function () {

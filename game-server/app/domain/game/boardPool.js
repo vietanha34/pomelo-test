@@ -64,7 +64,7 @@ exp.create = function (params, cb) {
     .spread(function (board, boardId) {
       if (board) {
         boards[boardId] = board;
-        if (!rooms[board.roomId]){
+        if (!rooms[board.roomId]) {
           rooms[board.roomId] = {};
         }
         return utils.invokeCallback(cb, null, board.tableId);
@@ -147,12 +147,26 @@ exp.delBoard = function (boardId) {
   if (channel) {
     channel.destroy();
   }
-  app.get('boardService').delBoard(boardId, function () {
-    var board;
-    if (!boards[boardId]) return false;
-    board = boards[boardId];
-    board.close();
-    boards[boardId] = null;
+  app.get('boardService').delBoard(boardId)
+    .then(function () {
+      var board;
+      if (!boards[boardId]) return false;
+      board = boards[boardId];
+      board.close();
+      boards[boardId] = null;
+    });
+};
+
+exp.delRoom = function (roomId) {
+  async.forEach(Object.keys(boards), function (item, done) {
+    var board = boards[item];
+    if (board.roomId === roomId) {
+      exp.delBoard(item);
+      done()
+    } else {
+      done();
+    }
+  }, function () {
   });
 };
 
@@ -187,16 +201,17 @@ function check() {
         var numPlayer = board.players.length;
         numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
         rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer
+        board.isAlive();
       }
       var roomKeys = Object.keys(rooms);
-      for(var i = 0, len = roomKeys.length; i< len ; i ++){
+      for (var i = 0, len = roomKeys.length; i < len; i++) {
         var key = roomKeys[i];
         var progress = Math.floor(rooms[key] / 100 * 10);
         if (!progress && rooms[key]) progress += 1;
         pomelo.app.get('boardService').updateRoom({
-          roomId : key,
-          gameId : gameId,
-          progress : progress
+          roomId: key,
+          gameId: gameId,
+          progress: progress
         })
       }
     }, 30000);

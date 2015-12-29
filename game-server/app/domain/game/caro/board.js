@@ -343,6 +343,7 @@ Table.prototype.demand = function (opts) {
     case consts.ACTION.SURRENDER:
     default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      return {};
   }
 };
 

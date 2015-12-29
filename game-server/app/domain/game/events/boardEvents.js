@@ -149,6 +149,7 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.PLAY });
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
     var status = board.getStatus();
+    board.timeStart = Date.now();
     delete status['turn'];
     board.game.logs = {
       matchId : board.game.matchId,
@@ -197,6 +198,7 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('finishGame', function (data, disableLooseUser) {
+    board.timeStart = Date.now();
     var player, winUid, loseUid;
     for (var i = 0, len = data.length; i < len; i ++){
       var user = data[i];

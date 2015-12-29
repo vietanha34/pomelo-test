@@ -577,6 +577,26 @@ UserDao.loginViaApp = function (msg, cb) {
 
 };
 
+UserDao.deleteCache = function (username, uid) {
+  if (uid){
+    UserDao.getUserProperties(uid, ['username'])
+      .then(function (user) {
+        if (user){
+          var username = user.username;
+          var redisClient  = pomelo.app.get('redisInfo');
+          redisClient.del('cothu:profile:' + username);
+          redisClient.del('cothu:expProfile:'+username);
+          pomelo.app.get('redisInfo')
+            .del('cothu:' + username, 'passwd');
+        }
+      })
+  }else {
+    var redisClient  = pomelo.app.get('redisInfo');
+    redisClient.del('cothu:profile:' + username);
+    redisClient.del('cothu:expProfile:'+username);
+  }
+};
+
 UserDao.createUser = function (msg, cb) {
   return pomelo
     .app

@@ -94,7 +94,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   console.log('setOnTurn with turnTime : ', turnTime);
   console.log('addTurnTime : ', turnTime);
   this.table.jobId = this.table.timer.addJob(function (uid) {
-    console.trace('turn covay')
     self.table.action(uid, {});
   }, turnUid, turnTime + 2000);
 };
@@ -368,6 +367,7 @@ Table.prototype.demand = function (opts) {
     case consts.ACTION.SURRENDER:
     default :
       this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      return {};
   }
 };
 

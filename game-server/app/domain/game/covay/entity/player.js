@@ -53,6 +53,8 @@ Player.prototype.xinHoa = function (numMove) {
 };
 
 Player.prototype.move = function () {
+  Player.super_.prototype.move.call(this);
+  this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
   if (!this.firstMove) {
     this.firstMove = true;
     var otherPlayer = this.table.players.getPlayer(this.table.players.getOtherPlayer(this.uid));
@@ -60,7 +62,6 @@ Player.prototype.move = function () {
     this.pushMenu(this.table.genMenu(consts.ACTION.CHANGE_TURN));
     return true
   }
-  this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
 };
 
 Player.prototype.reset = function () {
