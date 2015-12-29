@@ -37,7 +37,7 @@ module.exports.process = function (app, type, param) {
 
   UserDao.getUserProperties(param.uid, ['lastLogin'])
     .then(function(user) {
-      user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 0;
+      user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 1;
       UserDao.updateProperties(param.uid, {lastLogin: theMoment.format('YYYY-MM-DD HH:mm:ss')});
       if (!user.lastLogin || user.lastLogin >= startOfDay) return;
 
