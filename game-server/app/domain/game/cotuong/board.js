@@ -102,7 +102,6 @@ Game.prototype.init = function () {
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
-  console.log('gameStatus : ', gameStatus);
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
@@ -115,7 +114,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.isCheck = isCheck;
   this.legalMoves = gameStatus.legalMoves;
   if (Object.keys(gameStatus.warnings).length > 0) {
-    console.log('gameStatus.warning : ', gameStatus.warnings);
     if (Object.keys(gameStatus.warnings.sapChieuDai).length > 0) {
       notifyMsg = 'Bạn chiếu dai thêm một nước nữa sẽ bị xử thua';
     } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && !gameStatus.warnings.sapBiChieuHet) {
@@ -142,9 +140,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     isCheck: isCheck
   });
   this.table.turnUid = player.uid;
-  console.log('addTurnTime : ', turnTime, player.uid);
   this.table.jobId = this.table.timer.addJob(function (uid) {
-    console.log('Job finish : ', uid);
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
   }, turnUid, turnTime + 2000);
 };
@@ -165,7 +161,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [], finishData = [];
@@ -239,7 +234,6 @@ Game.prototype.finishGame = function (result, uid) {
   }
   this.table.finishGame();
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-  console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -247,7 +241,6 @@ Game.prototype.finishGame = function (result, uid) {
     finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
-    console.log('finishData : ', finishData[i], player.userInfo.username);
   }
   if (bet > 0){
     subGold = loseUser.subGold(bet);
@@ -295,7 +288,6 @@ function Table(opts) {
         update = true;
       }
       if (update) {
-        console.log('cài đặt liệt chấp : ', self.game.game.lockModes, self.game.game.handicapModes);
         changed.push(' cài đặt liệt chấp');
         //dataChanged.optional = JSON.stringify({ lock : properties.lock || [], remove: properties.remove || []});
         dataUpdate.optional = JSON.stringify({lock: properties.lock || [], remove: properties.remove || []});
@@ -357,15 +349,8 @@ Table.prototype.startGame = function (uid, cb) {
   var self = this;
   if (code == Code.OK) {
     this.game.playerPlayingId = this.players.playerSeat;
-    this.transaction(this.game.playerPlayingId, this.game.matchId, function (err, res) {
-      if (res) {
-        utils.invokeCallback(cb);
-        self.game.init();
-      } else {
-        self.game.close();
-        utils.invokeCallback(cb, null, {ec: 500, msg: 'Lỗi trong quá trình khởi tạo ván chơi, xin vui lòng thử lại'})
-      }
-    });
+    utils.invokeCallback(cb);
+    self.game.init();
     this.emit('startGame', this.game.playerPlayingId);
   } else {
     return utils.invokeCallback(cb, null, utils.merge_options(utils.getError(code), {menu: this.players.getPlayer(uid).menu}))
@@ -409,7 +394,6 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   } else {
-    console.log('legalMove : ', legal, opts);
     return utils.invokeCallback(cb, null, {ec: Code.FAIL, msg : 'Đánh sai'})
   }
 };

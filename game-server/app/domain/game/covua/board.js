@@ -290,15 +290,8 @@ Table.prototype.startGame = function (uid, cb) {
   var self = this;
   if (code == Code.OK) {
     this.game.playerPlayingId = this.players.playerSeat;
-    this.transaction(this.game.playerPlayingId, this.game.matchId, function (err, res) {
-      if (res) {
-        utils.invokeCallback(cb);
-        self.game.init();
-      } else {
-        self.game.close();
-        utils.invokeCallback(cb, null, { ec : 500, msg : 'Lỗi trong quá trình khởi tạo ván chơi, xin vui lòng thử lại'})
-      }
-    });
+    utils.invokeCallback(cb);
+    self.game.init();
     this.emit('startGame', this.game.playerPlayingId);
   } else {
     return utils.invokeCallback(cb, null, utils.merge_options(utils.getError(code), {menu: this.players.getPlayer(uid).menu}))

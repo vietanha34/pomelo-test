@@ -504,3 +504,20 @@ utils.findTourAfterTime = function findTourAfterTime(tour, time) {
     }
   }
 };
+
+utils.uid = function (len, uniqueString) {
+  var buf = [];
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charlen = chars.length;
+  for (var i = 0; i < len; ++i) {
+    buf.push(chars[getRandomInt(0, charlen - 1)]);
+  }
+  if (typeof uniqueString === 'string'){
+    buf.push(MD5(uniqueString))
+  }
+  return buf.join('');
+};
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}

@@ -126,26 +126,25 @@ Game.prototype.createRoom = function (hallConfig, roomId) {
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
+        var betConfig = utils.JSONParse(hallConfig.betConfig, []);
         opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)];
         opts.turnTime = 3 * 60;
-        switch (hallId){
-          case consts.HALL_ID.KIEN_TUONG:
-            opts.bet = 3000 + Math.floor((i-1) / 6) * 2000;
-            break;
-          case consts.HALL_ID.BINH_DAN:
-            //if (self.gameId === consts.GAME_ID.CO_TUONG){
-            //}
-            opts.bet = 300 + Math.floor((i-1) / 6) * 300;
-            break;
-          case consts.HALL_ID.LIET_CHAP:
-            opts.bet = 1000 + Math.floor((i-1) / 6) * 300;
-            break;
-          case consts.HALL_ID.CAO_THU:
-            opts.bet = 1000 + Math.floor((i-1) / 6) * 1000;
-            break;
-          default :
-            opts.bet = 0;
-        }
+        opts.bet = betConfig[Math.floor((i-1) / 6)] ? betConfig[Math.floor((i-1) / 6)]: betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0;
+        //switch (hallId){
+        //  case consts.HALL_ID.KIEN_TUONG:
+        //    break;
+        //  case consts.HALL_ID.BINH_DAN:
+        //    opts.bet = 300 + Math.floor((i-1) / 6) * 300;
+        //    break;
+        //  case consts.HALL_ID.LIET_CHAP:
+        //    opts.bet = 1000 + Math.floor((i-1) / 6) * 300;
+        //    break;
+        //  case consts.HALL_ID.CAO_THU:
+        //    opts.bet = 1000 + Math.floor((i-1) / 6) * 1000;
+        //    break;
+        //  default :
+        //    opts.bet = 0;
+        //}
         opts.totalTime = 15 * 60;
         opts.base = true;
         opts.level = parseInt(hallConfig.level);

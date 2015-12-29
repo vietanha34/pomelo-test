@@ -35,8 +35,11 @@
     "sequelize-redis-cache": "*",
     "express": "*",
     "body-parser": "*",
+    "connect-timeout": "*",
+    "morgan": "*",
     "multer": "*",
-    "rabbit.js": "*"
+    "rabbit.js": "*",
+    "bcrypt": "0.8.5"
   },
   "devDependencies": {
     "benchmark": "*",

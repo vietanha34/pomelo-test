@@ -1002,14 +1002,7 @@ pro.addJobReady = function (uid) {
       return
     }
     self.jobId = null;
-    var fullname = player.userInfo.fullname || player.userInfo.username;
-    var boardState = self.standUp(uid);
-    //boardState.msg = Code.ON_GAME.FA_NOT_READY;
-    //self.pushStandUp(uid, {
-    //  uid: uid,
-    //  msg: utils.getMessage(Code.ON_GAME.FA_NOT_READY_WITH_USERNAME, [fullname])
-    //});
-    //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+    self.standUp(uid);
   }, uid, 30000 + 4000);
 };
 
@@ -1030,14 +1023,7 @@ pro.addJobStart = function (uid) {
       return
     }
     self.jobId = null;
-    var fullname = player.userInfo.fullname || player.userInfo.username;
-    var boardState = self.standUp(uid);
-    //boardState.msg = Code.ON_GAME.FA_OWNER_NOT_START;
-    //self.pushStandUp(uid, {
-    //  uid: uid,
-    //  msg: utils.getMessage(Code.ON_GAME.FA_OWNER_NOT_START_WITH_USERNAME, [fullname])
-    //});
-    //self.pushMessageToPlayer(uid, 'game.gameHandler.reloadBoard', boardState);
+    self.standUp(uid);
   }, uid, 30000 + 4000);
 };
 

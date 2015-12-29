@@ -134,6 +134,8 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
               // doi mat khau khong thanh cong
               return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
             }
+            pomelo.app.get('redisInfo')
+              .del('cothu:' + params.username, 'passwd');
             return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.PASSWORD_SUCCESS});
           }
           else {
@@ -157,7 +159,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       .catch(function(e) {
         if (e.statusCode) {
           var json = utils.JSONParse(e.error, {});
-          return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+          return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : json.msg ? json.msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
         }
         console.error(e.stack || e);
         utils.log(e.stack || e);

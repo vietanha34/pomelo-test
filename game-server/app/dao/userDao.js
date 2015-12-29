@@ -340,6 +340,28 @@ UserDao.updateProperties = function (uid, opts, cb) {
     })
 };
 
+UserDao.isExist = function (username, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .findOne({
+      where : {
+        username : username
+      },
+      attributes : ['uid'],
+      raw : true
+    })
+    .then(function (user) {
+      if (user){
+        return utils.invokeCallback(cb, null, {userid : user.uid})
+      }else {
+        return utils.invokeCallback(cb, null, false);
+      }
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, null, false);
+    })
+
+};
 
 /**
  * Login user
@@ -350,25 +372,46 @@ UserDao.updateProperties = function (uid, opts, cb) {
 UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
-  var user, created, userData;
+  var user, created, userData, username;
   var promise = accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
-        console.log('res  typeof : ', typeof res);
+
         res.uid = res.id;
         userData = res;
         delete res['id'];
-        console.log('res : ', res);
-        return pomelo.app.get('mysqlClient')
-          .User
-          .findOrCreate({where: {uid: res.uid}, raw: true, defaults: res});
+        username = res.username;
+        return pomelo
+          .app
+          .get('redisInfo')
+          .zrankAsync('onlineUser:oldVersion', res.username);
       } else {
-        Promise.reject({
+        return Promise.reject({
           ec: Code.FAIL,
           msg: 'Có lỗi xảy ra'
         })
+      }
+    })
+    .then(function (rank) {
+      if (lodash.isNumber(rank)) {
+        if (username) {
+          pomelo
+            .app
+            .get('redisInfo')
+            .RPUSH('list:requireLogin:newVersion', username, function (e, r) {
+              if (e) console.error(e);
+            })
+        }
+        return Promise.reject({
+          ec: Code.FAIL,
+          msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
+        })
+      }else {
+        return pomelo.app.get('mysqlClient')
+          .User
+          .findOrCreate({where: {uid: userData.uid}, raw: true, defaults: userData});
       }
     })
     .spread(function (u, c) {
@@ -449,6 +492,8 @@ UserDao.loginWithUsername = function (msg, cb) {
         if (!result.code) {
           pomelo.app.get('redisInfo')
             .hmset('cothu:' + msg.username, {passwd: msg.password});
+          pomelo.app.get('redisInfo')
+            .expire('cothu:' + msg.username, 60 * 60 *24);
         }
         return utils.invokeCallback(cb, null, result)
       }
@@ -459,8 +504,22 @@ UserDao.loginWithUsername = function (msg, cb) {
     })
 };
 
-UserDao.changePassword = function (msg, cb) {
+UserDao.updateProfile = function (username, msg) {
+  msg.username = username;
+  if (msg.passwordMd5){
+    pomelo.app.get('redisInfo')
+      .hset('cothu:' + msg.username, 'passwd', msg.passwordMd5);
+    pomelo.app.get('redisInfo')
+      .expire('cothu:' + msg.username, 60 * 60 * 24);
+  }
+  return pomelo.app.get('accountService')
+    .updateProfile(msg);
+};
 
+UserDao.updateUserProfile = function (uid, msg) {
+  msg.userId = uid;
+  return pomelo.app.get('accountService')
+    .updateUserProfile(msg);
 };
 
 UserDao.loginViaApp = function (msg, cb) {
@@ -525,8 +584,8 @@ UserDao.createUser = function (msg, cb) {
     .createUser({
       username: msg.uname,
       password: msg.pass,
-      dtId: msg.dtid,
-      spId: msg.spId,
+      dtId: msg.dtid || msg.dtId,
+      spId: msg.spId || msg.spid,
       gold: msg.money,
       platform: msg.platform,
       deviceId: msg.deviceId,
@@ -539,28 +598,40 @@ UserDao.createUser = function (msg, cb) {
       if (result) {
         // result ok -> tạo mới tài khoản
         return pomelo
-          .app.get('mysqlClient')
+          .app
+          .get('mysqlClient')
           .User
           .create({
+            gold : msg.money2 || 0,
             uid: result.userId,
             username : msg.uname,
             fullname: msg.uname,
             phone: msg.phone || '',
             email: msg.email || '',
             avatar: null,
+            platform : msg.platform,
             accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
-            distributorId: msg.dtid || 1
+            distributorId: msg.dtid || msg.dtId || 1,
+            deviceId: msg.deviceId || msg.deviceid,
+            spId: msg.spid || msg.spId || ''
           });
+      } else {
+        console.error('createUser: ', result);
+        return utils.invokeCallback(cb, null, {
+          code: 1,
+          message: "Không thể tạo mới đc user",
+          data: ''
+        })
       }
     })
     .then(function (user) {
-      if (user){
+      if (user) {
         var emitterConfig = pomelo.app.get('emitterConfig');
         pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
           uid: user.uid,
           username: user.username,
           platform: msg.platform,
-          deviceId: msg.deviceid,
+          deviceId: msg.deviceid || msg.deviceId,
           version: msg.version,
           extraData: msg.data,
           type: user.accountType,
@@ -569,20 +640,30 @@ UserDao.createUser = function (msg, cb) {
         }, function () {
         });
         return utils.invokeCallback(cb, null, {code : 0, message: '', data:{}})
+      } else {
+        return utils.invokeCallback(cb, null, {
+          code: 1,
+          message: "Không thể tạo mới đc user",
+          data: ''
+        })
       }
     })
     .catch(function (err) {
-      console.log('err : ', err);
-      return utils.invokeCallback(cb, null, { message: "Không thể tạo mới đc user", code:1, data :''})
+      console.log('createUser: ', err);
+      return utils.invokeCallback(cb, null, {
+        code: 1,
+        message: "Không thể tạo mới đc user",
+        data: ''
+      })
     })
 };
-
-
 
 var findFullnameAvailable = function (fullname, num) {
   num = num || 0;
   var name = num > 0 ? fullname + ' ' + num : fullname;
-  return pomelo.app.get('mysqlClient')
+  return pomelo
+    .app
+    .get('mysqlClient')
     .User
     .count({
       where: {
@@ -600,4 +681,3 @@ var findFullnameAvailable = function (fullname, num) {
       return name
     })
 };
-

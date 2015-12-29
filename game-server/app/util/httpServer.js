@@ -3,6 +3,9 @@ var fs = require('fs');
 var path = require('path');
 var utils = require('./utils');
 var bodyParser = require('body-parser');
+var timeout = require('connect-timeout');
+var morgan = require('morgan');
+var pomelo = require('pomelo');
 
 module.exports = function(app, opts) {
   return new Http(app, opts);
@@ -19,6 +22,8 @@ var Http = function(app, opts) {
   this.app = express();
   this.app.use(bodyParser.json()); // for parsing application/json
   this.app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+  this.app.use(timeout('3s'));
+  this.app.use(morgan('dev'));
   fs.readdirSync(this.routePath).forEach(function(file) {
     var route= path.join(self.routePath , file);
     require(route)(self.app);
@@ -45,24 +50,21 @@ var httpStart = function(cb) {
   // will print stacktrace
   if (this.app.get('env') === 'development') {
     this.app.use(function(err, req, res, next) {
+      console.log(err);
       res.status(err.status || 500);
-      res.render('error', {
-        message: err.message,
-        error: err
-      });
+      res.json({ message : err.message})
     });
   }
 
   // production error handler
   // no stacktraces leaked to user
   this.app.use(function(err, req, res, next) {
+    console.log(err);
     res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: {}
-    });
+    res.json({ message : err.message})
   });
-  this.app.listen(8889);
+  var currentServer = pomelo.app.curServer;
+  this.app.listen(currentServer.httpPort || 8889);
   utils.invokeCallback(cb);
 };
 
