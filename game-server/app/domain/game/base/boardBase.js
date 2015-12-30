@@ -473,7 +473,7 @@ pro.clearIdlePlayer = function () {
         this.playerTimeout(player);
       }
     }else {
-      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START){
+      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && this.players.length < 2){
         this.playerTimeout(player);
       }
     }
