@@ -515,7 +515,6 @@ Table.prototype.selectFormationMode = function () {
 };
 
 Table.prototype.resetDefault = function () {
-  console.log('resetDefault');
   Table.super_.prototype.resetDefault.call(this);
   this.formationMode = true;
 };
@@ -577,15 +576,14 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
   var uid = properties.uid;
   var self = this;
   Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, dataChange) {
-    console.log('cothe dataChange : ', dataChange);
     if (dataChange && !dataChange.ec){
       if (lodash.isNumber(dataChange.color)){
         var player = self.players.getPlayer(uid);
         player.removeMenu(consts.ACTION.CHANGE_SIDE);
         self.ready(uid);
+        var boardState = self.getBoardState(uid);
+        self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
       }
-      var boardState = self.getBoardState(uid);
-      self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
     }
     return utils.invokeCallback(cb, err, dataChange)
   });

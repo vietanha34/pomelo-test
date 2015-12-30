@@ -296,11 +296,11 @@ Table.prototype.action = function (uid, opts, cb) {
   return utils.invokeCallback(cb, null, {});
 };
 
-Table.prototype.finishGame = function () {
-  this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.players.reset();
-  this.timer.stop();
-};
+//Table.prototype.finishGame = function () {
+//  this.status = consts.BOARD_STATUS.NOT_STARTED;
+//  this.players.reset();
+//  this.timer.stop();
+//};
 
 Table.prototype.reset = function () {
   this.game.close();

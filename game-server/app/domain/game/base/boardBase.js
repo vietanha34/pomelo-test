@@ -469,7 +469,7 @@ pro.clearIdlePlayer = function () {
       if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_LEAVE){
         this.playerTimeout(player);
       }
-      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START){
+      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && player.timeAction < Date.now() - 30000){
         this.playerTimeout(player);
       }
     }else {
@@ -509,7 +509,6 @@ pro.joinBoard = function (opts) {
   var result = this.players.addPlayer(opts);
   if (result.ec == Code.OK) {
     if (result.newPlayer) {
-      console.log('emit joinBoard :');
       self.emit('joinBoard', self.players.getPlayer(uid));
     }
     var state = self.getBoardState(uid);
@@ -542,8 +541,7 @@ pro.checkLeaveBoard = function (uid) {
 pro.leaveBoard = function (uid, cb) {
   var self = this;
   if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]));
-    return
+    return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]);
   }
   if (typeof self.clearPlayer == 'function') {
     self.clearPlayer(uid);
@@ -874,8 +872,10 @@ pro.finishGame = function () {
   this.status = consts.BOARD_STATUS.NOT_STARTED;
   this.players.reset();
   this.timer.stop();
-  this.game.close();
-  this.game = null;
+  this.turnUid = null;
+  this.jobId = null;
+  this.timer = null;
+  this.timer = new Timer();
 };
 
 pro.kick = function (uid, cb) {
@@ -989,6 +989,7 @@ pro.pushFinishGame = function (msg, finish, extraData) {
 };
 
 pro.addJobReady = function (uid) {
+  console.trace('addJobReady');
   var self = this;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
@@ -996,17 +997,18 @@ pro.addJobReady = function (uid) {
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [20000, this.totalTime, 20000]
+    time : [30000, this.totalTime, 30000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
+    console.trace('jobReady');
     var player = self.players.getPlayer(uid);
     if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid){
       return
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 20000 + 2000);
+  }, uid, 30000 + 2000);
 };
 
 pro.addJobStart = function (uid) {
@@ -1017,7 +1019,7 @@ pro.addJobStart = function (uid) {
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [20000, this.totalTime, 20000]
+    time : [30000, this.totalTime, 30000]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -1027,7 +1029,7 @@ pro.addJobStart = function (uid) {
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 20000 + 2000);
+  }, uid, 30000 + 2000);
 };
 
 pro.cancelJob = function () {

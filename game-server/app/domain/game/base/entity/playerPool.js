@@ -105,7 +105,7 @@ pro.addPlayer = function (opts) {
   });
   self.players[uid] = player;
   var slotIndex = self.getSlotAvailable(slotId, uid);
-  if (player.gold < self.table.bet
+  if (player.gold < self.table.configBet[0]
     || self.length >= self.table.maxPlayer
     || (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))
     || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG))

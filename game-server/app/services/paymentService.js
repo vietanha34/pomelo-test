@@ -43,7 +43,7 @@ pro.subBalance = function (opts) {
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
-      .findOne({where: {uid: uid}, attributes: ['uid', 'gold']}, {transaction: t})
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'username']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return Promises.reject({ec: Code.USER_NOT_EXIST});
@@ -64,7 +64,7 @@ pro.subBalance = function (opts) {
             , cmd: 'subGold'
           };
           pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
-          updateGoldInCache(opts.username, user.gold - gold);
+          updateGoldInCache(user.username, user.gold - gold);
           return user.updateAttributes({
             gold: user.gold - gold
           }, {transaction: t});
@@ -100,7 +100,7 @@ pro.addBalance = function (opts, cb) {
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
-      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame']}, {transaction: t})
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'goldInGame', 'username']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return utils.invokeCallback(cb, null, {ec: Code.USER_NOT_EXIST});
@@ -115,7 +115,7 @@ pro.addBalance = function (opts, cb) {
             , cmd: 'addGold'
           };
           pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
-          updateGoldInCache(opts.username, user.gold + gold);
+          updateGoldInCache(user.username, user.gold + gold);
           return user.updateAttributes({
             gold: user.gold + gold,
             goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
@@ -150,7 +150,7 @@ pro.transfer = function (opts, cb) {
                 uid: opts.fromUid
               },
               raw: true,
-              attributes: ['gold']
+              attributes: ['gold', 'username']
             }),
           pomelo.app.get('mysqlClient')
             .User
@@ -159,7 +159,7 @@ pro.transfer = function (opts, cb) {
                 uid : opts.toUid
               },
               raw : true,
-              attributes : ['gold']
+              attributes : ['gold', 'username']
             })
         ];
       })
@@ -173,6 +173,8 @@ pro.transfer = function (opts, cb) {
           fromUser.gold = 0;
         }
         var addGold = opts.tax ? Math.round(subGold * (100-opts.tax) / 100) : subGold;
+        updateGoldInCache(fromUser.username, fromUser.gold);
+        updateGoldInCache(toUser.username, toUser.gold + addGold);;
         return [
           pomelo.app.get('mysqlClient')
             .User

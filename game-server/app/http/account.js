@@ -85,7 +85,8 @@ module.exports = function (app) {
                 money2: item.point,
                 maxxp: item.point,
                 totalxp: item.point,
-                avatarid: 0,
+                avatarid: '',
+                fullname: item.fullname,
                 status: item.statusMsg || '',
                 vpoint: item.point
               });
@@ -94,7 +95,7 @@ module.exports = function (app) {
             return res.json({
               code: code.ACCOUNT_OLD.OK,
               data: ret,
-              message: data.me.rank
+              message: 0
             })
           });
       })
@@ -576,6 +577,7 @@ var updateVippoint = function (req, res) {
         });
     })
     .then(function () {
+      UserDao.deleteCache(data.uname);
       return res.json({code: 1, data: {}, message: ''})
     })
     .catch(function (err) {

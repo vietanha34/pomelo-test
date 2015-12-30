@@ -39,7 +39,6 @@ Game.prototype.close = function () {
 Game.prototype.init = function () {
   this.table.status = consts.BOARD_STATUS.PLAY;
   var index = Math.round(Math.random());
-  console.log('index : ', index, this.table.looseUser);
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
     this.turn = this.table.looseUser;
   }else {
@@ -54,7 +53,7 @@ Game.prototype.init = function () {
   }else {
     this.game.isWhiteTurn = true;
   }
-  this.game.firstTurn = turnPlayer.color;
+  this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (var i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -70,8 +69,9 @@ Game.prototype.init = function () {
       }
     }
   }
+  var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.table.showKill ? 'hiện quân' : 'không hiện quân');
   this.table.emit('startGame', this.playerPlayingId);
-  this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
+  this.table.pushMessageWithMenu('game.gameHandler.startGame', {detail : detail});
   this.gameStatus = this.game.getBoardStatus();
   this.setOnTurn(this.gameStatus);
 };

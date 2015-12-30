@@ -42,6 +42,11 @@ exp.addEventFromBoard = function (board) {
       });
       board.pushOnJoinBoard(player.uid);
       if (player.uid === board.owner){
+        // change bet
+        if (board.bet > player.gold){
+          board.bet = player.gold;
+          board.pushMessage("game.gameHandler.changeBoardProperties", { bet : board.bet, notifyMsg : 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'})
+        }
         board.timeStart = Date.now();
       }
     }else {

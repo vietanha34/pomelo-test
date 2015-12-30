@@ -66,6 +66,7 @@ pro.getLeftTime = function (id) {
  * @method stop
  */
 pro.stop = function () {
+  console.trace('stop timer');
   this.scheduler.cancelAllJob();
 };
 

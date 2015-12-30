@@ -57,7 +57,7 @@ Game.prototype.init = function () {
   } else {
     this.game.isWhiteTurn = true;
   }
-  this.game.firstTurn = turnPlayer.color;
+  this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -87,15 +87,16 @@ Game.prototype.init = function () {
       }
     }
   }
+  var detail = '' + this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên';
   if (lock) {
-    this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500});
+    this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
     this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
     this.table.pushMessage('game.gameHandler.action', {move: moveAfter});
     this.actionLog = [];
     this.actionLog.push({move: moveInit, sleep: 500});
     this.actionLog.push({move: moveAfter});
   } else {
-    this.table.pushMessageWithMenu('game.gameHandler.startGame', {});
+    this.table.pushMessageWithMenu('game.gameHandler.startGame', {detail: detail});
   }
   this.table.emit('startGame', this.playerPlayingId);
   this.gameStatus = this.game.getBoardStatus();
@@ -402,18 +403,26 @@ Table.prototype.action = function (uid, opts, cb) {
   }
 };
 
-Table.prototype.finishGame = function () {
-  this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.turnUid = null;
-  this.jobId = null;
-  this.players.reset();
-  this.timer.stop();
-};
+//Table.prototype.finishGame = function () {
+//  this.status = consts.BOARD_STATUS.NOT_STARTED;
+//  this.turnUid = null;
+//  this.jobId = null;
+//  this.players.reset();
+//  this.timer.stop();
+//};
 
 Table.prototype.reset = function () {
   this.game.close();
   this.game = null;
   this.game = new Game(this);
+  if (this.removeMode.length > 0){
+    var ownerPlayer = this.players.getPlayer(this.owner);
+    if (ownerPlayer && ownerPlayer.color !== consts.COLOR.WHITE){
+      this.game.game.isWhiteTurn = false;
+      this.game.game.turnToMode();
+      this.game.gameStatus = this.game.game.getBoardStatus();
+    }
+  }
 };
 
 Table.prototype.demand = function (opts) {
