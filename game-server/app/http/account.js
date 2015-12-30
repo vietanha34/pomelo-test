@@ -68,14 +68,25 @@ module.exports = function (app) {
       type = 100;
     }
 
-    UserDao
-      .getUserIdByUsername(param.uname)
-      .then(function (uid) {
-        if (!uid) {
-          return res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
-        }
+    return TopDao.getTop(1, type)
+      .then(function(data) {
+        var ret = [];
+        data.list.forEach(function(item, i, list) {
+          ret.push({
+            uname: item.username,
+            fullname: item.fullname,
+            money: item.gold || 0,
+            money2: item.gold || 0,
+            maxxp:  item.exp || 0,
+            totalxp:  item.exp || 0,
+            avatarid: '',
+            status: item.statusMsg || '',
+            vpoint:  item.vipPoint || 0,
+            elo:  item.point || 0
+          });
+        });
 
-        return TopDao.getTop(uid, type)
+        return res.json({
           .then(function(data) {
             var ret = [];
             data.list.forEach(function(item) {
@@ -96,12 +107,7 @@ module.exports = function (app) {
               code: code.ACCOUNT_OLD.OK,
               data: ret,
               message: 0
-            })
-          });
-      })
-      .catch(function (e) {
-        console.error(e.stack || e);
-        res.status(500).end();
+        })
       });
   });
 
