@@ -110,4 +110,22 @@ module.exports.process = function (app, type, param) {
         }
       }
     });
+
+  var opts = {
+    appId: consts.PR_ID,
+    register: 1,
+    deviceId: param.deviceId,
+    deviceToken: param.deviceToken || '',
+    username: param.username,
+    dtId: param.dtId || 1,
+    platform: consts.PLATFORM_UNMAP[param.platform] || ''
+  };
+
+  pomelo.app.get('redisCache')
+    .publish(redisKeyUtil.getSubscriberChannel(), JSON.stringify(opts), function (err, res) {
+      if (err) {
+        console.error(err, res);
+      }
+      opts = null;
+    });
 };
