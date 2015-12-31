@@ -53,9 +53,7 @@ Game.prototype.init = function () {
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   if (turnPlayer.color !== consts.COLOR.WHITE) {
-    this.game.isWhiteTurn = false;
-  } else {
-    this.game.isWhiteTurn = true;
+    this.game.changeTurn();
   }
   this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
@@ -418,8 +416,7 @@ Table.prototype.reset = function () {
   if (this.removeMode.length > 0){
     var ownerPlayer = this.players.getPlayer(this.owner);
     if (ownerPlayer && ownerPlayer.color !== consts.COLOR.WHITE){
-      this.game.game.isWhiteTurn = false;
-      this.game.game.turnToMode();
+      this.game.game.changeTurn();
       this.game.gameStatus = this.game.game.getBoardStatus();
     }
   }
@@ -540,12 +537,12 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
   Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
     if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color) {
       var ownerPlayer = self.players.getPlayer(self.owner);
-      if (ownerPlayer.color === consts.COLOR.WHITE) {
-        self.game.game.isWhiteTurn = true;
-      } else {
-        self.game.game.isWhiteTurn = false;
+      if (ownerPlayer.color !== consts.COLOR.WHITE) {
+        self.game.game.changeTurn();
+      }else {
+        self.game.game.changeTurn(true);
       }
-      self.game.game.turnToMode();
+      //self.game.game.turnToMode();
       self.game.gameStatus = self.game.game.getBoardStatus();
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
@@ -560,12 +557,12 @@ Table.prototype.setOwner = function () {
   if (this.removeMode.length > 0){
     var ownerPlayer = this.players.getPlayer(this.owner);
     if (ownerPlayer){
-      if (ownerPlayer.color === consts.COLOR.WHITE){
-        this.game.game.isWhiteTurn = true
+      if (ownerPlayer.color !== consts.COLOR.WHITE){
+        this.game.game.changeTurn();
       }else {
-        this.game.game.isWhiteTurn = false
+        this.game.game.changeTurn(true);
       }
-      this.game.game.turnToMode();
+      //this.game.game.turnToMode();
       process.nextTick(function () {
         var state = self.getBoardState();
         self.pushMessageWithMenu('game.gameHandler.reloadBoard', state);

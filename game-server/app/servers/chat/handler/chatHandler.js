@@ -121,7 +121,6 @@ Handler.prototype.send = function (msg, session, next) {
 Handler.prototype.getHistory = function (msg, session, next) {
   var uid = session.uid;
   msg.from = parseInt(session.uid);
-  console.log('msg  : ', msg);
   pomelo.app.get('chatService').getMessages(msg, function (err, msgs) {
     if (err) {
       next(null, {ec: Code.FAIL})
@@ -148,7 +147,6 @@ Handler.prototype.getChatLog = function (msg, session, next) {
   var getMessages = Promise.promisify(pomelo.app.get('chatService').getLastMessage, pomelo.app.get('chatService'));
   redisClient.lrangeAsync(redisKeyUtil.getUserChatLog(uid), 0, 15)
     .map(function (targetUid) {
-      console.log('targetUid : ', targetUid);
       return Promise.props({
         info : UserDao.getUserProperties(targetUid, ['uid', 'avatar', 'fullname','sex']),
         msg : getMessages({length:1, from : uid, target: parseInt(targetUid), reverse : 1}),// lastMessage
@@ -156,7 +154,6 @@ Handler.prototype.getChatLog = function (msg, session, next) {
       })
     })
     .then(function (results) {
-      console.log('res : ', results);
       for (var i = 0, len = results.length; i< len; i++){
         results[i].info.avatar = utils.JSONParse(results[i].info.avatar, {});
         results[i].msg = results[i].msg[0] ? results[i].msg[0].content || '' : '';

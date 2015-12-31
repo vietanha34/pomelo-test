@@ -97,34 +97,12 @@
     {
       "type": "gelf",
       "host": "10.2.10.197",
-      "facility": "payment",
-      "port" : 12201,
-      "category": "payment"
-    },
-    {
-      "type": "gelf",
-      "host": "10.2.10.197",
-      "facility": "service",
-      "port" : 12201,
-      "category": "service"
-    },
-    {
-      "type": "gelf",
-      "host": "10.2.10.197",
       "facility": "console",
       "port" : 12201,
       "category": "console"
-    },
-    {
-      "type": "gelf",
-      "host": "10.2.10.197",
-      "facility": "game",
-      "port" : 12201,
-      "category": "game"
     }
   ],
   "levels": {
-    "game" : "ERROR",
     "console" : "ERROR",
     "rpc-log" : "ERROR",
     "forward-log": "ERROR",

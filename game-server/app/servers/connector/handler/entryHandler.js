@@ -162,7 +162,6 @@ Handler.prototype.login = function (msg, session, next) {
         level: session.get('level'),
         avatar: session.get('avatar')
       };
-      console.log('waitingData : ', waitingData);
 			self.app.get('waitingService').add(waitingData);
 		}
     emitData.resume = msg.resume;

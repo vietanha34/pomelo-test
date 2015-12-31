@@ -210,7 +210,6 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   if (msg.type === 2) {
     friendDao.getFriendList(uid, consts.MAX_FRIEND)
       .then(function (uids) {
-        console.log('uids : ', uids);
         var waitingData = {
           where : {
             userId: {
@@ -219,7 +218,7 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
           },
           attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
           offset: 0,
-          length: 20
+          length: 10
         };
         return waitingService.getList(waitingData)
           .then(function (res) {
@@ -287,7 +286,6 @@ Handler.prototype.getHall = function (msg, session, next) {
       order : 'roomId ASC'
     })
     .then(function (rooms) {
-      console.log('room before : ', rooms);
       var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
       var temp = {};
       for (i = 0, len = rooms.length; i < len; i++) {

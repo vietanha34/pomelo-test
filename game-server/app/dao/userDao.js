@@ -448,6 +448,7 @@ UserDao.login = function (msg, cb) {
           deviceId: msg.deviceId,
           version: msg.version,
           extraData: msg.data,
+          dtId : msg.dtId,
           type: user.accountType,
           ip: msg.ip,
           userCount: balance ? balance.count || 1 : 1

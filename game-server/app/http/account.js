@@ -87,26 +87,9 @@ module.exports = function (app) {
         });
 
         return res.json({
-          .then(function(data) {
-            var ret = [];
-            data.list.forEach(function(item) {
-              ret.push({
-                uname: item.fullname,
-                money: item.point,
-                money2: item.point,
-                maxxp: item.point,
-                totalxp: item.point,
-                avatarid: '',
-                fullname: item.fullname,
-                status: item.statusMsg || '',
-                vpoint: item.point
-              });
-            });
-
-            return res.json({
-              code: code.ACCOUNT_OLD.OK,
-              data: ret,
-              message: 0
+          code: code.ACCOUNT_OLD.OK,
+          data: ret,
+          message: 0
         })
       });
   });
@@ -322,6 +305,29 @@ module.exports = function (app) {
       .finally(function () {
 
       })
+  });
+
+  app.get('/friendship', function (req, res) {
+    var data = req.query;
+    if (!data) return res.json({}).end();
+    switch (data.api) {
+      case 'friendship.listing':
+        register(req, res);
+        break;
+      case 'friendship.add':
+        login(req, res);
+        break;
+      case 'friendship.exists':
+        existUser(req, res);
+        break;
+      case 'friendship.delete':
+        banUser(req, res);
+        break;
+      case 'friendship.accept':
+        break;
+      default:
+        res.status(500).json({msg: "có lỗi xảy ra"})
+    }
   })
 };
 
@@ -682,4 +688,10 @@ var updateProfile = function (req, res) {
     .finally(function () {
       data = null;
     })
+};
+
+
+var friendListing = function (req, res) {
+  var data = req.query;
+
 };

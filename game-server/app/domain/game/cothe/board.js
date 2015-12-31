@@ -54,7 +54,7 @@ Game.prototype.init = function () {
   var turnPlayer = this.table.players.findPlayerByColor(this.firstTurn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
-    this.game.isWhiteTurn = false;
+    this.game.changeTurn();
   }
   this.firstTurn = turnPlayer.uid;
   var keys = Object.keys(this.table.players.players);
@@ -174,7 +174,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
@@ -510,6 +509,7 @@ Table.prototype.selectFormationMode = function () {
     this.pushMessageToPlayer(otherPlayer.uid, "undefined", { menu : otherPlayer.menu})
   }
   this.cancelJob();
+  this.addJobSelectFormation(this.owner);
   // todo push cho người chơi khác biết là chủ bàn đang chọn thế
   return { menu : ownerPlayer.menu };
 };

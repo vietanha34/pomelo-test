@@ -35,41 +35,44 @@ exp.addEventFromBoard = function (board) {
         channel.add(player.uid, player.userInfo.frontendId);
       }
     }
-    if (!player.guest){
+    if (!player.guest) {
       pomelo.app.get('boardService').updateBoard(board.tableId, {
-        numPlayer : board.players.length,
-        isFull : board.players.length >= board.maxPlayer ? 1 : 0
+        numPlayer: board.players.length,
+        isFull: board.players.length >= board.maxPlayer ? 1 : 0
       });
       board.pushOnJoinBoard(player.uid);
-      if (player.uid === board.owner){
+      if (player.uid === board.owner) {
         // change bet
-        if (board.bet > player.gold){
+        if (board.bet > player.gold) {
           board.bet = player.gold;
-          board.pushMessage("game.gameHandler.changeBoardProperties", { bet : board.bet, notifyMsg : 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'})
+          board.pushMessage("game.gameHandler.changeBoardProperties", {
+            bet: board.bet,
+            notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
+          })
         }
         board.timeStart = Date.now();
       }
-    }else {
+    } else {
       pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
-      board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
+      board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     }
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
-    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
-      if (board.gameId === consts.GAME_ID.CO_THE){
-        if (!board.formationMode){
+    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
+      if (board.gameId === consts.GAME_ID.CO_THE) {
+        if (!board.formationMode) {
           board.addJobReady(player.uid);
-        }else if (board.owner !== player.uid && !player.guest){
+        } else if (board.owner !== player.uid && !player.guest) {
           board.addJobSelectFormation(board.owner);
         }
-      }else {
+      } else {
         board.addJobReady(player.uid)
       }
     }
   });
 
   board.on('sitIn', function (player) {
-    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid){
+    if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
       setTimeout(function (uid) {
         board.addJobReady(uid)
       }, 100, player.uid)
@@ -97,14 +100,13 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} userInfo Đối tượng lưu trữ thông tin người chơi
    * @for BoardBase
    */
-  board.on('leaveBoard', function (userInfo) {
-    console.log('event leaveBoard : ');
-    board.score = [0,0]; // restart scorec
+  board.on('leaveBoard', function (userInfo, kick) {
+    board.score = [0, 0]; // restart scorec
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
     }
-    if (board.jobId){
+    if (board.jobId) {
       board.timer.cancelJob(board.jobId);
     }
     var channel = board.getChannel();
@@ -118,21 +120,29 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
     //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
-    if(userInfo.guest){
-      board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
+    if (userInfo.guest) {
+      board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     }
     // restart to default value
     if (board.players.length === 0) {
       board.resetDefault()
     }
     pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer : board.players.length,
-      isFull : board.players.length >= board.maxPlayer ? 1 : 0
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
     });
     userInfo.userId = userInfo.uid;
     userInfo.avatar = JSON.stringify(userInfo.avatar || {});
-    pomelo.app.get('waitingService').add(userInfo);
-    if (!userInfo.guest){
+    if (kick) {
+      pomelo.app.get('statusService').getStatusByUid(userInfo.uid, false, function (err, status) {
+        if (status && status.online) {
+          pomelo.app.get('waitingService').add(userInfo);
+        }
+      });
+    } else {
+      pomelo.app.get('waitingService').add(userInfo);
+    }
+    if (!userInfo.guest) {
       board.looseUser = null;
       board.timer.stop()
     }
@@ -154,13 +164,13 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('startGame', function () {
-    pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.PLAY });
+    pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.PLAY});
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
     var status = board.getStatus();
     board.timeStart = Date.now();
     delete status['turn'];
     board.game.logs = {
-      matchId : board.game.matchId,
+      matchId: board.game.matchId,
       info: {
         index: board.index,
         gameId: board.gameId,
@@ -170,10 +180,10 @@ exp.addEventFromBoard = function (board) {
         totalTime: board.totalTime,
         bet: board.bet
       },
-      status : status,
-      players : reserve ? board.game.playerPlayingId.reverse() : board.game.playerPlayingId,
-      timeStart : new Date(),
-      result : {}
+      status: status,
+      players: reserve ? board.game.playerPlayingId.reverse() : board.game.playerPlayingId,
+      timeStart: new Date(),
+      result: {}
     };
     board.game.actionLog = [];
   });
@@ -208,31 +218,31 @@ exp.addEventFromBoard = function (board) {
   board.on('finishGame', function (data, disableLooseUser) {
     board.timeStart = Date.now();
     var player, winUid, loseUid;
-    for (var i = 0, len = data.length; i < len; i ++){
+    for (var i = 0, len = data.length; i < len; i++) {
       var user = data[i];
       player = board.players.getPlayer(user.uid);
-      if (player.gold < board.bet){
+      if (player.gold < board.bet) {
         // standUp
         board.standUp(user.uid);
       }
-      if (user.result.type === consts.WIN_TYPE.WIN){
+      if (user.result.type === consts.WIN_TYPE.WIN) {
         winUid = user.uid;
         board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
-      }else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP){
-        if(!disableLooseUser){
+      } else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP) {
+        if (!disableLooseUser) {
           board.looseUser = user.uid;
         }
         loseUid = user.uid;
       }
     }
     var otherPlayerUid = board.players.getOtherPlayer();
-    if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)){
+    if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)) {
       board.addJobReady(otherPlayerUid);
     }
-    if(board.game.actionLog.length > 0){
+    if (board.game.actionLog.length > 0) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
-    if (board.firstUid !== data[0].uid){
+    if (board.firstUid !== data[0].uid) {
       data.reverse();
     }
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
@@ -240,16 +250,16 @@ exp.addEventFromBoard = function (board) {
     if (loseUid) board.game.logs.result['looser'] = loseUid;
 
     var logsData = {
-      boardInfo : board.getBoardInfo(true),
-      users : data,
-      tax : 0,
-      gameType : board.gameType,
-      timeShow : consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD,
-      logs : board.game.logs
+      boardInfo: board.getBoardInfo(true),
+      users: data,
+      tax: 0,
+      gameType: board.gameType,
+      timeShow: consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD,
+      logs: board.game.logs
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
-    pomelo.app.get('boardService').updateBoard(board.tableId, { stt : consts.BOARD_STATUS.NOT_STARTED });
+    pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.NOT_STARTED});
     return data;
   });
 
@@ -258,11 +268,11 @@ exp.addEventFromBoard = function (board) {
    *
    */
   board.on('standUp', function (player) {
-    board.score = [0,0]; // restart score;
-    if (board.jobId){
+    board.score = [0, 0]; // restart score;
+    if (board.jobId) {
       board.timer.cancelJob(board.jobId);
     }
-    else if (player.gold < board.bet){
+    else if (player.gold < board.bet) {
       // TODO add msg on charge money button
       player.pushMenu(board.genMenu(consts.ACTION.CHARGE_MONEY))
     }
@@ -270,21 +280,24 @@ exp.addEventFromBoard = function (board) {
       board.resetDefault()
     }
     pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
-    board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
+    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     //if (board.players.length < 2 && board.startTimeout) {
     //  board.clearTimeoutStart()
     //}
     pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer : board.players.length,
-      isFull : board.players.length >= board.maxPlayer ? 1 : 0
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
     });
-    if (!player.guest){
+    if (!player.guest) {
       if (board.jobId) {
         board.timer.cancelJob(board.jobId)
       }
     }
     var state = board.getBoardState(player.uid);
-    messageService.pushMessageToPlayer({ uid : player.uid, sid: player.userInfo.frontendId}, 'game.gameHandler.reloadBoard', state);
+    messageService.pushMessageToPlayer({
+      uid: player.uid,
+      sid: player.userInfo.frontendId
+    }, 'game.gameHandler.reloadBoard', state);
     board.pushMessageWithOutUid(player.uid, 'district.districtHandler.leaveBoard', {
       uid: player.uid
     })
@@ -292,11 +305,11 @@ exp.addEventFromBoard = function (board) {
 
   board.on('sitIn', function (player) {
     pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer : board.players.length,
-      isFull : board.players.length >= board.maxPlayer ? 1 : 0
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
     });
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
-    board.pushMessage('onUpdateGuest', { numGuest : board.players.guestIds.length});
+    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
   });
 
   board.on('kick', function (player) {
@@ -363,9 +376,9 @@ exp.addEventFromBoard = function (board) {
   board.on('resetDefault', function () {
     process.nextTick(function () {
       board.pushMessage('game.gameHandler.changeBoardProperties', {
-        bet : board.bet,
-        turnTime : board.turnTime,
-        totalTime : board.totalTime
+        bet: board.bet,
+        turnTime: board.turnTime,
+        totalTime: board.totalTime
       })
     })
   })

@@ -131,7 +131,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];

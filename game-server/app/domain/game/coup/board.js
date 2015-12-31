@@ -49,9 +49,7 @@ Game.prototype.init = function () {
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
-    this.game.isWhiteTurn = false;
-  }else {
-    this.game.isWhiteTurn = true;
+    this.game.changeTurn();
   }
   this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
@@ -77,6 +75,7 @@ Game.prototype.init = function () {
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
+  console.log('gameStatus : ', gameStatus);
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
@@ -132,7 +131,6 @@ Game.prototype.progress = function () {
 };
 
 Game.prototype.finishGame = function (result, uid) {
-  console.trace('finishGame : ', result);
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
@@ -332,7 +330,6 @@ Table.prototype.action = function (uid, opts, cb) {
     this.game.numMove += 1;
     var boardStatus = this.game.game.getBoardStatus();
     this.game.gameStatus = boardStatus;
-    //this.pushMessageWithOutUid(uid,'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2});
     if (this.jobId){
       this.timer.cancelJob(this.jobId);
     }

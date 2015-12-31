@@ -41,11 +41,17 @@ Handler.prototype.getServer = function (msg, session, next) {
       next(null, {ec : Code.FAIL})
     }
     else {
+      var config = configService.getConfig();
+      if (msg.versionCode === '30122015' && msg.platform === 'ios'){
+        console.log('versionCode : ', msg.versionCode);
+        config['IS_REVIEW'] = 1
+      }
+      console.log('config : ', config);
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,
         port : res.natPort ? res.natPort.toString() : res.clientPort.toString(),
-        config : configService.getConfig(),
+        config : config,
         idSession : idSession,
         key : key,
         msg : message,

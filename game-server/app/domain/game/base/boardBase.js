@@ -434,7 +434,7 @@ pro.playerTimeout = function (player, msg) {
   logger.info('\n %s auto leaveBoard ', player.uid);
   var self = this;
   this.emit('kick', player);
-  var uids = this.leaveBoard(player.uid);
+  var uids = this.leaveBoard(player.uid, true);
   messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
     uid: uids.uid, notifyMsg: msg || Code.ON_GAME.FA_TIME_OUT
   });
@@ -535,10 +535,10 @@ pro.checkLeaveBoard = function (uid) {
  * Rời bàn
  *
  * @param {String} uid
- * @param {Function} cb
+ * @param kick
  * @method leaveBoard
  */
-pro.leaveBoard = function (uid, cb) {
+pro.leaveBoard = function (uid, kick) {
   var self = this;
   if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
     return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]);
@@ -562,7 +562,7 @@ pro.leaveBoard = function (uid, cb) {
       this.emit('changeOwner');
     }
   }
-  self.emit('leaveBoard', userInfo);
+  self.emit('leaveBoard', userInfo, kick);
   uids.tourId = self.tourId;
   uids.gold = goldAfter;
   return uids
@@ -896,7 +896,8 @@ pro.kick = function (uid, cb) {
   }
   this.emit('kick', player);
   var userInfo = player.userInfo;
-  var uids = this.leaveBoard(uid);
+  var uids = this.leaveBoard(
+    uid, true);
   if (uids && !uids.ec) {
     messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
       uid: uids.uid, notifyMsg: Code.ON_GAME.FA_KICK
@@ -989,7 +990,6 @@ pro.pushFinishGame = function (msg, finish, extraData) {
 };
 
 pro.addJobReady = function (uid) {
-  console.trace('addJobReady');
   var self = this;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
@@ -1001,7 +1001,6 @@ pro.addJobReady = function (uid) {
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
-    console.trace('jobReady');
     var player = self.players.getPlayer(uid);
     if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid){
       return
