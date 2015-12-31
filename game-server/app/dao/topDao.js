@@ -134,14 +134,20 @@ TopDao.getTop = function getTop(uid, type, cb) {
       var rankAttr = attr+'Rank';
       var select = {};
       select[rankAttr] = 1;
+      select[attr] = 1;
       return Top
         .findOne({uid: uid})
         .select(select)
         .lean()
         .then(function(user) {
-          if (user && user[rankAttr])
-            me.rank = Number(user[rankAttr]);
-          else me.rank = 0;
+          if (user && user[rankAttr]) {
+            me.rank = Number(user[rankAttr]) || 0;
+            me.point = Number(user[attr]) || 0;
+          }
+          else {
+            me.rank = 0;
+            me.point = 0;
+          }
 
           return utils.invokeCallback(cb, null, {list: list, me: me});
         });
