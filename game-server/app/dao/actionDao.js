@@ -26,12 +26,41 @@ ActionDao.addAction = function (opts, uid) {
     msg: opts.msg || '',
     image: consts.NOTIFY.IMAGE.NORMAL,
     action: opts.action,
+    expire : (Date.now() / 1000 | 0) + (opts.expire || 7 * 24 * 60 * 60),
     popup: opts.popup
   };
-  if (opts.buttonLabel) object['buttonLabel'] = object['buttonLabel'];
+  if (opts.buttonLabel) object['buttonLabel'] = opts['buttonLabel'];
   pomelo.app.get('statusService').pushByUids([uid], 'onNotify', object);
   return pomelo.app.get('redisCache')
-    .zaddAsync(key, Date.now(), JSON.stringify(object));
+    .zaddAsync(key, Date.now() / 1000 | 0, JSON.stringify(object));
+};
+
+ActionDao.getAction = function (opts, uid, cb) {
+  var key = redisKeyUtil.getUserAction(uid);
+  return pomelo.app.get('redisCache')
+    .zrangeAsync(key, 0, -1)
+    .then(function (values) {
+      console.log('values : ', values);
+      var keys = Object.keys(opts);
+      var data = [];
+      for (var i = 0, len = values.length; i < len ; i++){
+        var json = utils.JSONParse(values[i], {});
+        console.log('json : ', json, values[i]);
+        if (json.action){
+          for (var j = 0, lenj = keys.length; j < lenj; j++) {
+            console.log('compare keys : ', keys[j]);
+            if (json.action[keys[j]] === opts[keys[j]]) {
+              data.push(json);
+            }
+          }
+        }
+      }
+      return utils.invokeCallback(cb, null, data);
+    })
+    .catch(function (err) {
+      console.error('ActionDao.getAction : ', err);
+      return utils.invokeCallback(cb, null, []);
+    })
 };
 
 ActionDao.removeAction = function (opts, uid, cb) {

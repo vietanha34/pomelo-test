@@ -438,9 +438,16 @@ Handler.prototype.updateMember = function (msg, session, next) {
               guildId: guildId,
               uid: session.uid,
               fullname: resource.fullname,
-              content: util.format('[%s] Nhường chức cho người chơi [%s]', resource.member ? resource.member[0].fullname : '', resource.member ? resource.member[1].fullname : ''),
+              content: util.format('[%s] Nhường chức hội chủ cho người chơi [%s]', resource.member ? resource.member[0].fullname : '', resource.member ? resource.member[1].fullname : ''),
               type: consts.GUILD_EVENT_TYPE.JOIN_GUILD
             });
+            ActionDao.getAction({ type : consts.ACTION_ID.TOURNAMENT_DUEL})
+              .then(function (actions) {
+                for (var i = 0, len = actions.length; i < len; i ++){
+                  var action = actions[i];
+                  ActionDao.addAction(action, currentUid)
+                }
+              })
         }
       }
       return utils.invokeCallback(next, null, resource);
@@ -754,6 +761,8 @@ Handler.prototype.duel = function (msg, session, next) {
       } else {
         msg.id = Date.now();
         msg.type = consts.ACTION_ID.TOURNAMENT_DUEL;
+        msg.currentGuildId = currentGuild.id;
+        msg.targetGuildId = targetGuild.id;
         GuildDao.addEvent({
           guildId: currentGuild.id,
           uid: session.uid,
@@ -768,6 +777,7 @@ Handler.prototype.duel = function (msg, session, next) {
           content: util.format('Nhận được một lời mời khiêu chiến từ hội quán [%s]', currentGuild.name),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
+        next(null, { ec : Code.FAIL, msg : "Đã gửi lời thách đấu thành công đến hội quán này"});
         return ActionDao.addAction({
           msg: util.format("Bạn nhận được lời mời thách đấu từ hội quán '%s', bạn có muốn hội quán của mình ứng chiến không?. Vui lòng chạm vào thông báo để xem thông tin chi tiết", currentGuild.name),
           title: "Thách đấu",
@@ -777,7 +787,7 @@ Handler.prototype.duel = function (msg, session, next) {
             data: msg
           },
           action: msg
-        }, president.uid)
+        }, president ? president.uid : 0)
       }
     })
     .catch(function (err) {

@@ -570,3 +570,7 @@ var findUserNearElo = function (users, elo, num) {
   } while(waitingPlayer.length < num && numRun < 20);
   return waitingPlayer
 };
+
+pro.preview = function (msg, session, next) {
+  
+};

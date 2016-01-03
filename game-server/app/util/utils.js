@@ -552,3 +552,18 @@ utils.getGameIdUser = function (app, list) {
   });
   return false;
 };
+
+utils.getServerIndexFromServerId = function (serverId) {
+  try {
+    var tmp = serverId.split('-');
+    if (tmp.length == 3) {
+      return parseInt(tmp[2]);
+    }
+    else {
+      return null;
+    }
+  }
+  catch (err) {
+    return null
+  }
+};

@@ -53,7 +53,8 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         //models.TourRound.hasMany(models.TourGroup,  {foreignKey : 'roundId'})
-        models.TourRound.hasOne(models.TourTableConfig, {foreignKey : 'tableConfigId'})
+        models.TourRound.belongsTo(models.TourTableConfig, {foreignKey : 'tableConfigId'});
+        models.TourRound.belongsTo(models.TourSchedule, { foreignKey : 'scheduleId'})
       }
     }
   });

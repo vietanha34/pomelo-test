@@ -191,9 +191,9 @@ module.exports = {
     CONTINUE : 100,
     SIT_BACK_IN : 3,
     DE_LAY : 4,
-    CHARGE_MONEY : 7,
     DRAW : 5,
     SURRENDER : 6,
+    CHARGE_MONEY : 7,
     HINT : 8,
     STAND_UP : 9,
     CHAT : 10,
@@ -204,7 +204,8 @@ module.exports = {
     CHANGE_SIDE : 15,
     BOTTOM_MENU_CHANGE_SIDE : 16,
     CHANGE_TURN : 17,
-    INFORMATION : 18
+    INFORMATION : 18,
+    TOURNAMENT: 19
   },
 
   LANGUAGE_LIMIT : {
@@ -449,7 +450,8 @@ module.exports = {
     SLEEP_TURN : 500,
     SLEEP_CHARGE : 1000,
     GUEST : 30 * 60 * 1000,
-    LOGOUT : 30 * 1000
+    LOGOUT : 30 * 1000,
+    FRIENDLY_WAIT : 5 * 60 * 1000,
   },
 
   CHANGE_GOLD_TYPE: {
@@ -794,6 +796,11 @@ module.exports = {
     INVITE_MEMBER : 5
   },
 
+  GUILD_MEMBER_STATUS_UMAP : {
+    1 : "Hội chủ",
+    2 : "Hội phó",
+    3 : "Thành viên"
+  },
 
   GUILD_UPDATE_MEMBER_TYPE : {
     ADD_MEMBER : 1,

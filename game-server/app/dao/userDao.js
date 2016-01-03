@@ -213,18 +213,18 @@ var charCode = [192,
 
 UserDao.getUserProperties = function (uid, properties, cb) {
   var promises = [];
-  if (properties.indexOf('guildName') > -1 || properties.indexOf('sIcon') > -1){
+  if (properties.indexOf('guildName') > -1 || properties.indexOf('sIcon') > -1) {
     promises.push(pomelo.app.get('mysqlClient')
-      .GuildMember
-      .findOne({
-          where : {
-            uid : uid
+        .GuildMember
+        .findOne({
+          where: {
+            uid: uid
           },
-          include : [{
-            model : pomelo.app.get('mysqlClient').Guild,
-            attributes : ['name', 'sIcon', 'id']
+          include: [{
+            model: pomelo.app.get('mysqlClient').Guild,
+            attributes: ['name', 'sIcon', 'id']
           }],
-          raw : true
+          raw: true
         })
     );
     properties = lodash.remove(properties, function (property) {
@@ -390,16 +390,16 @@ UserDao.isExist = function (username, cb) {
   return pomelo.app.get('mysqlClient')
     .User
     .findOne({
-      where : {
-        username : username
+      where: {
+        username: username
       },
-      attributes : ['uid'],
-      raw : true
+      attributes: ['uid'],
+      raw: true
     })
     .then(function (user) {
-      if (user){
-        return utils.invokeCallback(cb, null, {userid : user.uid})
-      }else {
+      if (user) {
+        return utils.invokeCallback(cb, null, {userid: user.uid})
+      } else {
         return utils.invokeCallback(cb, null, false);
       }
     })
@@ -414,16 +414,16 @@ UserDao.getUsernameByUid = function (uid, cb) {
   return pomelo.app.get('mysqlClient')
     .User
     .findOne({
-      where : {
-        uid : uid
+      where: {
+        uid: uid
       },
-      raw : true,
-      attributes : ['username']
+      raw: true,
+      attributes: ['username']
     })
     .then(function (user) {
-      if (user){
+      if (user) {
         return utils.invokeCallback(cb, null, user.username)
-      }else {
+      } else {
         return utils.invokeCallback(cb, null, null)
       }
     })
@@ -475,8 +475,8 @@ UserDao.login = function (msg, cb) {
           ec: Code.FAIL,
           msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
         })
-      }else {
-        if (pomelo.app.get('env') === 'development'){
+      } else {
+        if (pomelo.app.get('env') === 'development') {
           userData.gold = 100000;
         }
         return pomelo.app.get('mysqlClient')
@@ -495,10 +495,9 @@ UserDao.login = function (msg, cb) {
           fullname: userData.fullname,
           phone: userData.phoneNumber,
           email: userData.email,
-          birthday: userData.birthday,
-          distributorId: userData.dtId
+          birthday: userData.birthday
         };
-        if (userData.avatar){
+        if (userData.avatar) {
           updateData.avatar = JSON.stringify({
             id: userData.uid,
             version: userData.avatarVersion
@@ -522,7 +521,7 @@ UserDao.login = function (msg, cb) {
           deviceId: msg.deviceId,
           version: msg.version,
           extraData: msg.data,
-          dtId : msg.dtId,
+          dtId: msg.dtId,
           type: user.accountType,
           ip: msg.ip,
           userCount: balance ? balance.count || 1 : 1
@@ -579,7 +578,7 @@ UserDao.loginWithUsername = function (msg, cb) {
 
 UserDao.updateProfile = function (username, msg) {
   msg.username = username;
-  if (msg.passwordMd5){
+  if (msg.passwordMd5) {
     pomelo.app.get('redisInfo')
       .hset('cothu:' + msg.username, 'passwd', msg.passwordMd5);
     pomelo.app.get('redisInfo')
@@ -600,32 +599,35 @@ UserDao.loginViaApp = function (msg, cb) {
     .app
     .get('accountService')
     .loginViaApp({
-      data : msg.data,
-      spId : msg.spid,
-      dtId : msg.dtId,
-      deviceId : msg.deviceId,
-      ip : msg.ip,
+      data: msg.data,
+      spId: msg.spid,
+      dtId: msg.dtId,
+      deviceId: msg.deviceId,
+      ip: msg.ip,
       platform: msg.platform
     })
     .then(function (result) {
-      console.log('loginViaApp result : ', result );
-      if (result && !result.code){
+      console.log('loginViaApp result : ', result);
+      if (result && !result.code) {
         return pomelo
           .app.get('mysqlClient')
           .User
-          .findOrCreate({where: {uid: result.extra.userId}, raw: true, defaults: {
-            uid: result.extra.userId,
-            username : result.extra.username,
-            fullname: result.extra.username,
-            phone: msg.phone || '',
-            email: msg.email || '',
-            avatar: null,
-            accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
-            distributorId: msg.dtid || 1
-          }})
+          .findOrCreate({
+            where: {uid: result.extra.userId},
+            raw: true, defaults: {
+              uid: result.extra.userId,
+              username: result.extra.username,
+              fullname: result.extra.username,
+              phone: msg.phone || '',
+              email: msg.email || '',
+              avatar: null,
+              accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
+              distributorId: msg.dtid || 1
+            }
+          })
           .spread(function (user, created) {
             var firstLogin = 0;
-            if (created){
+            if (created) {
               var emitterConfig = pomelo.app.get('emitterConfig');
               pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.REGISTER, {
                 uid: user.uid,
@@ -641,9 +643,9 @@ UserDao.loginViaApp = function (msg, cb) {
               });
               firstLogin = 1;
             }
-            return utils.invokeCallback(cb, null, {code : 0, message: '', data: {}, extra: { firstLogin : firstLogin}})
+            return utils.invokeCallback(cb, null, {code: 0, message: '', data: {}, extra: {firstLogin: firstLogin}})
           })
-      }else{
+      } else {
         return utils.invokeCallback(cb, null, result)
       }
     })
@@ -651,22 +653,22 @@ UserDao.loginViaApp = function (msg, cb) {
 };
 
 UserDao.deleteCache = function (username, uid) {
-  if (uid){
+  if (uid) {
     UserDao.getUserProperties(uid, ['username'])
       .then(function (user) {
-        if (user){
+        if (user) {
           var username = user.username;
-          var redisClient  = pomelo.app.get('redisInfo');
+          var redisClient = pomelo.app.get('redisInfo');
           redisClient.del('cothu:profile:' + username);
-          redisClient.del('cothu:expProfile:'+username);
+          redisClient.del('cothu:expProfile:' + username);
           pomelo.app.get('redisInfo')
             .del('cothu:' + username, 'passwd');
         }
       })
-  }else {
-    var redisClient  = pomelo.app.get('redisInfo');
+  } else {
+    var redisClient = pomelo.app.get('redisInfo');
     redisClient.del('cothu:profile:' + username);
-    redisClient.del('cothu:expProfile:'+username);
+    redisClient.del('cothu:expProfile:' + username);
   }
 };
 
@@ -695,14 +697,14 @@ UserDao.createUser = function (msg, cb) {
           .get('mysqlClient')
           .User
           .create({
-            gold : msg.money2 || 0,
+            gold: msg.money2 || 0,
             uid: result.userId,
-            username : msg.uname,
+            username: msg.uname,
             fullname: msg.uname,
             phone: msg.phone || '',
             email: msg.email || '',
             avatar: null,
-            platform : msg.platform,
+            platform: msg.platform,
             accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
             distributorId: 1,
             deviceId: msg.deviceId || msg.deviceid,
@@ -732,7 +734,7 @@ UserDao.createUser = function (msg, cb) {
           userCount: 1
         }, function () {
         });
-        return utils.invokeCallback(cb, null, {code : 0, message: '', data:{}})
+        return utils.invokeCallback(cb, null, {code: 0, message: '', data: {}})
       } else {
         return utils.invokeCallback(cb, null, {
           code: 1,

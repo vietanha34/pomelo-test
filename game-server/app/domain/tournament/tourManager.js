@@ -17,6 +17,7 @@ var Code = require('../../consts/code');
 var Notify = require('../../dao/notifyDao');
 var util = require('util');
 var moment = require('moment');
+var GuildDao = require('../../dao/GuildDao');
 
 
 var TourManager = function (opts) {
@@ -33,62 +34,138 @@ module.exports = TourManager;
 pro = TourManager.prototype;
 
 pro.init = function () {
+  var self = this;
   if (this.status) return;
   var curServer = pomelo.app.curServer;
   // quét hệ thống xem có giải đấu nào sắp diễn ra k
   if (curServer.serverType === this.serverType) {
     setInterval(function () {
+      return pomelo.app.get('mysqlClient')
+        .Tournament
+        .findAll({
+          where: {
+            status: {
+              $ne: consts.TOUR_STATUS.FINISHED
+            },
+            type : consts.TOUR_TYPE.NORMAL
+          },
+          raw: true
+        })
+        .each(function (tour) {
+          if (!tour) return;
+          return TourDao.getTourRound({
+            where: {
+              id: tour.roundId
+            },
+            include : [
+              {
+                model : pomelo.app.get('mysqlClient').TourSchedule
+              }
+            ],
+            raw: true
+          })
+          .then(function (round) {
+              if (!round) return;
+              if (round['TourSchedule.matchTime'] && moment(round['TourSchedule.matchTime'] * 1000).isAfter(moment())){
 
+              }
+            })
+        })
     }, this.interval);
-  }
-  return pomelo.app.get('mysqlClient')
-    .Tournament
-    .findAll({
-      where: {
-        status: {
-          $ne: consts.TOUR_STATUS.FINISHED
-        }
-      },
-      raw: true
-    })
-    .each(function (tour) {
-      var tableConfig,  round;
-      if (!tour) return ;
-      return TourDao.getTourRound({
+    return pomelo.app.get('mysqlClient')
+      .Tournament
+      .findAll({
         where: {
-          id: tour.roundId
+          status: {
+            $ne: consts.TOUR_STATUS.FINISHED
+          }
         },
-        raw : true
+        raw: true
       })
-        .then(function (round) {
-          if (!round || round.length < 1) return Promise.reject();
-          round = round[0];
-          return pomelo.app.get('mysqlClient')
-            .TourTableConfig
-            .findOne({
+      .each(function (tour) {
+        var tableConfig, round;
+        if (!tour) return;
+        return TourDao.getTourRound({
+          where: {
+            id: tour.roundId
+          },
+          raw: true
+        })
+          .then(function (r) {
+            round = r;
+            if (!round || round.length < 1) return Promise.reject();
+            round = round[0];
+            return pomelo.app.get('mysqlClient')
+              .TourTableConfig
+              .findOne({
+                where: {
+                  id: round.tableConfigId
+                },
+                raw: true
+              })
+          })
+          .then(function (tc) {
+            tableConfig = tc;
+            return TourDao.getTourTable({
               where: {
-                id: round.tableConfigId
+                tourId: tour.tourId,
+                stt: {
+                  $lt: consts.BOARD_STATUS.FINISH
+                }
               },
               raw: true
             })
-        })
-        .then(function (tc) {
-          tableConfig = tc;
-          return TourDao.getTourTable({
-            where: {
-              tourId: tour.tourId,
-              stt: {
-                $lt: consts.BOARD_STATUS.FINISH
-              }
-            },
-            raw: true
           })
-        })
-        .each(function (table) {
-          // tạo lại các bàn chơi chưa đc đấu
-
-        })
-    });
+          .each(function (table) {
+            return Promise.props({
+              player1: pomelo.app.get('mysqlClient').User.findOne({
+                where: {
+                  uid: table.player1
+                },
+                raw: true
+              }),
+              player2: pomelo.app.get('mysqlClient').User.findOne({
+                where: {
+                  uid: table.player2
+                },
+                raw: true
+              })
+            })
+              .then(function (data) {
+                var player1 = data.player1;
+                var player2 = data.player2;
+                var dataCreateTable = {
+                  gameId: table.gameId,
+                  tourId: table.tourId,
+                  roundId: tour.roundId,
+                  boardId: table.boardId,
+                  serverId: table.serverId,
+                  groupId: table.groupId,
+                  scheduleId: table.scheduleId,
+                  matchTime: table.matchTime,
+                  index: table.index,
+                  battleType: round ? round.battleType : consts.TOUR_BATTLE_TYPE.THUY_SY,
+                  tourType: table.tourType
+                };
+                if (player1 && player2 && type === consts.TOUR_TYPE.NORMAL) {
+                  dataCreateTable['uid'] = [table.player1, table.player2];
+                  dataCreateTable['username'] = [player1.username, player2.username];
+                  dataCreateTable['fullname'] = [player1.fullname, player2.fullname];
+                  var player = utils.JSONParse(table.player);
+                  for (var i = 0, len = player.length; i < len; i++) {
+                    player[i].inBoard = 0;
+                  }
+                }else {
+                  player = [{}, {}];
+                  dataCreateTable['guildId'] = [table.player1, table.player2];
+                }
+                dataCreateTable['player'] = player;
+                self.createTable(dataCreateTable);
+              });
+            // tạo lại các bàn chơi chưa đc đấu
+          });
+      })
+  }
 };
 
 pro.matchMaking = function (tourId) {
@@ -1035,7 +1112,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhất tại giải đấu "%s". Vui lòng truy cập đấu trường để xem thông tin chi tiết', data.first['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.first.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1043,12 +1120,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.first.uid,
           fullname: data.first['User.fullname'],
-          avatar: utils.JSONParse(data.first['User.avatar'], {id : 0, version: 0}),
-          sex : data.first['User.sex'],
+          avatar: utils.JSONParse(data.first['User.avatar'], {id: 0, version: 0}),
+          sex: data.first['User.sex'],
           stt: 1,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.first.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.first.uid,
+              fullname: data.first['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã vô địch giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.first['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.second) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1066,7 +1169,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhì tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.second['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.second.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1074,12 +1177,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.second.uid,
           fullname: data.second['User.fullname'],
-          avatar: utils.JSONParse(data.second['User.avatar'], {id : 0, version: 0}),
-          sex : data.second['User.sex'],
+          avatar: utils.JSONParse(data.second['User.avatar'], {id: 0, version: 0}),
+          sex: data.second['User.sex'],
           stt: 2,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.second.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.second.uid,
+              fullname: data.second['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về nhì giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.second['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.third) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1097,7 +1226,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.third['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.third.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1105,12 +1234,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.third.uid,
           fullname: data.third['User.fullname'],
-          avatar: utils.JSONParse(data.third['User.avatar'], {id : 0, version: 0}),
-          sex : data.third['User.sex'],
+          avatar: utils.JSONParse(data.third['User.avatar'], {id: 0, version: 0}),
+          sex: data.third['User.sex'],
           stt: 3,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.third.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.third.uid,
+              fullname: data.third['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về ba giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.third['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.four) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1128,7 +1283,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.four['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.four.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1136,12 +1291,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.four.uid,
           fullname: data.four['User.fullname'],
-          avatar: utils.JSONParse(data.four['User.avatar'], {id : 0, version: 0}),
-          sex : data.four['User.sex'],
+          avatar: utils.JSONParse(data.four['User.avatar'], {id: 0, version: 0}),
+          sex: data.four['User.sex'],
           stt: 3,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.four.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.four.uid,
+              fullname: data.four['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về ba giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.four['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       pomelo.app.get('mysqlClient')
         .Tournament
@@ -1294,6 +1475,7 @@ pro.splitGroup = function (tourId, numGroup) {
 };
 
 pro.createTable = function (opts) {
+  console.log('tourManager createTable : ', opts);
   var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   var params = utils.clone(opts.tc);
   var hallConfig = hallConfigs['' + params.gameId + consts.HALL_ID.CAO_THU];
@@ -1304,6 +1486,7 @@ pro.createTable = function (opts) {
   params.timePlay = opts.matchTime * 1000;
   params.index = opts.index;
   params.tourId = opts.tourId;
+  params.matchPlay = opts.matchPlay || 2;
   params.battleType = opts.battleType;
   params.tourType = opts.tourType;
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
@@ -1318,10 +1501,10 @@ pro.createTable = function (opts) {
   return Promise.delay(0)
     .then(function () {
       var curServer = pomelo.app.curServer;
-      if (curServer.gameId = opts.gameId){
-        return game.boardManager.createRoomTournament(hallConfig, null, params);
-      }else {
-
+      if (curServer.gameId === opts.gameId) {
+        return pomelo.app.game.boardManager.createRoomTournament(hallConfig, null, params);
+      } else {
+        return Promise.promisify(pomelo.app.rpc.game.gameRemote.createRoomTournament.toServer)(hallConfig, null, params);
       }
     })
     .then(function (data) {
@@ -1339,9 +1522,9 @@ pro.createTable = function (opts) {
         tourId: opts.tourId,
         roundId: opts.roundId,
         matchTime: moment(opts.matchTime * 1000).toDate(),
-        player1: opts.uid[0],
-        player2: opts.uid[1],
-        player: opts.player || JSON.stringify([{},{}])
+        player1: opts.tourType === consts.TOUR_TYPE.FRIENDLY ? opts.guildId[0] : opts.uid[0],
+        player2: opts.tourType === consts.TOUR_TYPE.FRIENDLY ? opts.guildId[1] : opts.uid[1],
+        player: opts.player || JSON.stringify([{}, {}])
       };
       console.log('createTourTable opts : ', opts);
       return TourDao.createTable(opts);
@@ -1427,7 +1610,7 @@ pro.showTable = function (tourId, scheduleId) {
     where: {
       tourId: tourId
     },
-    attributes : ['name'],
+    attributes: ['name'],
     raw: true
   })
     .then(function (t) {

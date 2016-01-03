@@ -17,10 +17,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       allowNull: true
     },
-    acronym: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
     detail: {
       type: DataTypes.STRING,
       allowNull: true

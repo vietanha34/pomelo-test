@@ -78,15 +78,19 @@ module.exports.process = function (app, type, param) {
       utils.log(e.stack || e);
     });
 
-  // push from CMS
   setTimeout(function(){
-    // push action
     redisCache.zrangeAsync(redisKeyUtil.getUserAction(param.uid), 0, -1)
       .then(function (values) {
-        for (var i = 0, len = values.length;  i< len; i ++){
+        //return console.log('values : ', values);
+        for (var i = 0, len = values.length;  i< len; i += 1){
           var value = utils.JSONParse(values[i],{});
-          pomelo.app.get('statusService')
-            .pushByUids([param.uid], 'onNotify', value);
+          var now = Date.now() / 1000 | 0;
+          if (now < value.expire){
+            pomelo.app.get('statusService')
+              .pushByUids([param.uid], 'onNotify', value);
+          }else {
+            redisCache.zremAsync(redisKeyUtil.getUserAction(param.uid), values[i])
+          }
         }
       });
     // push online

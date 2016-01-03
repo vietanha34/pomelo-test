@@ -10,6 +10,7 @@ var ActionDao = require('../../../dao/actionDao');
 var TourDao = require('../../../dao/tourDao');
 var GuildDao = require('../../../dao/GuildDao');
 var UserDao = require('../../../dao/userDao');
+var lodash = require('lodash');
 var Promise = require('bluebird');
 var util = require('util');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
@@ -108,35 +109,108 @@ Handler.prototype.action = function (msg, session, next) {
         case consts.ACTION_ID.TOURNAMENT_DUEL:
           if (accept) {
             // create giải đấu
+            var tour, tableConfig, round;
             return pomelo.app.get('mysqlClient')
-              .Tournament
-              .create({
-                type: consts.TOUR_TYPE.FRIENDLY,
-                tourType: 1,
-                name: action.name
-              }) 
-              .then(function (tour) {
-                // tạo bàn đấu
+              .sequelize
+              .transaction(function (t) {
+                return pomelo.app.get('mysqlClient')
+                  .Tournament
+                  .create({
+                    type: consts.TOUR_TYPE.FRIENDLY,
+                    tourType: 1,
+                    name: action.name
+                  },{transaction : t})
+                  .then(function (tu) {
+                    tour = tu;
+                    return pomelo.app.get('mysqlClient')
+                      .TourTableConfig
+                      .create({
+                        gameId : action.gameId,
+                        bet : action.bet,
+                        totalTime : action.totalTime,
+                        turnTime: action.turnTime,
+                        timeWait : 5 * 60 * 1000,
+                        level : 0,
+                        tourTimeWait : 10 * 60 * 1000,
+                        showKill : action.showKill || 0,
+                        mustWin : 0,
+                        lockMode : lodash.isArray(action.lockMode) ? action.lockMode.join(',') : '',
+                        matchPlay : action.numMatch || 2
+                      }, { transaction : t})
+                  })
+                  .then(function (config) {
+                    tableConfig = config;
+                    return pomelo.app.get('mysqlClient')
+                      .TourSchedule
+                      .create({
+                        matchTime : action.time / 1000 | 0,
+                        matchmaking : 1,
+                        show : 1
+                      }, { transaction : t})
+                  })
+                  .then(function (schedule) {
+                    return pomelo.app.get('mysqlClient')
+                      .TourRound
+                      .create({
+                        tourId : tour.tourId,
+                        scheduleId : schedule.id,
+                        tableConfigId : tableConfig.id,
+                        name : "Vòng chung kết",
+                        status : 0,
+                        numGroup : 0,
+                        numRound : 1,
+                        type : 1,
+                        showMember : 1
+                      }, { transaction : t})
+                  })
+                  .then(function (r) {
+                    round = r;
+                    return pomelo.app.get('mysqlClient')
+                      .TourSchedule
+                      .update({
+                        roundId : round.id
+                      }, {
+                        where : {
+                          id : round.scheduleId
+                        },
+                        transaction : t
+                      })
+                  })
+              })
+              .then(function () {
+                console.log('tạo bàn thi đấu cho giải giao hữu');
                 var tourManager = pomelo.app.get('tourManager');
                 for (var i = 0; i < action.numBoard; i ++){
-                  tourManager.createTable({
-                    index : i+1,
+                  var dataCreateTable = {
+                    index : i + 1,
                     tourType : consts.TOUR_TYPE.FRIENDLY,
-                    username : [],
-                    fullname : [],
+                    gameId: action.gameId,
+                    roundId: tour.roundId,
                     guildId : [action.currentGuildId, action.targetGuildId],
-                    tourId : tour.tourId,
-                    timePlay : action.matchTime / 1000 | 0,
-                    mustWin : 0,
-                    lockMode : action.lockMode,
+                    matchTime: action.time / 1000 | 0,
+                    battleType: consts.TOUR_BATTLE_TYPE.THUY_SY,
                     tc : {
                       gameId : action.gameId,
-                      bet : action.bet
-                    }
-                  })
+                      bet : action.bet,
+                      totalTime : action.totalTime,
+                      turnTime : action.turnTime,
+                      timeWait : action.timeWait || 2 * 60 * 1000,
+                      tourTimeWait : action.tourTimeWait || 10 * 60 * 1000,
+                      showKill : 0,
+                      level : action.level || 0,
+                      lockMode : action.lockMode || [],
+                      mustWin : action.mustWin || 0,
+                      caroOpen : action.caroOpen || 1
+                    },
+                    lockMode : action.lockMode,
+                    mustWin : 0,
+                    username : [],
+                    fullname : [],
+                    tourId : tour.tourId
+                  };
+                  tourManager.createTable(dataCreateTable)
                 }
               })
-
           } else {
             GuildDao.addEvent({
               guildId: action.currentGuildId,
@@ -158,10 +232,11 @@ Handler.prototype.action = function (msg, session, next) {
       }
     })
     .then(function () {
-      ActionDao.removeAction({id: action.id}, uid);
+      //ActionDao.removeAction({id: action.id}, uid);
       return utils.invokeCallback(next, null, {});
     })
     .catch(function (err) {
+      console.error('actionHandler : ',err);
       return utils.invokeCallback(next, null, {ec: err.ec || Code.FAIL, msg: err.msg || Code.FAIL})
     })
 };

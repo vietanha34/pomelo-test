@@ -6,7 +6,8 @@
     "TOPUP": 7,
     "UPDATE_PROFILE" : 8,
     "ADD_FRIEND": 10,
-    "REGISTER": 15
+    "REGISTER": 15,
+    "TOURNAMENT" : 16
   },
   "production": {
     "FINISH_GAME": 2,
@@ -15,7 +16,8 @@
     "TOPUP": 7,
     "UPDATE_PROFILE" : 8,
     "ADD_FRIEND": 10,
-    "REGISTER": 15
+    "REGISTER": 15,
+    "TOURNAMENT" : 16
   },
   "local" : {
     "FINISH_GAME": 2,
@@ -24,6 +26,7 @@
     "TOPUP": 7,
     "UPDATE_PROFILE" : 8,
     "ADD_FRIEND": 10,
-    "REGISTER": 15
+    "REGISTER": 15,
+    "TOURNAMENT" : 16
   }
 }

@@ -577,7 +577,6 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
       }else {
         self.game.game.changeTurn(true, ownerPlayer.color === consts.COLOR.WHITE);
       }
-      //self.game.game.turnToMode();
       self.game.gameStatus = self.game.game.getBoardStatus();
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);

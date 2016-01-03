@@ -494,7 +494,7 @@ pro.clearIdlePlayer = function () {
   }
   var self = this;
   if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
-    if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish) {
+    if (this.status === consts.BOARD_STATUS.NOT_STARTED && ((Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay) || (this.tourType === consts.TOUR_TYPE.FRIENDLY && this.numMatchPlay && Date.now() > this.timeStart + consts.TIME.FRIENDLY_WAIT )) && !this.tableTourFinish) {
       if (this.players.length === 2) {
         // startGame
         console.error('start Game đi chứ');
@@ -512,9 +512,9 @@ pro.clearIdlePlayer = function () {
             uid: winPlayer.uid,
             fullname : winPlayer.userInfo.fullname
           };
-          this.tourScore[this.username.indexOf(winPlayer.userInfo.username)] += 2;
+          this.tourScore[this.username.indexOf(winPlayer.userInfo.username)] += this.matchPlay - this.numMatchPlay;
           this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
-          this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc');
+          this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc hoặc không bắt đầu ván tiếp theo sau thời gian quy định');
         } else {
           // cả 2 người chơi cùng thua
           this.tableTourFinish = true;
@@ -713,6 +713,18 @@ pro.getBoardState = function (uid) {
     state['owner'] = this.owner;
   }
   state.menu = this.players.getMenu(uid);
+  return state
+};
+
+pro.getPreview = function () {
+  var state = {
+    info: this.getBoardInfo(true),
+    status: this.getStatus(),
+    players: this.players.getPlayerState()
+  };
+  if (this.owner) {
+    state['owner'] = this.owner;
+  }
   return state
 };
 

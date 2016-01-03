@@ -10,6 +10,7 @@ var utils = require('../../util/utils');
 var async = require('async');
 var lodash = require('lodash');
 var consts = require('../../consts/consts');
+var Promise = require('bluebird');
 
 
 var MAX_PLAYER_IN_ROOM = 100;
@@ -36,7 +37,7 @@ module.exports = BoardPool;
 
 var exp = BoardPool.prototype;
 
-exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
+exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
   tableOpts = tableOpts || {};
   var self = this;
   if (roomId) {
@@ -69,14 +70,16 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
           opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
           opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
           opts.turnTime = tableOpts.turnTime || 180;
+          opts.boardId = tableOpts.boardId;
           opts.totalTime = tableOpts.totalTime || 15 * 60;
-          opts.showKill = false;
-          opts.mustWin = false;
+          opts.showKill = tableOpts.showKill;
+          opts.mustWin = tableOpts.mustWin ;
+          opts.caroOpen = tableOpts.caroOpen || 0;
           opts.bet = tableOpts.bet || 5000;
           opts.configTurnTime = [opts.turnTime * 1000];
           opts.configTotalTime = [opts.totalTime * 1000];
           opts.base = true;
-          opts.tourTimeWait = 60 * 1000;
+          opts.tourTimeWait = tableOpts.tourTimeWait || 10 * 60 * 1000;
           opts.level = tableOpts.level || 0;
           opts.roomId = roomOpts.roomId;
           opts.gameType = consts.GAME_TYPE.TOURNAMENT;
@@ -94,6 +97,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
       opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
     }
     opts.username = tableOpts.username;
+    opts.boardId = table.boardId;
     opts.fullname = tableOpts.fullname;
     opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
     opts.matchPlay = tableOpts.matchPlay || 2;
@@ -115,7 +119,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
     opts.index = tableOpts.index;
     opts.tourId = tableOpts.tourId;
     console.log('createBoard : ', opts);
-    return self.createBoard(opts);
+    return self.createBoard(opts, cb);
   }
 };
 
@@ -185,12 +189,20 @@ exp.createBoard = function (params, cb) {
 exp.create = function (params, cb) {
   var boardService = pomelo.app.get('boardService');
   var self = this;
-  return boardService.genBoardId({
-    serverId: this.serverId,
-    gameId: this.gameId,
-    gameType: params.gameType || consts.GAME_TYPE.NORMAL,
-    roomId: params.roomId
-  })
+  return Promise.delay(0)
+    .then(function () {
+      if(params.boardId){
+        boardService.saveBoardId(params.boardId, utils.getServerIndexFromServerId(self.serverId));
+        return Promise.resolve(params.boardId);
+      }else {
+        return boardService.genBoardId({
+          serverId: self.serverId,
+          gameId: self.gameId,
+          gameType: params.gameType || consts.GAME_TYPE.NORMAL,
+          roomId: params.roomId
+        })
+      }
+    })
     .then(function (boardId) {
       if (self.boards[boardId]) {
         utils.invokeCallback(cb, null, boardId);
