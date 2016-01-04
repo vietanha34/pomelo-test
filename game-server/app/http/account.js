@@ -163,11 +163,10 @@ module.exports = function (app) {
             var mongoClient = pomelo.app.get('mongoClient');
             var Top = mongoClient.model('Top');
             var topUpdate = {};
-            topUpdate[gameName] = elo;
-            Top.update({uid: uid}, {$inc: topUpdate}, {upsert: false})
-              .catch(function (err) {
-                console.error(err);
-              });
+            topUpdate[gameName] = (user[gameName + 'Elo'] + elo);
+            Top.update({uid: uid}, topUpdate, {upsert: false}, function(e,r) {
+              if (e) console.error(e.stack || e);
+            });
           })
           .catch(function (err) {
             console.error(err);
