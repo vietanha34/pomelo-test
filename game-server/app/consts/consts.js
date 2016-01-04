@@ -407,7 +407,8 @@ module.exports = {
     LAYER_TIME : 4000,
     DELTA_TIME : 5000,
     SLEEP_TURN : 500,
-    SLEEP_CHARGE : 1000
+    SLEEP_CHARGE : 1000,
+    LOGOUT : 60 * 1000
   },
 
   CHANGE_GOLD_TYPE: {

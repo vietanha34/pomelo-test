@@ -34,7 +34,7 @@ exp.init = function (opts) {
   gameId = opts.gameId;
   serverId = opts.serverId;
   intervel = opts.interval || 2 * 60 * 1000;
-  check();
+  exp.check();
 };
 
 /**
@@ -191,13 +191,17 @@ exp.getBoardList = function () {
   return boards
 };
 
-function check() {
+exp.check = function () {
   try {
     utils.interval(function () {
       var boardId, board;
       var rooms = {};
       for (boardId in boards) {
         board = boards[boardId];
+        if (!board){
+          delete boards[boardId];
+          continue
+        }
         var numPlayer = board.players.length;
         numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
         rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer
@@ -219,7 +223,7 @@ function check() {
   catch (err) {
     logger.error("error in check : %j ", err);
   }
-}
+};
 
 
 function onClose(err, boardId) {

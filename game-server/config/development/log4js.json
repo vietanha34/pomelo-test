@@ -93,21 +93,10 @@
         }
       ,"backups": 5,
       "category":"pomelo-rpc"
-    },
-    {
-      "type": "file",
-      "filename": "${opts:base}/logs/exception.log",
-      "maxLogSize": 10485760,
-      "layout": {
-        "type": "basic"
-      }
-    ,"backups": 5,
-      "category":"console"
     }
   ],
 
   "levels": {
-    "console": "ERROR",
     "database" : "ERROR",
     "rpc-log" : "ERROR",
     "forward-log": "ERROR"

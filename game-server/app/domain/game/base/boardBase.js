@@ -94,9 +94,9 @@ var Board = function (opts, PlayerPool, Player) {
       if (bet && bet !== self.bet) {
         var ownerPlayer = self.players.getPlayer(self.owner);
         var multi = 1;
-        if (ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)){
+        if (ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)){
           multi = 5;
-        }else if(ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)){
+        }else if(ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)){
           multi = 3;
         }
         if (bet < self.configBet[0] || bet > self.configBet[1] * multi) {
@@ -470,6 +470,9 @@ pro.clearIdlePlayer = function () {
         this.playerTimeout(player);
       }
       if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && player.timeAction < Date.now() - 30000){
+        this.playerTimeout(player);
+      }
+      if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT){
         this.playerTimeout(player);
       }
     }else {
@@ -1108,7 +1111,7 @@ pro.transaction = function (uids, transactionId, cb) {
   return utils.invokeCallback(cb, null, {});
   var self = this;
   var opts = [];
-  for(var i = 0, len = uids.length; i < len ; i ++){
+  for(var i = 0, len = uids.length;i < len; i ++){
     var player = this.players.getPlayer(uids[i]);
     if (!player) continue;
     opts.push({
@@ -1163,5 +1166,12 @@ pro.checkStartGame = function () {
     return Code.ON_GAME.FA_NOT_READY
   }else {
     return Code.OK;
+  }
+};
+
+pro.logout = function (uid) {
+  var player = this.players.getPlayer(uid);
+  if(player && player.guest){
+    player.timeLogout = Date.now();
   }
 };

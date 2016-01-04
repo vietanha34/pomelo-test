@@ -430,7 +430,13 @@ Table.prototype.demand = function (opts) {
         if (opts.accept && otherPlayer.requestDraw){
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        }else {
+        }else if (otherPlayer){
+          this.pushMessage('chat.chatHandler.send', {
+            from : uid,
+            targetType : consts.TARGET_TYPE.BOARD,
+            type : 0,
+            content : util.format('Người chơi %s từ chối xin hoà', player.userInfo.fullname)
+          });
           otherPlayer.requestDraw = false;
         }
       }else {
@@ -524,8 +530,10 @@ Table.prototype.ready = function (uid) {
   if (!result.ec){
     var player = this.players.getPlayer(uid);
     player.removeMenu(consts.ACTION.CHANGE_SIDE);
+    return {menu : player.menu}
+  }else {
+    return result
   }
-  return { menu : player.menu}
 };
 
 Table.prototype.standUp = function (uid) {

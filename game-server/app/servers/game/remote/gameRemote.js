@@ -43,7 +43,6 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
     game.delBoard(tableId);
     return utils.invokeCallback(cb, null, {data : utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   }
-  logger.error('joinBoard : ', tableId, opts);
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
       console.log('effect : ', effect);
@@ -123,4 +122,19 @@ GameRemote.prototype.addItems = function (boardId, items, cb) {
   }
   console.log("callback addItem");
   utils.invokeCallback(cb, null, board.addItems(items));
+};
+
+GameRemote.prototype.logout = function (boardId, uid, cb) {
+  console.log('gameRemote logout : ', boardId, uid);
+  var game = this.app.game;
+  var board = game.getBoard(boardId);
+  var err;
+  if (!board) {
+    game.delBoard(boardId);
+    err = new Error('Khong co ban phu hop');
+    err.code = Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST;
+    utils.invokeCallback(cb, err);
+    return;
+  }
+  utils.invokeCallback(cb, null, board.logout(uid));
 };

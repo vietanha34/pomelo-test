@@ -85,7 +85,8 @@ Game.prototype.init = function () {
       }
     }
   }
-  var detail = '' + this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên';
+  console.log('this.firstTurn : ', this.firstTurn);
+  var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
   if (lock) {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
     this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
@@ -233,27 +234,36 @@ Game.prototype.finishGame = function (result, uid) {
     }
   }
   this.table.finishGame();
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-  for (i = 0, len = eloMap.length; i < len; i++) {
-    player = this.table.players.getPlayer(players[i].uid);
-    players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    players[i].title  = Formula.calEloLevel(eloMap[i]);
-    finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    finishData[i].result.eloAfter = eloMap[i];
-    player.userInfo.elo = eloMap[i];
+  try {
+    var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+    for (i = 0, len = eloMap.length; i < len; i++) {
+      player = this.table.players.getPlayer(players[i].uid);
+      players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+      players[i].title  = Formula.calEloLevel(eloMap[i]);
+      finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+      finishData[i].result.eloAfter = eloMap[i];
+      player.userInfo.elo = eloMap[i];
+    }
+  } catch(err){
+    console.error('error : ', err);
+    console.error('players : ', players);
   }
-  if (bet > 0){
-    subGold = loseUser.subGold(bet);
-    addGold = winUser.addGold(subGold, true);
-    players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
-    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
-      gold : bet,
-      fromUid : fromUid,
-      toUid : toUid,
-      tax : 5,
-      force : true
-    }, 1, function () {})
+  try {
+    if (bet > 0){
+      subGold = loseUser.subGold(bet);
+      addGold = winUser.addGold(subGold, true);
+      players[winIndex].gold = addGold;
+      players[loseIndex].gold = -subGold;
+      this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+        gold : bet,
+        fromUid : fromUid,
+        toUid : toUid,
+        tax : 5,
+        force : true
+      }, 1, function () {})
+    }
+  }catch(err){
+    console.error('error : ', err);
   }
   this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({players: players}, true);
@@ -319,7 +329,7 @@ Table.prototype.getStatus = function () {
   status.remove = this.game.game.handicapSquares;
   status.log = boardStatus.movesHistory2;
   if (this.game.firstTurn){
-    status.detail = '' + this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên';
+    status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
   }else {
     status.detail = '';
   }  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
@@ -451,7 +461,7 @@ Table.prototype.demand = function (opts) {
           this.game.progress();
           return {};
         }
-        else {
+        else if(otherPlayer){
           this.pushMessage('chat.chatHandler.send', {
             from : uid,
             targetType : consts.TARGET_TYPE.BOARD,
@@ -489,7 +499,7 @@ Table.prototype.demand = function (opts) {
         if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        } else {
+        } else if (otherPlayer){
           this.pushMessage('chat.chatHandler.send', {
             from : uid,
             targetType : consts.TARGET_TYPE.BOARD,

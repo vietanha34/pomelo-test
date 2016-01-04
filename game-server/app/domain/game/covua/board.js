@@ -375,7 +375,7 @@ Table.prototype.demand = function (opts) {
         if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        } else {
+        } else if (otherPlayer){
           this.pushMessage('chat.chatHandler.send', {
             from : uid,
             targetType : consts.TARGET_TYPE.BOARD,

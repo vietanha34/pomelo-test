@@ -101,6 +101,16 @@ app.configure('production|development|local', function () {
       .catch(function (err) {
         console.error('err : ', err)
       })
+  }else if (!curServer.serverType){
+    var ccuPlugin = require('pomelo-ccu-plugin');
+    app.use(ccuPlugin, {
+      ccu: {
+        redis: app.get('redisCache'),
+        username: 'monitor',
+        password: 'monitor',
+        middleware : utils.getGameIdUser
+      }
+    })
   }
 });
 

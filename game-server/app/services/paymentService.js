@@ -164,7 +164,6 @@ pro.transfer = function (opts, cb) {
         ];
       })
     .spread(function (fromUser, toUser) {
-        console.log('fromUser : ', fromUser);
         var subGold = gold;
         if (fromUser.gold >= gold) {
           fromUser.gold -= gold
@@ -174,7 +173,25 @@ pro.transfer = function (opts, cb) {
         }
         var addGold = opts.tax ? Math.round(subGold * (100-opts.tax) / 100) : subGold;
         updateGoldInCache(fromUser.username, fromUser.gold);
-        updateGoldInCache(toUser.username, toUser.gold + addGold);;
+        updateGoldInCache(toUser.username, toUser.gold + addGold);
+        var logFromUser = {
+          before: fromUser.gold + gold
+          , after: fromUser.gold
+          , temp: 0
+          , time: new Date().getTime()
+          , opts: { uid : fromUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME}
+          , cmd: 'addGold'
+        };
+        pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
+        var logToUser = {
+          before: toUser.gold
+          , after: toUser.gold + gold
+          , temp: 0
+          , time: new Date().getTime()
+          , opts: { uid : toUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME}
+          , cmd: 'addGold'
+        };
+        pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
         return [
           pomelo.app.get('mysqlClient')
             .User

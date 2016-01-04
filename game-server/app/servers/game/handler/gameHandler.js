@@ -200,7 +200,6 @@ pro.invitePlayer = function (msg, session, next) {
     gameId: board.gameId
   })
     .then(function (users) {
-      console.log('invite User : ', users);
       if (lodash.isArray(users)) {
         if (users.length > 0) {
           var uids = [];
@@ -336,10 +335,11 @@ pro.startGame = function (msg, session, next) {
     return;
   }
   if (uid != board.owner) {
+    var optionalData = {};
+    var player = board.players.getPlayer(uid);
+    if(player) optionalData['menu'] = player.menu;
     messageService.pushMessageToPlayer(utils.getUids(session), route,
-      utils.merge_options(utils.getError(Code.ON_GAME.FA_WRONG_ARGUMENT), {
-        menu: board.players.getPlayer(uid).menu
-      }));
+      utils.merge_options(utils.getError(Code.ON_GAME.FA_WRONG_ARGUMENT), optionalData));
     next(null);
     return;
   }

@@ -119,7 +119,6 @@ Handler.prototype.send = function (msg, session, next) {
 };
 
 Handler.prototype.getHistory = function (msg, session, next) {
-  var uid = session.uid;
   msg.from = parseInt(session.uid);
   pomelo.app.get('chatService').getMessages(msg, function (err, msgs) {
     if (err) {
@@ -131,11 +130,13 @@ Handler.prototype.getHistory = function (msg, session, next) {
         results.push(msg.getInfo());
       }
       next(null, { msg : results});
-      MessageDao.unCountUnreadMessage({
-        targetType: consts.TARGET_TYPE.PERSON,
-        uid: msg.target,
-        fromId: msg.from
-      });
+      if (msg){
+        MessageDao.unCountUnreadMessage({
+          targetType: consts.TARGET_TYPE.PERSON,
+          uid: msg.target,
+          fromId: msg.from
+        });
+      }
       msg = null;
     }
   })

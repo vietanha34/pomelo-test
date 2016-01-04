@@ -50,12 +50,9 @@ var Player = function (opts) {
   this.owner = opts.owner || false; // chủ bàn chơi
   this.guest = opts.guest || false; // ngồi xem
   this.timeAction = Date.now();
-  this.deltaMoney = 0;
-  this.totalTax = 0;
   this.menu = [];
   this.moneyLogs = [];
-  this.sitInTime = null; // Thời gian cần thiết để ngồi xuống
-  this.isStandUp = false;
+  this.timeLogout = null;
 };
 
 /**
@@ -98,6 +95,7 @@ Player.prototype.genStartMenu = function () {
  * @param userInfo
  */
 Player.prototype.updateUserInfo = function (userInfo) {
+  this.timeLogout = null;
   this.userInfo = userInfo;
   this.userInfo.avatar = utils.JSONParse(this.userInfo.avatar, { id : 0, version : 0});
 };
@@ -154,11 +152,9 @@ Player.prototype.getState = function (uid) {
 Player.prototype.subGold = function (gold, msg) {
   if  (!lodash.isNumber(gold)) return 0;
   if (this.gold >= gold) {
-    this.deltaMoney -= gold;
     this.gold -= gold;
   }else {
     gold = this.gold;
-    this.deltaMoney -= gold;
     this.gold -= gold;
   }
   this.moneyLogs.push(util.format(msg || 'Thua %s gold', -gold));
@@ -183,8 +179,6 @@ Player.prototype.addGold = function (gold, tax, msg) {
   this.goldInGame += gold;
   this.gold += gold;
   this.goldAfter += gold;
-  this.deltaMoney += gold;
-  this.totalTax += taxMoney;
   this.moneyLogs.push(util.format(msg || 'Thắng %s gold', gold) + ' , phế ' + taxMoney + ' gold');
   return gold;
 };
@@ -207,8 +201,6 @@ Player.prototype.close = function () {
  */
 Player.prototype.reset = function () {
   this.ready = false;
-  this.deltaMoney = 0;
-  this.totalTax = 0;
   this.timeAction = Date.now();
   this.moneyLogs.splice(0,this.moneyLogs.length);
   this.status = consts.PLAYER_STATUS.NOT_PLAY;
@@ -246,12 +238,10 @@ Player.prototype.removeMenu = function (id) {
       break;
     }
   }
-  console.log('remove Menu : ', id, menu);
 };
 
 Player.prototype.pushMenu = function (menu) {
   var indexMenu = lodash.findIndex(this.menu, 'id', menu.id);
-  console.log('this.menu : ', this.menu, indexMenu, menu);
   if(indexMenu > -1){
     this.menu[indexMenu] = menu;
   }else {
@@ -273,7 +263,6 @@ Player.prototype.addItems = function (items) {
 };
 
 Player.prototype.checkItems = function (item) {
-  console.log('item : ', this.effect);
   return this.effect[item]
 };
 

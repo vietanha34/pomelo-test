@@ -369,7 +369,7 @@ var login = function (req, res) {
       if (uid) {
         return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid, null)
       } else {
-        res.json({code: code.ACCOUNT_OLD.USER_NOT_EXISTS});
+        Promise.reject({code: code.ACCOUNT_OLD.USER_NOT_EXISTS, messsage: "Người dùng không tồn tại", data: {}});
       }
     })
     .then(function (status) {

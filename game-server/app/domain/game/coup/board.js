@@ -75,7 +75,6 @@ Game.prototype.init = function () {
 };
 
 Game.prototype.setOnTurn = function (gameStatus) {
-  console.log('gameStatus : ', gameStatus);
   var turnColor = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
@@ -171,7 +170,8 @@ Game.prototype.finishGame = function (result, uid) {
           elo : player.userInfo.elo
         }
       });
-    }else {
+    }
+    else {
       res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
       if (res === consts.WIN_TYPE.WIN){
@@ -206,7 +206,6 @@ Game.prototype.finishGame = function (result, uid) {
   }
   this.table.finishGame();
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [0,0] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-  console.log('eloMap : ', eloMap);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -277,7 +276,7 @@ Table.prototype.getStatus = function () {
     : undefined;
   status.score  = this.score;
   if (this.game.firstTurn){
-    status.detail = '' + this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen' + ' đi tiên - ' + this.showKill ? 'hiện quân' : 'không hiện quân';
+    status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.showKill ? 'hiện quân' : 'không hiện quân');
   }else {
     status.detail = '';
   }
@@ -365,7 +364,7 @@ Table.prototype.demand = function (opts) {
         if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        } else {
+        } else if (otherPlayer){
           this.pushMessage('chat.chatHandler.send', {
             from : uid,
             targetType : consts.TARGET_TYPE.BOARD,

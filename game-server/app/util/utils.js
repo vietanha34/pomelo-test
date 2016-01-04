@@ -521,3 +521,34 @@ utils.uid = function (len, uniqueString) {
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+
+utils.getGameIdUser = function (app, list) {
+  var multi = app.get('redisCache').multi();
+  for (var i = 0, len = list.length;  i < len; i ++){
+    multi.smembers(redisKeyUtil.getPlayerBoardList(list[i].uid))
+  }
+  multi.exec(function (err, res) {
+    if (err) {
+    }else {
+      for (var i = 0, len = res.length;  i < len; i ++){
+        var boards = res[i];
+        if (lodash.isArray(boards) && boards.length > 0) {
+          var board = boards[0];
+          var boardSplit = board.split(':');
+          list[i].boardId = board;
+          list[i].gameId = parseInt(boardSplit[1]);
+        }
+      }
+      var multi = app.get('redisCache').multi();
+      multi.set(redisKeyUtil.getCcuKey(), list.length);
+      multi.set(redisKeyUtil.getCcuList(), JSON.stringify(list));
+      multi.exec(function (err) {
+        if(err){
+          logger.error ('error : ', err);
+        }
+      });
+    }
+  });
+  return false;
+};
