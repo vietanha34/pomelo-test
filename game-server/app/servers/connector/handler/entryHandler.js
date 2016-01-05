@@ -64,18 +64,17 @@ Handler.prototype.login = function (msg, session, next) {
   var version = '' + msg.versionCode.slice(4, 10) + msg.versionCode.slice(2, 4) + msg.versionCode.slice(0, 2);
   msg.ip = loginIp;
   var maintenance = this.app.get('maintenance');
+  if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL){
+    return next(null, {
+      ec: Code.GATE.FA_MAINTENANCE,
+      msg: Code.GATE.FA_MAINTENANCE
+    });
+  }
   async.waterfall([
     function (done) {
       self.app.rpc.auth.authRemote.login(session, msg, done);
     },
     function (user, done) {
-      if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL && user.username !== 'laanhdo') {
-        next(null, {
-          ec: Code.GATE.FA_MAINTENANCE,
-          msg: Code.GATE.FA_MAINTENANCE
-        });
-        return
-      }
       player = user;
       kickUser(self.app, user.uid, done);
     },
@@ -154,15 +153,6 @@ Handler.prototype.login = function (msg, session, next) {
         type: type,
         tableId: ''
       });
-      var waitingData = {
-        username: session.get('username'),
-        fullname: session.get('fullname'),
-        userId: session.uid,
-        gold: session.get('gold'),
-        level: session.get('level'),
-        avatar: session.get('avatar')
-      };
-      self.app.get('waitingService').add(waitingData);
     }
     emitData.resume = msg.resume;
     var emitterConfig = self.app.get('emitterConfig');
@@ -199,11 +189,6 @@ var onUserLeave = function onUserLeave(app, session, reason) {
     //	channelUtil.getGlobalChannelName(), function () {
     //	});
     app.get('waitingService').leave(session.uid);
-    var emitData = {
-      uid: session.uid,
-      lastLogin: session.get('lastLogin'),
-      boardId: session.get('tableId')
-    };
     var emitterConfig = pomelo.app.get('emitterConfig');
     pomelo.app.rpc.game.gameRemote.logout(session, session.get('tableId'), session.uid,function () {});
     //pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGOUT, emitData, function () {});

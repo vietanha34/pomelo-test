@@ -101,6 +101,7 @@ pro.addPlayer = function (opts) {
     effect : opts.effect || {},
     userInfo: userInfo,
     players: self,
+    totalTime : self.table.totalTime,
     table: self.table
   });
   self.players[uid] = player;

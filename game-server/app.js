@@ -233,6 +233,13 @@ app.configure('production|development', 'worker', function () {
   app.set('httpServer', httpServer);
 });
 
+app.configure('production', function () {
+  app.set('maintenance', {
+    enable: 1,
+    type: consts.MAINTENANCE_TYPE.ALL
+  });
+});
+
 // start app
 app.start();
 

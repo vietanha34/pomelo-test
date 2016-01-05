@@ -194,34 +194,38 @@ exp.getBoardList = function () {
 exp.check = function () {
   try {
     utils.interval(function () {
-      var boardId, board;
-      var rooms = {};
-      for (boardId in boards) {
-        board = boards[boardId];
-        if (!board){
-          delete boards[boardId];
-          continue
+      try {
+        var boardId, board;
+        var rooms = {};
+        for (boardId in boards) {
+          board = boards[boardId];
+          if (!board) {
+            delete boards[boardId];
+            continue
+          }
+          var numPlayer = board.players.length;
+          numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
+          rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer;
+          board.isAlive();
         }
-        var numPlayer = board.players.length;
-        numPlayer = lodash.isNumber(numPlayer) ? numPlayer : 0;
-        rooms[board.roomId] = !rooms[board.roomId] ? numPlayer : rooms[board.roomId] + numPlayer
-        board.isAlive();
-      }
-      var roomKeys = Object.keys(rooms);
-      for (var i = 0, len = roomKeys.length; i < len; i++) {
-        var key = roomKeys[i];
-        var progress = Math.floor(rooms[key] / 100 * 10);
-        if (!progress && rooms[key]) progress += 1;
-        pomelo.app.get('boardService').updateRoom({
-          roomId: key,
-          gameId: gameId,
-          progress: progress
-        })
+        var roomKeys = Object.keys(rooms);
+        for (var i = 0, len = roomKeys.length; i < len; i++) {
+          var key = roomKeys[i];
+          var progress = Math.floor(rooms[key] / 100 * 10);
+          if (!progress && rooms[key]) progress += 1;
+          pomelo.app.get('boardService').updateRoom({
+            roomId: key,
+            gameId: gameId,
+            progress: progress
+          })
+        }
+      }catch(err){
+        console.error('error ', err)
       }
     }, 30000);
   }
   catch (err) {
-    logger.error("error in check : %j ", err);
+    console.error("error in check : %j ", err);
   }
 };
 

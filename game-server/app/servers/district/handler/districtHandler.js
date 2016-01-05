@@ -29,7 +29,13 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   var gameId = msg.gameId;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance) {
-    return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
+    if (maintenance.type === consts.MAINTENANCE_TYPE.ALL) {
+      next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
+      return
+    }else if(maintenance.type === consts.MAINTENANCE_TYPE.GAME && lodash.isArray(maintenance.game) && maintenance.game.indexOf(gameId) > -1){
+      next(null, { ec : Code.GATE.FA_MAINTENANCE_GAME, msg : [Code.GATE.FA_MAINTENANCE_GAME, gameId]});
+      return
+    }
   }
   if (!gameId) {
     return next(null, utils.getError(Code.FAIL))
@@ -47,6 +53,8 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   if(msg.roomId){
     whereClause['roomId'] = msg.roomId
   }
+  var excludeBoardId = session.get('excludeBoardId');
+  excludeBoardId = lodash.isArray(excludeBoardId) ? excludeBoardId : [];
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
   if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var tableId;
@@ -73,7 +81,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         };
         self.app.get('boardService').getBoard({
           where: whereClause,
-          limit: 1,
+          limit: 3,
           raw : true,
           order: 'numPlayer DESC'
         }, done)
@@ -81,8 +89,12 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         next(null, {ec: Code.FAIL});
       }
     }, function (boardIds, done) {
-      console.log('boardId : ', boardIds);
-      var boardId = boardIds[0];
+      for (var i = 0, len = boardIds.length; i < len; i++){
+        var board = boardIds[i];
+        if (excludeBoardId.indexOf(board.boardId) < 0) {
+          var boardId = boardIds[i];
+        }
+      }
       if (boardId) {
         tableId = boardId.boardId;
         self.app.rpc.game.gameRemote.joinBoard(session, boardId.boardId, {userInfo: user}, done)
@@ -100,7 +112,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         session.pushAll();
         // TODO handle
       }
-      done()
+      done();
       next(null, result.data);
     }
   ], function (err) {
@@ -114,16 +126,25 @@ Handler.prototype.quickPlay = function (msg, session, next) {
 
 Handler.prototype.joinBoard = function (msg, session, next) {
   var uid = session.uid;
-  var tableId = msg.tableId;
-  var maintenance = this.app.get('maintenance');
-  if (!!maintenance) {
-    return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
-  }
   var self = this;
   var type = msg.type;
   if (type == 1) {
     this.quickPlay(msg, session, next);
     return
+  }
+  var tableId = session.get('tableId') || msg.tableId;
+  if (lodash.isString(tableId)) {
+    gameId = tableId.split(':')[1];
+  }
+  var maintenance = this.app.get('maintenance');
+  if (!!maintenance) {
+    if (maintenance.type === consts.MAINTENANCE_TYPE.ALL) {
+      next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
+      return
+    }else if(maintenance.type === consts.MAINTENANCE_TYPE.GAME && lodash.isArray(maintenance.game) && maintenance.game.indexOf(gameId) > -1){
+      next(null, { ec : Code.GATE.FA_MAINTENANCE_GAME, msg : [Code.GATE.FA_MAINTENANCE_GAME,gameId]});
+      return
+    }
   }
   if (!tableId) {
     next(null, {ec: Code.FAIL, msg: Code.FAIL});
@@ -168,7 +189,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
     }
   ], function (err) {
     if (err) {
-      console.log(err);
+      console.error(err);
       next(null, {ec: err.ec || Code.FAIL})
     }
   })
@@ -207,6 +228,8 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   var waitingService = this.app.get('waitingService');
   var uid = session.uid;
   var tableId = session.get('tableId');
+  var gameId = consts.GAME_ID.CO_TUONG;
+  if (tableId) gameId = tableId.split(':')[1];
   if (msg.type === 2) {
     friendDao.getFriendList(uid, consts.MAX_FRIEND)
       .then(function (uids) {
@@ -216,9 +239,9 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
               $in : uids || []
             }
           },
-          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
+          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar', 'elo'],
           offset: 0,
-          length: 10
+          limit: 10
         };
         return waitingService.getList(waitingData)
           .then(function (res) {
@@ -233,9 +256,10 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
       });
   } else {
     var waitingData = {
-      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar'],
+      where : { gameId : gameId},
+      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar', 'elo'],
       offset: 0,
-      length: 10
+      limit: 10
     };
     return waitingService.getList(waitingData)
       .then(function (res) {
@@ -250,32 +274,37 @@ Handler.prototype.getWaitingPlayer = function (msg, session, next) {
   }
 };
 
-Handler.prototype.getNumBoard = function (msg, session, next) {
-  var clause = {
-    bet: msg.bet,
-    game_type: msg.gameType,
-    limit_pot: msg.limitPot,
-    max_player: msg.maxPlayer,
-    num_player: {
-      type: consts.WHERE_TYPE.GREATER,
-      value: 0
-    },
-    count: true
-  };
-  this.app.get('boardService').getBoard(clause, null, function (err, num) {
-    if (err) {
-      next(null, {ec: Code.FAIL})
-    } else {
-      next(null, {count: num[0]['count(*)']})
-    }
-  })
-};
-
 Handler.prototype.getHall = function (msg, session, next) {
   var gameId = msg.gameId;
   if (gameId < 1 && gameId > 6) {
     return next(null, {ec: Code.FAIL, msg: 'Sai Định danh game'}); // TODO change language
   }
+  this.app.get('waitingService').leave(session.uid);
+  var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
+  var waitingData = {
+    username: session.get('username'),
+    fullname: session.get('fullname'),
+    userId: session.uid,
+    gold: session.get('gold'),
+    level: session.get('level'),
+    avatar: session.get('avatar'),
+    gameId : gameId
+  };
+  this.app.get('mysqlClient')
+    .Achievement
+    .findOne({
+      where : {
+        uid : session.uid
+      },
+      attributes : [[eloKey, 'elo']],
+      raw : true
+    })
+    .then(function (user) {
+      if (user){
+        waitingData['elo'] = user.elo;
+        pomelo.app.get('waitingService').add(waitingData);
+      }
+    });
   var boardService = this.app.get('boardService');
   boardService
     .getRoom({
@@ -326,11 +355,17 @@ Handler.prototype.getHall = function (msg, session, next) {
  * @param next
  */
 Handler.prototype.getBoardList = function (msg, session, next) {
+  var gameId = msg.gameId;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance) {
-    return next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
+    if (maintenance.type === consts.MAINTENANCE_TYPE.ALL) {
+      next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
+      return
+    }else if(maintenance.type === consts.MAINTENANCE_TYPE.GAME && lodash.isArray(maintenance.game) && maintenance.game.indexOf(gameId) > -1){
+      next(null, { ec : Code.GATE.FA_MAINTENANCE_GAME, msg : [Code.GATE.FA_MAINTENANCE_GAME,gameId]});
+      return
+    }
   }
-  var gameId = msg.gameId;
   var roomId = msg.roomId;
   var hallId;
   var boardService = this.app.get('boardService');

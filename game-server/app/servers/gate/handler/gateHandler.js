@@ -24,6 +24,20 @@ Handler.prototype.getServer = function (msg, session, next) {
     next(null, utils.getError(Code.GATE.FA_NO_CODE_AVAILABLE));
     return;
   }
+  var configService = this.app.get('configService');
+  if (msg.platform === 'ios' && [30122015].indexOf(msg.versionCode) > -1){
+    var config = configService.getConfig();
+    config['IS_REVIEW'] = 1;
+    // trỏ sang server test
+    return next(null, {
+      ec : Code.OK,
+      host : '123.30.235.196',
+      port : '6511',
+      config : config,
+      idSession : '362a5477-3658-4b80-bba8-9d510b84b4f2',
+      key : '41jw5tq'
+    })
+  }
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   var version = '' + msg.versionCode.slice(4,10) + msg.versionCode.slice(2,4) + msg.versionCode.slice(0,2);
   if (version < '20151210' && this.app.get('beta')){
@@ -34,7 +48,6 @@ Handler.prototype.getServer = function (msg, session, next) {
   var key = shortId.generate();
   var idSessionKey = redisKeyUtil.getIdSessionKey(idSession);
   var redisCache = this.app.get('redisCache');
-  var configService = this.app.get('configService');
   var res = dispatcher.dispatch(Date.now(), connectors, 'web', msg.platform === 'web' ? true : undefined);
   redisCache.set(idSessionKey, key, function (err, result) {
     if (err || !result) {
@@ -46,7 +59,6 @@ Handler.prototype.getServer = function (msg, session, next) {
         console.log('versionCode : ', msg.versionCode);
         config['IS_REVIEW'] = 1
       }
-      console.log('config : ', config);
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,

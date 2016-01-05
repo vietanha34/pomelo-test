@@ -46,7 +46,6 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
   } else {
     this.app.set('maintenance', msg);
     if (this.app.getServerId() == 'home-server-1') {
-      channelService = pomelo.app.get('channelService');
       notifyDao.push({
         type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
         title: msg.title || 'Bảo trì',
@@ -56,9 +55,14 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
         scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
         image:  consts.NOTIFY.IMAGE.ALERT
       });
-      channelService.broadcast('connector', 'onNotify', dropDownNotify, {}, function (err, res) {
-      });
-      channelService.broadcast('connector', 'onNotify', notifyCenterNotify, {}, function (err, res) {
+      notifyDao.push({
+        type: consts.NOTIFY.TYPE.MARQUEE,
+        title: msg.title || 'Bảo trì',
+        msg: msg.message || 'Máy chủ sẽ được bảo trì sau ít phút nữa, người chơi vui lòng rời bàn khi ván chơi kết thúc',
+        buttonLabel: 'Ok',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
+        image:  consts.NOTIFY.IMAGE.ALERT
       });
     }
   }

@@ -141,7 +141,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     isCheck: isCheck
   });
   this.table.turnUid = player.uid;
-  this.table.jobId = this.table.timer.addJob(function (uid) {
+  this.table.turnId = this.table.timer.addJob(function (uid) {
     self.finishGame(consts.WIN_TYPE.LOSE, uid);
   }, turnUid, turnTime + 2000);
 };
@@ -380,8 +380,8 @@ Table.prototype.action = function (uid, opts, cb) {
       killed: killed ? [[opts.move[1], killed]] : undefined
     };
     this.game.numMove += 1;
-    if (this.jobId) {
-      this.timer.cancelJob(this.jobId);
+    if (this.turnId) {
+      this.timer.cancelJob(this.turnId);
     }
     this.game.gameStatus = this.game.game.getBoardStatus();
     var gameStatus = this.game.gameStatus;
@@ -446,8 +446,8 @@ Table.prototype.demand = function (opts) {
         otherPlayer = this.players.getPlayer(otherPlayerUid);
         if (opts.accept && otherPlayer.requestDelay) {
           // xử lý hoãn nước đi;
-          if (this.jobId) {
-            this.timer.cancelJob(this.jobId);
+          if (this.turnId) {
+            this.timer.cancelJob(this.turnId);
           }
           this.pushMessage('game.gameHandler.action', {
             move: [this.game.previousMove.move],

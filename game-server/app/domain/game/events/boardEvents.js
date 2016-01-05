@@ -101,7 +101,7 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo, kick) {
-    board.score = [0, 0]; // restart scorec
+    board.score = [0, 0]; // restart score
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
@@ -164,6 +164,9 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('startGame', function () {
+    if (board.jobId){
+      board.timer.cancelJob(board.jobId);
+    }
     pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.PLAY});
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
     var status = board.getStatus();

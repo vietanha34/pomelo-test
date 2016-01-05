@@ -67,6 +67,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.tableType = 1; // loại bàn đá;
   this.score = [0,0];
   this.firstUid = null;
+  this.turnId = null;
   this.createdTime = Date.now();
   this.jobId = null;
   this.timeStart = Date.now();
@@ -543,13 +544,13 @@ pro.checkLeaveBoard = function (uid) {
  */
 pro.leaveBoard = function (uid, kick) {
   var self = this;
-  if (this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
+  var player = self.players.getPlayer(uid);
+  if (player && !player.guest && this.status !== consts.BOARD_STATUS.NOT_STARTED && this.timeStart + BoardConsts.LEAVEBOARD_TIMEOUT > Date.now()) {
     return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]);
   }
   if (typeof self.clearPlayer == 'function') {
     self.clearPlayer(uid);
   }
-  var player = self.players.getPlayer(uid);
   var userInfo = player.userInfo;
   var uids = player.getUids();
   if (player) {
@@ -1109,43 +1110,6 @@ pro.addItems = function (items) {
 
 pro.transaction = function (uids, transactionId, cb) {
   return utils.invokeCallback(cb, null, {});
-  var self = this;
-  var opts = [];
-  for(var i = 0, len = uids.length;i < len; i ++){
-    var player = this.players.getPlayer(uids[i]);
-    if (!player) continue;
-    opts.push({
-      type: consts.CHANGE_GOLD_TYPE.ADD_BOARD,
-      uid: uids[i],
-      gold: player.gold,
-      gameType: this.gameType,
-      bet : this.bet,
-      tableId : this.tableId,
-      roomId : this.roomId,
-      gameId : this.gameId,
-      tourId : this.tourId
-    })
-  }
-  this.players.paymentRemote(BoardConsts.PAYMENT_METHOD.SUB_GOLD, opts, transactionId, function (err, results) {
-    if (err) {
-      logger.error('err : ', err);
-    } else {
-      for(i= 0, len = results.length; i < len ; i ++ ){
-        var res = results[i];
-        if (res.ec){
-          // TODO rollback transaction
-          continue
-        }
-        var uid = res.uid;
-        var player = self.players.getPlayer(uid);
-        if (player){
-          player.goldInGame = res.subGold;
-          player.goldAfter = res.gold + res.subGold;
-        }
-      }
-    }
-    utils.invokeCallback(cb, err, res);
-  })
 };
 
 pro.plusScore = function (whiteWin) {

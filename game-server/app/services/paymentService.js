@@ -75,7 +75,6 @@ pro.subBalance = function (opts) {
       return Promises.resolve({ec: Code.OK, gold: goldAfter, subGold: goldSub})
     })
     .catch(function (err) {
-      console.log('subbalance err : ', err);
       return Promises.resolve({ec : Code.FAIL});
     })
     .finally(function () {
@@ -150,7 +149,7 @@ pro.transfer = function (opts, cb) {
                 uid: opts.fromUid
               },
               raw: true,
-              attributes: ['gold', 'username']
+              attributes: ['gold', 'username', 'uid']
             }),
           pomelo.app.get('mysqlClient')
             .User
@@ -159,7 +158,7 @@ pro.transfer = function (opts, cb) {
                 uid : opts.toUid
               },
               raw : true,
-              attributes : ['gold', 'username']
+              attributes : ['gold', 'username', 'uid']
             })
         ];
       })

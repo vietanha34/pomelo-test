@@ -67,7 +67,6 @@ pro.subBalance = function (opts, transaction, cb) {
 };
 
 pro.transfer = function (opts, transaction, cb) {
-  console.log('transfer : ', opts, transaction);
   this.app.get('paymentService').transfer(opts, cb);
 };
 

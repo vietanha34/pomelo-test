@@ -92,9 +92,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid,count:1, time : [turnTime, player.totalTime]});
   this.table.turnUid = player.uid;
-  console.log('setOnTurn with turnTime : ', turnTime);
-  console.log('addTurnTime : ', turnTime);
-  this.table.jobId = this.table.timer.addJob(function (uid) {
+  this.table.turnId = this.table.timer.addJob(function (uid) {
     self.finishGame(consts.WIN_TYPE.LOSE,uid);
   }, turnUid, turnTime + 2000);
 };
@@ -287,8 +285,8 @@ Table.prototype.action = function (uid, opts, cb) {
   var player = this.players.getPlayer(uid);
   var id = player.color === consts.COLOR.WHITE ? 1 : -1;
   this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]]});
-  if (this.jobId){
-    this.timer.cancelJob(this.jobId);
+  if (this.turnId){
+    this.timer.cancelJob(this.turnId);
   }
   player.move();
   this.game.progress();

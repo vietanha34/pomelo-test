@@ -188,16 +188,22 @@ pro.invitePlayer = function (msg, session, next) {
       districtId: districtId,
       slotId: slotId
     });
-    next(null, {
+    return next(null, {
       ec : Code.FAIL,
       msg: "Đã gửi lời mời thành công đến người chơi khác"
     });
-    return
   }
-  pomelo.app.get('waitingService').getRandomUser({
-    gold: board.bet,
-    limit: 2,
-    gameId: board.gameId
+
+  pomelo.app.get('waitingService').getList({
+    where : {
+      gold: {
+        $gte : board.bet
+      },
+      gameId: board.gameId
+    },
+    attributes: ['userId'],
+    limit: 10,
+    raw : true
   })
     .then(function (users) {
       if (lodash.isArray(users)) {
@@ -333,6 +339,10 @@ pro.startGame = function (msg, session, next) {
     messageService.pushMessageToPlayer(utils.getUids(session), route, utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST));
     next(null);
     return;
+  }
+  if (board.isMaintenance){
+    messageService.pushMessageToPlayer(utils.getUids(session), route, {ec : Code.FAIL, msg : "Máy chủ đang bảo trì, xin vui lòng rời bàn chơi "});
+    return next(null);
   }
   if (uid != board.owner) {
     var optionalData = {};
