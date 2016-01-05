@@ -56,6 +56,8 @@ module.exports.process = function (app, type, param) {
    return;
   }
 
+  pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyIngameKey(), JSON.stringify(param));
+
   var mongoClient = pomelo.app.get('mongoClient');
   var GameHistory = mongoClient.model('GameHistory');
   GameHistory.create({
@@ -69,5 +71,5 @@ module.exports.process = function (app, type, param) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
     }
-  })
+  });
 };
