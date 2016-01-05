@@ -101,17 +101,18 @@ app.configure('production|development|local', function () {
       .catch(function (err) {
         console.error('err : ', err)
       })
-  }else if (!curServer.serverType){
-    var ccuPlugin = require('pomelo-ccu-plugin');
-    app.use(ccuPlugin, {
-      ccu: {
-        redis: app.get('redisCache'),
-        username: 'monitor',
-        password: 'monitor',
-        middleware : utils.getGameIdUser
-      }
-    })
   }
+  //else if (!curServer.serverType){
+  //  var ccuPlugin = require('pomelo-ccu-plugin');
+  //  app.use(ccuPlugin, {
+  //    ccu: {
+  //      redis: app.get('redisCache'),
+  //      username: 'monitor',
+  //      password: 'monitor',
+  //      middleware : utils.getGameIdUser
+  //    }
+  //  })
+  //}
 });
 
 app.configure('production', function () {
@@ -233,12 +234,12 @@ app.configure('production|development', 'worker', function () {
   app.set('httpServer', httpServer);
 });
 
-app.configure('production', function () {
-  app.set('maintenance', {
-    enable: 1,
-    type: consts.MAINTENANCE_TYPE.ALL
-  });
-});
+//app.configure('production', function () {
+//  app.set('maintenance', {
+//    enable: 1,
+//    type: consts.MAINTENANCE_TYPE.ALL
+//  });
+//});
 
 // start app
 app.start();
