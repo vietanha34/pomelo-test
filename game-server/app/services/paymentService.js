@@ -63,7 +63,7 @@ pro.subBalance = function (opts) {
             , opts: opts
             , cmd: 'subGold'
           };
-          pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
+          pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           updateGoldInCache(user.username, user.gold - gold);
           return user.updateAttributes({
             gold: user.gold - gold
