@@ -52,7 +52,14 @@ module.exports = {
     KIEN_TUONG : 6
   },
 
-
+  MAP_GAME_ID_OLD_VERSION : {
+    20 : 5,
+    21 : 1,
+    22 : 2,
+    23 : 6,
+    24 : 3,
+    25 : 4
+  },
 
   COLOR : {
     WHITE : 1,
