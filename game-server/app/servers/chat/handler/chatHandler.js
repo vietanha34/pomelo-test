@@ -112,7 +112,7 @@ Handler.prototype.send = function (msg, session, next) {
     }
   ], function (err) {
     if (err) {
-      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, { ec : err.ec || Code.FAIL, msg: err.msg || [Code.FAIL] });
+      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, { ec : err.ec || Code.FAIL, msg: err.msg || [Code.FAIL]});
     }
     msg = null;
   });

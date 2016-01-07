@@ -169,6 +169,11 @@ app.configure('production|development|local', 'game', function () {
   app.game = new Game({gameId: gameId, serverId: server.id});
 });
 
+app.configure('production|development|local', 'chat', function () {
+  var abuseFilter = require('./app/servers/chat/filter/abuseFilter');
+  app.filter(abuseFilter());
+});
+
 // config board
 app.configure('production|development|local', 'game|district|service|manager|master|worker', function () {
   var BoardService = require('pomelo-board-plugin');

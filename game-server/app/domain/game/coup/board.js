@@ -86,8 +86,8 @@ Game.prototype.setOnTurn = function (gameStatus) {
     : undefined;
   this.isCheck = isCheck;
   this.legalMoves = gameStatus.legalMoves;
+  console.log('gameStatus.warning : ', gameStatus.warnings, this.game.laCoThe);
   if (Object.keys(gameStatus.warnings).length > 0) {
-    console.log('gameStatus.warning : ', gameStatus.warnings);
     if (Object.keys(gameStatus.warnings.sapChieuDai).length > 0) {
       notifyMsg = 'Bạn chiếu dai thêm một nước nữa sẽ bị xử thua';
     } else if (Object.keys(gameStatus.warnings.sapDuoiDai).length > 0 && !gameStatus.warnings.sapBiChieuHet) {
@@ -337,9 +337,11 @@ Table.prototype.action = function (uid, opts, cb) {
     if (result){
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      //this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }
     this.game.actionLog.push({ move : [opts.move], id : boardStatus.hohohaha});
     this.game.progress(boardStatus);
@@ -393,13 +395,6 @@ Table.prototype.demand = function (opts) {
       return {};
   }
 };
-
-
-//Table.prototype.finishGame = function () {
-//  this.status = consts.BOARD_STATUS.NOT_STARTED;
-//  this.players.reset();
-//  this.timer.stop();
-//};
 
 Table.prototype.reset = function () {
   this.game.close();

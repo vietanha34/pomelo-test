@@ -133,6 +133,7 @@ exp.addEventFromBoard = function (board) {
     });
     userInfo.userId = userInfo.uid;
     userInfo.avatar = JSON.stringify(userInfo.avatar || {});
+    userInfo.gameId = board.gameId;
     if (kick) {
       pomelo.app.get('statusService').getStatusByUid(userInfo.uid, false, function (err, status) {
         if (status && status.online) {
