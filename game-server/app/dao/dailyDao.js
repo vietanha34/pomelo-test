@@ -39,13 +39,16 @@ DailyDao.getData = function getData(uid, cb) {
 
       return [
         redis.hgetallAsync(redisKeyUtil.getDailyConfigKey()),
-        UserDao.getUserProperties(uid, ['exp','vipPoint']),
+        UserDao.getUserProperties(uid, ['exp','vipPoint','userCount']),
         ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP])
       ];
     })
     .spread(function(config, user, effect) {
-      var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
       var level = formula.calLevel(user.exp||0);
+      if (user.userCount > 3 && level < 1) {
+        throw new Error('spam user daily');
+      }
+      var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
       var levelGold = (Number(config.firstLevel)||0) + (level-1)*(Number(config.levelStep)||0);
       var vip = Math.max(formula.calVipLevel(user.vipPoint||0), (effect[consts.ITEM_EFFECT.THE_VIP]||0));
       var vipPercent = Number(config['vip'+vip])||0;
