@@ -40,12 +40,16 @@ DailyDao.getData = function getData(uid, cb) {
       return [
         redis.hgetallAsync(redisKeyUtil.getDailyConfigKey()),
         UserDao.getUserProperties(uid, ['exp','vipPoint']),
-        ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP])
+        ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP]),
+        pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}, attributes: ['userCount']})
       ];
     })
-    .spread(function(config, user, effect) {
-      var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
+    .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
+      if (achie.userCount > 3 && level < 1) {
+        throw new Error('spam user daily');
+      }
+      var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
       var levelGold = (Number(config.firstLevel)||0) + (level-1)*(Number(config.levelStep)||0);
       var vip = Math.max(formula.calVipLevel(user.vipPoint||0), (effect[consts.ITEM_EFFECT.THE_VIP]||0));
       var vipPercent = Number(config['vip'+vip])||0;
