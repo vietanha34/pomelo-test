@@ -39,8 +39,9 @@ DailyDao.getData = function getData(uid, cb) {
 
       return [
         redis.hgetallAsync(redisKeyUtil.getDailyConfigKey()),
-        UserDao.getUserProperties(uid, ['exp','vipPoint','userCount']),
-        ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP])
+        UserDao.getUserProperties(uid, ['exp','vipPoint']),
+        ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.THE_VIP]),
+        pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}, attributes: ['userCount']})
       ];
     })
     .spread(function(config, user, effect) {
