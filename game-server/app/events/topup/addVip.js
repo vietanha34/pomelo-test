@@ -34,7 +34,7 @@ module.exports.process = function (app, type, param) {
   utils.log('TOPUP',param);
   return UserDao.getUserProperties(param.uid, ['vipPoint', 'hasPay'])
     .then(function(user) {
-      if (user.hasPay) {
+      if (!user.hasPay) {
         ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.THE_VIP, (3*1440));
         NotifyDao.push({
           type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
