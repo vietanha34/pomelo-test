@@ -360,7 +360,7 @@ module.exports = {
 
   REGISTER_LANGUAGE: {
     BONUS_TITLE: 'Chào mừng bạn đến với game Cờ Thủ',
-    BONUS: 'Bạn được tặng %s vàng và 2 tuần sử dụng miễn phí vé phòng thường'
+    BONUS: 'Bạn được tặng %s vàng và 1 tuần sử dụng miễn phí vé phòng thường'
   },
 
   MISSION_LANGUAGE: {

@@ -11,6 +11,8 @@ var formula = require('../../consts/formula');
 var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var TopDao = require('../../dao/topDao');
+var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
 
 module.exports.type = Config.TYPE.TOPUP;
 
@@ -30,8 +32,21 @@ module.exports.type = Config.TYPE.TOPUP;
 
 module.exports.process = function (app, type, param) {
   utils.log('TOPUP',param);
-  return UserDao.getUserProperties(param.uid, ['vipPoint'])
+  return UserDao.getUserProperties(param.uid, ['vipPoint', 'hasPay'])
     .then(function(user) {
+      if (!user.hasPay) {
+        ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.THE_VIP, (3*1440));
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: 'Tặng thẻ VIP',
+          msg: 'Chúc mừng bạn được tặng thẻ VIP bạc trong 3 ngày',
+          buttonLabel: 'OK',
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [param.uid],
+          image:  consts.NOTIFY.IMAGE.AWARD
+        });
+      }
 
       // update user info
       user.hasPay = 1;
