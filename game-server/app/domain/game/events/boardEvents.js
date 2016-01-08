@@ -59,23 +59,33 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
-      if (board.gameId === consts.GAME_ID.CO_THE) {
-        if (!board.formationMode) {
-          board.addJobReady(player.uid);
-        } else if (board.owner !== player.uid && !player.guest) {
-          board.addJobSelectFormation(board.owner);
+      setTimeout(function (player) {
+        if (board.gameId === consts.GAME_ID.CO_THE) {
+          if (!board.formationMode) {
+            board.addJobReady(player.uid);
+          } else if (board.owner !== player.uid && !player.guest) {
+            board.addJobSelectFormation(board.owner);
+          }
+        } else {
+          board.addJobReady(player.uid)
         }
-      } else {
-        board.addJobReady(player.uid)
-      }
+      }, 100, player);
     }
   });
 
   board.on('sitIn', function (player) {
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
-      setTimeout(function (uid) {
-        board.addJobReady(uid)
-      }, 100, player.uid)
+      setTimeout(function (player) {
+        if (board.gameId === consts.GAME_ID.CO_THE) {
+          if (!board.formationMode) {
+            board.addJobReady(player.uid);
+          } else if (board.owner !== player.uid && !player.guest) {
+            board.addJobSelectFormation(board.owner);
+          }
+        } else {
+          board.addJobReady(player.uid)
+        }
+      }, 100, player)
     }
   });
 

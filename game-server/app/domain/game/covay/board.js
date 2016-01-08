@@ -80,6 +80,10 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var turnUid = turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var player = this.table.players.getPlayer(turnUid);
   player.timeTurnStart = Date.now();
+  var timeout = false;
+  if (player.totalTime <= this.table.turnTime){
+    timeout = true;
+  }
   var turnTime = player.totalTime <= this.table.turnTime ? player.totalTime : this.table.turnTime;
   this.table.pushMessageToPlayer(player.uid, 'onTurn',  {
     uid : player.uid,
@@ -91,9 +95,21 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count : 1, time : [turnTime, player.totalTime]});
   this.table.turnUid = player.uid;
-  this.table.turnId = this.table.timer.addJob(function (uid) {
-    self.table.action(uid, {});
-  }, turnUid, turnTime + 2000);
+  this.table.turnId = this.table.timer.addJob(function (opts) {
+    self.table.turnId = null;
+    var player = self.table.players.getPlayer(opts.uid);
+    if (opts.timeout){
+      return self.finishGame(consts.WIN_TYPE.LOSE, opts.uid)
+    }
+    if (player){
+      player.autoAction ++;
+      if (player.autoAction >= 4 ){
+        var result = self.table.game.game.getScore();
+        return self.finishGame(result);
+      }
+    }
+    self.table.action(opts.uid, {}, true);
+  }, { uid : turnUid, timeout : timeout}, turnTime + 2000);
 };
 
 
@@ -120,7 +136,7 @@ Game.prototype.finishGame = function (result, uid) {
   if (result.matchResult === 'hoaRoi'){
     winType = consts.WIN_TYPE.DRAW;
   } else if(uid){
-    winType = consts.WIN_TYPE.LOSE
+    winType = result || consts.WIN_TYPE.LOSE
   }
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
@@ -130,7 +146,8 @@ Game.prototype.finishGame = function (result, uid) {
     var player = this.table.players.getPlayer(this.playerPlayingId[i]);
     if (player.uid === turnUid){
       var colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
-      xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.gameId, this.hallId) : 0;
+      xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      console.log('xp : ', xp, winType, Formula.calGameExp(this.gameId, this.hallId));
       if (winType === consts.WIN_TYPE.WIN){
         winUser = player;
         toUid = player.uid;
@@ -158,10 +175,12 @@ Game.prototype.finishGame = function (result, uid) {
           xp : xp
         }
       });
-    }else {
+    }
+    else {
       colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      console.log('xp : ', xp, res, Formula.calGameExp(this.gameId, this.hallId));
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
@@ -279,11 +298,16 @@ Table.prototype.startGame = function (uid, cb) {
   }
 };
 
-Table.prototype.action = function (uid, opts, cb) {
+Table.prototype.action = function (uid, opts, auto, cb) {
+  if (typeof auto === 'function'){
+    cb = auto;
+    auto = null;
+  }
   var otherPlayer;
   var remove = this.game.game.makeMove(opts.move);
   this.game.numMove += 1;
   var player = this.players.getPlayer(uid);
+  if (!auto) player.autoAction = 0;
   var id = player.color === consts.COLOR.WHITE ? -1 : 1;
   var result = player.move(this.game.numMove);
   if (this.turnId){

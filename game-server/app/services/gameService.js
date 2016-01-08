@@ -33,6 +33,7 @@ var GameService = function (app, opts) {
   this.gameObject = [];
   this.language = {};
   this.langVersion = '';
+  this.abuse = {};
   this.version = 1;
   if (opts && opts.interval) {
     this.inter = opts.interval
@@ -56,8 +57,8 @@ GameService.prototype.getData = function (cb) {
   var self = this;
   return Promise.all([
     //self.setGameConfig(),
-    self.setLanguage()
-    //self.setHall()
+    self.setLanguage(),
+    self.setAbuse()
   ])
     .then(function (res) {
       return utils.invokeCallback(cb, null, res)
@@ -65,22 +66,17 @@ GameService.prototype.getData = function (cb) {
 };
 
 
-GameService.prototype.setHall = function (cb) {
+GameService.prototype.setAbuse = function (cb) {
   var self = this;
   return this.mysql
-    .Game
-    .findAll({raw: true})
-    .map(function (g) {
-      var game = new Game(g);
-      return Promise.resolve(game);
-    })
-    .call('sort', function (a, b) {
-      return a.rank - b.rank;
-    })
-    .then(function (gs) {
-      self.game.splice(0, self.game.length);
-      self.game = gs;
-      self.setVersion();
+    .AbuseWord
+    .findAll({raw: true, attributes : ['word']})
+    .then(function (abuses) {
+      var data = {};
+      for (var i = 0, len = abuses.length; i< len ; i ++){
+        data[abuses[i].word] = 1;
+      }
+      self.abuse = data;
       return utils.invokeCallback(cb);
     })
 };

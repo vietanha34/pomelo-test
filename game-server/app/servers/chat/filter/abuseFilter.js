@@ -18,7 +18,7 @@ var Filter = function () {
  */
 Filter.prototype.before = function (msg, session, next) {
   if (typeof msg.content === 'string'){
-    var word = wordFilter(msg.content);
+    var word = wordFilter(msg.content, pomelo.app.get('gameService').abuse);
     msg.content = word.msg;
     if (word.isChange){
       session.__abuse__ = true;

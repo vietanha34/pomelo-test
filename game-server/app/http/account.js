@@ -606,7 +606,7 @@ var forgotPass = function (req, res) {
       if (!user) {
         return Promise.reject({code: 10, message: 'Tên đăng nhập không hợp lệ', data: {}});
       }
-      if ((data.email && user.email === data.email) || (data.deviceId && data.deviceId === user.deviceId)) {
+      if ((data.email && user.email === data.email) || (data["o\tdevice"] && data["o\tdevice"] === user['deviceId'])) {
         newPass = utils.uid(6);
         return UserDao.updateProfile(data.uname, {
           passwordMd5: MD5(newPass),

@@ -381,7 +381,6 @@ pro.action = function (msg, session, next) {
     return next(null);
   }
   return board.action(uid, msg, function (err, res) {
-    console.log('boardAction : ', res);
     if (err) {
       console.log(err);
       board.pushMessageToPlayer(uid, route, utils.getError(Code.FAIL));

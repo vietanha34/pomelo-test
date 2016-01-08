@@ -36,6 +36,7 @@ var Player = function (opts) {
   this.timeDraw = 0; // nước đi xin hoà
   this.requestDraw  = false;
   this.firstMove = false;
+  this.autoAction = 0;
   this.numAutoChangeTurn = 0;
 };
 
@@ -67,7 +68,7 @@ Player.prototype.move = function () {
 Player.prototype.reset = function () {
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
-  this.numAutoChangeTurn = 0;
+  this.autoAction = 0;
   this.numDraw = 3;
   this.firstMove = false;
   this.timeDraw = 0; // nước đi xin hoãn;
