@@ -44,9 +44,9 @@ DailyDao.getData = function getData(uid, cb) {
         pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: uid}, attributes: ['userCount']})
       ];
     })
-    .spread(function(config, user, effect) {
+    .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
-      if (user.userCount > 3 && level < 1) {
+      if (achie.userCount > 3 && level < 1) {
         throw new Error('spam user daily');
       }
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
