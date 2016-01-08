@@ -601,12 +601,12 @@ var forgotPass = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   var newPass;
-  UserDao.getUserPropertiesByUsername(data.uname, ['email'])
+  UserDao.getUserPropertiesByUsername(data.uname, ['email', 'deviceId'])
     .then(function (user) {
       if (!user) {
         return Promise.reject({code: 10, message: 'Tên đăng nhập không hợp lệ', data: {}});
       }
-      if (user.email === data.email) {
+      if ((data.email && user.email === data.email) || (data.deviceId && data.deviceId === user.deviceId)) {
         newPass = utils.uid(6);
         return UserDao.updateProfile(data.uname, {
           passwordMd5: MD5(newPass),
