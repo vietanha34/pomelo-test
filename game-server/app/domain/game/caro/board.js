@@ -252,11 +252,6 @@ Table.prototype.getStatus = function () {
   return status
 };
 
-Table.prototype.getBoardInfo = function (finish) {
-  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish);
-  return boardInfo
-};
-
 Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
@@ -293,12 +288,6 @@ Table.prototype.action = function (uid, opts, cb) {
   return utils.invokeCallback(cb, null, {});
 };
 
-//Table.prototype.finishGame = function () {
-//  this.status = consts.BOARD_STATUS.NOT_STARTED;
-//  this.players.reset();
-//  this.timer.stop();
-//};
-
 Table.prototype.reset = function () {
   this.game.close();
   this.game = null;
@@ -314,13 +303,13 @@ Table.prototype.demand = function (opts) {
   switch (opts.id){
     case consts.ACTION.DRAW:
       otherPlayerUid = this.players.getOtherPlayer(uid);
-      if (lodash.isNumber(opts.accept)){
+      if (lodash.isNumber(opts.accept)) {
         // trả lời request
         otherPlayer = this.players.getPlayer(otherPlayerUid);
-        if (opts.accept && otherPlayer.requestDraw){
+        if (opts.accept && otherPlayer.requestDraw) {
           // xử lý hoà cờ nước đi;
           this.game.finishGame(consts.WIN_TYPE.DRAW);
-        }else if (otherPlayer){
+        } else if (otherPlayer){
           this.pushMessage('chat.chatHandler.send', {
             from : uid,
             targetType : consts.TARGET_TYPE.BOARD,
@@ -329,17 +318,18 @@ Table.prototype.demand = function (opts) {
           });
           otherPlayer.requestDraw = false;
         }
-      }else {
+      } else {
         //request
-        if (player.timeDraw && this.game.numMove - player.timeDraw < 20){
-          return {ec : Code.FAIL};
+        if (player.timeDraw && this.game.numMove - player.timeDraw < 10) {
+          return {ec: Code.FAIL};
         }
         player.xinHoa(this.game.numMove);
         this.pushMessageToPlayer(otherPlayerUid, 'game.gameHandler.demand', {
-          id : consts.ACTION.DRAW,
-          msg : "Đối thủ muốn xin hoà",
-          time : 10000
-        })
+          id: consts.ACTION.DRAW,
+          msg: "Đối thủ muốn xin hoà",
+          time: 10000
+        });
+        return {menu: player.menu}
       }
       break;
     case consts.ACTION.SURRENDER:
@@ -351,20 +341,8 @@ Table.prototype.demand = function (opts) {
 
 
 Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
-  var uid = properties.uid;
-  var self = this;
+  uid = uid || properties.uid;
   Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, res) {
-    //if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color){
-    //  var ownerPlayer = self.players.getPlayer(self.owner);
-    //  if (ownerPlayer.color === consts.COLOR.WHITE){
-    //    self.game.game.isWhiteTurn = true;
-    //  }else {
-    //    self.game.game.isWhiteTurn = false;
-    //  }
-    //  console.log('turnToMode : ');
-    //  var boardState = self.getBoardState(uid);
-    //  self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);
-    //}
     return utils.invokeCallback(cb, err, res)
   });
 };

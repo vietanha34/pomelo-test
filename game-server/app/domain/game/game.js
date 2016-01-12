@@ -163,6 +163,5 @@ Game.prototype.getChannel = function () {
     utils.myPrint('channelName = ', channelName);
     this.channel = pomelo.app.get('channelService').getChannel(channelName, true);
   }
-  utils.myPrint('this.channel = ', this.channel);
   return this.channel;
 };

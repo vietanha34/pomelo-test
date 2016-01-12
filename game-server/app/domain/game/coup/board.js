@@ -260,8 +260,8 @@ Table.prototype.pushFinishGame = function (msg, finish) {
   Table.super_.prototype.pushFinishGame.call(this, msg, finish);
 };
 
-Table.prototype.getBoardInfo = function (finish) {
-  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish);
+Table.prototype.getBoardInfo = function (finish, uid) {
+  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish, uid);
   boardInfo.showKill = this.showKill ? 1 : 0;
   return boardInfo
 };

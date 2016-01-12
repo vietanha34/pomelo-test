@@ -167,6 +167,7 @@ exp.delRoom = function (roomId) {
       done();
     }
   }, function () {
+    // xoá bàn chơi
   });
 };
 

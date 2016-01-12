@@ -95,8 +95,13 @@ Player.prototype.genStartMenu = function () {
  * @param userInfo
  */
 Player.prototype.updateUserInfo = function (userInfo) {
+  var extraLevel = this.checkItems(consts.ITEM_EFFECT.LEVEL) || 0;
   this.timeLogout = null;
   this.userInfo = userInfo;
+  this.userInfo.sex = parseInt(this.userInfo.sex);
+  this.userInfo.elo = parseInt(this.userInfo.elo);
+  this.userInfo.title = Formula.calEloLevel(this.userInfo.elo);
+  this.userInfo.level = this.userInfo.level + extraLevel;
   this.userInfo.avatar = utils.JSONParse(this.userInfo.avatar, { id : 0, version : 0});
 };
 

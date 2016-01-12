@@ -271,10 +271,6 @@ Table.prototype.getStatus = function () {
   return status
 };
 
-Table.prototype.getBoardInfo = function (finish) {
-  return Table.super_.prototype.getBoardInfo.call(this, finish);
-};
-
 Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);

@@ -34,7 +34,7 @@
   "game.gameHandler.sitIn" : 53,
   "game.gameHandler.setOwner" : 54,
   "game.gameHandler.invitePlayer" : 55,
-  "district.districtHandler.getWaitingPlayer" : 56,
+  "game.gameHandler.getWaitingPlayer" : 56,
   "game.gameHandler.kick" : 57,
   "game.gameHandler.muteChat" : 58,
   "game.gameHandler.getListFormation" : 59,

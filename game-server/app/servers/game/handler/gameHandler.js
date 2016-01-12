@@ -3,6 +3,7 @@
  */
 var Code = require('../../../consts/code');
 var userDao = require('../../../dao/userDao');
+var friendDao = require('../../../dao/friendDao');
 var async = require('async');
 var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
@@ -193,7 +194,6 @@ pro.invitePlayer = function (msg, session, next) {
       msg: "Đã gửi lời mời thành công đến người chơi khác"
     });
   }
-
   pomelo.app.get('waitingService').getList({
     where : {
       gold: {
@@ -251,6 +251,73 @@ pro.invitePlayer = function (msg, session, next) {
     .finally(function () {
       session = null;
     })
+};
+
+Handler.prototype.getWaitingPlayer = function (msg, session, next) {
+  var waitingService = this.app.get('waitingService');
+  var uid = session.uid;
+  var tableId = session.get('tableId');
+  var board = session.board;
+  var gameId = consts.GAME_ID.CO_TUONG;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_GAME.FA_NOT_ON_BOARD)});
+    return
+  }
+  var player = board.players.getPlayer(uid);
+  var elo = player ? player.userInfo.elo : 1000;
+  if (tableId) gameId = tableId.split(':')[1];
+  if (msg.type === 2) {
+    friendDao.getFriendList(uid, consts.MAX_FRIEND)
+      .then(function (uids) {
+        var waitingData = {
+          where : {
+            userId: {
+              $in : uids || []
+            },
+            gold : {
+              $gte : board.bet
+            }
+          },
+          attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar', 'elo'],
+          offset: 0,
+          limit: 100
+        };
+        return waitingService.getList(waitingData)
+          .then(function (res) {
+            for (var i = 0, len = res.length; i< len; i++){
+              res[i].avatar = utils.JSONParse(res[i].avatar, {});
+            }
+            var waitingPlayer = findUserNearElo(res, elo, 10);
+            next(null, {users: waitingPlayer, type : msg.type});
+          })
+          .finally(function () {
+            msg = null;
+          });
+      });
+  } else {
+    var waitingData = {
+      where : {
+        gameId : gameId,
+        gold : {
+          $gte : board.bet
+        }
+      },
+      attributes : ['fullname', 'gold', ['userId', 'uid'], 'level', 'avatar', 'elo'],
+      offset: 0,
+      limit: 100
+    };
+    return waitingService.getList(waitingData)
+      .then(function (res) {
+        for (var i = 0, len = res.length; i< len; i++){
+          res[i].avatar = utils.JSONParse(res[i].avatar, {});
+        }
+        var waitingPlayer = findUserNearElo(res, elo, 10);
+        next(null, {users: waitingPlayer, type : msg.type});
+      })
+      .finally(function () {
+        msg = null;
+      });
+  }
 };
 
 
@@ -433,4 +500,43 @@ pro.getGuest = function (msg, session, next) {
 var getHandlerPath = function (appBase, serverType) {
   var p = path.join(appBase, '/app/domain/game/', serverType, consts.DIR.HANDLER);
   return fs.existsSync(p) ? p : null;
+};
+
+var findUserNearElo = function (users, elo, num) {
+  users = lodash.sortBy(users, 'elo');
+  var index = 0;
+  for (var i = 0, len = users.length; i< len ; i ++){
+    var user = users[i];
+    if (user.elo < elo){
+      index = i;
+    }
+  }
+  var waitingPlayer = [];
+  var reverse = false;
+  var abs = 0;
+  var numRun = 0;
+  do {
+    numRun ++;
+    if (users.length === 0){
+      break;
+    }
+    if (index >= users.length - 1){
+      reverse = true;
+    }else if (index < 0 ){
+      index = 0;
+      reverse = false;
+    }
+    if (!reverse){
+      user = users[index + 1];
+    }else {
+      user = users[index];
+      index--;
+    }
+    if (Math.abs(user.elo-elo) > abs){
+      abs = Math.abs(user.elo-elo);
+      reverse = !reverse;
+    }
+    waitingPlayer = waitingPlayer.concat(users.splice(index + 1,1));
+  } while(waitingPlayer.length < num && numRun < 20);
+  return waitingPlayer
 };

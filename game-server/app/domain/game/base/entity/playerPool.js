@@ -263,7 +263,7 @@ pro.sitIn = function (uid, slotId) {
   if (player.gold < this.table.bet){
     return utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY)
   }
-  if (player.userInfo.level < self.table.level){
+  if (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA)){
     return { ec: Code.FAIL, msg : 'Bạn không đủ cấp độ để chơi bàn chơi này'}
   }
   if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){

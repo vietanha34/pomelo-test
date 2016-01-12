@@ -175,8 +175,9 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('startGame', function () {
-    if (board.jobId){
+    if (board.jobId) {
       board.timer.cancelJob(board.jobId);
+      board.jobId = null;
     }
     pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.PLAY});
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
