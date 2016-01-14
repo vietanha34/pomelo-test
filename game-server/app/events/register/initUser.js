@@ -123,11 +123,11 @@ module.exports.process = function (app, type, param) {
     platformRaw: param.platform
   };
 
-  //pomelo.app.get('redisService')
-  //  .publish(redisKeyUtil.getSubscriberChannel(), JSON.stringify(opts), function (err, res) {
-  //    if (err) {
-  //      console.error(err, res);
-  //    }
-  //    opts = null;
-  //  });
+  pomelo.app.get('redisService')
+    .publish(redisKeyUtil.getSubscriberChannel(), JSON.stringify(opts), function (err, res) {
+      if (err) {
+        console.error(err, res);
+      }
+      opts = null;
+    });
 };

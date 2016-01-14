@@ -58,11 +58,11 @@ HomeDao.getHome = function getHome(params, cb) {
     userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
-    dailyReceived: pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived')
+    cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location')
   })
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
-      data.received = (globalConfig.IS_REVIEW ? 1 : (Number(props.dailyReceived) || 0));
+      data.received = ((globalConfig.IS_REVIEW || (props.cacheInfo[1] && props.cacheInfo[1] != 'VN')) ? 1 : (Number(props.cacheInfo[0]) || 0));
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;

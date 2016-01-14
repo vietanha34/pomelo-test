@@ -31,9 +31,9 @@ DailyDao.getData = function getData(uid, cb) {
   }
 
   var redis = pomelo.app.get('redisInfo');
-  return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount'])
+  return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (result[0]) throw new Error('received');
+      if (result[0] || (result[2] && result[2] != 'VN')) throw new Error('received');
 
       loginCount = result[1] || 1;
 
