@@ -715,6 +715,6 @@ module.exports = {
   PLATFORM_UNMAP: {
     1: 'ios',
     2: 'android',
-    3: 'windowsphone'
+    3: 'windowphone'
   }
 };
