@@ -59,23 +59,33 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('waitingService').leave(player.uid);
     // TODO setonTurn
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
-      if (board.gameId === consts.GAME_ID.CO_THE) {
-        if (!board.formationMode) {
-          board.addJobReady(player.uid);
-        } else if (board.owner !== player.uid && !player.guest) {
-          board.addJobSelectFormation(board.owner);
+      setTimeout(function (player) {
+        if (board.gameId === consts.GAME_ID.CO_THE) {
+          if (!board.formationMode) {
+            board.addJobReady(player.uid);
+          } else if (board.owner !== player.uid && !player.guest) {
+            board.addJobSelectFormation(board.owner);
+          }
+        } else {
+          board.addJobReady(player.uid)
         }
-      } else {
-        board.addJobReady(player.uid)
-      }
+      }, 100, player);
     }
   });
 
   board.on('sitIn', function (player) {
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
-      setTimeout(function (uid) {
-        board.addJobReady(uid)
-      }, 100, player.uid)
+      setTimeout(function (player) {
+        if (board.gameId === consts.GAME_ID.CO_THE) {
+          if (!board.formationMode) {
+            board.addJobReady(player.uid);
+          } else if (board.owner !== player.uid && !player.guest) {
+            board.addJobSelectFormation(board.owner);
+          }
+        } else {
+          board.addJobReady(player.uid)
+        }
+      }, 100, player)
     }
   });
 
@@ -133,6 +143,7 @@ exp.addEventFromBoard = function (board) {
     });
     userInfo.userId = userInfo.uid;
     userInfo.avatar = JSON.stringify(userInfo.avatar || {});
+    userInfo.gameId = board.gameId;
     if (kick) {
       pomelo.app.get('statusService').getStatusByUid(userInfo.uid, false, function (err, status) {
         if (status && status.online) {
@@ -164,8 +175,9 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('startGame', function () {
-    if (board.jobId){
+    if (board.jobId) {
       board.timer.cancelJob(board.jobId);
+      board.jobId = null;
     }
     pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.PLAY});
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;

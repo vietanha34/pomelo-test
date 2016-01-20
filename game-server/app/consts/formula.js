@@ -73,6 +73,7 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
   //var exp = 0;
   var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   var hallConfig = hallConfigs['' + gameId + hallId];
+  console.log('hallConfig : ', hallConfig);
   if (!hallConfig){
     return 0;
   }else {

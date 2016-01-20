@@ -9,6 +9,7 @@ var MessageDao = require('../../../dao/messageDao');
 var UserDao = require('../../../dao/userDao');
 var FriendDao = require('../../../dao/friendDao');
 var messageService = require('../../../services/messageService');
+var ItemDao = require('../../../dao/itemDao');
 var async = require('async');
 var Promise = require('bluebird');
 var pomelo = require('pomelo');
@@ -60,10 +61,14 @@ Handler.prototype.send = function (msg, session, next) {
           break;
         case consts.TARGET_TYPE.BOARD_GUEST:
           if (tableId) {
-            if (!effect[consts.ITEM_EFFECT.LUAN_CO]){
-              return done({ec: Code.FAIL, msg : 'Bạn cần có vật phẩm luận cờ để có thể tán gẫu trong bàn chơi'})
-            }
-            done(null, true)
+            ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.LUAN_CO])
+              .then(function (effect) {
+                if (!effect[consts.ITEM_EFFECT.LUAN_CO]){
+                  return done({ec: Code.FAIL, msg : 'Bạn cần có vật phẩm luận cờ để có thể tán gẫu trong bàn chơi'})
+                }else {
+                  done(null, true)
+                }
+              });
           } else {
             done({ec: Code.FAIL, msg : 'Bạn đang không ở trong bàn chơi'})
           }
@@ -112,7 +117,7 @@ Handler.prototype.send = function (msg, session, next) {
     }
   ], function (err) {
     if (err) {
-      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, { ec : err.ec || Code.FAIL, msg: err.msg || [Code.FAIL] });
+      messageService.pushMessageToPlayer({ uid : session.uid, sid : session.frontendId}, msg.__route__, { ec : err.ec || Code.FAIL, msg: err.msg || [Code.FAIL]});
     }
     msg = null;
   });

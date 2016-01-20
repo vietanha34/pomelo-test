@@ -14,7 +14,7 @@ var Promise = require('bluebird');
 //var HomeDao = require('../dao/homeDao');
 
 
-var ChatService = function(app, opts) {
+var ChatService = function (app, opts) {
   this.app = app;
 };
 
@@ -42,7 +42,7 @@ ChatService.prototype.pushByGlobalChannel = function (channelName, route, msg, c
  * @param  {String}   route       route to push Message
  * @param  {Function} cb          callback function
  */
-ChatService.prototype.pushByRoomId = function(channelName, route ,msg, cb) {
+ChatService.prototype.pushByRoomId = function (channelName, route, msg, cb) {
   this.app.get('globalChannelService').pushMessage('connector', route, msg, channelName, cb);
 };
 
@@ -57,11 +57,11 @@ pro.createMessage = function (message, cb) {
 };
 
 pro.updateMessage = function (message, cb) {
-  this.app.get('mongoClient').model('message').update({ id : message.id}, message, cb)
+  this.app.get('mongoClient').model('message').update({id: message.id}, message, cb)
 };
 
 pro.getMessage = function (msgId, cb) {
-  this.app.get('mongoClient').model('message').findOne({ _id : msgId}, cb)
+  this.app.get('mongoClient').model('message').findOne({_id: msgId}, cb)
 };
 
 pro.getLastMessage = function (opts, cb) {
@@ -73,19 +73,19 @@ pro.getLastMessage = function (opts, cb) {
   var projection;
   if (targetType == consts.TARGET_TYPE.GROUP) {
     projection = {
-      roomId : roomId
+      roomId: roomId
     }
-  }else {
+  } else {
     projection = {
-      $or : [
-        { from :target, target : from},
-        { target : target, from : from}
+      $or: [
+        {from: target, target: from},
+        {target: target, from: from}
       ]
     }
   }
   console.log('projection: ', projection);
   this.app.get('mongoClient').model('message').find(projection)
-    .sort({ date : -1})
+    .sort({date: -1})
     .limit(length)
     .exec(cb);
 };
@@ -98,67 +98,69 @@ pro.getMessages = function (opts, cb) {
   var roomId = opts.rid;
   if (targetUid) {
     var projection = {
-      $or : [
-        { from :targetUid, target : fromUid},
-        { target : targetUid, from : fromUid}
+      $or: [
+        {from: targetUid, target: fromUid},
+        {target: targetUid, from: fromUid}
       ]
     };
-  }else {
+  } else {
     projection = {
-      roomId : roomId
+      roomId: roomId
     }
   }
   if (msgId) {
     if (opts.navigator) {
-      projection['_id'] = { '$gte' : msgId}
-    }else {
-      projection['_id'] = { '$lte' : msgId}
+      projection['_id'] = {'$gte': msgId}
+    } else {
+      projection['_id'] = {'$lte': msgId}
     }
   }
   console.log('projection: ', projection);
   this.app.get('mongoClient').model('message')
     .find(projection)
-    .sort({ date : opts.reverse ? 1 : -1})
+    .sort({date: opts.reverse ? 1 : -1})
     .limit(length)
     .exec(cb)
 };
 
 pro.sendMessageToPlayer = function (fromUid, targetUid, data) {
   //utils.invokeCallback(cb);
-  pomelo.app.get('statusService').getStatusByUid(targetUid, false, function (err, status) {
-    if (err) {
-      console.log(err);
-    }
-    else if (status.online) {
-      pomelo.app.get('statusService').pushByUids([targetUid], 'chat.chatHandler.send', data);
-    }
-    var redisClient = pomelo.app.get('redisInfo');
-    var promises = [];
-    console.log('lrem : ', redisKeyUtil.getUserChatLog(fromUid), 0, targetUid);
-    var multi = redisClient.multi();
-    promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(fromUid), 0, targetUid));
-    promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(targetUid), 0, fromUid));
-    promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(fromUid), targetUid));
-    promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(targetUid), fromUid));
-    Promise.all(promises)
-      .then(function (data) {
-        // TODO remove some data length
-      });
-    MessageDao.countUnreadMessage({
-      count : 1,
-      targetType : consts.TARGET_TYPE.PERSON,
-      uid : targetUid,
-      fromId : fromUid
-    }, function (err, res) {
-      if (err) {
-        logger.error("message : %s , stack : %s ",err.message, err.stack);
-      }else {
-        //HomeDao.pushInfo(targetUid, { chatCount : res}, function () {
-        //
-        //});
+  this.checkBanUser('global', fromUid)
+    .then(function (banStatus) {
+      if (!banStatus){
+        pomelo.app.get('statusService').getStatusByUid(targetUid, false, function (err, status) {
+          if (err) {
+            console.log(err);
+          }
+          else if (status.online) {
+            pomelo.app.get('statusService').pushByUids([targetUid], 'chat.chatHandler.send', data);
+          }
+          var redisClient = pomelo.app.get('redisInfo');
+          var promises = [];
+          promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(fromUid), 0, targetUid));
+          promises.push(redisClient.lremAsync(redisKeyUtil.getUserChatLog(targetUid), 0, fromUid));
+          promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(fromUid), targetUid));
+          promises.push(redisClient.lpushAsync(redisKeyUtil.getUserChatLog(targetUid), fromUid));
+          Promise.all(promises)
+            .then(function (data) {
+              // TODO remove some data length
+            });
+          MessageDao.countUnreadMessage({
+            count: 1,
+            targetType: consts.TARGET_TYPE.PERSON,
+            uid: targetUid,
+            fromId: fromUid
+          }, function (err, res) {
+            if (err) {
+              logger.error("message : %s , stack : %s ", err.message, err.stack);
+            } else {
+            }
+          })
+        });
+      } else {
+        utils.invokeCallback(cb, {ec: Code.ON_GAME.FA_CAM_CHAT})
       }
-    })
-  });
+    });
 };
 
 pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
@@ -176,18 +178,18 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
     function (f, done) {
       console.log(f);
       fails = f;
-      pomelo.app.get('statusService').getStatusByUids(members,false, done);
+      pomelo.app.get('statusService').getStatusByUids(members, false, done);
     },
     function (status, done) {
-      for(var key in status){
+      for (var key in status) {
         var stat = status[key];
         var targetUid = key;
         if (!stat.online) {
           MessageDao.countUnreadMessage({
-            count : 1,
-            targetType : consts.TARGET_TYPE.GROUP,
-            uid : targetUid,
-            fromId : roomId
+            count: 1,
+            targetType: consts.TARGET_TYPE.GROUP,
+            uid: targetUid,
+            fromId: roomId
           })
         }
       }
@@ -200,37 +202,73 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
   });
 };
 
-pro.sendMessageToBoard = function (fromUid, channelName, data, cb) {
+pro.sendMessageToBoard = function (fromUid, channelName, data, checkBan, cb) {
   var self = this;
+  if (typeof checkBan === 'function'){
+    cb = checkBan;
+    checkBan = null;
+  }
   data.content = setContent(data.content);
-  this.checkBanUser(channelName, fromUid, function (err, exists) {
-    if (!exists) {
-      self.app.get('globalChannelService').pushMessage('connector', 'chat.chatHandler.send', data, channelName);
-    }else {
-      utils.invokeCallback(cb, { ec : Code.ON_GAME.FA_CAM_CHAT})
-    }
-  });
+  if (!checkBan){
+    this.checkBanUser([channelName,'global'], fromUid)
+      .then(function (banStatus) {
+        if (!banStatus){
+          self.app.get('globalChannelService').pushMessage('connector', 'chat.chatHandler.send', data, channelName);
+        } else {
+          return utils.invokeCallback(cb, utils.getError(Code.ON_GAME.FA_CAM_CHAT))
+        }
+      });
+  }else {
+    self.app.get('globalChannelService').pushMessage('connector', 'chat.chatHandler.send', data, channelName);
+  }
 };
 
-pro.banUser = function (channelName, uid, cb) {
+pro.banUser = function (channelName, uid, timeRelease, cb) {
   var redisClient = this.app.get('redisCache');
-  redisClient.sadd(redisKeyUtil.getChatChannelBanUserKey(channelName), uid, function (err, res) {
-    utils.invokeCallback(cb, err, res)
-  })
+  return redisClient.zaddAsync(redisKeyUtil.getChatChannelBanUserKey(channelName), timeRelease, uid)
+    .then(function (res) {
+      return utils.invokeCallback(cb, null, res);
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, err);
+    })
 };
 
-pro.clearBanUser = function (channelName, uid, cb) {
+pro.clearBanUser = function (channelName, uid, timeRelease, cb) {
   var redisClient = this.app.get('redisCache');
-  redisClient.srem(redisKeyUtil.getChatChannelBanUserKey(channelName), uid, function (err, res) {
-    utils.invokeCallback(cb, err, res)
-  })
+  return redisClient.zremAsync(redisKeyUtil.getChatChannelBanUserKey(channelName), uid)
+    .then(function (res) {
+      return utils.invokeCallback(cb, null, res);
+    })
+    .catch(function (err) {
+      return utils.invokeCallback(cb, err);
+    })
 };
 
 pro.checkBanUser = function (channelName, uid, cb) {
   var redisClient = this.app.get('redisCache');
-  redisClient.sismember(redisKeyUtil.getChatChannelBanUserKey(channelName), uid, function (err, res) {
-    utils.invokeCallback(cb, err, res)
+  channelName = lodash.isArray(channelName) ? channelName : [channelName];
+  return Promise.map(channelName, function (name) {
+    return redisClient.zscoreAsync(redisKeyUtil.getChatChannelBanUserKey(name), uid)
+      .then(function (res) {
+        return utils.invokeCallback(cb, null, res);
+      })
+      .catch(function (err) {
+        return utils.invokeCallback(cb, err);
+      })
   })
+    .then(function (data) {
+      for (var i = 0, len = data.length; i < len; i++) {
+        if (!lodash.isNaN(parseInt(data[i])) && (!data[i] || Date.now() < parseInt(data[i]))){
+          return utils.invokeCallback(cb, null, true);
+        }
+      }
+      return utils.invokeCallback(cb, null, false)
+    })
+    .catch(function (err) {
+      console.error(err);
+      return utils.invokeCallback(cb, null, false);
+    })
 };
 
 pro.destroyChannel = function (channelName) {

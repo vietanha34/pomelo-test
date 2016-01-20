@@ -56,7 +56,7 @@ Game.prototype.init = function () {
   if (color !== consts.COLOR.WHITE){
     this.game.changeTurn();
   }
-  this.firstTurn = turnPlayer.uid;
+  this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
     var player = this.table.players.getPlayer(keys[i]);
@@ -112,7 +112,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count: 1, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
-  this.table.jobId = this.table.timer.addJob(function () {
+  this.table.turnId = this.table.timer.addJob(function () {
     self.finishGame(consts.WIN_TYPE.LOSE);
   }, null, turnTime + 2000);
 };
@@ -134,20 +134,21 @@ Game.prototype.progress = function () {
     }
   }
   var turn = gameStatus.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
+  console.log('gameStatus.matchResult : ', gameStatus.matchResult, turn, this.firstTurn, result, gameStatus);
   if (gameStatus.matchResult){
     switch (result){
       case consts.WIN_TYPE.WIN:
         if(turn === this.firstTurn){
           this.finishGame(result);
         }else {
-          this.finishGame(consts.WIN_TYPE.LOSE);
+          this.finishGame(consts.WIN_TYPE.WIN);
         }
         break;
       case consts.WIN_TYPE.LOSE:
         if(turn !== this.firstTurn){
           this.finishGame(result);
         }else {
-          this.finishGame(consts.WIN_TYPE.WIN);
+          this.finishGame(consts.WIN_TYPE.LOSE);
         }
         break;
       case consts.WIN_TYPE.DRAW:
@@ -341,11 +342,6 @@ Table.prototype.getStatus = function (uid) {
   return status
 };
 
-Table.prototype.getBoardInfo = function (finish) {
-  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish);
-  return boardInfo
-};
-
 Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
@@ -378,8 +374,8 @@ Table.prototype.action = function (uid, opts, cb) {
       killed : killed ? [[opts.move[1],killed]] : undefined
     };
     this.game.numMove += 1;
-    if (this.jobId){
-      this.timer.cancelJob(this.jobId);
+    if (this.turnId){
+      this.timer.cancelJob(this.turnId);
     }
     var player = this.players.getPlayer(uid);
     var result = player.move();
@@ -581,7 +577,6 @@ Table.prototype.addJobSelectFormation = function (uid) {
 
 
 Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {
-  var uid = properties.uid;
   var self = this;
   Table.super_.prototype.changeBoardProperties.call(this, uid, properties, this.addFunction, function (err, dataChange) {
     if (dataChange && !dataChange.ec){

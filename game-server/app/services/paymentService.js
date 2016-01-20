@@ -123,9 +123,6 @@ pro.addBalance = function (opts, cb) {
       })
   })
     .then(function () {
-      if (opts.resultLogs && opts.resultLogs.length >= 1) {
-        addResultLog(uid, opts.resultLogs);
-      }
       return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.SUCCESS, gold: goldAfter});
     })
     .finally(function () {
@@ -251,7 +248,7 @@ pro.syncBalance = function (opts, cb) {
           , opts: opts
         };
         utils.invokeCallback(cb, null, {ec: Code.PAYMENT.SUCCESS, gold: log.after});
-        pomelo.app.get('redisCache').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
+        pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
         pomelo.app.get('mysqlClient')
           .AccUser
           .update({
@@ -282,38 +279,3 @@ var updateGoldInCache = function (username, gold) {
     })
 };
 
-
-var addResultLog = function (uid, resultLogs) {
-  pomelo.app.get('mongoClient')
-    .model('transaction')
-    .findOne({uid: uid})
-    .exec(function (err, result) {
-      if (err) {
-        console.error(err);
-      } else if (result) {
-        logger.info('update resultLog in exists  user');
-        pomelo.app.get('mongoClient')
-          .model('transaction')
-          .update({uid: uid}, {
-            $push: {
-              playHistory: {
-                $each: resultLogs.reverse(),
-                $position: 0
-              }
-            }
-          })
-          .exec(function (err, result) {
-            logger.info(err, result);
-          })
-      } else {
-        var Transaction = pomelo.app.get('mongoClient').model('transaction');
-        var data = new Transaction({uid: uid});
-        data.playHistory = data.playHistory.concat(resultLogs);
-        data.save(function (err) {
-          if (err) {
-            console.error('err : ', arguments)
-          }
-        })
-      }
-    })
-};

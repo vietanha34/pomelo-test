@@ -41,7 +41,6 @@ Game.prototype.close = function () {
 Game.prototype.init = function () {
   var i, len;
   this.table.timer.stop();
-  this.game.startGame();
   this.table.status = consts.BOARD_STATUS.PLAY;
   if (this.playerPlayingId.indexOf(this.table.looseUser) > -1) {
     this.turn = this.table.looseUser;
@@ -51,10 +50,12 @@ Game.prototype.init = function () {
   }
   this.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
+  var ownerPlayer = this.table.players.getPlayer(this.table.owner);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   if (turnPlayer.color !== consts.COLOR.WHITE) {
-    this.game.changeTurn();
+    this.game.changeTurn(null, ownerPlayer.color === consts.COLOR.WHITE);
   }
+  this.game.startGame(ownerPlayer.color === consts.COLOR.WHITE);
   this.firstTurn = turnPlayer.color;
   var keys = Object.keys(this.table.players.players);
   for (i = 0; i < keys.length; i++) {
@@ -85,7 +86,6 @@ Game.prototype.init = function () {
       }
     }
   }
-  console.log('this.firstTurn : ', this.firstTurn);
   var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
   if (lock) {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
@@ -340,8 +340,8 @@ Table.prototype.getStatus = function () {
   return status
 };
 
-Table.prototype.getBoardInfo = function (finish) {
-  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish);
+Table.prototype.getBoardInfo = function (finish, uid) {
+  var boardInfo = Table.super_.prototype.getBoardInfo.call(this, finish, uid);
   boardInfo.allowLock = this.allowLockMode ? 1 : 0;
   boardInfo.lock = this.lockMode;
   boardInfo.remove = this.removeMode;
@@ -426,8 +426,9 @@ Table.prototype.reset = function () {
   if (this.removeMode.length > 0){
     var ownerPlayer = this.players.getPlayer(this.owner);
     if (ownerPlayer && ownerPlayer.color !== consts.COLOR.WHITE){
-      this.game.game.changeTurn();
+      this.game.game.changeTurn(null, false);
       this.game.gameStatus = this.game.game.getBoardStatus();
+      console.log('gameStatus : ', this.game.gameStatus);
     }
   }
 };
@@ -548,9 +549,9 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
     if (lodash.isArray(properties.lock) || lodash.isArray(properties.remove) || properties.color) {
       var ownerPlayer = self.players.getPlayer(self.owner);
       if (ownerPlayer.color !== consts.COLOR.WHITE) {
-        self.game.game.changeTurn();
+        self.game.game.changeTurn(null, ownerPlayer.color === consts.COLOR.WHITE);
       }else {
-        self.game.game.changeTurn(true);
+        self.game.game.changeTurn(true, ownerPlayer.color === consts.COLOR.WHITE);
       }
       //self.game.game.turnToMode();
       self.game.gameStatus = self.game.game.getBoardStatus();
@@ -568,9 +569,9 @@ Table.prototype.setOwner = function () {
     var ownerPlayer = this.players.getPlayer(this.owner);
     if (ownerPlayer){
       if (ownerPlayer.color !== consts.COLOR.WHITE){
-        this.game.game.changeTurn();
+        this.game.game.changeTurn(null, ownerPlayer.color === consts.COLOR.WHITE);
       }else {
-        this.game.game.changeTurn(true);
+        this.game.game.changeTurn(true, ownerPlayer.color === consts.COLOR.WHITE);
       }
       //this.game.game.turnToMode();
       process.nextTick(function () {

@@ -582,9 +582,10 @@ pro.getStatus = function () {
   var status = {
     stt : this.status
   };
+  var turnId = this.jobId || this.turnId;
   var player = this.players.getPlayer(this.turnUid);
-  if (lodash.isNumber(this.jobId) && player){
-    var timeLeft = this.timer.getLeftTime(this.jobId);
+  if (lodash.isNumber(turnId) && player){
+    var timeLeft = this.timer.getLeftTime(turnId);
     status.turn = {
       uid : this.turnUid,
       count : this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
@@ -619,7 +620,7 @@ pro.setOwner = function () {
  */
 pro.getBoardState = function (uid) {
   var state = {
-    info: this.getBoardInfo(),
+    info: this.getBoardInfo(null, uid || this.owner),
     status: this.getStatus(uid),
     players: this.players.getPlayerState(uid)
   };
@@ -630,7 +631,14 @@ pro.getBoardState = function (uid) {
   return state
 };
 
-pro.getBoardInfo = function (finish) {
+pro.getBoardInfo = function (finish, uid) {
+  var player = this.players.getPlayer(uid);
+  var multi = 1;
+  if (player && player.checkItems(consts.ITEM_EFFECT.CUOCX5)){
+    multi = 5;
+  }else if(player && player.checkItems(consts.ITEM_EFFECT.CUOCX3)){
+    multi = 3;
+  }
   if (finish) {
     return {
       boardId: this.tableId,
@@ -651,7 +659,9 @@ pro.getBoardInfo = function (finish) {
       turnTime: this.turnTime,
       totalTime : this.totalTime,
       password: this.lock,
-      configBet: this.configBet,
+      configBet: this.configBet.map(function (x, index) {
+        if (index === 1) {return x  * multi }else { return x}
+      }),
       configTurnTime : this.configTurnTime || [],
       configTotalTime : this.configTotalTime || [],
       gameType: this.gameType,
@@ -729,7 +739,6 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
       return utils.invokeCallback(cb, err);
     } else {
       propertiesFunction.splice(0, propertiesFunction.length);
-      console.log('dataChanged : ', changed, dataChanged, dataUpdate);
       if (changed.length > 0) {
         self.players.unReadyAll();
         var otherPlayer = self.players.getPlayer(self.players.getOtherPlayer());

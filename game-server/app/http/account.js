@@ -230,7 +230,6 @@ module.exports = function (app) {
       });
   });
 
-
   app.get('/profile', getProfile);
 
   app.get('/expProfile', getExpProfile);
@@ -269,7 +268,6 @@ module.exports = function (app) {
                 response.extra = {
                   currentMoney: bank.gold
                 };
-                response.data = bank;
                 return res.json(response);
               }
               res.json(response);
@@ -327,9 +325,51 @@ module.exports = function (app) {
       default:
         res.status(500).json({msg: "có lỗi xảy ra"})
     }
+  });
+
+  app.get('/topup', function (req, res) {
+    var data = req.query;
+    if (!data) return res.json({}).end();
+    return UserDao.getUserIdByUsername(data.uname)
+      .then(function (uid) {
+        var opts = {
+          uid : uid,
+          gold : parseInt(data.gold) || 0,
+          type : Consts.CHANGE_GOLD_TYPE.TOPUP_CARD
+        };
+        return pomelo
+          .app
+          .get('paymentService')
+          .addBalance(opts, function (err, bank) {
+            console.log('paymentService: ', err, bank);
+            var response = {
+              code: code.ACCOUNT_OLD.FAIL,
+              data: null,
+              extra: {},
+              message: null
+            };
+            if (bank && bank.ec === code.OK) {
+              response.code = code.ACCOUNT_OLD.OK;
+              response.extra = {
+                currentMoney: bank.gold
+              };
+              response.data = bank;
+              return res.json(response);
+            }
+            if (err) console.error(err);
+            res.json(response);
+          });
+      })
+      .catch(function (err) {
+        if (err && err.code === 15){
+          // người dùng k tồn tài
+          res.json({code : 15, message:"Người dùng không tồn tại", data:{}})
+        }else {
+          res.json({ code : 99, messsage: 'Lỗi hệ thống', data : {}});
+        }
+      })
   })
 };
-
 
 var register = function (req, res) {
   var data = req.query;
@@ -570,7 +610,6 @@ var logout = function (req, res) {
   res.json({code: code.ACCOUNT_OLD.OK});
 };
 
-
 var updateVippoint = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
@@ -601,12 +640,12 @@ var forgotPass = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
   var newPass;
-  UserDao.getUserPropertiesByUsername(data.uname, ['email'])
+  UserDao.getUserPropertiesByUsername(data.uname, ['email', 'deviceId'])
     .then(function (user) {
       if (!user) {
         return Promise.reject({code: 10, message: 'Tên đăng nhập không hợp lệ', data: {}});
       }
-      if (user.email === data.email) {
+      if ((data.email && user.email === data.email) || (data["o\tdevice"] && data["o\tdevice"] === user['deviceId'])) {
         newPass = utils.uid(6);
         return UserDao.updateProfile(data.uname, {
           passwordMd5: MD5(newPass),
@@ -688,7 +727,6 @@ var updateProfile = function (req, res) {
       data = null;
     })
 };
-
 
 var friendListing = function (req, res) {
   var data = req.query;

@@ -64,6 +64,7 @@ Player.prototype.move = function (numMove) {
 };
 
 Player.prototype.reset = function () {
+  console.log('player caro reset');
   Player.super_.prototype.reset.call(this);
   this.totalTime = this.totalTimeDefault;
   this.timeDraw = 0; // nước đi xin hoãn;
