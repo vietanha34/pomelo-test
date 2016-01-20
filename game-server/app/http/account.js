@@ -142,7 +142,8 @@ module.exports = function (app) {
             update[gameName + 'Win'] = db.sequelize.literal(' ' + gameName + 'Win + ' + win);
             update[gameName + 'Lose'] = db.sequelize.literal(' ' + gameName + 'Lose + ' + lose);
             update[gameName + 'Draw'] = db.sequelize.literal(' ' + gameName + 'Draw + ' + draw);
-            if (user[gameName + 'Elo'] + elo < 500) {
+            var newElo = Number(user[gameName + 'Elo']) + Number(elo);
+            if (newElo < 500) {
               update[gameName + 'Elo'] = 500
             } else {
               update[gameName + 'Elo'] = db.sequelize.literal(' ' + gameName + 'Elo + ' + elo);
@@ -163,7 +164,7 @@ module.exports = function (app) {
             var mongoClient = pomelo.app.get('mongoClient');
             var Top = mongoClient.model('Top');
             var topUpdate = {};
-            topUpdate[gameName] = (user[gameName + 'Elo'] + elo);
+            topUpdate[gameName] = newElo || 500;
             Top.update({uid: uid}, topUpdate, {upsert: false}, function(e,r) {
               if (e) console.error(e.stack || e);
             });
