@@ -86,7 +86,8 @@ module.exports.process = function (app, type, param) {
     deviceToken: param.deviceToken || '',
     username: param.username,
     dtId: param.dtId || 1,
-    platform: consts.PLATFORM_UNMAP[param.platform] || ''
+    platform: (isNaN(param.platform) ? param.platform : (consts.PLATFORM_UNMAP[param.platform] || 'ios')),
+    platformRaw: param.platform
   };
 
   pomelo.app.get('redisService')
