@@ -716,5 +716,12 @@ module.exports = {
     1: 'ios',
     2: 'android',
     3: 'windowphone'
+  },
+
+  GUILD_MEMBER_STATUS:{
+    NORMAL_MEMBER : 1,
+    PRESIDENT : 2,
+    VICE_PRESIDENT : 3,
+    REQUEST_MEMBER : 4
   }
 };

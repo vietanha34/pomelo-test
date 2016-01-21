@@ -111,7 +111,6 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo, kick) {
-    board.score = [0, 0]; // restart score
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
@@ -128,10 +127,11 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('globalChannelService').leave(board.channelName, userInfo.uid, userInfo.frontendId);
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
-    //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
     if (userInfo.guest) {
       board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
+    }else {
+      board.score = [0, 0]; // restart score
     }
     // restart to default value
     if (board.players.length === 0) {
@@ -254,12 +254,13 @@ exp.addEventFromBoard = function (board) {
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)) {
       board.addJobReady(otherPlayerUid);
     }
-    if (board.game.actionLog.length > 0) {
+    if (board.game.actionLog && board.game.actionLog.length > 0) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
     if (board.firstUid !== data[0].uid) {
       data.reverse();
     }
+    console.log('data : ', data , board.firstUid);
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
     if (winUid) board.game.logs.result['winner'] = winUid;
     if (loseUid) board.game.logs.result['looser'] = loseUid;

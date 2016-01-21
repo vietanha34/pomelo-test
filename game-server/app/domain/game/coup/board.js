@@ -44,7 +44,7 @@ Game.prototype.init = function () {
   }else {
     this.turn = this.playerPlayingId[index];
   }
-  this.firstUid = this.turn;
+  this.table.firstUid = this.turn;
   this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
