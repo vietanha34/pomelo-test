@@ -37,14 +37,18 @@ app.configure('production|development|local', function () {
   app.loadConfig('serviceConfig', app.getBase() + '/config/externalService.json');
   app.loadConfig('eventConfig', app.getBase() + '/config/eventConfig.json');
   app.loadConfig('emitterConfig', app.getBase() + '/config/emitterConfig.json');
-  var dataPlugin = require('pomelo-data-plugin');
+  var dataPlugin = require('pomelo-data-plugin-ex');
   var redisConfig = app.get('redisConfig');
   var redisConfigCache = redisConfig.cache;
   app.use(dataPlugin, {
     watcher: {
       dir: __dirname + '/config/csv',
       idx: 'id',
-      interval: 30000
+      interval: 30000,
+      nameRow: 1,
+      typeRow : 2,
+      ignoreRows: [3],
+      indexColumn : 1
     }
   });
 
@@ -102,17 +106,17 @@ app.configure('production|development|local', function () {
         console.error('err : ', err)
       })
   }
-  //else if (!curServer.serverType){
-  //  var ccuPlugin = require('pomelo-ccu-plugin');
-  //  app.use(ccuPlugin, {
-  //    ccu: {
-  //      redis: app.get('redisCache'),
-  //      username: 'monitor',
-  //      password: 'monitor',
-  //      middleware : utils.getGameIdUser
-  //    }
-  //  })
-  //}
+  else if (curServer.id === 'home-server-1'){
+    var ccuPlugin = require('pomelo-ccu-plugin');
+    app.use(ccuPlugin, {
+      ccu: {
+        redis: app.get('redisCache'),
+        username: 'monitor',
+        password: 'monitor',
+        middleware : utils.getGameIdUser
+      }
+    })
+  }
 });
 
 app.configure('production', function () {
@@ -166,7 +170,7 @@ app.configure('production|development|local', 'game', function () {
   var server = app.curServer;
   var gameId = server.gameId;
   var Game = require('./app/domain/game/game');
-  app.game = new Game({gameId: gameId, serverId: server.id});
+  app.game = new Game({gameId: gameId, serverId: server.id, base : server.base});
 });
 
 app.configure('production|development|local', 'chat', function () {
@@ -237,6 +241,15 @@ app.configure('production|development', 'worker', function () {
     routePath: app.getBase() + '/app/http'
   });
   app.set('httpServer', httpServer);
+});
+
+app.configure('production|development', 'event', function () {
+  var geoIpPlugin = require('pomelo-geoip-plugin');
+  app.use(geoIpPlugin, {
+    geoip : {
+      urlService : 'http://sdk.vgame.us:8888/iploc'
+    }
+  });
 });
 
 //app.configure('production', function () {

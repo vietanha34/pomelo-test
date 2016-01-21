@@ -93,6 +93,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         var board = boardIds[i];
         if (excludeBoardId.indexOf(board.boardId) < 0) {
           var boardId = boardIds[i];
+          break;
         }
       }
       if (boardId) {
@@ -164,6 +165,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           gold: userInfo.gold,
           username: userInfo.username,
           uid: userInfo.uid,
+          vipPoint : userInfo.vipPoint,
           fullname: userInfo.fullname,
           sex: userInfo.sex,
           avatar: userInfo.avatar,

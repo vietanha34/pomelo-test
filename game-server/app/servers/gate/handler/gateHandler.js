@@ -40,7 +40,7 @@ Handler.prototype.getServer = function (msg, session, next) {
   //}
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   var version = '' + msg.versionCode.slice(4,10) + msg.versionCode.slice(2,4) + msg.versionCode.slice(0,2);
-  if (version < '20151210' && this.app.get('beta')){
+  if (version < '20151210' && this.app.get('beta') && version !== '20150118'){
     next(null, { ec: Code.FAIL, msg : "Chương trình beta cờ thủ đã kết thúc. Bạn có thể cập nhật phần mềm để có những tính năng mới nhất"})
   }
   var link, type, message;
@@ -55,10 +55,9 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = configService.getConfig();
-      //if (msg.versionCode === '30122015' && msg.platform === 'ios'){
-      //  console.log('versionCode : ', msg.versionCode);
-      //  config['IS_REVIEW'] = 1
-      //}
+      if (msg.packageName === 'com.mcoup.vn2016' && msg.platform === 'android'){
+        config['IS_REVIEW'] = 1
+      }
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,

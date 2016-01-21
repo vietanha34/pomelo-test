@@ -20,6 +20,7 @@ var async = require('async');
  * @api public
  */
 var Game = function (opts) {
+  this.base = opts.base;
   this.gameId = opts.gameId;
   this.serverId = opts.serverId;
   this.district = {};
@@ -38,7 +39,9 @@ Game.prototype.start = function (cb) {
   if (!this.init) {
     return pomelo.app.get('boardService').delBoardByServerId(self.serverId)
       .then(function () {
-        console.log('initBoard');
+        if (self.base){
+        }
+        console.log('game base : ', self.base);
         self.initBoards();
         self.init = true;
         return utils.invokeCallback(cb);
@@ -64,19 +67,6 @@ Game.prototype.maintenance = function (opts) {
  * @param {Function} cb
  */
 
-Game.prototype.createBoard = function (params, cb) {
-  var self = this;
-  this.boardManager.create(params, function (err, res) {
-    if (res) {
-      return utils.invokeCallback(cb, err, {boardId: res, serverId: self.serverId, roomId: params.roomId})
-    }
-    else if (!!err) {
-      logger.error(err);
-      return utils.invokeCallback(cb, err)
-    }
-  });
-};
-
 /**
  * Lấy về 1 bàn chơi đã có sẵn
  *
@@ -101,44 +91,12 @@ Game.prototype.initBoards = function () {
     if (hallConfig) {
       var hallId = parseInt(hallConfig.hallId);
       for (var j = 1, lenj = parseInt(hallConfig.numRoom); j <= lenj; j++) {
-        this.createRoom(hallConfig, hallId * 100 + j)
+        this.boardManager.createRoom(hallConfig, hallId * 100 + j)
       }
     }
   }
 };
 
-Game.prototype.createRoom = function (hallConfig, roomId) {
-  var self = this;
-  var hallId = parseInt(hallConfig.hallId);
-  var opts = {
-    serverId: this.serverId,
-    gameId: this.gameId,
-    roomId: roomId,
-    hallId: parseInt(hallConfig.hallId)
-  };
-  return pomelo.app.get('boardService')
-    .addRoom(opts)
-    .then(function () {
-      for (var i = 1; i <= 51; i++) {
-        var opts = utils.clone(hallConfig);
-        if (hallId === consts.HALL_ID.LIET_CHAP){
-          opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
-          opts.removeMode = [];
-          opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
-        }
-        var betConfig = utils.JSONParse(hallConfig.betConfig, []);
-        opts.configBet = [parseInt(hallConfig.goldMin), parseInt(hallConfig.goldMax)];
-        opts.turnTime = 3 * 60;
-        opts.bet = betConfig[Math.floor((i-1) / 6)] ? betConfig[Math.floor((i-1) / 6)]: betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0;
-        opts.totalTime = 15 * 60;
-        opts.base = true;
-        opts.level = parseInt(hallConfig.level);
-        opts.roomId = roomId;
-        opts.index = i;
-        self.createBoard(opts);
-      }
-    })
-};
 
 
 /**

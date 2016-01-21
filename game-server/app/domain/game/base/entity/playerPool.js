@@ -106,10 +106,12 @@ pro.addPlayer = function (opts) {
   });
   self.players[uid] = player;
   var slotIndex = self.getSlotAvailable(slotId, uid);
-  if (player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)
+  if ((player.gold < self.table.configBet[0]
+    || (self.table.owner && player.gold < self.table.bet)
     || self.length >= self.table.maxPlayer
     || (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))
-    || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG))
+    || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)))
+    && !player.userInfo.vipLevel
   ) {
     if (slotIndex > -1){
       if (player.gold < self.table.bet) {
@@ -260,14 +262,16 @@ pro.sitIn = function (uid, slotId) {
   if (self.length >= self.table.maxPlayer) {
     return {ec: Code.ON_GAME.BOARD_FULL}
   }
-  if (player.gold < this.table.bet){
+  if ((player.gold < self.table.configBet[0] && !self.table.owner) || (self.table.owner && player.gold < self.table.bet)){
     return utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY)
   }
-  if (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA)){
-    return { ec: Code.FAIL, msg : 'Bạn không đủ cấp độ để chơi bàn chơi này'}
-  }
-  if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){
-    return { ec: Code.FAIL, msg : 'Bạn không có vật phẩm để chơi phòng miễn phí'};
+  if (!player.userInfo.vipLevel){
+    if (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA)){
+      return { ec: Code.FAIL, msg : 'Bạn không đủ cấp độ để chơi bàn chơi này'}
+    }
+    if (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)){
+      return { ec: Code.FAIL, msg : 'Bạn không có vật phẩm để chơi phòng miễn phí'};
+    }
   }
   if (slotId) {
     var index = self.checkSlotIdAvailable(slotId, uid);

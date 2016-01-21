@@ -488,7 +488,6 @@ UserDao.loginWithUsername = function (msg, cb) {
       }
     })
     .then(function (result) {
-      console.log('result accountService : ', result);
       if (result) {
         if (!result.code) {
           pomelo.app.get('redisInfo')

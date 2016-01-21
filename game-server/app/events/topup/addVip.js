@@ -47,10 +47,11 @@ module.exports.process = function (app, type, param) {
           image:  consts.NOTIFY.IMAGE.AWARD
         });
       }
-
+      var userId = param.uid;
       // update user info
       user.hasPay = 1;
       user.vipPoint += formula.calVipPointByMoney(param.money);
+      var vipPoint = user.vipPoint;
       UserDao.updateProperties(param.uid, user);
 
       // increase daily topup
@@ -64,7 +65,17 @@ module.exports.process = function (app, type, param) {
         gold: param.gold,
         vipPoint: user.vipPoint
       };
-      return TopDao.updateVip({uid: param.uid, update: updateParams});
+      TopDao.updateVip({uid: param.uid, update: updateParams});
+      return app.get('statusService').getSidsByUid(param.uid, function (err, list) {
+        if (list && list.length > 0){
+          pomelo.app.get('backendService').getByUid(list[0], userId, function (err, backendService) {
+            if (backendService){
+              backendService.set('vipPoint', vipPoint);
+              backendService.push('vipPoint');
+            }
+          })
+        }
+      })
     })
     .catch(function(e) {
       console.error(e.stack || e);

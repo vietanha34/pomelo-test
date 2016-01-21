@@ -87,17 +87,14 @@ Handler.prototype.login = function (msg, session, next) {
     },
     // check effect
     function (done) {
-      ItemDao.checkEffect(player.uid, [consts.ITEM_EFFECT.LUAN_CO], done)
-    },
-    function (items, done) {
       session.set('fullname', player.fullname);
       session.set('username', player.username);
       session.set('level', Formula.calLevel(player.exp));
       session.set('gold', player.gold);
       session.set('sex', player.sex);
+      session.set('vipPoint', player.vipPoint);
       session.set('accessToken', msg.accessToken);
       session.set('avatar', player.avatar);
-      session.set('effect', items);
       session.set('platform', msg.platform);
       session.set('version', version);
       session.on('closed', onUserLeave.bind(null, self.app));

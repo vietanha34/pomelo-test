@@ -45,7 +45,6 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
-      console.log('effect : ', effect);
       opts.effect = effect;
       var state = board.joinBoard(opts);
       if (state && !state.ec) {
@@ -120,7 +119,6 @@ GameRemote.prototype.addItems = function (boardId, items, cb) {
     utils.invokeCallback(cb, err);
     return;
   }
-  console.log("callback addItem");
   utils.invokeCallback(cb, null, board.addItems(items));
 };
 

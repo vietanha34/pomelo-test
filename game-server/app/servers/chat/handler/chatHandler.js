@@ -8,6 +8,7 @@ var RoomDao = require('../../../dao/roomChatDao');
 var MessageDao = require('../../../dao/messageDao');
 var UserDao = require('../../../dao/userDao');
 var FriendDao = require('../../../dao/friendDao');
+var Formula = require('../../../consts/formula');
 var messageService = require('../../../services/messageService');
 var ItemDao = require('../../../dao/itemDao');
 var async = require('async');
@@ -28,7 +29,7 @@ Handler.prototype.send = function (msg, session, next) {
   var uid = session.uid;
   var fullname = session.get('fullname');
   var uids = { uid : session.uid, sid : session.frontendId};
-  var effect = session.get('effect');
+  var vipPoint = session.get('vipPoint');
   var route = msg.__route__;
   var sendDate = msg.date || Math.round(Date.now() /1000);
   next();
@@ -61,9 +62,9 @@ Handler.prototype.send = function (msg, session, next) {
           break;
         case consts.TARGET_TYPE.BOARD_GUEST:
           if (tableId) {
-            ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.LUAN_CO])
+            ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.LUAN_CO, consts.ITEM_EFFECT.THE_VIP])
               .then(function (effect) {
-                if (!effect[consts.ITEM_EFFECT.LUAN_CO]){
+                if (!effect[consts.ITEM_EFFECT.LUAN_CO] && (!effect[consts.ITEM_EFFECT.THE_VIP] && !Formula.calVipLevel(vipPoint))){
                   return done({ec: Code.FAIL, msg : 'Bạn cần có vật phẩm luận cờ để có thể tán gẫu trong bàn chơi'})
                 }else {
                   done(null, true)

@@ -37,6 +37,52 @@ exp.init = function (opts) {
   exp.check();
 };
 
+exp.createRoom = function (hallConfig, roomId) {
+  console.log('hallConfig : ', hallConfig);
+  var hallId = parseInt(hallConfig.hallId);
+  var opts = {
+    serverId: serverId,
+    gameId: gameId,
+    roomId: roomId,
+    hallId: parseInt(hallConfig.hallId)
+  };
+  return pomelo.app.get('boardService')
+    .addRoom(opts)
+    .then(function () {
+      for (var i = 1; i <= 51; i++) {
+        var opts = utils.clone(hallConfig);
+        if (hallId === consts.HALL_ID.LIET_CHAP){
+          opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
+          opts.removeMode = [];
+          opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+        }
+        var betConfig = hallConfig.betConfig;
+        opts.configBet = [hallConfig.goldMin, hallConfig.goldMax];
+        opts.turnTime = 3 * 60;
+        opts.bet = (betConfig[Math.floor((i-1) / 6)] ? betConfig[Math.floor((i-1) / 6)]: betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0) || 0;
+        opts.totalTime = 15 * 60;
+        opts.base = true;
+        opts.level = hallConfig.level;
+        opts.roomId = roomId;
+        opts.index = i;
+        exp.createBoard(opts);
+      }
+    })
+};
+
+
+exp.createBoard = function (params, cb) {
+  exp.create(params, function (err, res) {
+    if (res) {
+      return utils.invokeCallback(cb, err, {boardId: res, serverId: serverId, roomId: params.roomId})
+    }
+    else if (!!err) {
+      logger.error(err);
+      return utils.invokeCallback(cb, err)
+    }
+  });
+};
+
 /**
  * Tạo mới bàn chơi từ tham số
  *

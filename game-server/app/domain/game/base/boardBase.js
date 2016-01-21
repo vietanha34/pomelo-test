@@ -91,7 +91,7 @@ var Board = function (opts, PlayerPool, Player) {
     // thay đổi tiền cược
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
-      var bet = properties.bet;
+      var bet = Math.abs(properties.bet);
       if (bet && bet !== self.bet) {
         var ownerPlayer = self.players.getPlayer(self.owner);
         var multi = 1;
@@ -100,7 +100,7 @@ var Board = function (opts, PlayerPool, Player) {
         }else if(ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)){
           multi = 3;
         }
-        if (bet < self.configBet[0] || bet > self.configBet[1] * multi) {
+        if ((bet < self.configBet[0] || bet > self.configBet[1] * multi) && !ownerPlayer.userInfo.vipLevel) {
           return done({ec : Code.FAIL, msg : util.format("Mức cược phải nằm trong khoảng từ %s đến %s Gold", self.configBet[0], self.configBet[1] * multi)});
         }
         if (ownerPlayer && ownerPlayer.gold < bet) {
@@ -119,7 +119,6 @@ var Board = function (opts, PlayerPool, Player) {
       // change bet;
       var lock = properties.password;
       if (lodash.isString(lock) && lock !== self.lock) {
-        console.log('update password');
         self.lock = lock;
         changed.push(' mật khẩu bàn chơi');
         dataChanged.password = lock;
@@ -639,6 +638,9 @@ pro.getBoardInfo = function (finish, uid) {
   }else if(player && player.checkItems(consts.ITEM_EFFECT.CUOCX3)){
     multi = 3;
   }
+  if (player && player.userInfo.vipLevel){
+    multi = 1000;
+  }
   if (finish) {
     return {
       boardId: this.tableId,
@@ -766,7 +768,7 @@ pro.checkEffectSetting = function (properties) {
   var self = this;
   var ownerPlayer = self.players.getPlayer(self.owner);
   if (lodash.isString(properties.password) && properties.password.length > 0){
-    if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN)){
+    if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN) && !ownerPlayer.userInfo.vipLevel){
       return 'Bạn không có vật phẩm khoá bàn chơi';
     }
   }
@@ -903,17 +905,33 @@ pro.kick = function (uid, cb) {
     utils.invokeCallback(cb, null, utils.getError(Code.FAIL));
     return
   }
-  if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
-    utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
-    return
+  var notifyMsg = Code.ON_GAME.FA_KICK;
+  var ownerPlayer = this.players.getPlayer(this.owner);
+  if (ownerPlayer.userInfo.vipLevel < player.userInfo.vipLevel){
+    return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
+  }else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel){
+    if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint){
+      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
+    }else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint){
+      if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
+        return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
+      }
+    }
+    notifyMsg = 'Bạn bị đuổi bởi có điểm vip lớn hơn';
+  }else {
+    if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
+      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
+    }
+    if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel){
+      notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
+    }
   }
   this.emit('kick', player);
   var userInfo = player.userInfo;
-  var uids = this.leaveBoard(
-    uid, true);
+  var uids = this.leaveBoard(uid, true);
   if (uids && !uids.ec) {
     messageService.pushMessageToPlayer(uids, 'district.districtHandler.leaveBoard', {
-      uid: uids.uid, notifyMsg: Code.ON_GAME.FA_KICK
+      uid: uids.uid, notifyMsg: notifyMsg
     });
     self.pushLeaveBoard(uids.uid, {
       uid: uids.uid,
@@ -962,7 +980,7 @@ pro.genMenu = function (menuId, extraData) {
   )
 };
 
-pro.mixGiveUpUsers = function (data) {
+pro.mixGiveUpUsers= function (data) {
   for (var i = 0, len = this.giveUpUsers.length; i < len; i++) {
     var giveUpUser = this.giveUpUsers[i];
     var index = lodash.findIndex(data, {uid: giveUpUser.uid});

@@ -1,0 +1,53 @@
+/**
+ * Created by vietanha34 on 1/14/16.
+ */
+
+var async = require('async');
+var utils = require('../../../util/utils');
+var code = require('../../../consts/code');
+var DailyDao = require('../../../dao/dailyDao');
+var TopupDao = require('../../../dao/topupDao');
+
+module.exports = function (app) {
+  return new Handler(app);
+};
+
+var Handler = function (app) {
+  this.app = app;
+};
+
+Handler.prototype.createGuild = function (msg, session, next) {
+  DailyDao.getData(session.uid)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.getGuild  = function (msg, session, next) {
+  DailyDao.getGold(session.uid)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.getGuildR = function (msg, session, next) {
+  TopupDao.getGoldAward(session.uid, msg.packageId)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};

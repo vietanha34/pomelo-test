@@ -158,7 +158,8 @@ module.exports = {
     FA_USER_NOT_ENOUGH_MONEY_TO_START_WITH_USERNAME : 1312, // %s không đủ tiền để chơi bàn %s người
     FA_OWNER_NOT_ENOUGH_MONEY_TO_PLAY_WITH_USER_WITH_USERNAME : 1313, // Chủ bàn không đủ tiền chơi với %s
     FA_NOT_ENOUGH_MONEY_TO_CONTINUE_WITH_USERNAME : 1314,
-    FA_WRONG_PASSWORD : 1315
+    FA_WRONG_PASSWORD : 1315,
+    FA_VIP_LEVEL_NOT_ENOUGH : 1316
   },
 
   WIN_TYPE : {

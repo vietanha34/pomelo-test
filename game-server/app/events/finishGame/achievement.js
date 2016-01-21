@@ -17,6 +17,7 @@ var lodash = require('lodash');
 var utils = require('../../util/utils');
 var Promise = require('bluebird');
 var TopDao = require('../../dao/topDao');
+var util = require('util');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
