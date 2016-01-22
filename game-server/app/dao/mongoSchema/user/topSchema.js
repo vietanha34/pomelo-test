@@ -35,6 +35,7 @@ var TopSchema = new Schema({
 TopSchema.index({ uid: 1 });
 TopSchema.index({ username: 1 });
 TopSchema.index({ gold: -1 });
+TopSchema.index({ vipPoint: -1 });
 TopSchema.index({ tuong: -1 });
 TopSchema.index({ up: -1 });
 TopSchema.index({ the: -1 });
