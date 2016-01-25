@@ -105,6 +105,7 @@ pro.addPlayer = function (opts) {
     table: self.table
   });
   self.players[uid] = player;
+  data.newPlayer = true;
   var slotIndex = self.getSlotAvailable(slotId, uid);
   if ((player.gold < self.table.configBet[0]
     || (self.table.owner && player.gold < self.table.bet)
@@ -113,6 +114,7 @@ pro.addPlayer = function (opts) {
     || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)))
     && !player.userInfo.vipLevel
   ) {
+    console.log('alway guest');
     if (slotIndex > -1){
       if (player.gold < self.table.bet) {
         player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
@@ -127,10 +129,7 @@ pro.addPlayer = function (opts) {
     }
     self.guestIds.push(player.uid);
     player.guest = true;
-    data.newPlayer = true;
     data.guest = true;
-    result = data;
-    player.genMenu();
   } else {
     if (slotIndex > -1) {
       // add new player
@@ -142,7 +141,6 @@ pro.addPlayer = function (opts) {
         player.color = consts.COLOR.WHITE;
       }
       self.length = lodash.compact(self.playerSeat).length;
-      data.newPlayer = true;
       if (!self.table.owner) {
         self.table.owner = uid;
         data.owner = true;
@@ -154,9 +152,9 @@ pro.addPlayer = function (opts) {
       player.guest = true;
       data.guest = true;
     }
-    player.genMenu();
-    result = data;
   }
+  result = data;
+  player.genMenu();
   return result;
 };
 
@@ -167,10 +165,10 @@ pro.addPlayer = function (opts) {
  * @param uid
  */
 pro.getSlotAvailable = function (slotId, uid) {
-  var slot = null;
+  var slot = -1;
   for (var i = 0, len = this.playerSeat.length; i < len; i++) {
     var index = this.playerSeat[i];
-    if ((index === undefined && slot === null) || index === uid) {
+    if ((index === undefined && slot === -1) || index === uid) {
       slot = i
     }
   }

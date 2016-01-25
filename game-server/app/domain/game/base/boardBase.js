@@ -911,20 +911,20 @@ pro.kick = function (uid, cb) {
     return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
   }else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel){
     if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint){
-      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
+      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_POINT_NOT_ENOUGH))
     }else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint){
       if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
         return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
       }
     }
-    notifyMsg = 'Bạn bị đuổi bởi có điểm vip lớn hơn';
-  }else {
+    notifyMsg = 'Bạn bị đuổi bởi người có điểm vip lớn hơn';
+  }else if(ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel){
     if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
       return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
     }
-    if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel){
-      notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
-    }
+  }
+  if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel){
+    notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
   }
   this.emit('kick', player);
   var userInfo = player.userInfo;
