@@ -77,6 +77,9 @@ module.exports.process = function (app, type, param) {
         raw: true
       });
 
+      ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
+      ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
+
       if (userCount == 1) {
         var globalConfig = app.get('configService').getConfig();
 
@@ -96,8 +99,6 @@ module.exports.process = function (app, type, param) {
 
           if (bonus) {
             setTimeout(function () {
-              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
-              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
               //ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
               TopupDao.pushGoldAward({
                 uid: param.uid,

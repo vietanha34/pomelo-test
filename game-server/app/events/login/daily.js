@@ -37,8 +37,28 @@ module.exports.process = function (app, type, param) {
   var startOfDay = moment().startOf('day').unix();
   var startOfWeek = moment().startOf('isoweek').unix();
 
-  UserDao.getUserProperties(param.uid, ['lastLogin'])
+  UserDao.getUserProperties(param.uid, ['lastLogin', 'username'])
     .then(function(user) {
+
+      var opts = {
+        appId: consts.PR_ID,
+        register: 0,
+        deviceId: param.deviceId,
+        deviceToken: param.deviceToken || '',
+        username: user.username || '',
+        dtId: param.dtId || 1,
+        platform: (isNaN(param.platform) ? param.platform : (consts.PLATFORM_UNMAP[param.platform] || 'ios')),
+        platformRaw: param.platform
+      };
+
+      pomelo.app.get('redisService')
+        .publish(redisKeyUtil.getSubscriberChannel(), JSON.stringify(opts), function (err, res) {
+          if (err) {
+            console.error(err, res);
+          }
+          opts = null;
+        });
+
       user.lastLogin = user.lastLogin ? moment(user.lastLogin).unix() : 1;
       UserDao.updateProperties(param.uid, {lastLogin: theMoment.format('YYYY-MM-DD HH:mm:ss')});
       if (!user.lastLogin || user.lastLogin >= startOfDay) return;
@@ -78,41 +98,4 @@ module.exports.process = function (app, type, param) {
       console.error(e.stack || e);
       utils.log(e.stack || e);
     });
-
-  var opts = {
-    appId: consts.PR_ID,
-    register: 0,
-    deviceId: param.deviceId,
-    deviceToken: param.deviceToken || '',
-    username: param.username,
-    dtId: param.dtId || 1,
-    platform: (isNaN(param.platform) ? param.platform : (consts.PLATFORM_UNMAP[param.platform] || 'ios')),
-    platformRaw: param.platform
-  };
-
-  pomelo.app.get('redisService')
-    .publish(redisKeyUtil.getSubscriberChannel(), JSON.stringify(opts), function (err, res) {
-      if (err) {
-        console.error(err, res);
-      }
-      opts = null;
-    });
-  setTimeout(function (user) {
-    console.log('user : ', user);
-    return pomelo.app.get('videoAdsService')
-      .getAds({ platform : user.platform})
-      .then(function (data) {
-        console.log('data : ', data);
-        var ads;
-        if (!data.ec){
-          ads = JSON.stringify(data.data);
-        }
-        pomelo.app.get('statusService')
-          .pushByUids([user.uid], 'onSuggestCharge', {
-            ads : ads,
-            msg: "Bạn vừa hết tiền, bạn có muốn nạp thêm tiền không"
-          })
-      })
-  }, 15000, param);
-
 };

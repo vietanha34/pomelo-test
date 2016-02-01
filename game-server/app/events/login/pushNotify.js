@@ -59,7 +59,7 @@ module.exports.process = function (app, type, param) {
       for (var i=0; i<keys.length; i++) {
         notifyObj = utils.JSONParse(notify[keys[i]], null);
         if (notifyObj) {
-          return NotifyDao.push({
+          NotifyDao.push({
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: notifyObj.title || '',
             msg: notifyObj.msg || '',
