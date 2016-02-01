@@ -6,6 +6,7 @@ var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('game', __filename, process.pid);
 var pomelo = require('pomelo');
 var userDao = require('../../../dao/userDao');
+var itemDao = require('../../../dao/itemDao');
 var async = require('async');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
@@ -74,6 +75,12 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('sitIn', function (player) {
+    pomelo.app.get('boardService').updateBoard(board.tableId, {
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
+    });
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
       setTimeout(function (player) {
         if (board.gameId === consts.GAME_ID.CO_THE) {
@@ -86,6 +93,15 @@ exp.addEventFromBoard = function (board) {
           board.addJobReady(player.uid)
         }
       }, 100, player)
+    }
+    if (player.uid === board.owner){
+      if (board.bet > player.gold) {
+        board.bet = player.gold;
+        board.pushMessage("game.gameHandler.changeBoardProperties", {
+          bet: board.bet,
+          notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
+        })
+      }
     }
   });
 
@@ -319,14 +335,6 @@ exp.addEventFromBoard = function (board) {
     })
   });
 
-  board.on('sitIn', function (player) {
-    pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer: board.players.length,
-      isFull: board.players.length >= board.maxPlayer ? 1 : 0
-    });
-    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
-    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
-  });
 
   board.on('kick', function (player) {
     var boardId = board.boardId;
@@ -397,6 +405,34 @@ exp.addEventFromBoard = function (board) {
         totalTime: board.totalTime
       })
     })
+  });
+
+  board.on('suggestBuyItem', function (uid, itemId) {
+    itemDao.getItemPrice(itemId)
+      .then(function (item) {
+        if (item && item.length > 0){
+          var player = board.players.getPlayer(uid);
+          for (var i = item.length -1 ; i>= 0 ; i --){
+            if ((player.gold - board.bet) > item[i]){
+              var id = Date.now();
+              player.addSuggestBuyItem({
+                id : id,
+                duration : 3,
+                item : itemId,
+                price : item[i]
+              });
+              board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
+                text : "suggest mua vật phẩm",
+                price : item[i],
+                btLabel : 'Mua luôn',
+                id : id
+              });
+              break;
+            }
+          }
+        }
+      })
   })
 };
+
 

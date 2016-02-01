@@ -13,7 +13,7 @@
     "mongoose": "^4.1.9",
     "mysql": "^2.9.0",
     "node-uuid": "^1.4.3",
-    "pomelo": "git+ssh://git@git.vgame.us:root/pomelo-proxy.git#ionlinev4",
+    "pomelo": "git+ssh://git@git.vgame.us:root/pomelo-proxy.git#gzip",
     "pomelo-account-plugin": "git+ssh://git@git.vgame.us:root/pomelo-account-plugin.git",
     "pomelo-board-plugin": "git+ssh://git@git.vgame.us:root/pomelo-board-plugin.git",
     "pomelo-data-plugin-ex": "*",

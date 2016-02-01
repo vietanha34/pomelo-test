@@ -58,7 +58,8 @@ HomeDao.getHome = function getHome(params, cb) {
     userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
-    cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location')
+    cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location'),
+    ads: pomelo.app.get('videoAdsService').available(params.platform)
   })
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
@@ -75,7 +76,12 @@ HomeDao.getHome = function getHome(params, cb) {
 
       data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
       data.userInfo.vipLevel = Math.max(data.userInfo.vipLevel, (props.effect[consts.ITEM_EFFECT.THE_VIP]||0));
-
+      var adsDisappear = data.userInfo.vipLevel ? 0 : 1;
+      data.ads = {
+        data : props.ads,
+        gold : 500,
+        disappear: adsDisappear
+      };
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
       var max = 0;
@@ -129,7 +135,9 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
         else {
           change.friendCount = Number(change[attr2]) + (count?Number(count):0);
           delete change[attr2];
-          pomelo.app.get('statusService')
+          pomelo
+            .app
+            .get('statusService')
             .pushByUids([uid], 'home.homeHandler.updateHome', change, function (e, res) {
               if (e) console.error(e);
             });

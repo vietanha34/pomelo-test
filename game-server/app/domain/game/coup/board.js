@@ -123,13 +123,13 @@ Game.prototype.progress = function () {
       : gameStatus.matchResult === 'thangRoi'
       ? consts.WIN_TYPE.WIN
       : consts.WIN_TYPE.DRAW;
-    return this.finishGame(result);
+    return this.finishGame(result, null, gameStatus.losingReason);
   }else {
     return this.setOnTurn(gameStatus);
   }
 };
 
-Game.prototype.finishGame = function (result, uid) {
+Game.prototype.finishGame = function (result, uid, losingReason) {
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
@@ -228,7 +228,7 @@ Game.prototype.finishGame = function (result, uid) {
     }, 1, function () {})
   }
   this.table.emit('finishGame', finishData);
-  this.table.pushFinishGame({players: players}, true);
+  this.table.pushFinishGame({players: players, notifySms: consts.LOSING_REASON[losingReason]}, true);
 };
 
 function Table(opts) {
