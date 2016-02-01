@@ -6,6 +6,7 @@ var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('game', __filename, process.pid);
 var pomelo = require('pomelo');
 var userDao = require('../../../dao/userDao');
+var itemDao = require('../../../dao/itemDao');
 var async = require('async');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
@@ -74,6 +75,12 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('sitIn', function (player) {
+    pomelo.app.get('boardService').updateBoard(board.tableId, {
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
+    });
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
       setTimeout(function (player) {
         if (board.gameId === consts.GAME_ID.CO_THE) {
@@ -86,6 +93,15 @@ exp.addEventFromBoard = function (board) {
           board.addJobReady(player.uid)
         }
       }, 100, player)
+    }
+    if (player.uid === board.owner){
+      if (board.bet > player.gold) {
+        board.bet = player.gold;
+        board.pushMessage("game.gameHandler.changeBoardProperties", {
+          bet: board.bet,
+          notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
+        })
+      }
     }
   });
 
@@ -111,7 +127,6 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo, kick) {
-    board.score = [0, 0]; // restart score
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
@@ -128,10 +143,11 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('globalChannelService').leave(board.channelName, userInfo.uid, userInfo.frontendId);
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
-    //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
     if (userInfo.guest) {
       board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
+    }else {
+      board.score = [0, 0]; // restart score
     }
     // restart to default value
     if (board.players.length === 0) {
@@ -254,12 +270,13 @@ exp.addEventFromBoard = function (board) {
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)) {
       board.addJobReady(otherPlayerUid);
     }
-    if (board.game.actionLog.length > 0) {
+    if (board.game.actionLog && board.game.actionLog.length > 0) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
     if (board.firstUid !== data[0].uid) {
       data.reverse();
     }
+    console.log('data : ', data , board.firstUid);
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
     if (winUid) board.game.logs.result['winner'] = winUid;
     if (loseUid) board.game.logs.result['looser'] = loseUid;
@@ -318,14 +335,6 @@ exp.addEventFromBoard = function (board) {
     })
   });
 
-  board.on('sitIn', function (player) {
-    pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer: board.players.length,
-      isFull: board.players.length >= board.maxPlayer ? 1 : 0
-    });
-    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
-    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
-  });
 
   board.on('kick', function (player) {
     var boardId = board.boardId;
@@ -396,6 +405,34 @@ exp.addEventFromBoard = function (board) {
         totalTime: board.totalTime
       })
     })
+  });
+
+  board.on('suggestBuyItem', function (uid, itemId) {
+    itemDao.getItemPrice(itemId)
+      .then(function (item) {
+        if (item && item.length > 0){
+          var player = board.players.getPlayer(uid);
+          for (var i = item.length -1 ; i>= 0 ; i --){
+            if ((player.gold - board.bet) > item[i]){
+              var id = Date.now();
+              player.addSuggestBuyItem({
+                id : id,
+                duration : 3,
+                item : itemId,
+                price : item[i]
+              });
+              board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
+                text : "suggest mua vật phẩm",
+                price : item[i],
+                btLabel : 'Mua luôn',
+                id : id
+              });
+              break;
+            }
+          }
+        }
+      })
   })
 };
+
 

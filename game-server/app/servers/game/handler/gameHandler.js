@@ -490,6 +490,20 @@ pro.getGuest = function (msg, session, next) {
   next(null, {guest: board.getGuest()});
 };
 
+pro.suggestBuyItem = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    return
+  }
+  var player = board.players.getPlayer(uid);
+  if (player && player.suggest){
+    board.buyItem(player.uid, player.suggest.item, player.suggest.duration, player.suggest.price)
+  }
+  next(null, {});
+};
+
 /**
  * Get handler path
  *

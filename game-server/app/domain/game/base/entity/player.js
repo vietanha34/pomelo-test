@@ -55,6 +55,7 @@ var Player = function (opts) {
   this.menu = [];
   this.moneyLogs = [];
   this.timeLogout = null;
+  this.suggest = null;
 };
 
 /**
@@ -71,6 +72,7 @@ Player.prototype.genMenu = function () {
   this.menu.splice(0, this.menu.length);
   if(this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.TAN_GAU));
+    this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
   }else {
     if (this.uid === this.table.owner){
       this.pushMenu(this.table.genMenu(consts.ACTION.START_GAME));
@@ -78,7 +80,8 @@ Player.prototype.genMenu = function () {
       this.pushMenu(this.table.genMenu(consts.ACTION.READY));
     }
     this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
-    this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    //this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
     this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP));
   }
 };
@@ -281,6 +284,10 @@ Player.prototype.startGame = function () {
 Player.prototype.unReady = function () {
   this.ready = false;
   this.genMenu();
+};
+
+Player.prototype.addSuggestBuyItem = function (suggest) {
+  this.suggest = suggest;
 };
 
 module.exports = Player;

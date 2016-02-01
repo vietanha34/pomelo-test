@@ -97,4 +97,22 @@ module.exports.process = function (app, type, param) {
       }
       opts = null;
     });
+  setTimeout(function (user) {
+    console.log('user : ', user);
+    return pomelo.app.get('videoAdsService')
+      .getAds({ platform : user.platform})
+      .then(function (data) {
+        console.log('data : ', data);
+        var ads;
+        if (!data.ec){
+          ads = JSON.stringify(data.data);
+        }
+        pomelo.app.get('statusService')
+          .pushByUids([user.uid], 'onSuggestCharge', {
+            ads : ads,
+            msg: "Bạn vừa hết tiền, bạn có muốn nạp thêm tiền không"
+          })
+      })
+  }, 15000, param);
+
 };

@@ -191,7 +191,8 @@ module.exports = {
     SELECT_FORMATION : 13,
     CHANGE_SIDE : 15,
     BOTTOM_MENU_CHANGE_SIDE : 16,
-    CHANGE_TURN : 17
+    CHANGE_TURN : 17,
+    INFORMATION : 18
   },
 
   LANGUAGE_LIMIT : {
@@ -409,7 +410,7 @@ module.exports = {
     GAME_IDLE: 60 * 1000 * 10,
     GAME_STUCK: 60 * 10 * 1000,
     SIT_OUT_LEAVE: 30 * 60 * 1000,
-    BOARD_NOT_START :3 * 60 * 1000,
+    BOARD_NOT_START :5 * 60 * 1000,
     TIMEOUT_LEAVE_BOARD: 2000,
     LAYER_TIME : 4000,
     DELTA_TIME : 5000,
@@ -430,6 +431,7 @@ module.exports = {
     DAILY: 43,
     LEVEL_UP: 44,
     PLAY_GAME: 47,
+    VIDEO_ADS: 48,
     UNKNOWN: 99
   },
 
@@ -716,5 +718,22 @@ module.exports = {
     1: 'ios',
     2: 'android',
     3: 'windowphone'
+  },
+
+  GUILD_MEMBER_STATUS:{
+    NORMAL_MEMBER : 1,
+    PRESIDENT : 2,
+    VICE_PRESIDENT : 3,
+    REQUEST_MEMBER : 4
+  },
+
+  LOSING_REASON : {
+    //1: 'Hết nước đi hợp lệ.',
+    2: 'Cả hai phạm luật chiếu dai.',
+    3: 'Người chơi phạm luật chiếu dai.',
+    4: 'Người chơi phạm luật duổi dai để cản chiếu hết.',
+    5: 'Người chơi phạm luật đuổi dai.',
+    6: 'Ván đấu kết thúc do 40 nước không tiến triển',
+    7: 'Sau 300 nước ván cờ không kết thúc'
   }
 };

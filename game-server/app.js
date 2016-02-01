@@ -3,6 +3,7 @@ var Mongo = require('./app/dao/mongo/mongo');
 var path = require('path');
 var utils = require('./app/util/utils');
 var Promise = require('bluebird');
+var consts = require('./app/consts/consts');
 
 process.env.LOGGER_LINE = true; // debug line number
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -130,6 +131,7 @@ app.configure('production|development', 'connector|gate', function(){
     {
       connector: pomelo.connectors.hybridconnector,
       useDict: true,
+      gzip : true,
       useProtobuf: false,
       msgpack: false
     });
@@ -250,6 +252,11 @@ app.configure('production|development', 'event', function () {
       urlService : 'http://sdk.vgame.us:8888/iploc'
     }
   });
+});
+
+app.configure('production|development', 'service|home|event', function () {
+  var VideoAdsService = require('./app/services/videoAdsService');
+  app.set('videoAdsService', new VideoAdsService(app))
 });
 
 //app.configure('production', function () {

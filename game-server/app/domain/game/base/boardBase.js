@@ -11,6 +11,7 @@ var Timer = require('./logic/timer');
 var channelUtil = require('../../../util/channelUtil');
 var util = require('util');
 var utils = require('../../../util/utils');
+var itemDao = require('../../../dao/itemDao');
 var Players = require('./entity/playerPool');
 var EventEmitter = require('events').EventEmitter;
 var Code = require('../../../consts/code');
@@ -769,10 +770,12 @@ pro.checkEffectSetting = function (properties) {
   var ownerPlayer = self.players.getPlayer(self.owner);
   if (lodash.isString(properties.password) && properties.password.length > 0){
     if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN) && !ownerPlayer.userInfo.vipLevel){
+      this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.KHOA_BAN);
       return 'Bạn không có vật phẩm khoá bàn chơi';
     }
   }
   if((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)){
+    this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.SUA_THOI_GIAN);
     return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
   }
   if(properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])){
@@ -1165,4 +1168,28 @@ pro.logout = function (uid) {
   if(player && player.guest){
     player.timeLogout = Date.now();
   }
+};
+
+pro.buyItem = function (uid, item, duration, price) {
+  var self = this;
+  itemDao
+    .buy(uid, item, duration)
+    .then(function (result) {
+      if (result && !result.ec){
+        var player = self.players.getPlayer(uid);
+        if (player){
+          player.gold = result.gold;
+          self.pushMessage('onChargeMoney', {
+            uid : player.uid,
+            deltaMoney : -price,
+            money : player.gold
+          });
+          itemDao.checkEffect(uid, null)
+            .then(function (effect) {
+              var player = self.players.getPlayer(uid);
+              player.effect = effect;
+            })
+        }
+      }
+    })
 };

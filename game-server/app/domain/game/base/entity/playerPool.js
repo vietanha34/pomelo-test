@@ -107,14 +107,9 @@ pro.addPlayer = function (opts) {
   self.players[uid] = player;
   data.newPlayer = true;
   var slotIndex = self.getSlotAvailable(slotId, uid);
-  if ((player.gold < self.table.configBet[0]
-    || (self.table.owner && player.gold < self.table.bet)
-    || self.length >= self.table.maxPlayer
-    || (player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))
-    || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG)))
-    && !player.userInfo.vipLevel
+  if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
+    || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA)) || (this.table.hallId === consts.HALL_ID.MIEN_PHI && !player.checkItems(consts.ITEM_EFFECT.VE_PHONG_THUONG))) && !player.userInfo.vipLevel)
   ) {
-    console.log('alway guest');
     if (slotIndex > -1){
       if (player.gold < self.table.bet) {
         player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
