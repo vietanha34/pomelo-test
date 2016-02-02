@@ -8,6 +8,7 @@ var consts = require('../consts/consts');
 var TopupDao = require('../dao/topupDao');
 var NotifyDao = require('../dao/notifyDao');
 var UserDao = require('../dao/userDao');
+var ItemDao = require('../dao/itemDao');
 var MD5 = require('MD5');
 
 module.exports = function(app) {
@@ -46,6 +47,39 @@ module.exports = function(app) {
       })
       .catch(function(e) {
           res.status(500).json({ec: 500, msg: e.stack || e});
+      });
+  });
+
+  app.post('/cms/donateItem', function(req, res) {
+    var msg = ((req.method == 'POST') ? req.body : req.query);
+
+    if (!msg.user || !msg.userId || !msg.itemId || !msg.duration || !msg.title || !msg.msg || !msg.signature) {
+      return res.status(500).json({ec: 500, msg: 'invalid params'});
+    }
+
+    var checkContent = [msg.userId, msg.itemId, msg.duration, consts.CMS_SECRET_KEY].join('|');
+    var checkMd5 = MD5(checkContent);
+    if (checkMd5 != msg.signature) {
+      return res.status(500).json({ec: 500, msg: 'invalid signature'});
+    }
+
+    ItemDao.donateItem(msg.userId, msg.itemId, msg.duration)
+      .then(function(result) {
+        res.json({msg: 'Tặng vật phẩm thành công'});
+
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: msg.title,
+          msg: msg.msg,
+          buttonLabel: 'OK',
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [msg.userId],
+          image:  consts.NOTIFY.IMAGE.AWARD
+        })
+      })
+      .catch(function(e) {
+        res.status(500).json({ec: 500, msg: e.stack || e});
       });
   });
 
