@@ -49,6 +49,52 @@ module.exports = function(app) {
       });
   });
 
+  app.post('/payment/addGold', function(req, res) {
+    var msg = ((req.method == 'POST') ? req.body : req.query);
+
+    if (!msg.username || !msg.gold || !msg.signature) {
+      return res.status(500).json({ec: 500, msg: 'invalid params'});
+    }
+
+    var checkContent = [msg.username, msg.gold, consts.CMS_SECRET_KEY].join('|');
+    var checkMd5 = MD5(checkContent);
+    if (checkMd5 != msg.signature) {
+      return res.status(500).json({ec: 500, msg: 'invalid signature'});
+    }
+
+    var content = 'Add gold from affiliate, username: '+msg.username+',gold: '+msg.gold;
+    UserDao.getUserPropertiesByUsername(msg.username, ['uid'])
+      .then(function(user) {
+        if (!user || !user.uid) {
+          throw new Error('User not exists');
+          return;
+        }
+
+        return TopupDao.topup({
+          uid: user.uid,
+          gold: Number(msg.gold),
+          type: consts.CHANGE_GOLD_TYPE.AFFILIATE,
+          msg: content
+        })
+      })
+      .then(function(result) {
+        res.json(result);
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: 'Thông báo tặng vàng',
+          msg: [code.COMMON_LANGUAGE.ADD_GOLD, msg.gold],
+          buttonLabel: 'OK',
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [msg.userId],
+          image:  consts.NOTIFY.IMAGE.GOLD
+        })
+      })
+      .catch(function(e) {
+        res.status(500).json({ec: 500, msg: e.stack || e});
+      });
+  });
+
   app.post('/cms/notify', function(req, res) {
     var msg = ((req.method == 'POST') ? req.body : req.query);
 

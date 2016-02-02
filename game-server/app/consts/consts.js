@@ -430,6 +430,7 @@ module.exports = {
     DAILY: 43,
     LEVEL_UP: 44,
     PLAY_GAME: 47,
+    AFFILIATE: 48,
     UNKNOWN: 99
   },
 
