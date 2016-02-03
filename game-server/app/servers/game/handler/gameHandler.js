@@ -442,11 +442,15 @@ pro.action = function (msg, session, next) {
     next(null);
     return
   }
-  console.log('turnUid : ', board.turnUid, uid);
-  if (board.turnUid !== uid || board.status === consts.BOARD_STATUS.NOT_STARTED) {
+  if (board.turnUid !== uid && board.status !== consts.BOARD_STATUS.NOT_STARTED) {
     messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Không phải lượt của bạn'});
     return next(null);
   }
+
+  if (board.status === consts.BOARD_STATUS.NOT_STARTED){
+    return next(null)
+  }
+
   return board.action(uid, msg, function (err, res) {
     if (err) {
       console.log(err);

@@ -142,7 +142,9 @@ Game.prototype.setOnTurn = function (gameStatus) {
   });
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
-    self.finishGame(consts.WIN_TYPE.LOSE, uid);
+    var player = self.table.players.getPlayer(uid);
+    var losingReason = player.totalTime < self.table.turnTime ? consts.LOSING_REASON_NAME.HET_TIME : consts.LOSING_REASON_NAME.HET_LUOT
+    self.finishGame(consts.WIN_TYPE.LOSE,uid, losingReason);
   }, turnUid, turnTime + 2000);
 };
 
@@ -155,7 +157,7 @@ Game.prototype.progress = function () {
       : gameStatus.matchResult === 'thangRoi'
       ? consts.WIN_TYPE.WIN
       : consts.WIN_TYPE.DRAW;
-    return this.finishGame(result, null, gameStatus.losingReason);
+    return this.finishGame(result, null, this.game.losingReason);
   } else {
     return this.setOnTurn(gameStatus);
   }
@@ -266,7 +268,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     console.error('error : ', err);
   }
   this.table.emit('finishGame', finishData);
-  this.table.pushFinishGame({players: players, notifySms: consts.LOSING_REASON[losingReason]}, true);
+  this.table.pushFinishGame({players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
 function Table(opts) {
@@ -352,7 +354,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED) {
     var index = this.game.playerPlayingId.indexOf(uid);
     if (index > -1) {
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid, consts.LOSING_REASON_NAME.ROI_BAN);
     }
   }
 };
@@ -525,7 +527,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
       return {};
   }
 };

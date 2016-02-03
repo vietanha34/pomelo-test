@@ -614,12 +614,14 @@ var logout = function (req, res) {
 var updateVippoint = function (req, res) {
   var data = req.query;
   if (!data) return res.json({code: 99, data: {}, extra: {}}).end();
+  if (parseInt(data.vipPoint) < 0) return res.json({code:0, data:{}, message:''});
   UserDao
     .getUserIdByUsername(data.uname)
     .then(function (uid) {
       var mysqlClient = pomelo.app.get('mysqlClient');
       return mysqlClient
-        .User.update({
+        .User
+        .update({
           vipPoint: mysqlClient.sequelize.literal('vipPoint + ' + parseInt(data.vipPoint))
         }, {
           where: {

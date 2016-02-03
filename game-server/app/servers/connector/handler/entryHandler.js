@@ -59,10 +59,11 @@ Handler.prototype.login = function (msg, session, next) {
   var self = this;
   var player, boardId;
   var type = msg.type;
+  var sessionId = session.id;
   var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   var version = '' + msg.versionCode.slice(4, 10) + msg.versionCode.slice(2, 4) + msg.versionCode.slice(0, 2);
-  if (version > '20160130'){
+  if (version >= '20160130'){
     self.app.sessionService.get(sessionId).useGzip(true);
   }
   msg.ip = loginIp;

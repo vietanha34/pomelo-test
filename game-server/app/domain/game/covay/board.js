@@ -99,7 +99,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     self.table.turnId = null;
     var player = self.table.players.getPlayer(opts.uid);
     if (opts.timeout){
-      return self.finishGame(consts.WIN_TYPE.LOSE, opts.uid)
+      return self.finishGame(consts.WIN_TYPE.LOSE, opts.uid, consts.LOSING_REASON_NAME.HET_TIME)
     }
     if (player){
       player.autoAction ++;
@@ -122,7 +122,7 @@ Game.prototype.progress = function () {
   }
 };
 
-Game.prototype.finishGame = function (result, uid) {
+Game.prototype.finishGame = function (result, uid, losingReason) {
   var winType = consts.WIN_TYPE.WIN;
   var xp, subGold, addGold, loseUser, winUser, toUid, winIndex, fromUid, loseIndex;
   var turnColor = result ?
@@ -180,7 +180,6 @@ Game.prototype.finishGame = function (result, uid) {
       colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
-      console.log('xp : ', xp, res, Formula.calGameExp(this.gameId, this.hallId));
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
@@ -234,7 +233,7 @@ Game.prototype.finishGame = function (result, uid) {
     }, 1, function () {})
   }
   this.table.emit('finishGame', finishData);
-  this.table.pushFinishGame({ players : players}, true);
+  this.table.pushFinishGame({ players : players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
 function Table(opts) {
@@ -276,7 +275,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid, consts.LOSING_REASON_NAME.ROI_BAN);
     }
   }
 };
@@ -387,7 +386,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
       return {};
   }
 };

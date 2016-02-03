@@ -134,14 +134,12 @@ var Board = function (opts, PlayerPool, Player) {
       var totalTime = properties.totalTime;
       var tableType = properties.tableType;
       if (turnTime && turnTime !== self.turnTime &&(self.configTurnTime.indexOf(turnTime) > -1)){
-        console.log('update TurnTime :', turnTime);
         self.turnTime = turnTime;
         changed.push(util.format(' thời gian 1 lượt đi: %s giây', turnTime /1000));
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime / 1000;
       }
       if (totalTime && self.totalTime !== totalTime &&(self.configTotalTime.indexOf(totalTime) > -1)){
-        console.log('update TotalTime :', totalTime);
         self.totalTime = totalTime;
         changed.push(util.format(' thời gian tổng: %s phút', totalTime /1000/60));
         dataChanged.totalTime = totalTime;
@@ -149,7 +147,6 @@ var Board = function (opts, PlayerPool, Player) {
         self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
       if(lodash.isNumber(tableType) && tableType !== self.tableType){
-        console.log('update tableType : ', tableType);
         dataChanged.tableType = tableType;
         changed.push(' ' + consts.TABLE_TYPE_NAME_MAP[tableType]);
         self.tableType = tableType;
@@ -779,6 +776,7 @@ pro.checkEffectSetting = function (properties) {
     return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
   }
   if(properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])){
+    this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.BAN_CO_TOI);
     return 'Bạn cần có item tương ứng để kích hoạt loại bàn cờ này'
   }
 };
@@ -804,9 +802,9 @@ pro.sitIn = function (uid, slotId, cb) {
       }
       player.menu.splice(0, player.menu.length);
       player.genMenu();
+      self.emit('sitIn', player);
       var state = self.getBoardState(uid);
       self.pushOnJoinBoard(uid);
-      self.emit('sitIn', player);
       return utils.invokeCallback(cb, null, state);
     } else {
       return utils.invokeCallback(cb, null, result || {ec: Code.FAIL});

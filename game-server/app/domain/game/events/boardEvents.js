@@ -13,6 +13,7 @@ var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var Formula = require('../../../consts/formula');
 var messageService = require('../../../services/messageService');
+var util = require('util');
 var exp = module.exports;
 
 exp.addEventFromBoard = function (board) {
@@ -46,6 +47,7 @@ exp.addEventFromBoard = function (board) {
         // change bet
         if (board.bet > player.gold) {
           board.bet = player.gold;
+          board.emit('setBoard', {bet: player.gold});
           board.pushMessage("game.gameHandler.changeBoardProperties", {
             bet: board.bet,
             notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
@@ -97,6 +99,7 @@ exp.addEventFromBoard = function (board) {
     if (player.uid === board.owner){
       if (board.bet > player.gold) {
         board.bet = player.gold;
+        board.emit('setBoard', {bet: player.gold});
         board.pushMessage("game.gameHandler.changeBoardProperties", {
           bet: board.bet,
           notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
@@ -276,7 +279,6 @@ exp.addEventFromBoard = function (board) {
     if (board.firstUid !== data[0].uid) {
       data.reverse();
     }
-    console.log('data : ', data , board.firstUid);
     board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
     if (winUid) board.game.logs.result['winner'] = winUid;
     if (loseUid) board.game.logs.result['looser'] = loseUid;
@@ -374,7 +376,6 @@ exp.addEventFromBoard = function (board) {
     else {
       opts.isFull = 0;
     }
-    console.log('updateBoard is : ', opts);
     pomelo.app.get('boardService').updateBoard(board.tableId, opts)
   });
 
@@ -412,24 +413,20 @@ exp.addEventFromBoard = function (board) {
       .then(function (item) {
         if (item && item.length > 0){
           var player = board.players.getPlayer(uid);
-          for (var i = item.length -1 ; i>= 0 ; i --){
-            if ((player.gold - board.bet) > item[i]){
-              var id = Date.now();
-              player.addSuggestBuyItem({
-                id : id,
-                duration : 3,
-                item : itemId,
-                price : item[i]
-              });
-              board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
-                text : "suggest mua vật phẩm",
-                price : item[i],
-                btLabel : 'Mua luôn',
-                id : id
-              });
-              break;
-            }
-          }
+          var id = Date.now();
+          if (item[0] > player.gold - board.bet) return;
+          player.addSuggestBuyItem({
+            id : id,
+            duration : 3,
+            item : itemId,
+            price : item[0]
+          });
+          board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
+            text : util.format("Bạn cần mua vât phẩm '%s' để có thể thiết lập", consts.ITEM_EFFECT_NAME[itemId]),
+            price : item[0],
+            btLabel : 'Mua luôn',
+            id : id
+          });
         }
       })
   })

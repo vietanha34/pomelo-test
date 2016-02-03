@@ -93,7 +93,9 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid,count:1, time : [turnTime, player.totalTime]});
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
-    self.finishGame(consts.WIN_TYPE.LOSE,uid);
+    var player = self.table.players.getPlayer(uid);
+    var losingReason = player.totalTime < self.table.turnTime ? consts.LOSING_REASON_NAME.HET_TIME : consts.LOSING_REASON_NAME.HET_LUOT;
+    self.finishGame(consts.WIN_TYPE.LOSE,uid, losingReason);
   }, turnUid, turnTime + 2000);
 };
 
@@ -117,7 +119,7 @@ Game.prototype.progress = function () {
   }
 };
 
-Game.prototype.finishGame = function (result, uid) {
+Game.prototype.finishGame = function (result, uid, losingReason) {
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
@@ -217,7 +219,7 @@ Game.prototype.finishGame = function (result, uid) {
     }, 1, function () {})
   }
   this.table.emit('finishGame', finishData, true);
-  this.table.pushFinishGame({players: players, line : winningLine}, true);
+  this.table.pushFinishGame({players: players, line : winningLine, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
 
@@ -256,7 +258,7 @@ Table.prototype.clearPlayer = function (uid) {
   if (this.game && this.status !== consts.BOARD_STATUS.NOT_STARTED){
     var index = this.game.playerPlayingId.indexOf(uid);
     if(index > -1){
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, uid, consts.LOSING_REASON_NAME.ROI_BAN);
     }
   }
 };
@@ -334,7 +336,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
     default :
-      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid);
+      this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
       return {};
   }
 };

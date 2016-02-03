@@ -72,7 +72,6 @@ Player.prototype.genMenu = function () {
   this.menu.splice(0, this.menu.length);
   if(this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.TAN_GAU));
-    this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
   }else {
     if (this.uid === this.table.owner){
       this.pushMenu(this.table.genMenu(consts.ACTION.START_GAME));
@@ -80,8 +79,11 @@ Player.prototype.genMenu = function () {
       this.pushMenu(this.table.genMenu(consts.ACTION.READY));
     }
     this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
-    //this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
-    this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
+    if (this.userInfo.version >= 20160130){
+      this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
+    }else {
+      this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    }
     this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP));
   }
 };
