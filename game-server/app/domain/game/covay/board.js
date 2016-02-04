@@ -173,6 +173,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           color : player.color,
           elo : 0,
           xp : xp
+        },
+        info: {
+          platform : player.userInfo.platform
         }
       });
     }
@@ -205,6 +208,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           color : player.color,
           elo : 0,
           xp : xp
+        },
+        info: {
+          platform : player.userInfo.platform
         }
       });
     }
@@ -220,17 +226,21 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     player.userInfo.elo = eloMap[i];
   }
   if (bet > 0){
-    subGold = loseUser.subGold(bet);
-    addGold = winUser.addGold(subGold, true);
-    players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
     this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
       gold : bet,
       fromUid : fromUid,
       toUid : toUid,
       tax : 5,
       force : true
-    }, 1, function () {})
+    }, 1, function () {});
+    subGold = loseUser.subGold(bet);
+    addGold = winUser.addGold(subGold, true);
+    players[winIndex].gold = addGold;
+    players[loseIndex].gold = -subGold;
+    finishData[winIndex].result.remain = winUser.gold;
+    finishData[winIndex].result.money = addGold;
+    finishData[loseIndex].result.remain = loseUser.gold;
+    finishData[loseIndex].result.money = subGold;
   }
   this.table.emit('finishGame', finishData);
   this.table.pushFinishGame({ players : players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);

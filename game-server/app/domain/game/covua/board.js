@@ -170,6 +170,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           color : player.color,
           xp : xp,
           elo : player.userInfo.elo
+        },
+        info: {
+          platform : player.userInfo.platform
         }
       });
     }else {
@@ -201,6 +204,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           color : player.color,
           xp : xp,
           elo : player.userInfo.elo
+        },
+        info: {
+          platform : player.userInfo.platform
         }
       });
     }
@@ -216,10 +222,6 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     player.userInfo.elo = eloMap[i];
   }
   if (bet > 0 && loseUser && winUser){
-    subGold = loseUser.subGold(bet);
-    addGold = winUser.addGold(subGold, true);
-    players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
     this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
       gold : bet,
       fromUid : fromUid,
@@ -227,9 +229,17 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       tax : 5,
       force : true
     }, 1, function () {})
+    subGold = loseUser.subGold(bet);
+    addGold = winUser.addGold(subGold, true);
+    players[winIndex].gold = addGold;
+    players[loseIndex].gold = -subGold;
+    finishData[winIndex].result.remain = winUser.gold;
+    finishData[winIndex].result.money = addGold;
+    finishData[loseIndex].result.remain = loseUser.gold;
+    finishData[loseIndex].result.money = subGold;
   }
   this.table.emit('finishGame', finishData, true);
-  this.table.pushFinishGame({players: players, notifMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
+  this.table.pushFinishGame({players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
 function Table(opts) {

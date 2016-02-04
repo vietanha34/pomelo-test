@@ -43,7 +43,7 @@ pro.subBalance = function (opts) {
   return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
     return pomelo.app.get('mysqlClient')
       .User
-      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'username']}, {transaction: t})
+      .findOne({where: {uid: uid}, attributes: ['uid', 'gold', 'username', 'platform']}, {transaction: t})
       .then(function (user) {
         if (!user) {
           return Promises.reject({ec: Code.USER_NOT_EXIST});
@@ -51,6 +51,19 @@ pro.subBalance = function (opts) {
           if (opts.force) {
             gold = gold ? user.gold > gold ? gold : user.gold : user.gold;
           } else if (user.gold < gold) {
+            pomelo.app.get('videoAdsService')
+              .getAds({ platform : user.platform})
+              .then(function (data) {
+                var ads;
+                if (!data.ec){
+                  ads = JSON.stringify(data.data);
+                }
+                pomelo.app.get('statusService')
+                  .pushByUids([user.uid], 'onSuggestCharge', {
+                    ads : ads,
+                    msg: "Bạn không đủ tiền để thực hiện thao tác này, bạn có muốn nạp thêm tiền không?"
+                  })
+              });
             return Promises.reject({ec: Code.PAYMENT.MONEY_LOWER});
           }
           goldSub = gold;
@@ -175,7 +188,7 @@ pro.transfer = function (opts, cb) {
           , after: fromUser.gold
           , temp: 0
           , time: new Date().getTime()
-          , opts: { uid : fromUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME}
+          , opts: { uid : fromUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME, gameId : opts.gameId, msg: opts.msg}
           , cmd: 'addGold'
         };
         pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
@@ -184,7 +197,7 @@ pro.transfer = function (opts, cb) {
           , after: toUser.gold + gold
           , temp: 0
           , time: new Date().getTime()
-          , opts: { uid : toUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME}
+          , opts: { uid : toUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME, gameId: opts.gameId, msg: opts.msg}
           , cmd: 'addGold'
         };
         pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));

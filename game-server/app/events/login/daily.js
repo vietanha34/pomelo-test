@@ -80,19 +80,6 @@ module.exports.process = function (app, type, param) {
       });
 
       ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (3 * 60));
-
-      //setTimeout(function(){
-      //  NotifyDao.push({
-      //    type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
-      //    title: 'Tặng vật phẩm',
-      //    msg: 'Bạn được tặng vật phẩm cài đặt thời gian chơi trong vòng 3 giờ',
-      //    buttonLabel: 'OK',
-      //    command: {target: consts.NOTIFY.TARGET.NORMAL},
-      //    scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-      //    users: [param.uid],
-      //    image:  consts.NOTIFY.IMAGE.AWARD
-      //  });
-      //}, 7000);
     })
     .catch(function(e) {
       console.error(e.stack || e);

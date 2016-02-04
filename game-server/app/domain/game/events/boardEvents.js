@@ -257,7 +257,9 @@ exp.addEventFromBoard = function (board) {
       player = board.players.getPlayer(user.uid);
       if (player.gold < board.bet) {
         // standUp
-        board.standUp(user.uid);
+        setTimeout(function (user) {
+          board.standUp(user.uid);
+        }, 1000, user)
       }
       if (user.result.type === consts.WIN_TYPE.WIN) {
         winUid = user.uid;
@@ -431,5 +433,3 @@ exp.addEventFromBoard = function (board) {
       })
   })
 };
-
-

@@ -36,8 +36,6 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  *    * uid: Định danh người chơi
  *    * result :
  *       * type : thắng hoà thua : xem thêm tại **consts.WIN_TYPE**
- *       * hand : Array : mảng bài thắng
- *       * handValue : Giá trị của mảng bài
  *       * money : số tiền thắng (+) , thua (-)
  *       * remain : Số tiền còn lại thực sự
  *       * tax : phế người chơi mất
@@ -58,21 +56,23 @@ module.exports.process = function (app, type, param) {
     console.error('wrong param finish game: ', param);
     return;
   }
-  pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyIngameKey(), JSON.stringify(param));
   var users = param.users;
   Promise.map(users, function (user) {
-    return pomelo.app.get('videoAdsService')
-      .getAds({ platform : user.info.platform})
-      .then(function (data) {
-        var ads;
-        if (!data.ec){
-          ads = JSON.stringify(data.data);
-        }
-        pomelo.app.get('statusService')
-          .pushByUids([user.uid], 'onSuggestCharge', {
-            ads : ads,
-            msg: "Bạn vừa hết tiền, bạn có muốn nạp thêm tiền không"
-          })
-      })
+    console.log('user: ', user);
+    if(user.remain < 500){
+      return pomelo.app.get('videoAdsService')
+        .getAds({ platform : user.info.platform})
+        .then(function (data) {
+          var ads;
+          if (!data.ec){
+            ads = JSON.stringify(data.data);
+          }
+          pomelo.app.get('statusService')
+            .pushByUids([user.uid], 'onSuggestCharge', {
+              ads : ads,
+              msg: "Bạn vừa hết tiền, bạn có muốn nạp thêm tiền không"
+            })
+        })
+    }
   });
 };

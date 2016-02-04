@@ -1177,11 +1177,16 @@ pro.buyItem = function (uid, item, duration, price) {
         var player = self.players.getPlayer(uid);
         if (player){
           player.gold = result.gold;
-          self.pushMessage('onChargeMoney', {
+          self.pushMessageToPlayer(uid, 'onChargeMoney', {
             uid : player.uid,
             deltaMoney : -price,
-            money : player.gold
+            money : player.gold,
+            notifyMsg : 'Bạn vừa mua vật phẩm "' + consts.ITEM_EFFECT_NAME[item] + '" Thành công'
           });
+          self.pushMessageWithMenuWithOutUid(uid, 'onChargeMoney', {
+            uid : player.uid,
+            deltaMoney : -price,
+            money : player.gold});
           itemDao.checkEffect(uid, null)
             .then(function (effect) {
               var player = self.players.getPlayer(uid);
