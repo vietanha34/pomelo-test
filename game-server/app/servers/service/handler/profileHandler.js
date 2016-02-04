@@ -53,7 +53,7 @@ Handler.prototype.getAchievement = function getAchievement(msg, session, next) {
 };
 
 Handler.prototype.getHistory = function getHistory(msg, session, next) {
-  msg.uid = session.uid;
+  msg.uid = msg.uid || session.uid;
   return ProfileDao.getGameHistory(msg)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
