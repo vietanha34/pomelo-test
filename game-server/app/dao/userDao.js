@@ -383,6 +383,7 @@ UserDao.login = function (msg, cb) {
         userData = res;
         delete res['id'];
         username = res.username;
+        if (msg.platform === 'ios') return Promise.resolve(null);
         return pomelo
           .app
           .get('redisInfo')

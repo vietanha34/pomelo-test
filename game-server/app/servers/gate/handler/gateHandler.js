@@ -55,9 +55,9 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = configService.getConfig();
-      if (msg.packageName === 'com.mcoup.vn2016' && msg.platform === 'android'){
-        config['IS_REVIEW'] = 1
-      }
+      //if (msg.versionCode === '30012016' && msg.platform === 'android'){
+      //  config['IS_REVIEW'] = 1
+      //}
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,

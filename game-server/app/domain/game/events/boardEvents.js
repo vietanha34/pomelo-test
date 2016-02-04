@@ -6,12 +6,14 @@ var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('game', __filename, process.pid);
 var pomelo = require('pomelo');
 var userDao = require('../../../dao/userDao');
+var itemDao = require('../../../dao/itemDao');
 var async = require('async');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var Formula = require('../../../consts/formula');
 var messageService = require('../../../services/messageService');
+var util = require('util');
 var exp = module.exports;
 
 exp.addEventFromBoard = function (board) {
@@ -45,6 +47,7 @@ exp.addEventFromBoard = function (board) {
         // change bet
         if (board.bet > player.gold) {
           board.bet = player.gold;
+          board.emit('setBoard', {bet: player.gold});
           board.pushMessage("game.gameHandler.changeBoardProperties", {
             bet: board.bet,
             notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
@@ -74,6 +77,12 @@ exp.addEventFromBoard = function (board) {
   });
 
   board.on('sitIn', function (player) {
+    pomelo.app.get('boardService').updateBoard(board.tableId, {
+      numPlayer: board.players.length,
+      isFull: board.players.length >= board.maxPlayer ? 1 : 0
+    });
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     if (!player.guest && board.status === consts.BOARD_STATUS.NOT_STARTED && board.owner !== player.uid) {
       setTimeout(function (player) {
         if (board.gameId === consts.GAME_ID.CO_THE) {
@@ -86,6 +95,16 @@ exp.addEventFromBoard = function (board) {
           board.addJobReady(player.uid)
         }
       }, 100, player)
+    }
+    if (player.uid === board.owner){
+      if (board.bet > player.gold) {
+        board.bet = player.gold;
+        board.emit('setBoard', {bet: player.gold});
+        board.pushMessage("game.gameHandler.changeBoardProperties", {
+          bet: board.bet,
+          notifyMsg: 'Bàn chơi đc thay đổi mức cược thành ' + player.gold + ' gold'
+        })
+      }
     }
   });
 
@@ -111,7 +130,6 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo, kick) {
-    board.score = [0, 0]; // restart score
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
@@ -128,10 +146,11 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('globalChannelService').leave(board.channelName, userInfo.uid, userInfo.frontendId);
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
-    //pomelo.app.get('chatService').clearBanUser(board.channelName, userInfo.uid);
     pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
     if (userInfo.guest) {
       board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
+    }else {
+      board.score = [0, 0]; // restart score
     }
     // restart to default value
     if (board.players.length === 0) {
@@ -254,7 +273,7 @@ exp.addEventFromBoard = function (board) {
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)) {
       board.addJobReady(otherPlayerUid);
     }
-    if (board.game.actionLog.length > 0) {
+    if (board.game.actionLog && board.game.actionLog.length > 0) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
     if (board.firstUid !== data[0].uid) {
@@ -318,14 +337,6 @@ exp.addEventFromBoard = function (board) {
     })
   });
 
-  board.on('sitIn', function (player) {
-    pomelo.app.get('boardService').updateBoard(board.tableId, {
-      numPlayer: board.players.length,
-      isFull: board.players.length >= board.maxPlayer ? 1 : 0
-    });
-    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
-    board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
-  });
 
   board.on('kick', function (player) {
     var boardId = board.boardId;
@@ -365,7 +376,6 @@ exp.addEventFromBoard = function (board) {
     else {
       opts.isFull = 0;
     }
-    console.log('updateBoard is : ', opts);
     pomelo.app.get('boardService').updateBoard(board.tableId, opts)
   });
 
@@ -396,6 +406,30 @@ exp.addEventFromBoard = function (board) {
         totalTime: board.totalTime
       })
     })
+  });
+
+  board.on('suggestBuyItem', function (uid, itemId) {
+    itemDao.getItemPrice(itemId)
+      .then(function (item) {
+        if (item && item.length > 0){
+          var player = board.players.getPlayer(uid);
+          var id = Date.now();
+          if (item[0] > player.gold - board.bet) return;
+          player.addSuggestBuyItem({
+            id : id,
+            duration : 3,
+            item : itemId,
+            price : item[0]
+          });
+          board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
+            text : util.format("Bạn cần mua vât phẩm '%s' để có thể thiết lập", consts.ITEM_EFFECT_NAME[itemId]),
+            price : item[0],
+            btLabel : 'Mua luôn',
+            id : id
+          });
+        }
+      })
   })
 };
+
 

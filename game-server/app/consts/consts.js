@@ -191,7 +191,8 @@ module.exports = {
     SELECT_FORMATION : 13,
     CHANGE_SIDE : 15,
     BOTTOM_MENU_CHANGE_SIDE : 16,
-    CHANGE_TURN : 17
+    CHANGE_TURN : 17,
+    INFORMATION : 18
   },
 
   LANGUAGE_LIMIT : {
@@ -408,8 +409,8 @@ module.exports = {
     SIT_OUT_TIMEOUT: 10 * 60 * 1000,
     GAME_IDLE: 60 * 1000 * 10,
     GAME_STUCK: 60 * 10 * 1000,
-    SIT_OUT_LEAVE: 30 * 60 * 1000,
-    BOARD_NOT_START :3 * 60 * 1000,
+    SIT_OUT_LEAVE: 120 * 60 * 1000,
+    BOARD_NOT_START :5 * 60 * 1000,
     TIMEOUT_LEAVE_BOARD: 2000,
     LAYER_TIME : 4000,
     DELTA_TIME : 5000,
@@ -430,7 +431,7 @@ module.exports = {
     DAILY: 43,
     LEVEL_UP: 44,
     PLAY_GAME: 47,
-    AFFILIATE: 48,
+    VIDEO_ADS: 48,
     UNKNOWN: 99
   },
 
@@ -687,6 +688,21 @@ module.exports = {
     THE_VIP: 13
   },
 
+  ITEM_EFFECT_NAME: {
+    1 : 'Luận cờ',
+    2: 'Cấm kích',
+    3: 'Sửa thời gian',
+    4: 'Khoá bàn',
+    5: 'level',
+    7: 'Cược x3',
+    8: 'Cược x5',
+    9: 'Thẻ đại gia',
+    10: 'Bàn cờ sắt',
+    11: 'Bàn cờ tối',
+    12: 'Vé phòng thường',
+    13: 'Thẻ vip'
+  },
+
   NEWS_CATE: {
     SU_KIEN: 1, // tab tin sự kiện
     TIN_KM: 2, // tab tin KM
@@ -717,5 +733,33 @@ module.exports = {
     1: 'ios',
     2: 'android',
     3: 'windowphone'
+  },
+
+  GUILD_MEMBER_STATUS:{
+    NORMAL_MEMBER : 1,
+    PRESIDENT : 2,
+    VICE_PRESIDENT : 3,
+    REQUEST_MEMBER : 4
+  },
+
+  LOSING_REASON : {
+    //1: 'Hết nước đi hợp lệ.',
+    2: 'Cả hai phạm luật chiếu dai.',
+    3: 'Người chơi %s phạm luật chiếu dai.',
+    4: 'Người chơi %s phạm luật duổi dai để cản chiếu hết.',
+    5: 'Người chơi %s phạm luật đuổi dai.',
+    6: 'Ván đấu kết thúc do 40 nước không tiến triển',
+    7: 'Sau 300 nước ván cờ không kết thúc',
+    10: 'Người chơi %s xin thua',
+    11: 'Người chơi %s rời bàn',
+    12: 'Người chơi %s hết thời gian một lượt đi quân',
+    13: 'Người chơi %s hết thời gian tổng lượt đi quân'
+  },
+
+  LOSING_REASON_NAME : {
+    XIN_THUA : 10,
+    ROI_BAN:11,
+    HET_LUOT :12,
+    HET_TIME:13
   }
 };

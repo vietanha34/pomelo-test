@@ -55,6 +55,7 @@ var Player = function (opts) {
   this.menu = [];
   this.moneyLogs = [];
   this.timeLogout = null;
+  this.suggest = null;
 };
 
 /**
@@ -78,7 +79,11 @@ Player.prototype.genMenu = function () {
       this.pushMenu(this.table.genMenu(consts.ACTION.READY));
     }
     this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
-    this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    if (this.userInfo.version >= 20160130){
+      this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
+    }else {
+      this.pushMenu(this.table.genMenu(consts.ACTION.EMO));
+    }
     this.pushMenu(this.table.genMenu(consts.ACTION.STAND_UP));
   }
 };
@@ -281,6 +286,10 @@ Player.prototype.startGame = function () {
 Player.prototype.unReady = function () {
   this.ready = false;
   this.genMenu();
+};
+
+Player.prototype.addSuggestBuyItem = function (suggest) {
+  this.suggest = suggest;
 };
 
 module.exports = Player;

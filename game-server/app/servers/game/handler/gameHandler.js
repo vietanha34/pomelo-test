@@ -442,11 +442,15 @@ pro.action = function (msg, session, next) {
     next(null);
     return
   }
-  console.log('turnUid : ', board.turnUid, uid);
-  if (board.turnUid !== uid || board.status === consts.BOARD_STATUS.NOT_STARTED) {
+  if (board.turnUid !== uid && board.status !== consts.BOARD_STATUS.NOT_STARTED) {
     messageService.pushMessageToPlayer(utils.getUids(session), route, {ec: 500, msg: 'Không phải lượt của bạn'});
     return next(null);
   }
+
+  if (board.status === consts.BOARD_STATUS.NOT_STARTED){
+    return next(null)
+  }
+
   return board.action(uid, msg, function (err, res) {
     if (err) {
       console.log(err);
@@ -488,6 +492,20 @@ pro.getGuest = function (msg, session, next) {
     return
   }
   next(null, {guest: board.getGuest()});
+};
+
+pro.suggestBuyItem = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+    return
+  }
+  var player = board.players.getPlayer(uid);
+  if (player && player.suggest){
+    board.buyItem(player.uid, player.suggest.item, player.suggest.duration, player.suggest.price)
+  }
+  next(null, {});
 };
 
 /**

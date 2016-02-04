@@ -11,6 +11,7 @@ var Timer = require('./logic/timer');
 var channelUtil = require('../../../util/channelUtil');
 var util = require('util');
 var utils = require('../../../util/utils');
+var itemDao = require('../../../dao/itemDao');
 var Players = require('./entity/playerPool');
 var EventEmitter = require('events').EventEmitter;
 var Code = require('../../../consts/code');
@@ -133,14 +134,12 @@ var Board = function (opts, PlayerPool, Player) {
       var totalTime = properties.totalTime;
       var tableType = properties.tableType;
       if (turnTime && turnTime !== self.turnTime &&(self.configTurnTime.indexOf(turnTime) > -1)){
-        console.log('update TurnTime :', turnTime);
         self.turnTime = turnTime;
         changed.push(util.format(' thời gian 1 lượt đi: %s giây', turnTime /1000));
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime / 1000;
       }
       if (totalTime && self.totalTime !== totalTime &&(self.configTotalTime.indexOf(totalTime) > -1)){
-        console.log('update TotalTime :', totalTime);
         self.totalTime = totalTime;
         changed.push(util.format(' thời gian tổng: %s phút', totalTime /1000/60));
         dataChanged.totalTime = totalTime;
@@ -148,7 +147,6 @@ var Board = function (opts, PlayerPool, Player) {
         self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
       }
       if(lodash.isNumber(tableType) && tableType !== self.tableType){
-        console.log('update tableType : ', tableType);
         dataChanged.tableType = tableType;
         changed.push(' ' + consts.TABLE_TYPE_NAME_MAP[tableType]);
         self.tableType = tableType;
@@ -769,13 +767,16 @@ pro.checkEffectSetting = function (properties) {
   var ownerPlayer = self.players.getPlayer(self.owner);
   if (lodash.isString(properties.password) && properties.password.length > 0){
     if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN) && !ownerPlayer.userInfo.vipLevel){
+      this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.KHOA_BAN);
       return 'Bạn không có vật phẩm khoá bàn chơi';
     }
   }
   if((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)){
+    this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.SUA_THOI_GIAN);
     return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
   }
   if(properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])){
+    this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.BAN_CO_TOI);
     return 'Bạn cần có item tương ứng để kích hoạt loại bàn cờ này'
   }
 };
@@ -801,9 +802,9 @@ pro.sitIn = function (uid, slotId, cb) {
       }
       player.menu.splice(0, player.menu.length);
       player.genMenu();
+      self.emit('sitIn', player);
       var state = self.getBoardState(uid);
       self.pushOnJoinBoard(uid);
-      self.emit('sitIn', player);
       return utils.invokeCallback(cb, null, state);
     } else {
       return utils.invokeCallback(cb, null, result || {ec: Code.FAIL});
@@ -1165,4 +1166,28 @@ pro.logout = function (uid) {
   if(player && player.guest){
     player.timeLogout = Date.now();
   }
+};
+
+pro.buyItem = function (uid, item, duration, price) {
+  var self = this;
+  itemDao
+    .buy(uid, item, duration)
+    .then(function (result) {
+      if (result && !result.ec){
+        var player = self.players.getPlayer(uid);
+        if (player){
+          player.gold = result.gold;
+          self.pushMessage('onChargeMoney', {
+            uid : player.uid,
+            deltaMoney : -price,
+            money : player.gold
+          });
+          itemDao.checkEffect(uid, null)
+            .then(function (effect) {
+              var player = self.players.getPlayer(uid);
+              player.effect = effect;
+            })
+        }
+      }
+    })
 };
