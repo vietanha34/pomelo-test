@@ -328,6 +328,30 @@ ItemDao.onBuyItem = function onBuyItem(params) {
   }
 };
 
+
+ItemDao.getItemPrice = function (itemId, cb) {
+  return pomelo.app.get('mysqlClient')
+    .Item
+    .findOne({
+      where: { id : itemId},
+      raw: true,
+      attributes: ['price1', 'discount', 'price2', 'price3']
+    })
+    .then(function (item) {
+      var data = [];
+      if (item){
+        data.push(parseInt(item.price1 * (100 - item.discount) / 100));
+        data.push(parseInt(item.price2 * (100 - item.discount) / 100));
+        data.push(parseInt(item.price3 * (100 - item.discount) / 100))
+      }
+      return utils.invokeCallback(cb, null, data);
+    })
+    .catch(function (err) {
+      console.error(err);
+      return utils.invokeCallback(cb, null, []);
+    })
+};
+
 ItemDao.CONFIG = {
   RENEW_DISCOUNT: 0.2
 };
