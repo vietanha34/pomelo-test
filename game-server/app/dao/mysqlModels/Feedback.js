@@ -32,6 +32,18 @@ module.exports = function(sequelize, DataTypes) {
     image2: {
       type: DataTypes.STRING(31),
       allowNull: true
+    },
+    version: {
+      type: DataTypes.STRING(31),
+      allowNull: true
+    },
+    info: {
+      type: DataTypes.STRING(63),
+      allowNull: true
+    },
+    ip: {
+      type: DataTypes.STRING(31),
+      allowNull: true
     }
   }, {
     classMethods: {
@@ -39,8 +51,6 @@ module.exports = function(sequelize, DataTypes) {
         // associations can be defined here
       }
     },
-    tableName : 'Feedback',
-    createdAt: false,
-    updatedAt: false
+    tableName : 'Feedback'
   });
 };
