@@ -5,6 +5,7 @@
 var request = require('request');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var code = require('../consts/code');
+var formula = require('../consts/formula');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var logger = require('pomelo-logger').getLogger('payment', __filename);
@@ -158,13 +159,15 @@ function ProcessTopup(app, msg, numberRetry) {
         }
       ]);
     }
-    var userId;
+    var userId, vipPoint;
     async.waterfall([
       function (done) {
-        UserDao.getUserIdByUsername(data.username, done);
+        UserDao.getUserPropertiesByUsername(data.username, ['uid', 'vipPoint'], done);
       },
-      function (uid, done) {
-        userId = uid;
+      function (userInfo, done) {
+        userId = userInfo.uid;
+        vipPoint = userInfo.vipPoint || 0;
+        var uid = userId;
         if (!uid) {
           data.msg = 'uid not found';
           logging(data, false);
@@ -187,10 +190,12 @@ function ProcessTopup(app, msg, numberRetry) {
         if (bonusPercent) {
           data.promotionMoney += Math.round(data.gameMoney * bonusPercent / 100);
         }
+        var addVip = formula.calVipPointByMoney(data.money);
+        var vipAfter = (vipPoint+addVip);
         var opts = {
           uid: uid,
           gold: data.promotionMoney,
-          msg: "Nạp tiền vào trò chơi qua sms, iap, card, banking "+data.methodType,
+          msg: "Nạp tiền vào game qua "+data.methodType+"; vip trước: "+vipPoint+'; vip cộng: '+addVip+'; vip sau: '+vipAfter,
           bonus: data.promotionMoney - data.gameMoney,
           type: data.methodType
         };
