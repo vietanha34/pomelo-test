@@ -70,6 +70,8 @@ DailyDao.getData = function getData(uid, cb) {
       return utils.invokeCallback(cb, null, data);
     })
     .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
       return utils.invokeCallback(cb, null, {received: 1});
     });
 };

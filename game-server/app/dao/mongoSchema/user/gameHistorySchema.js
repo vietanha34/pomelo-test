@@ -13,6 +13,7 @@ var GameHistorySchema = new Schema({
   status: Number, // 3: thắng, 2: hòa, 1: thua
   log: String,
   date: Number,
+  bet: Number,
   createdAt: { type: Date, default: Date.now, expires: '60d' }
 }, { versionKey: false, collection: 'GameHistory'});
 

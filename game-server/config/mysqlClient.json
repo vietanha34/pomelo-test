@@ -3,9 +3,9 @@
     "host" : "127.0.0.1",
     "port": 3306,
     "database": "cothu",
-    "dialert" : "mysql",
     "username": "root",
     "password": "Aq2bF8L9JYNY",
+    "dialert" : "mysql",
     "timezone": "+07:00",
     "log" : false,
     "pool": {

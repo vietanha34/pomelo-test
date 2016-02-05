@@ -10,6 +10,7 @@ var consts = require('../../consts/consts');
 var code = require('../../consts/code');
 var TopupDao = require('../../dao/topupDao');
 var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
 
 module.exports.type = Config.TYPE.REGISTER;
 
@@ -77,9 +78,6 @@ module.exports.process = function (app, type, param) {
         raw: true
       });
 
-      ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
-      ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
-
       if (userCount == 1) {
         var globalConfig = app.get('configService').getConfig();
 
@@ -99,6 +97,8 @@ module.exports.process = function (app, type, param) {
 
           if (bonus) {
             setTimeout(function () {
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
               //ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
               TopupDao.pushGoldAward({
                 uid: param.uid,
@@ -107,6 +107,23 @@ module.exports.process = function (app, type, param) {
                 msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
                 title: code.REGISTER_LANGUAGE.BONUS_TITLE
               })
+            }, 2500);
+          }
+          else {
+            setTimeout(function () {
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
+              ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
+              //ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
+              NotifyDao.push({
+                type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                title: code.REGISTER_LANGUAGE.BONUS_TITLE,
+                msg: 'Bạn được tặng 1 tuần sử dụng miễn phí vé phòng thường và vật phẩm sửa thời gian',
+                buttonLabel: 'OK',
+                command: {target: consts.NOTIFY.TARGET.NORMAL},
+                scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+                users: [param.uid],
+                image:  consts.NOTIFY.IMAGE.AWARD
+              });
             }, 2500);
           }
         }

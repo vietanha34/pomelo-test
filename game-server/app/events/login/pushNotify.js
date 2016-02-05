@@ -31,6 +31,8 @@ module.exports.type = Config.TYPE.LOGIN;
 module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
+  utils.log('LOGIN', param);
+
   var globalConfig = pomelo.app.get('configService').getConfig();
 
   if (globalConfig.IS_REVIEW) {
@@ -80,6 +82,7 @@ module.exports.process = function (app, type, param) {
   // push from CMS
   setTimeout(function(){
     redisCache.hgetall('cothu:pushOnline', function(e, notify) {
+      utils.log('LOGIN', notify);
       if (!e && notify) {
         var keys = Object.keys(notify);
         var notifyObj;
@@ -88,13 +91,14 @@ module.exports.process = function (app, type, param) {
         var now = Date.now()/1000|0;
         for (var i=0; i<keys.length; i++) {
           notifyObj = utils.JSONParse(notify[keys[i]], null);
+          utils.log(notifyObj, now, notifyObj.startTime <= now && notifyObj.endTime >= now, notifyObj.scope == consts.NOTIFY.SCOPE.ALL, notifyObj.users.indexOf(param.uid)>=0);
           if (notifyObj && notifyObj.startTime <= now && notifyObj.endTime >= now
             && (notifyObj.scope == consts.NOTIFY.SCOPE.ALL || notifyObj.users.indexOf(param.uid)>=0)) {
             pushObj = {
               type: Number(notifyObj.type)||0,
-              title: utils.JSONParse(notifyObj.title, {vi: ''}).vi,
-              msg: utils.JSONParse(notifyObj.msg, {vi: ''}).vi || '',
-              buttonLabel: utils.JSONParse(notifyObj.buttonLabel, {vi: 'OK', en: 'OK'}),
+              title: notifyObj.title || '',
+              msg: notifyObj.msg || '',
+              buttonLabel: notifyObj.buttonLabel || '',
               buttonColor: Number(notifyObj.buttonColor) || 0,
               command: utils.JSONParse(notifyObj.command, {target: 0}),
               scope: consts.NOTIFY.SCOPE.USER,

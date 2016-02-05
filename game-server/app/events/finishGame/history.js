@@ -65,7 +65,8 @@ module.exports.process = function (app, type, param) {
     gameId: param.boardInfo.gameId,
     uids: [param.users[0].uid, param.users[1].uid],
     status: (param.users[0].result.type == consts.WIN_TYPE.GIVE_UP ? consts.WIN_TYPE.LOSE : param.users[0].result.type),
-    date: Number(moment().format('YYYYMMDD'))
+    date: Number(moment().format('YYYYMMDD')),
+    bet: param.boardInfo.bet || 0
   }, function(e, r) {
     if (e) {
       console.error(e.stack || e);

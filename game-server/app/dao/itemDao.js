@@ -36,7 +36,7 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
   }
 
   // lấy thông tin vật phẩm, kiểm tra tồn tại, kiểm tra hòm đồ
-  var query = 'SELECT vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, effect, u.expiredAt ' +
+  var query = 'SELECT name, vipLevel, '+ItemDao.durationMap[duration]+' as price, price1, price2, price3, discount, effect, u.expiredAt ' +
                 'FROM Item AS i LEFT JOIN UserItem AS u ' +
                 'ON i.id = u.itemId AND u.uid = :uid ' +
                 'WHERE i.id = :itemId';
@@ -62,7 +62,7 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
         uid: uid,
         gold: -gold,
         type: consts.CHANGE_GOLD_TYPE.BUY_ITEM,
-        msg: 'Mua vật phẩm '+itemId+' giá '+gold+' gold'
+        msg: 'Mua vật phẩm '+itemId+', '+item.name+' giá '+gold+' gold'
       });
     })
     .then(function(topupResult) {
