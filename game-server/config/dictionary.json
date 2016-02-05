@@ -128,6 +128,7 @@
   "onFinishGame" : 204,
   "onChargeMoney" : 205,
   "onAddPot" : 206,
+  "onEnableVideoAds": 207,
   "onNotify" : 210,
   "onMission" : 211,
   "onMarquee" : 212,

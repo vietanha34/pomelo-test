@@ -22,7 +22,6 @@ var Handler = function (app) {
 Handler.prototype.validClient = function (msg, session, next) {
   var self = this;
   var idSession = msg.idSession;
-  var langVersion = msg.langVersion;
   var sessionId = session.id;
   if (idSession) {
     this.app.get('redisCache').get(redisKeyUtil.getIdSessionKey(idSession), function (err, key) {
@@ -32,9 +31,6 @@ Handler.prototype.validClient = function (msg, session, next) {
       else if (key) {
         self.app.sessionService.get(sessionId).changeEncryptKey(key);
         var language;
-        if (lodash.isString(langVersion) && langVersion !== self.app.get('gameService').langVersion) {
-          language = self.app.get('gameService').language
-        }
         next(null, {
           language: language
         });
@@ -62,7 +58,9 @@ Handler.prototype.login = function (msg, session, next) {
   var sessionId = session.id;
   var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
+  msg.versionCode = msg.versionCode.length === 7 ? '0' + msg.versionCode : msg.versionCode;
   var version = '' + msg.versionCode.slice(4, 10) + msg.versionCode.slice(2, 4) + msg.versionCode.slice(0, 2);
+  console.log('version : ', version);
   if (version >= '20160130'){
     self.app.sessionService.get(sessionId).useGzip(true);
   }

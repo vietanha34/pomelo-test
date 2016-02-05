@@ -212,7 +212,7 @@ app.configure('production|development|local', function () {
   }})
 });
 
-app.configure('production|development', 'home|district|game|connector|service|worker', function () {
+app.configure('production|development', 'home|game|chat', function () {
   var GameService = require('./app/services/gameService');
   var gameService = new GameService(app);
   gameService.init();

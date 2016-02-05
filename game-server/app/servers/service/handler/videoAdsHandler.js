@@ -72,7 +72,7 @@ Handler.prototype.markAds = function (msg, session, next) {
         next(null, { notifyMsg : 'Cảm ơn bạn đã xem video. Chúc bạn chơi game vui vẻ'});
         if (result.status && result.status.board){
           pomelo.app.get('statusService')
-            .pushByUids([uid], 'onChargeMoney', { uid : uid, deltaGold : 500 , gold : result.payment.gold})
+            .pushByUids([uid], 'onChargeMoney', { uid : uid, deltaGold : 500 , gold : result.payment.gold});
         }else if (result.status && !result.status.board){
           NotifyDao.push({
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
@@ -85,6 +85,8 @@ Handler.prototype.markAds = function (msg, session, next) {
             users: [uid]
           })
         }
+        pomelo.app.get('statusService')
+          .pushByUids([uid], 'onEnableVideoAds', { enable : 0});
       }
     })
     .catch(function (err) {

@@ -56,7 +56,6 @@ GameService.prototype.init = function () {
 GameService.prototype.getData = function (cb) {
   var self = this;
   return Promise.all([
-    //self.setGameConfig(),
     self.setLanguage(),
     self.setAbuse()
   ])
