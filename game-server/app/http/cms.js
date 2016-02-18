@@ -107,7 +107,7 @@ module.exports = function(app) {
         return TopupDao.topup({
           uid: user.uid,
           gold: Number(msg.gold),
-          type: consts.CHANGE_GOLD_TYPE.AFFILIATE,
+          type: consts.CHANGE_GOLD_TYPE.VIDEO_ADS,
           msg: content
         })
       })
