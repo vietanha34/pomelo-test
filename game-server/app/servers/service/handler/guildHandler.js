@@ -17,14 +17,42 @@ var Handler = function (app) {
 };
 
 Handler.prototype.createGuild = function (msg, session, next) {
+
 };
 
 Handler.prototype.getGuild = function (msg, session, next) {
 };
 
-Handler.prototype.getGuildR = function (msg, session, next) {
+Handler.prototype.updateGuild = function (msg, session, next) {
 };
 
-var checkPermission = function (uid, guildId, permission) {
-  
+
+/**
+ *  Kiểm tra permission
+ *
+ * @param uid
+ * @param guildId
+ * @param resource
+ * @param action
+ */
+var checkPermission = function (uid, guildId, resource, action) {
+
+};
+
+/**
+ * Kiểm tra role hiện tại của người dùng trong guild
+ *
+ * @param uid
+ * @param guildId
+ */
+var getRole = function (uid, guildId) {
+};
+
+/**
+ * Lấy về permission của role hiện tại
+ *
+ * @param role
+ * @param resource
+ */
+var getPermission = function (role, resource) {
 };

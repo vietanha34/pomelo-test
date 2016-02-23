@@ -422,7 +422,7 @@ UserDao.login = function (msg, cb) {
         // TODO push event register
         return accountService.getInitBalance(msg);
       } else {
-        return pomelo.app.get('mysqlClient')
+        pomelo.app.get('mysqlClient')
           .User
           .update({
             fullname: userData.fullname,
@@ -436,7 +436,8 @@ UserDao.login = function (msg, cb) {
             distributorId: userData.dtId
           }, {
             where: {uid: userData.uid}
-          })
+          });
+        return Promise.resolve({});
       }
     })
     .then(function (balance) {

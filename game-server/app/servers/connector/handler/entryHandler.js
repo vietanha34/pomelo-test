@@ -131,7 +131,9 @@ Handler.prototype.login = function (msg, session, next) {
       ip: loginIp,
       lastLogin: player.lastLogin,
       deviceId: msg.deviceId,
-      platform: msg.platform
+      platform: msg.platform,
+      version: version,
+      deviceName : msg.deviceName
     };
 
     if (boardId) {

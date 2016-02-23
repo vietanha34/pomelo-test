@@ -76,11 +76,14 @@ HomeDao.getHome = function getHome(params, cb) {
 
       data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
       data.userInfo.vipLevel = Math.max(data.userInfo.vipLevel, (props.effect[consts.ITEM_EFFECT.THE_VIP]||0));
-      var adsDisappear = data.userInfo.vipLevel ? 0 : 1;
+      var adsDisappear = data.userInfo.vipLevel ? 1 : 0;
+      if (params.version < '20160217') {
+        adsDisappear = 1;
+      }
       data.ads = {
         data : props.ads,
         gold : 500,
-        disappear: adsDisappear
+        disable: adsDisappear
       };
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);

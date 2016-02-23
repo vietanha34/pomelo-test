@@ -41,6 +41,9 @@ module.exports = function(sequelize, DataTypes) {
       associate: function(models) {
         // associations can be defined here
       }
-    }
+    },
+    createdAt: false,
+    // I want updatedAt to actually be called updateTimestamp
+    updatedAt: false
   });
 };

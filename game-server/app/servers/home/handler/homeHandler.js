@@ -47,7 +47,7 @@ Handler.prototype.getLanguage = function (msg, session, next) {
 };
 
 Handler.prototype.updateHome = function (msg, session, next) {
-  HomeDao.getHome({uid: session.uid, langVersion : msg.langVersion, update: true})
+  HomeDao.getHome({uid: session.uid, langVersion : msg.langVersion, update: true, version: session.get('version')})
     .then(function(res) {
       utils.invokeCallback(next, null, res);
     })
