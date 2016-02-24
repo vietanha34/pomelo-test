@@ -26,6 +26,7 @@ var ROOM_MEMBERS = 'cothu:room:{id}:members';
 var USER_MESSAGE_STATE =  'cothu:{uid}:message:state';
 var USER_ROOM_LIST = 'cothu:{uid}:room:list';
 var USER_METADATA = 'cothu:{uid}:metadata'; // count unread message;
+var USER_VIDEO_ADS = 'cothu:{uid}:videoAds';
 var CRONID_HASH = 'cothu:cron:ids';
 var CRONID_MAX = 'cothu:cron:max';
 var PLAYER_BOARD_LIST = 'POMELO:STATUS:board:{uid}';
@@ -54,6 +55,16 @@ var INVITE_SOCIAL = 'cothu:invite_social:%d';
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
 
+
+RedisKeyUtil.getUserKeyVideoAds = function (uid) {
+  return USER_VIDEO_ADS.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return uid;
+    }
+  );
+};
+
 RedisKeyUtil.getTransactionDetail = function (transactionId) {
   return TRANSACTION_DETAIL.replace(
     /\{(\w+)\}/g,
@@ -66,8 +77,6 @@ RedisKeyUtil.getTransactionDetail = function (transactionId) {
 RedisKeyUtil.getTransactionList = function () {
   return TRANSACTION_LIST;
 };
-
-
 
 RedisKeyUtil.getCcuKey = function () {
   return CCU_KEY

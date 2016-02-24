@@ -81,7 +81,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         };
         self.app.get('boardService').getBoard({
           where: whereClause,
-          limit: 3,
+          limit: 6,
           raw : true,
           order: 'numPlayer DESC'
         }, done)
@@ -204,6 +204,15 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
     next(null, {ec: Code.OK});
     return;
   }
+  var excludeBoardId = session.get('excludeBoardId') || [];
+  if (excludeBoardId.indexOf(tableId) > -1){
+  }else {
+    if (excludeBoardId.length >= 5){
+      excludeBoardId[0] = tableId;
+    }else {
+      excludeBoardId.push(tableId);
+    }
+  }
   this.app.rpc.game.gameRemote.leaveBoard(session, {
     boardId: tableId,
     uid: uid
@@ -216,7 +225,7 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
       next(null, result);
       if (result && !result.ec) {
         session.set('tableId', null);
-        session.set('excludeBoardId', [tableId]);
+        session.set('excludeBoardId', excludeBoardId);
         session.set('serverId', null);
         session.set('roomId', null);
         session.set('onBoard', false);

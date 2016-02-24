@@ -10,6 +10,10 @@ module.exports = {
     JAVA : 4
   },
 
+  GAME_ACTION_ID :{
+    AFK_CHECK : 1
+  },
+
   MAP_GAME_ID_OLD_VERSION : {
     20 : 5,
     21 : 1,
@@ -147,7 +151,9 @@ module.exports = {
   DEFAULT : {
     GOLD : 1000000,
     XP : 0,
-    LEVEL : 0
+    LEVEL : 0,
+    TURN_TIME_FREE : 3 * 60 * 1000,
+    TOTAL_TIME_FREE : 30*60 * 1000
   },
 
   BOARD_STATUS: {
@@ -701,6 +707,13 @@ module.exports = {
     11: 'Bàn cờ tối',
     12: 'Vé phòng thường',
     13: 'Thẻ vip'
+  },
+
+  SUGGEST_BUY_ITEM_TEXT: {
+    3 : 'Bạn cần vật phẩm  "sửa thời gian" để sử dụng chức năng này',
+    4 : 'Bạn cần vật phẩm "khóa bàn chơi" để sử dụng chức năng này"',
+    8 : 'Bạn cần item "cược x5" để gia tăng giới hạn cược',
+    7 : 'Bạn cần item "cược x3" để gia tăng giới hạn cược'
   },
 
   NEWS_CATE: {

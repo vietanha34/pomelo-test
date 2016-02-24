@@ -59,7 +59,8 @@ HomeDao.getHome = function getHome(params, cb) {
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
     cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'markVideo'),
-    ads: pomelo.app.get('videoAdsService').available(params.platform)
+    ads: pomelo.app.get('videoAdsService').available(params.platform),
+    videoAds : pomelo.app.get('redisCache').getAsync(redisKeyUtil.getUserKeyVideoAds(params.uid))
   })
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
@@ -83,7 +84,7 @@ HomeDao.getHome = function getHome(params, cb) {
       data.ads = {
         data : props.ads,
         gold : 500,
-        disable: adsDisappear
+        disable: (props.videoAds ? 0 : 1) | adsDisappear
       };
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);

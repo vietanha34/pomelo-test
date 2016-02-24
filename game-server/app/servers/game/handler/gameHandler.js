@@ -485,6 +485,16 @@ pro.demand = function (msg, session, next) {
   next(null, board.demand(msg));
 };
 
+pro.hint = function (msg, session, next) {
+  var board = session.board;
+  var uid = session.uid;
+  if (!board) {
+    return next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
+  }
+  board.hint(uid, msg);
+  return next(null, {});
+};
+
 pro.getGuest = function (msg, session, next) {
   var board = session.board;
   if (!board) {

@@ -73,7 +73,7 @@ Player.prototype.genMenu = function () {
   if(this.guest){
     this.pushMenu(this.table.genMenu(consts.ACTION.TAN_GAU));
     if (this.userInfo.version >= '20160130' ){
-      if (this.table.gameId <= 3){
+      if (this.table.gameId <= 4){
         this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
       }
     }

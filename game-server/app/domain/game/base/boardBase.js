@@ -477,6 +477,9 @@ pro.clearIdlePlayer = function () {
       if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && this.players.length < 2){
         this.playerTimeout(player);
       }
+      if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.SIT_OUT_LEAVE){
+        this.playerTimeout(player);
+      }
     }
   }
   if (playerSeat.length > 0) {
@@ -1021,15 +1024,16 @@ pro.pushFinishGame = function (msg, finish, extraData) {
   }
 };
 
-pro.addJobReady = function (uid) {
+pro.addJobReady = function (uid, time) {
   var self = this;
+  time = time || 30000;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [30000, this.totalTime, 30000]
+    time : [time, this.totalTime, time]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -1039,18 +1043,19 @@ pro.addJobReady = function (uid) {
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 30000 + 2000);
+  }, uid, time + 2000);
 };
 
-pro.addJobStart = function (uid) {
+pro.addJobStart = function (uid, time) {
   var self = this;
+  time = time || 30000;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
     uid : uid,
     count : 0,
-    time : [30000, this.totalTime, 30000]
+    time : [time, this.totalTime, time]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
@@ -1060,7 +1065,7 @@ pro.addJobStart = function (uid) {
     }
     self.jobId = null;
     self.standUp(uid);
-  }, uid, 30000 + 2000);
+  }, uid, time + 2000);
 };
 
 pro.cancelJob = function () {
@@ -1195,4 +1200,13 @@ pro.buyItem = function (uid, item, duration, price) {
         }
       }
     })
+};
+
+pro.hint = function (uid, msg) {
+  var player = this.players.getPlayer(uid);
+  if (!player) return;
+  switch (msg.actionId){
+    case consts.GAME_ACTION_ID.AFK_CHECK:
+      player.timeLogout = null;
+  }
 };

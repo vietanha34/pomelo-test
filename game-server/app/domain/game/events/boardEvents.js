@@ -65,12 +65,12 @@ exp.addEventFromBoard = function (board) {
       setTimeout(function (player) {
         if (board.gameId === consts.GAME_ID.CO_THE) {
           if (!board.formationMode) {
-            board.addJobReady(player.uid);
+            board.addJobReady(player.uid, 60000);
           } else if (board.owner !== player.uid && !player.guest) {
             board.addJobSelectFormation(board.owner);
           }
         } else {
-          board.addJobReady(player.uid)
+          board.addJobReady(player.uid, 60000)
         }
       }, 100, player);
     }
@@ -424,7 +424,7 @@ exp.addEventFromBoard = function (board) {
             price : item[0]
           });
           board.pushMessageToPlayer(uid, 'game.gameHandler.suggestBuyItem', {
-            text : util.format("Bạn cần mua vât phẩm '%s' để có thể thiết lập", consts.ITEM_EFFECT_NAME[itemId]),
+            text : consts.SUGGEST_BUY_ITEM_TEXT[itemId],
             price : item[0],
             btLabel : 'Mua luôn',
             id : id

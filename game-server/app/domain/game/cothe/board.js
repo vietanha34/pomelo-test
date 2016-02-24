@@ -482,7 +482,7 @@ Table.prototype.changeFormation = function (formation, opts) {
   if (otherPlayer) {
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.CHANGE_SIDE));
     otherPlayer.pushMenu(this.genMenu(consts.ACTION.READY));
-    this.addJobReady(otherPlayer.uid);
+    this.addJobReady(otherPlayer.uid, 60000);
   }
   ownerPlayer.pushMenu(this.genMenu(consts.ACTION.START_GAME));
   ownerPlayer.removeMenu(consts.ACTION.BOTTOM_MENU_CHANGE_SIDE);

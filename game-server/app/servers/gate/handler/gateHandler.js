@@ -25,19 +25,19 @@ Handler.prototype.getServer = function (msg, session, next) {
     return;
   }
   var configService = this.app.get('configService');
-  //if (msg.platform === 'ios' && [30122015].indexOf(msg.versionCode) > -1){
-  //  var config = configService.getConfig();
-  //  config['IS_REVIEW'] = 1;
-  //  // trỏ sang server test
-  //  return next(null, {
-  //    ec : Code.OK,
-  //    host : '123.30.235.196',
-  //    port : '6511',
-  //    config : config,
-  //    idSession : '362a5477-3658-4b80-bba8-9d510b84b4f2',
-  //    key : '41jw5tq'
-  //  })
-  //}
+  if (msg.platform === 'ios' && [4022016].indexOf(msg.versionCode) > -1){
+    var config = configService.getConfig();
+    config['IS_REVIEW'] = 1;
+    // trỏ sang server test
+    return next(null, {
+      ec : Code.OK,
+      host : '123.30.235.196',
+      port : '6511',
+      config : config,
+      idSession : '362a5477-3658-4b80-bba8-9d510b84b4f2',
+      key : '41jw5tq'
+    })
+  }
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   msg.versionCode = msg.versionCode.length === 7 ? '0' + msg.versionCode : msg.versionCode;
   var version = '' + msg.versionCode.slice(4,10) + msg.versionCode.slice(2,4) + msg.versionCode.slice(0,2);

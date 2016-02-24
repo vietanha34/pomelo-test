@@ -11,6 +11,7 @@ var TopupDao = require('../../../dao/topupDao');
 var Promise = require('bluebird');
 var NotifyDao = require('../../../dao/notifyDao');
 var pomelo = require('pomelo');
+var redisKeyUtil = require('../../../util/redisKeyUtil');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -62,7 +63,6 @@ Handler.prototype.markAds = function (msg, session, next) {
           }),
           status : Promise.promisify(statusService.getStatusByUid, statusService)(uid, true)
         })
-
       } else {
         return Promise.reject({})
       }
@@ -87,6 +87,10 @@ Handler.prototype.markAds = function (msg, session, next) {
         }
         pomelo.app.get('statusService')
           .pushByUids([uid], 'onEnableVideoAds', { enable : 0});
+        pomelo.app.get('redisClient')
+          .set(redisKeyUtil.getUserKeyVideoAds(uid), uid);
+        pomelo.app.get('redisClient')
+          .expire(redisKeyUtil.getUserKeyVideoAds(uid), 60 * 60);
       }
     })
     .catch(function (err) {
