@@ -78,21 +78,27 @@ module.exports.process = function (app, type, param) {
         raw: true
       });
 
-      if (userCount == 1) {
+      if (userCount <= 3) {
         var globalConfig = app.get('configService').getConfig();
 
         if (!globalConfig.IS_REVIEW) {
-          var bonus;
-          switch (param.type) {
-            case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
-              bonus = globalConfig.FB_GOLD || 0;
-              break;
-            case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
-              bonus = globalConfig.USER_GOLD || 0;
-              break;
-            default :
-              bonus = globalConfig.USER_GOLD || 0;
-              break;
+          var bonus = 0;
+          if (userCount == 1) {
+            switch (param.type) {
+              case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
+                bonus = globalConfig.FB_GOLD || 0;
+                break;
+              case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER):
+                bonus = globalConfig.USER_GOLD || 0;
+                break;
+              default :
+                bonus = globalConfig.USER_GOLD || 0;
+                break;
+            }
+          }
+          else if (param.platform == consts.PLATFORM_ENUM.IOS || param.platform == consts.PLATFORM_ENUM.WINDOWPHONE) {
+            if (userCount == 2) bonus = 3000;
+            else if (userCount == 3) bonus = 1000;
           }
 
           if (bonus) {
