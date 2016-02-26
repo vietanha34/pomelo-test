@@ -37,20 +37,62 @@ exp.init = function (opts) {
   exp.check();
 };
 
-exp.createRoom = function (hallConfig, roomId) {
-  console.log('hallConfig : ', hallConfig);
-  var hallId = parseInt(hallConfig.hallId);
-  var opts = {
+exp.createRoomTournament = function (hallConfig, roomId) {
+  var roomOpts = {
     serverId: serverId,
     gameId: gameId,
     roomId: roomId,
     hallId: parseInt(hallConfig.hallId)
   };
   return pomelo.app.get('boardService')
-    .addRoom(opts)
+    .addRoom(roomOpts)
     .then(function () {
-      for (var i = 1; i <= 51; i++) {
+      var data = pomelo.app.get('dataService').get(''+roomId).data;
+      var listPlayers = lodash.values(data);
+      console.log('data : ', data, listPlayers, roomId);
+      for (var i = 0, len = listPlayers.length; i < len ; i++){
+        var listPlayer = listPlayers[i];
         var opts = utils.clone(hallConfig);
+        if (opts.hallId === consts.HALL_ID.LIET_CHAP) {
+          opts.lockMode = [3]; // liệt tốt 5;
+          opts.removeMode = [];
+          opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+        }
+        opts.username = [listPlayer['player1'], listPlayer['player2']];
+        opts.timeWait = 120000; // thời gian chờ là 1 phút
+        opts.matchPlay = opts.matchPlay || 1;
+        opts.timePlay = 1456493400000;
+        opts.configBet = [opts.bet || 5000, opts.bet || 5000];
+        opts.turnTime = 180;
+        opts.totalTime = 20 * 60;
+        opts.bet = opts.bet || 5000;
+        opts.configTurnTime = [opts.turnTime];
+        opts.configTotalTime = [opts.totalTime];
+        opts.base = true;
+        opts.tourTimeWait = 10 * 60 * 1000;
+        opts.level = opts.level || 0;
+        opts.roomId = roomOpts.roomId;
+        opts.gameType = consts.GAME_TYPE.TOURNAMENT;
+        opts.index = listPlayer['id'];
+        exp.createBoard(opts);
+      }
+    })
+};
+
+exp.createRoom = function (hallConfig, roomId) {
+  var hallId = parseInt(hallConfig.hallId);
+  var roomOpts = {
+    serverId: serverId,
+    gameId: gameId,
+    roomId: roomId,
+    hallId: parseInt(hallConfig.hallId)
+  };
+  return pomelo.app.get('boardService')
+    .addRoom(roomOpts)
+    .then(function () {
+      var opts;
+      for (var i = 1; i <= 51; i++) {
+        opts = utils.clone(hallConfig);
         if (hallId === consts.HALL_ID.LIET_CHAP){
           opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
           opts.removeMode = [];
@@ -67,6 +109,8 @@ exp.createRoom = function (hallConfig, roomId) {
         opts.index = i;
         exp.createBoard(opts);
       }
+    })
+    .then(function () {
     })
 };
 

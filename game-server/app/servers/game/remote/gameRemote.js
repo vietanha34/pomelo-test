@@ -123,7 +123,6 @@ GameRemote.prototype.addItems = function (boardId, items, cb) {
 };
 
 GameRemote.prototype.logout = function (boardId, uid, cb) {
-  console.log('gameRemote logout : ', boardId, uid);
   var game = this.app.game;
   var board = game.getBoard(boardId);
   var err;
@@ -131,8 +130,20 @@ GameRemote.prototype.logout = function (boardId, uid, cb) {
     game.delBoard(boardId);
     err = new Error('Khong co ban phu hop');
     err.code = Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST;
-    utils.invokeCallback(cb, err);
-    return;
+    return utils.invokeCallback(cb, err);
   }
-  utils.invokeCallback(cb, null, board.logout(uid));
+  return utils.invokeCallback(cb, null, board.logout(uid));
+};
+
+GameRemote.prototype.setBoard = function (boardId, msg, cb) {
+  var game = this.app.game;
+  var board = game.getBoard(boardId);
+  var err;
+  if (!board) {
+    game.delBoard(boardId);
+    err = new Error('Khong co ban phu hop');
+    err.code = Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST;
+    return utils.invokeCallback(cb, err);
+  }
+  return utils.invokeCallback()
 };

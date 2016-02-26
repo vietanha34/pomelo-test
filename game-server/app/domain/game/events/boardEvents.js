@@ -13,6 +13,7 @@ var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var Formula = require('../../../consts/formula');
 var messageService = require('../../../services/messageService');
+var NotifyDao = require('../../../dao/notifyDao');
 var util = require('util');
 var exp = module.exports;
 
@@ -70,10 +71,22 @@ exp.addEventFromBoard = function (board) {
             board.addJobSelectFormation(board.owner);
           }
         } else {
-          board.addJobReady(player.uid, 60000)
+          if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.timePlay > Date.now()){
+          }else {
+            console.log('gameType : ', board.gameType, board.timePlay, board.timePlay - Date.now());
+            board.addJobReady(player.uid)
+          }
         }
       }, 100, player);
     }
+    //setTimeout(function (player) {
+    //  board.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+    //    msg: "vui lòng ấn vào nút nếu muốn tiếp tục sau ",
+    //    time : 10,
+    //    btLabel: 'Ấn đê',
+    //    actionId : 1
+    //  })
+    //}, 3000, player);
   });
 
   board.on('sitIn', function (player) {
@@ -92,7 +105,10 @@ exp.addEventFromBoard = function (board) {
             board.addJobSelectFormation(board.owner);
           }
         } else {
-          board.addJobReady(player.uid)
+          if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.timePlay > Date.now()){
+          } else {
+            board.addJobReady(player.uid)
+          }
         }
       }, 100, player)
     }
@@ -121,6 +137,7 @@ exp.addEventFromBoard = function (board) {
         channel.add(userInfo.uid, userInfo.frontendId);
       }
     }
+    pomelo.app.get('globalChannelService').add(board.guestChannelName, userInfo.uid, userInfo.frontendId);
   });
 
   /**
@@ -175,6 +192,21 @@ exp.addEventFromBoard = function (board) {
     if (!userInfo.guest) {
       board.looseUser = null;
       board.timer.stop()
+    }
+    if (board.gameType === consts.GAME_TYPE.TOURNAMENT){
+      if (board.numMatchPlay > 0 && board.username && board.username.indexOf(userInfo.username)){
+        // finish;
+        var tourWinUid = board.owner;
+        var winPlayer = board.players.getPlayer(tourWinUid);
+        board.tableTourFinish = true;
+        if (winPlayer){
+          board.tourWinUser = {
+            username : winPlayer.userInfo.username,
+            uid : winPlayer.uid
+          };
+          board.emit('tourFinish', board.tourWinUser, 'Đối thủ rời bàn chơi');
+        }
+      }
     }
   });
 
@@ -296,6 +328,25 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
     pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.NOT_STARTED});
+    board.numMatchPlay += 0;
+    if (board.gameType === consts.GAME_TYPE.TOURNAMENT && !board.tableTourFinish){
+      if (Math.abs(board.score[0] - board.score[1]) > board.matchPlay / 2 || (board.numMathPlay >= board.matchPlay && board.score[0] > board.score[1])){
+        // finish;
+        var tourWinUid = board.score[0] > board.score[1] ? board.players.playerSeat[0] : board.players.playerSeat[1];
+        var winPlayer = board.players.getPlayer(tourWinUid);
+        board.tableTourFinish = true;
+        if (winPlayer){
+          board.tourWinUser = {
+            username : winPlayer.userInfo.username,
+            uid : winPlayer.uid
+          };
+          board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
+        }
+      }if (board.numMathPlay >= board.matchPlay && board.score[0] === board.score[1]){
+        // hoà rồi
+        board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
+      }
+    }
     return data;
   });
 
@@ -336,7 +387,22 @@ exp.addEventFromBoard = function (board) {
     }, 'game.gameHandler.reloadBoard', state);
     board.pushMessageWithOutUid(player.uid, 'district.districtHandler.leaveBoard', {
       uid: player.uid
-    })
+    });
+    if (board.gameType === consts.GAME_TYPE.TOURNAMENT){
+      if (board.numMatchPlay > 0){
+        // finish;
+        var tourWinUid = board.owner;
+        var winPlayer = board.players.getPlayer(tourWinUid);
+        board.tableTourFinish = true;
+        if (winPlayer){
+          board.tourWinUser = {
+            username : winPlayer.userInfo.username,
+            uid : winPlayer.uid
+          };
+          board.emit('tourFinish', board.tourWinUser, 'Đối thủ đứng lên');
+        }
+      }
+    }
   });
 
 
@@ -431,5 +497,44 @@ exp.addEventFromBoard = function (board) {
           });
         }
       })
+  });
+  board.on('tourFinish', function (winner, reason) {
+    if (winner){
+      board.pushMessageToPlayer(winner.uid,'onNotify',{
+        type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+        title: 'Đấu trường',
+        msg: util.format('Chúc mừng bạn là người chiến thắng. Bạn theo dõi lịch thi đấu tiếp trong loa làng'),
+        buttonLabel: 'Xác nhận',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        image:  consts.NOTIFY.IMAGE.NORMAL
+      });
+      board.pushMessageToPlayer(winner.uid, 'onNotify', {
+        type: consts.NOTIFY.TYPE.POPUP,
+        title: 'Đấu trường',
+        msg: util.format('Chúc mừng bạn là người chiến thắng. Bạn theo dõi lịch thi đấu tiếp trong loa làng'),
+        buttonLabel: 'Xác nhận',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        image:  consts.NOTIFY.IMAGE.NORMAL
+      });
+      board.pushMessageWithOutUid(winner.uid, 'onNotify', {
+        type: consts.NOTIFY.TYPE.POPUP,
+        title: 'Đấu trường',
+        msg: util.format('Người chơi "%s" đã giành chiến thắng trong cặp đấu này.', winner.username),
+        buttonLabel: 'Xác nhận',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        image:  consts.NOTIFY.IMAGE.NORMAL
+      });
+      console.error(util.format, 'tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc thắng nghiêng về : "%s" ' +
+        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, winner.username, reason, board.score);
+    }else {
+      // hoà
+      console.error(util.format, 'tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc hoà ' +
+        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, reason, board.score);
+    }
+    // ghi log
+  });
+  
+  board.on('logout', function (player) {
+    pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
   })
 };

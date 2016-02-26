@@ -41,7 +41,6 @@ Game.prototype.start = function (cb) {
       .then(function () {
         if (self.base){
         }
-        console.log('game base : ', self.base);
         self.initBoards();
         self.init = true;
         return utils.invokeCallback(cb);
@@ -92,6 +91,10 @@ Game.prototype.initBoards = function () {
       var hallId = parseInt(hallConfig.hallId);
       for (var j = 1, lenj = parseInt(hallConfig.numRoom); j <= lenj; j++) {
         this.boardManager.createRoom(hallConfig, hallId * 100 + j)
+      }
+      if (this.gameId === consts.GAME_ID.CO_TUONG && hallId === consts.HALL_ID.LIET_CHAP){
+        this.boardManager.createRoomTournament(hallConfig, 503);
+        this.boardManager.createRoomTournament(hallConfig, 504);
       }
     }
   }

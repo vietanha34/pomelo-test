@@ -217,7 +217,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       toUid : toUid,
       tax : 5,
       force : true
-    }, 1, function () {})
+    }, 1, function () {});
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;
@@ -275,13 +275,13 @@ Table.prototype.clearPlayer = function (uid) {
 Table.prototype.startGame = function (uid, cb) {
   var code = this.checkStartGame();
   var self = this;
-  if (code == Code.OK) {
+  if (code.ec == Code.OK) {
     this.game.playerPlayingId = this.players.playerSeat;
     utils.invokeCallback(cb);
     self.game.init();
     this.emit('startGame', this.game.playerPlayingId);
   } else {
-    return utils.invokeCallback(cb, null, utils.merge_options(utils.getError(code), {menu: this.players.getPlayer(uid).menu}))
+    return utils.invokeCallback(cb, null, utils.merge_options(code, {menu: this.players.getPlayer(uid).menu}))
   }
 };
 

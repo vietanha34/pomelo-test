@@ -50,7 +50,6 @@ var Board = function (opts, PlayerPool, Player) {
   this.hallId = parseInt(opts.hallId);
   this.owner = '';
   this.base = opts.base;
-  this.numMatchPlay = 0;
   this.numSlot = 2;
   this.minBuyIn = this.bet;
   this.status = consts.BOARD_STATUS.NOT_STARTED;
@@ -60,7 +59,8 @@ var Board = function (opts, PlayerPool, Player) {
   this.maxPlayer = 2;
   this.configBet = opts.configBet || [];
   this.configTurnTime = opts.configTurnTime || [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
-  this.configTotalTime = opts.configTotalTime || [5*60 * 1000, 10*60 * 1000, 15*60 * 1000, 30*60 * 1000];
+  this.configTotalTime = opts.configTotalTime || [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
+  this.timeWait = opts.timeWait || 30000; // Thời gian đợi người chơi sẵn sàng hoặc start ván
   this.isMaintenance = false;
   this.turnTime = opts.turnTime * 1000 || 180 * 1000;
   this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
@@ -69,7 +69,6 @@ var Board = function (opts, PlayerPool, Player) {
   this.score = [0,0];
   this.firstUid = null;
   this.turnId = null;
-  this.createdTime = Date.now();
   this.jobId = null;
   this.timeStart = Date.now();
   this.gameType = opts.gameType || consts.GAME_TYPE.NORMAL;
@@ -88,6 +87,35 @@ var Board = function (opts, PlayerPool, Player) {
   this.turnTimeDefault = this.turnTime;
   this.totalTimeDefault = this.totalTime;
   var self = this;
+  // TOURNAMENT
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+    this.numMatchPlay = 0;
+    this.username = lodash.map(opts.username, function (username) {
+        return username.toLowerCase();
+      }) || null; // mảng người chơi đc phép chơi trong bàn
+    this.timePlay = opts.timePlay || Date.now();
+    this.matchPlay = opts.matchPlay || 3;
+    this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
+    this.tableTourFinish = false;
+    this.tourWinUser = null;
+    if (this.timePlay > Date.now()){
+      setTimeout(function () {
+        // thời gian tour đấu đã đến,
+        // push ready cho người chơi
+        self.pushMessage('onNotify', {
+          type: consts.NOTIFY.TYPE.POPUP,
+          title: 'Đấu trường',
+          msg: 'Đã đến giờ thi đấu',
+          buttonLabel: 'OK',
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          image:  consts.NOTIFY.IMAGE.NORMAL
+        });
+        if (self.players.length > 1){
+          self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
+        }
+      }, this.timePlay - Date.now());
+    }
+  }
   this.changePropertiesFunction = [
     // thay đổi tiền cược
     function (properties, dataChanged, dataUpdate, changed ,done) {
@@ -119,7 +147,7 @@ var Board = function (opts, PlayerPool, Player) {
     function (properties, dataChanged, dataUpdate, changed ,done) {
       // change bet;
       var lock = properties.password;
-      if (lodash.isString(lock) && lock !== self.lock) {
+      if (lodash.isString(lock) && lock !== self.lock && self.gameType !== consts.GAME_TYPE.TOURNAMENT) {
         self.lock = lock;
         changed.push(' mật khẩu bàn chơi');
         dataChanged.password = lock;
@@ -413,7 +441,6 @@ pro.pushLeaveBoard = function (uid, data) {
   var playerUids = Object.keys(this.players.players);
   for (var i = 0, len = playerUids.length; i < len; i++) {
     var playerUid = playerUids[i];
-    var player = this.players.getPlayer(playerUid);
     if (uid === playerUid) {
       continue
     }
@@ -429,7 +456,7 @@ pro.pushLeaveBoard = function (uid, data) {
  * @param msg
  */
 pro.playerTimeout = function (player, msg) {
-  logger.info('\n %s auto leaveBoard ', player.uid);
+  console.trace('\n %s auto leaveBoard ', player.uid);
   var self = this;
   this.emit('kick', player);
   var uids = this.leaveBoard(player.uid, true);
@@ -457,6 +484,29 @@ pro.clearIdlePlayer = function () {
   if (!this.players) {
     return
   }
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+    if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish){
+      if (this.players.length === 2){
+        // startGame
+        this.startGame(this.owner);
+      }else{
+        // finishTourSession
+        var winPlayer = this.players.getPlayer(this.owner);
+        if (winPlayer){
+          this.tableTourFinish = true;
+          this.tourWinUser = {
+            username : winPlayer.userInfo.username,
+            uid : winPlayer.uid
+          };
+          this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc');
+        }else {
+          // cả 2 người chơi cùng thua
+          this.tableTourFinish = true;
+          this.emit('tourFinish', null, 'Cả 2 đối thủ không vào bàn chơi');
+        }
+      }
+    }
+  }
   var playerSeat = lodash.compact(this.players.playerSeat);
   for (key in this.players.players) {
     player = this.players.players[key];
@@ -468,13 +518,21 @@ pro.clearIdlePlayer = function () {
         this.playerTimeout(player);
       }
       if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && player.timeAction < Date.now() - 30000){
+        //setTimeout(function (player) {
+        //  board.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+        //    msg: "vui lòng ấn vào nút nếu muốn tiếp tục sau ",
+        //    time : 10,
+        //    btLabel: 'Ấn đê',
+        //    actionId : 1
+        //  })
+        //}, 3000, player);
         this.playerTimeout(player);
       }
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT){
         this.playerTimeout(player);
       }
     }else {
-      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && this.players.length < 2){
+      if (this.gameType !== consts.GAME_TYPE.TOURNAMENT && this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && this.players.length < 2){
         this.playerTimeout(player);
       }
       if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.SIT_OUT_LEAVE){
@@ -716,6 +774,7 @@ pro.getPunishMessage = function (msg, punish) {
 
 /**
  *
+ * @param uid
  * @param properties
  * @param addFunction
  * @param cb
@@ -731,6 +790,9 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
   var resultString = this.checkEffectSetting(properties);
   if(resultString){
     return utils.invokeCallback(cb, null, { ec :Code.FAIL, msg : resultString});
+  }
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+    return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : "Không thể thay đổi bàn chơi trong giải đấu"});
   }
   var propertiesFunction = [
     function (done) {
@@ -855,6 +917,11 @@ pro.ready = function (uid) {
   if (player) {
     if(player.gold < this.bet){
       return utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED);
+    }
+    if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+      if (this.timePlay > Date.now()){
+        return { ec : 500, msg : "Chưa đến giờ thi đấu, xin vui lòng quay lại sau", menu : player.menu}
+      }
     }
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid !== this.owner) {
       player.Ready();
@@ -1026,7 +1093,7 @@ pro.pushFinishGame = function (msg, finish, extraData) {
 
 pro.addJobReady = function (uid, time) {
   var self = this;
-  time = time || 30000;
+  time = time || this.timeWait;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
@@ -1048,7 +1115,7 @@ pro.addJobReady = function (uid, time) {
 
 pro.addJobStart = function (uid, time) {
   var self = this;
-  time = time || 30000;
+  time = time || this.timeWait;
   if (this.jobId){
     this.timer.cancelJob(this.jobId);
   }
@@ -1080,19 +1147,17 @@ pro.cancelJob = function () {
 };
 
 pro.checkCloseWhenFinishGame = function checkCloseWhenFinishGame() {
-  if ((this.gameType === consts.GAME_TYPE.TOURNAMENT && this.numMatchPlay >= this.matchTurn)|| this.isMaintenance) {
-    if (this.isMaintenance) {
-      this.pushMessage('onNotify', {
-        popup_type: consts.POPUP_TYPE.CENTER_SCREEN,
-        title: Code.ON_GAME.FA_BOARD_MAINTENANCE_TITLE,
-        message: Code.ON_GAME.FA_BOARD_MAINTENANCE_MESSAGE,
-        buttonLabel: 'Rời bàn',
-        buttonColor: 1,
-        command: {
-          target: consts.NOTIFY_TARGET.LEAVE_BOARD
-        }
-      })
-    }
+  if (this.isMaintenance) {
+    this.pushMessage('onNotify', {
+      popup_type: consts.POPUP_TYPE.CENTER_SCREEN,
+      title: Code.ON_GAME.FA_BOARD_MAINTENANCE_TITLE,
+      message: Code.ON_GAME.FA_BOARD_MAINTENANCE_MESSAGE,
+      buttonLabel: 'Rời bàn',
+      buttonColor: 1,
+      command: {
+        target: consts.NOTIFY_TARGET.LEAVE_BOARD
+      }
+    });
     setTimeout(function () {
       pomelo.app.game.boardManager.remove({tableId: this.tableId});
     }.bind(this), 20000);
@@ -1141,10 +1206,6 @@ pro.addItems = function (items) {
   return player.goldAfter
 };
 
-pro.transaction = function (uids, transactionId, cb) {
-  return utils.invokeCallback(cb, null, {});
-};
-
 pro.plusScore = function (whiteWin) {
   if (whiteWin) {
     this.score[0] += 1;
@@ -1160,9 +1221,14 @@ pro.getGuest = function () {
 pro.checkStartGame = function () {
   var result = this.players.checkStartGame();
   if (!result){
-    return Code.ON_GAME.FA_NOT_READY
+    return utils.getError(Code.ON_GAME.FA_NOT_READY);
   }else {
-    return Code.OK;
+    if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+      if (this.timePlay > Date.now()){
+        return { ec : 500, msg : "Chưa đến giờ thi đấu, xin vui lòng quay lại sau"}
+      }
+    }
+    return {ec : Code.OK};
   }
 };
 
@@ -1171,6 +1237,7 @@ pro.logout = function (uid) {
   if(player && player.guest){
     player.timeLogout = Date.now();
   }
+  this.emit('logout', player);
 };
 
 pro.buyItem = function (uid, item, duration, price) {
@@ -1209,4 +1276,9 @@ pro.hint = function (uid, msg) {
     case consts.GAME_ACTION_ID.AFK_CHECK:
       player.timeLogout = null;
   }
+};
+
+
+pro.setBoard = function (opts) {
+
 };

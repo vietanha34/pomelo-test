@@ -13,6 +13,8 @@ var BoardUtils = require('../logic/utils');
 var BoardConsts = require('../logic/consts');
 var consts = require('../../../../consts/consts');
 var userDao = require('../../../../dao/userDao');
+var moment = require('moment');
+moment.locale('vi');
 
 /**
  * Quản lý người chơi trong bàn chơi game chắn, bao gồm các thuộc tính sau :
@@ -32,8 +34,6 @@ var PlayerPool = function (opts) {
   this.players = {};
   this.Player = typeof opts.Player === 'function' ? opts.Player : Player;
   this.guestIds = []; // mảng uid của người xem;
-  this.orderUid = [];
-  this.mapColor = [consts.COLOR.WHITE, consts.COLOR.BLACK];
   this.slot = [];
   for (var i = 0, len = this.numSlot.length; i < len; i++) {
     this.slot.push({
@@ -69,11 +69,6 @@ pro.reset = function () {
     player.goldInGame = -1;
     player.reset();
   }
-  //this.paymentRemote(BoardConsts.PAYMENT_METHOD.ADD_GOLD, opts, this.table.game.matchId, function (err, res) {
-  //  if (err) {
-  //    logger.error("message : %s , stack : %s , err : %s ", err.message, err.stack, err);
-  //  }
-  //});
 };
 
 
@@ -106,11 +101,27 @@ pro.addPlayer = function (opts) {
   });
   self.players[uid] = player;
   data.newPlayer = true;
-  var slotIndex = self.getSlotAvailable(slotId, uid);
+  var slotIndex = self.getSlotAvailable(slotId, uid, player.userInfo.username, this.table.timePlay);
+  if(this.table.username) {
+    var index = this.table.username.indexOf(player.userInfo.username);
+    if (index > -1){
+      if (Date.now() < this.table.timePlay){
+        data.notifyMsg = util.format('Còn %s nữa sẽ đến giờ thi đấu. Xin vui lòng xem danh sách thi đấu tại loa làng hoặc Tin Admin"', moment(this.table.timePlay).fromNow(true));
+      }else if (this.table.numMatchPlay === 0 && !this.table.tableTourFinish){
+        data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong ít phút!', index === 0 ? this.table.username[1] : this.table.username[0]);
+      }
+    }else {
+      data.notifyMsg = util.format('Bạn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s"', this.table.username[0], this.table.username[1]);
+    }
+    if (this.table.tableTourFinish && this.table.tourWinUser){
+      data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.username[0], this.table.username[1], this.table.tourWinUser['username'])
+    }
+  }
+  console.log('player.userInfo.level : ', player.userInfo.level, self.table.level, this.table.username);
   if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
     || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel)
   ) {
-    if (slotIndex > -1){
+    if (slotIndex > -1) {
       if (player.gold < self.table.bet) {
         player.pushMenu(self.table.genMenu(consts.ACTION.CHARGE_MONEY));
         data.notifyMsg = 'Bạn không đủ tiền để chơi bàn chơi này'
@@ -155,8 +166,9 @@ pro.addPlayer = function (opts) {
  *
  * @param slotId
  * @param uid
+ * @param username
  */
-pro.getSlotAvailable = function (slotId, uid) {
+pro.getSlotAvailable = function (slotId, uid, username) {
   var slot = -1;
   for (var i = 0, len = this.playerSeat.length; i < len; i++) {
     var index = this.playerSeat[i];
@@ -164,6 +176,7 @@ pro.getSlotAvailable = function (slotId, uid) {
       slot = i
     }
   }
+  if (this.table.username && this.table.username.indexOf(username) < 0) return -1;
   return slot
 };
 
@@ -265,7 +278,7 @@ pro.sitIn = function (uid, slotId) {
   } else {
     index = self.getAvailableIndex(uid);
   }
-  if (index > -1){
+  if (index > -1 && (!this.table.username || this.table.username.indexOf(player.userInfo.username) > -1)){
     var result = {};
     utils.arrayRemove(self.guestIds, uid);
     self.playerSeat[index] = uid;
@@ -429,6 +442,7 @@ pro.close = function (cb) {
   else {
     code = Code.ON_GAME.FA_GAME_NOT_START
   }
+  console.trace('here');
   var playerUids = Object.keys(this.players);
   var gameType = this.table.gameType;
   var target = gameType === consts.GAME_TYPE.TOURNAMENT ? consts.NOTIFY_TARGET.TOURNAMENT : undefined;

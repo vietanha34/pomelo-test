@@ -106,7 +106,7 @@ Handler.prototype.send = function (msg, session, next) {
           self.chatService.sendMessageToBoard(uid,  channelUtil.getBoardChannelName(tableId), data, done);
           return;
         case consts.TARGET_TYPE.BOARD_GUEST:
-          return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
+          self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
           var dataClone = utils.clone(data);
           dataClone.targetType = consts.TARGET_TYPE.BOARD;
           return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), dataClone, done);
