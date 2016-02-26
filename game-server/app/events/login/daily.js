@@ -45,6 +45,7 @@ module.exports.process = function (app, type, param) {
         register: 0,
         deviceId: param.deviceId,
         deviceToken: param.deviceToken || '',
+        uid: param.uid,
         username: user.username || '',
         dtId: param.dtId || 1,
         platform: (isNaN(param.platform) ? param.platform : (consts.PLATFORM_UNMAP[param.platform] || 'ios')),
