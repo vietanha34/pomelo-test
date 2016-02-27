@@ -37,7 +37,8 @@ exp.init = function (opts) {
   exp.check();
 };
 
-exp.createRoomTournament = function (hallConfig, roomId) {
+exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
+  tableOpts = tableOpts || {};
   var roomOpts = {
     serverId: serverId,
     gameId: gameId,
@@ -47,33 +48,36 @@ exp.createRoomTournament = function (hallConfig, roomId) {
   return pomelo.app.get('boardService')
     .addRoom(roomOpts)
     .then(function () {
-      var data = pomelo.app.get('dataService').get(''+roomId).data;
-      var listPlayers = lodash.values(data);
-      console.log('data : ', data, listPlayers, roomId);
+      if (lodash.isArray(tableOpts.players)){
+        listPlayer = tableOpts.players;
+      }else {
+        var data = pomelo.app.get('dataService').get(''+roomId).data;
+        var listPlayers = lodash.values(data);
+      }
       for (var i = 0, len = listPlayers.length; i < len ; i++){
         var listPlayer = listPlayers[i];
         var opts = utils.clone(hallConfig);
         if (opts.hallId === consts.HALL_ID.LIET_CHAP) {
-          opts.lockMode = [3]; // liệt tốt 5;
+          opts.lockMode = tableOpts.lockMode || [3]; // liệt tốt 5;
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
         opts.username = [listPlayer['player1'], listPlayer['player2']];
-        opts.timeWait = 120000; // thời gian chờ là 1 phút
-        opts.matchPlay = opts.matchPlay || 1;
-        opts.timePlay = 1456493400000;
-        opts.configBet = [opts.bet || 5000, opts.bet || 5000];
-        opts.turnTime = 180;
-        opts.totalTime = 20 * 60;
-        opts.bet = opts.bet || 5000;
+        opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
+        opts.matchPlay = tableOpts.matchPlay || 1;
+        opts.timePlay = tableOpts.timePlay || 1456579800000;
+        opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
+        opts.turnTime = tableOpts.turnTime || 180;
+        opts.totalTime = tableOpts.turnTime || 20 * 60;
+        opts.bet = tableOpts.bet || 5000;
         opts.configTurnTime = [opts.turnTime];
         opts.configTotalTime = [opts.totalTime];
         opts.base = true;
         opts.tourTimeWait = 10 * 60 * 1000;
-        opts.level = opts.level || 0;
+        opts.level = tableOpts.level || 0;
         opts.roomId = roomOpts.roomId;
         opts.gameType = consts.GAME_TYPE.TOURNAMENT;
-        opts.index = listPlayer['id'];
+        opts.index = listPlayer['id'] || i + 1;
         exp.createBoard(opts);
       }
     })
@@ -248,17 +252,21 @@ exp.delBoard = function (boardId) {
 };
 
 exp.delRoom = function (roomId) {
-  async.forEach(Object.keys(boards), function (item, done) {
-    var board = boards[item];
-    if (board.roomId === roomId) {
-      exp.delBoard(item);
-      done()
-    } else {
-      done();
-    }
-  }, function () {
-    // xoá bàn chơi
-  });
+  return pomelo.app.get('boardService')
+    .delRoom({ roomId : roomId, gameId : gameId})
+    .then(function () {
+      async.forEach(Object.keys(boards), function (item, done) {
+        var board = boards[item];
+        if (board.roomId === roomId) {
+          exp.delBoard(item);
+          done()
+        } else {
+          done();
+        }
+      }, function () {
+        // xoá bàn chơi
+      });
+    })
 };
 
 

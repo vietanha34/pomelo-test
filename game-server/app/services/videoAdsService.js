@@ -74,7 +74,7 @@ VideoAdsService.prototype.available = function (platform, cb) {
     })
     .then(function (body) {
       if (body){
-        if (!body.ec){
+        if (body.ec === 0){
           pomelo.app.get('redisCache')
             .set('videoAds:available', JSON.stringify(body['data']));
           pomelo.app.get('redisCache').expire('videoAds:available', 60 * 60);

@@ -743,6 +743,12 @@ module.exports = {
     25: 'vua'
   },
   PLATFORM_UNMAP: {
+    ios: 'ios',
+    android: 'android',
+    windowphone: 'windowsphone'
+  },
+
+  VIDEO_ADS_PLATFORM_UMAP: {
     1: 'ios',
     2: 'android',
     3: 'windowphone'

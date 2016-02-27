@@ -24,11 +24,12 @@ app.configure('production|development|local', function () {
   var onlineUser = require('./app/modules/onlineUser');
   var maintenance = require('./app/modules/maintenance');
   var kickUser = require('./app/modules/kickUser');
+  var tournament = require('./app/modules/tournament');
   var globalChannel = require('pomelo-globalchannel-plugin');
   if (typeof app.registerAdmin === 'function'){
     app.registerAdmin(onlineUser, {app: app});
     app.registerAdmin(maintenance, {app: app});
-    //app.registerAdmin(notify, { app : app});
+    app.registerAdmin(tournament, { app : app});
     app.registerAdmin(kickUser,  { app : app});
   }
   app.loadConfig('redisConfig', app.getBase() + '/config/redis.json');

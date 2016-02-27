@@ -524,12 +524,12 @@ exp.addEventFromBoard = function (board) {
         command: {target: consts.NOTIFY.TARGET.NORMAL},
         image:  consts.NOTIFY.IMAGE.NORMAL
       });
-      console.error(util.format, 'tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc thắng nghiêng về : "%s" ' +
-        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, winner.username, reason, board.score);
+      console.error(util.format('tournament -  cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc thắng nghiêng về : "%s" ' +
+        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, winner.username, reason, board.score));
     }else {
       // hoà
-      console.error(util.format, 'tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc hoà ' +
-        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, reason, board.score);
+      console.error(util.format('tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc hoà ' +
+        'với lý do : %s , tỷ số : "%s"', board.username[0], board.username[1], board.roomId, board.index, reason, board.score));
     }
     // ghi log
   });

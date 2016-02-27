@@ -59,7 +59,7 @@ HomeDao.getHome = function getHome(params, cb) {
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
     cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'markVideo'),
-    ads: pomelo.app.get('videoAdsService').available(params.platform),
+    ads: pomelo.app.get('videoAdsService').available(consts.VIDEO_ADS_PLATFORM_UMAP[params.platform]),
     videoAds : pomelo.app.get('redisCache').getAsync(redisKeyUtil.getUserKeyVideoAds(params.uid))
   })
     .then(function(props) {

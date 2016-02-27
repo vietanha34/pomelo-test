@@ -37,7 +37,7 @@ module.exports = Game;
 Game.prototype.start = function (cb) {
   var self = this;
   if (!this.init) {
-    return pomelo.app.get('boardService').delBoardByServerId(self.serverId)
+    return pomelo.app.get('boardService').cleanByServerId(self.serverId)
       .then(function () {
         if (self.base){
         }

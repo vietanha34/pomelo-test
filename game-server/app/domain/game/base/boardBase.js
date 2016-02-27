@@ -472,7 +472,11 @@ pro.isAlive = function () {
   if (!this.players) {
     return false;
   }
-  this.clearIdlePlayer();
+  try {
+    this.clearIdlePlayer();
+  } catch (err){
+    console.error('clearIdlePlayer error : ', error);
+  }
   if (this.base) {
     return true
   }
@@ -1275,6 +1279,35 @@ pro.hint = function (uid, msg) {
   switch (msg.actionId){
     case consts.GAME_ACTION_ID.AFK_CHECK:
       player.timeLogout = null;
+  }
+};
+
+pro.resetTournament = function (opts) {
+  this.numMatchPlay = 0;
+  this.username = lodash.map(opts.username, function (username) {
+      return username.toLowerCase();
+    }) || null; // mảng người chơi đc phép chơi trong bàn
+  this.timePlay = opts.timePlay || Date.now();
+  this.matchPlay = opts.matchPlay || 3;
+  this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
+  this.tableTourFinish = false;
+  this.tourWinUser = null;
+  if (this.timePlay > Date.now()){
+    setTimeout(function () {
+      // thời gian tour đấu đã đến,
+      // push ready cho người chơi
+      self.pushMessage('onNotify', {
+        type: consts.NOTIFY.TYPE.POPUP,
+        title: 'Đấu trường',
+        msg: 'Đã đến giờ thi đấu',
+        buttonLabel: 'OK',
+        command: {target: consts.NOTIFY.TARGET.NORMAL},
+        image:  consts.NOTIFY.IMAGE.NORMAL
+      });
+      if (self.players.length > 1){
+        self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
+      }
+    }, this.timePlay - Date.now());
   }
 };
 

@@ -442,7 +442,6 @@ pro.close = function (cb) {
   else {
     code = Code.ON_GAME.FA_GAME_NOT_START
   }
-  console.trace('here');
   var playerUids = Object.keys(this.players);
   var gameType = this.table.gameType;
   var target = gameType === consts.GAME_TYPE.TOURNAMENT ? consts.NOTIFY_TARGET.TOURNAMENT : undefined;
