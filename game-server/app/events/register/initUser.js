@@ -96,7 +96,9 @@ module.exports.process = function (app, type, param) {
                 break;
             }
           }
-          else if (param.platform == consts.PLATFORM_ENUM.IOS || param.platform == consts.PLATFORM_ENUM.WINDOWPHONE) {
+          else if (
+            param.platform == consts.PLATFORM_ENUM.IOS || param.platform == consts.PLATFORM_ENUM.WINDOWPHONE ||
+            param.platform == 'ios' || param.platform == 'windowphone') {
             if (userCount == 2) bonus = 3000;
             else if (userCount == 3) bonus = 1000;
           }
