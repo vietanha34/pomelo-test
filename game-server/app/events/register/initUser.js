@@ -125,7 +125,7 @@ module.exports.process = function (app, type, param) {
               NotifyDao.push({
                 type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
                 title: code.REGISTER_LANGUAGE.BONUS_TITLE,
-                msg: 'Bạn được tặng 1 tuần sử dụng miễn phí vé phòng thường và vật phẩm sửa thời gian',
+                msg: 'Bạn được tặng 1 tuần sử dụng miễn phí vật phẩm sửa thời gian',
                 buttonLabel: 'OK',
                 command: {target: consts.NOTIFY.TARGET.NORMAL},
                 scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
