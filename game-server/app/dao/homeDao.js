@@ -84,7 +84,7 @@ HomeDao.getHome = function getHome(params, cb) {
       data.ads = {
         data : props.ads,
         gold : 500,
-        disable: (props.videoAds ? 0 : 1) | adsDisappear
+        disable: (props.videoAds ? 1 : 0) | adsDisappear
       };
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
