@@ -24,14 +24,14 @@ var VideoAdsService = function (app, opts) {
   this.app = app;
 };
 
-VideoAdsService.prototype.getAds = function (opts,cb ) {
+VideoAdsService.prototype.getAds = function (opts, cb) {
   return rp({
-    uri :'http://10.2.10.88:8090/ads/get',
-    qs : {username: opts.username || 'laanhdo', platform : opts.platform, appId: consts.APP_ID, version : '2.0.0'},
+    uri: 'http://10.2.10.88:8090/ads/get',
+    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.APP_ID, version: '2.0.0'},
     json: true,
-    timeout : 2000
+    timeout: 2000
   })
-    .then(function (data){
+    .then(function (data) {
       return utils.invokeCallback(cb, null, data)
     })
     .catch(function (err) {
@@ -42,46 +42,48 @@ VideoAdsService.prototype.getAds = function (opts,cb ) {
 
 VideoAdsService.prototype.markAds = function (opts, cb) {
   return rp({
-    uri :'http://10.2.10.88:8090/ads/mark',
-    qs : {username: opts.username || 'laanhdo', platform : opts.platform, appId: consts.APP_ID, id : opts.id},
+    uri: 'http://10.2.10.88:8090/ads/mark',
+    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.APP_ID, id: opts.id},
     json: true,
-    timeout : 2000
+    timeout: 2000
   })
     .then(function (data) {
       return utils.invokeCallback(cb, null, data)
     })
     .catch(function (err) {
       console.error(err);
-      return utils.invokeCallback(cb, null, { ec : Code.FAIL})
+      return utils.invokeCallback(cb, null, {ec: Code.FAIL})
     })
 };
 
 VideoAdsService.prototype.available = function (platform, cb) {
-  pomelo.app.get('redisCache')
+  return pomelo.app.get('redisCache')
     .getAsync('videoAds:available')
     .then(function (data) {
-      if (data){
+      if (data) {
         data = utils.JSONParse(data, {});
+        console.log('data : ', data, typeof data, platform);
         return utils.invokeCallback(cb, null, JSON.stringify(data[platform]) || []);
-      }else {
+      } else {
         return rp({
-          uri :'http://10.2.10.88:8090/ads/available',
-          qs : {appId: consts.APP_ID, version : '2.0.0'},
+          uri: 'http://10.2.10.88:8090/ads/available',
+          qs: {appId: consts.APP_ID, version: '2.0.0'},
           json: true,
-          timeout : 2000
+          timeout: 2000
         })
-      }
-    })
-    .then(function (body) {
-      if (body){
-        if (body.ec === 0){
-          pomelo.app.get('redisCache')
-            .set('videoAds:available', JSON.stringify(body['data']));
-          pomelo.app.get('redisCache').expire('videoAds:available', 60 * 60);
-          return utils.invokeCallback(cb, null, JSON.stringify(body['data'][platform]))
-        }else {
-          return utils.invokeCallback(cb, null, JSON.stringify([]))
-        }
+          .then(function (body) {
+            if (body) {
+              console.log('body : ', body, typeof body);
+              if (body.ec === 0) {
+                pomelo.app.get('redisCache')
+                  .set('videoAds:available', JSON.stringify(body['data']));
+                pomelo.app.get('redisCache').expire('videoAds:available', 60 * 60);
+                return utils.invokeCallback(cb, null, JSON.stringify(body['data'][platform]))
+              } else {
+                return utils.invokeCallback(cb, null, JSON.stringify([]))
+              }
+            }
+          })
       }
     })
     .catch(function (err) {
