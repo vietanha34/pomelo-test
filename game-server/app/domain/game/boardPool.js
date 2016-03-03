@@ -11,14 +11,8 @@ var async = require('async');
 var lodash = require('lodash');
 var consts = require('../../consts/consts');
 
-var exp = module.exports;
 
-var boards;
-var serverId;
-var rooms;
-var intervel;
 var MAX_PLAYER_IN_ROOM = 100;
-var gameId;
 var maps = {};
 
 /**
@@ -28,20 +22,26 @@ var maps = {};
  * @class BoardPool
  * @param opts
  */
-exp.init = function (opts) {
-  boards = {};
-  rooms = {};
-  gameId = opts.gameId;
-  serverId = opts.serverId;
-  intervel = opts.interval || 2 * 60 * 1000;
-  exp.check();
+
+var BoardPool = function (opts) {
+  this.boards = {};
+  this.rooms = {};
+  this.serverId = opts.serverId;
+  this.gameId = opts.gameId;
+  this.intervel = opts.interval || 2 * 60 * 1000;
+  this.check();
 };
+
+module.exports = BoardPool;
+
+var exp = BoardPool.prototype;
 
 exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
   tableOpts = tableOpts || {};
+  var self = this;
   var roomOpts = {
-    serverId: serverId,
-    gameId: gameId,
+    serverId: this.serverId,
+    gameId: this.gameId,
     roomId: roomId,
     hallId: parseInt(hallConfig.hallId)
   };
@@ -68,26 +68,27 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
         opts.timePlay = tableOpts.timePlay || 1456579800000;
         opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
         opts.turnTime = tableOpts.turnTime || 180;
-        opts.totalTime = tableOpts.turnTime || 20 * 60;
+        opts.totalTime = tableOpts.totalTime || 20 * 60;
         opts.bet = tableOpts.bet || 5000;
-        opts.configTurnTime = [opts.turnTime];
-        opts.configTotalTime = [opts.totalTime];
+        opts.configTurnTime = [opts.turnTime * 1000];
+        opts.configTotalTime = [opts.totalTime * 1000];
         opts.base = true;
         opts.tourTimeWait = 10 * 60 * 1000;
         opts.level = tableOpts.level || 0;
         opts.roomId = roomOpts.roomId;
         opts.gameType = consts.GAME_TYPE.TOURNAMENT;
         opts.index = listPlayer['id'] || i + 1;
-        exp.createBoard(opts);
+        self.createBoard(opts);
       }
     })
 };
 
 exp.createRoom = function (hallConfig, roomId) {
   var hallId = parseInt(hallConfig.hallId);
+  var self = this;
   var roomOpts = {
-    serverId: serverId,
-    gameId: gameId,
+    serverId: this.serverId,
+    gameId: this.gameId,
     roomId: roomId,
     hallId: parseInt(hallConfig.hallId)
   };
@@ -102,16 +103,24 @@ exp.createRoom = function (hallConfig, roomId) {
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
+        opts.turnTime = 3 * 60;
+        if (hallId === consts.HALL_ID.MIEN_PHI){
+          opts.totalTime = 30 * 60;
+          opts.configTurnTime = [3 * 60 * 1000];
+          opts.configTotalTime = [30 * 60 * 1000];
+        }else {
+          opts.totalTime = 15 * 60;
+          opts.configTurnTime = [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
+          opts.configTotalTime = [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
+        }
         var betConfig = hallConfig.betConfig;
         opts.configBet = [hallConfig.goldMin, hallConfig.goldMax];
-        opts.turnTime = 3 * 60;
         opts.bet = (betConfig[Math.floor((i-1) / 6)] ? betConfig[Math.floor((i-1) / 6)]: betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0) || 0;
-        opts.totalTime = 15 * 60;
         opts.base = true;
         opts.level = hallConfig.level;
         opts.roomId = roomId;
         opts.index = i;
-        exp.createBoard(opts);
+        self.createBoard(opts);
       }
     })
     .then(function () {
@@ -120,9 +129,9 @@ exp.createRoom = function (hallConfig, roomId) {
 
 
 exp.createBoard = function (params, cb) {
-  exp.create(params, function (err, res) {
+  this.create(params, function (err, res) {
     if (res) {
-      return utils.invokeCallback(cb, err, {boardId: res, serverId: serverId, roomId: params.roomId})
+      return utils.invokeCallback(cb, err, {boardId: res, serverId: this.serverId, roomId: params.roomId})
     }
     else if (!!err) {
       logger.error(err);
@@ -141,25 +150,26 @@ exp.createBoard = function (params, cb) {
  */
 exp.create = function (params, cb) {
   var boardService = pomelo.app.get('boardService');
+  var self = this;
   return boardService.genBoardId({
-    serverId: serverId,
-    gameId: gameId,
+    serverId: this.serverId,
+    gameId: this.gameId,
     gameType: consts.GAME_TYPE.NORMAL,
     roomId: params.roomId
   })
     .then(function (boardId) {
-      if (boards[boardId]) {
+      if (self.boards[boardId]) {
         utils.invokeCallback(cb, null, boardId);
       }
-      params.serverId = serverId;
+      params.serverId = self.serverId;
       params.boardId = boardId;
       return Promise.resolve([Board(params, boardId), boardId]);
     })
     .spread(function (board, boardId) {
       if (board) {
-        boards[boardId] = board;
-        if (!rooms[board.roomId]) {
-          rooms[board.roomId] = {};
+        self.boards[boardId] = board;
+        if (!self.rooms[board.roomId]) {
+          self.rooms[board.roomId] = {};
         }
         return utils.invokeCallback(cb, null, board.tableId);
       } else {
@@ -178,8 +188,9 @@ exp.create = function (params, cb) {
  * @param opts
  */
 exp.maintenance = function (opts) {
-  async.forEach(Object.keys(boards), function (item, done) {
-    var board = boards[item];
+  var self = this;
+  async.forEach(Object.keys(self.boards), function (item, done) {
+    var board = self.boards[item];
     if (board) {
       board.maintenance(opts);
     }
@@ -199,13 +210,13 @@ exp.maintenance = function (opts) {
 exp.remove = function (params) {
   var boardId = params.tableId;
   var board;
-  if (!boards[boardId]) return false;
+  if (!this.boards[boardId]) return false;
   pomelo.app.get('boardService').delBoard(boardId);
-  board = boards[boardId];
+  board = this.boards[boardId];
   if (board) {
     board.close();
   }
-  boards[boardId] = null;
+  this.boards[boardId] = null;
   return true;
 };
 
@@ -216,8 +227,9 @@ exp.remove = function (params) {
  * @param {Function} cb
  */
 exp.stop = function (cb) {
-  async.forEach(Object.keys(boards), function (item, done) {
-    var board = boards[item];
+  var self = this;
+  async.forEach(Object.keys(this.boards), function (item, done) {
+    var board = self.boards[item];
     pomelo.app.get('boardService').delBoard(item, function () {
       if (board) {
         board.close();
@@ -237,6 +249,7 @@ exp.stop = function (cb) {
  */
 exp.delBoard = function (boardId) {
   var app = pomelo.app;
+  var self = this;
   var channel = pomelo.app.get('channelService').getChannel(channelUtil.getBoardChannelName(boardId), true);
   if (channel) {
     channel.destroy();
@@ -244,21 +257,22 @@ exp.delBoard = function (boardId) {
   app.get('boardService').delBoard(boardId)
     .then(function () {
       var board;
-      if (!boards[boardId]) return false;
-      board = boards[boardId];
+      if (!self.boards[boardId]) return false;
+      board = self.boards[boardId];
       board.close();
-      boards[boardId] = null;
+      self.boards[boardId] = null;
     });
 };
 
 exp.delRoom = function (roomId) {
+  var self = this;
   return pomelo.app.get('boardService')
     .delRoom({ roomId : roomId, gameId : gameId})
     .then(function () {
-      async.forEach(Object.keys(boards), function (item, done) {
-        var board = boards[item];
+      async.forEach(Object.keys(self.boards), function (item, done) {
+        var board = self.boards[item];
         if (board.roomId === roomId) {
-          exp.delBoard(item);
+          self.delBoard(item);
           done()
         } else {
           done();
@@ -278,7 +292,7 @@ exp.delRoom = function (roomId) {
  * @returns {*}
  */
 exp.getBoard = function (boardId) {
-  return boards[boardId];
+  return this.boards[boardId];
 };
 
 /**
@@ -287,19 +301,21 @@ exp.getBoard = function (boardId) {
  * @returns {*}
  */
 exp.getBoardList = function () {
-  return boards
+  return this.boards
 };
 
 exp.check = function () {
+  var self = this;
   try {
     utils.interval(function () {
+      console.error('check board status in ' + self.serverId);
       try {
         var boardId, board;
         var rooms = {};
-        for (boardId in boards) {
-          board = boards[boardId];
+        for (boardId in self.boards) {
+          board = self.boards[boardId];
           if (!board) {
-            delete boards[boardId];
+            delete self.boards[boardId];
             continue
           }
           var numPlayer = board.players.length;
@@ -314,14 +330,14 @@ exp.check = function () {
           if (!progress && rooms[key]) progress += 1;
           pomelo.app.get('boardService').updateRoom({
             roomId: key,
-            gameId: gameId,
+            gameId: self.gameId,
             progress: progress
           })
         }
       }catch(err){
         console.error('error ', err)
       }
-    }, 30000);
+    }, 40000);
   }
   catch (err) {
     console.error("error in check : %j ", err);
@@ -331,8 +347,8 @@ exp.check = function () {
 
 function onClose(err, boardId) {
   if (!err) {
-    boards[boardId].close();
-    boards[boardId] = null;
+    this.boards[boardId].close();
+    this.boards[boardId] = null;
   }
   else {
     logger.warn('remove instance error! id : %j, err : %j', boardId, err);

@@ -422,7 +422,8 @@ module.exports = {
     DELTA_TIME : 5000,
     SLEEP_TURN : 500,
     SLEEP_CHARGE : 1000,
-    LOGOUT : 60 * 1000
+    GUEST : 5 * 60 * 1000,
+    LOGOUT : 30 * 1000
   },
 
   CHANGE_GOLD_TYPE: {
@@ -749,9 +750,9 @@ module.exports = {
   },
 
   VIDEO_ADS_PLATFORM_UMAP: {
-    1: 'ios',
-    2: 'android',
-    3: 'windowphone'
+    ios: 'ios',
+    android: 'android',
+    windowphone: 'windowsphone'
   },
 
   GUILD_MEMBER_STATUS:{

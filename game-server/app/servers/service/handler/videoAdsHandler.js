@@ -61,7 +61,7 @@ Handler.prototype.markAds = function (msg, session, next) {
             msg : "Xem video cộng tiền",
             type : consts.CHANGE_GOLD_TYPE.VIDEO_ADS
           }),
-          status : Promise.promisify(statusService.getStatusByUid, statusService)(uid, true)
+          status : Promise.promisify(statusService.getStatusByUid, {context : statusService})(uid, true)
         })
       } else {
         return Promise.reject({})
@@ -87,9 +87,9 @@ Handler.prototype.markAds = function (msg, session, next) {
         }
         pomelo.app.get('statusService')
           .pushByUids([uid], 'onEnableVideoAds', { enable : 0});
-        pomelo.app.get('redisClient')
+        pomelo.app.get('redisCache')
           .set(redisKeyUtil.getUserKeyVideoAds(uid), uid);
-        pomelo.app.get('redisClient')
+        pomelo.app.get('redisCache')
           .expire(redisKeyUtil.getUserKeyVideoAds(uid), 60 * 60);
       }
     })

@@ -30,8 +30,7 @@ module.exports = function(sequelize, DataTypes) {
     tableName: 'UserItem',
     indexes:[
       {
-        type:"primary",
-        columns:["uid","itemId"]
+        fields:["uid","itemId"]
       }
     ]
   });

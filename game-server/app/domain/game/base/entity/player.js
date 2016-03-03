@@ -56,6 +56,7 @@ var Player = function (opts) {
   this.moneyLogs = [];
   this.timeLogout = null;
   this.suggest = null;
+  this.timeoutLeaveBoard = null;
 };
 
 /**

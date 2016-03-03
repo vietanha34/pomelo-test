@@ -51,7 +51,7 @@ module.exports = function(sequelize, DataTypes) {
     tableName : 'Mission',
     indexes:[
       {
-        columns:["status","rank"]
+        fields :["status","rank"]
       }
     ]
   });

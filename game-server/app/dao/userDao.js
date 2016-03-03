@@ -461,7 +461,6 @@ UserDao.login = function (msg, cb) {
         return utils.invokeCallback(cb, null, user);
       }
     })
-    .cancellable()
     .catch(function (err) {
       console.error('err : ', err);
       return utils.invokeCallback(cb, err);

@@ -456,7 +456,6 @@ pro.pushLeaveBoard = function (uid, data) {
  * @param msg
  */
 pro.playerTimeout = function (player, msg) {
-  console.trace('\n %s auto leaveBoard ', player.uid);
   var self = this;
   this.emit('kick', player);
   var uids = this.leaveBoard(player.uid, true);
@@ -488,6 +487,7 @@ pro.clearIdlePlayer = function () {
   if (!this.players) {
     return
   }
+  var self = this;
   if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish){
       if (this.players.length === 2){
@@ -518,29 +518,41 @@ pro.clearIdlePlayer = function () {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
     if (player.guest){
-      if (player.timeAction < Date.now() - consts.TIME.SIT_OUT_LEAVE){
+      console.log('guest hien thị pop up : ', Date.now() - player.timeAction);
+      if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
-      if (this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && player.timeAction < Date.now() - 30000){
-        //setTimeout(function (player) {
-        //  board.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
-        //    msg: "vui lòng ấn vào nút nếu muốn tiếp tục sau ",
-        //    time : 10,
-        //    btLabel: 'Ấn đê',
-        //    actionId : 1
-        //  })
-        //}, 3000, player);
-        this.playerTimeout(player);
-      }
-      if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT){
-        this.playerTimeout(player);
+      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
+        this.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+          msg: "Vui lòng xác nhận bạn vẫn còn theo dõi trận đấu này!",
+          time : 30,
+          btLabel: 'Xem',
+          actionId : 1
+        });
+        player.timeoutLeaveBoard = setTimeout(function (uid) {
+          var player = self.players.getPlayer(uid);
+          if (player && player.guest && player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
+            self.playerTimeout(player);
+          }
+        }, 30000 + 2000, player.uid);
       }
     }else {
-      if (this.gameType !== consts.GAME_TYPE.TOURNAMENT && this.status === consts.BOARD_STATUS.NOT_STARTED && this.timeStart < Date.now() - consts.TIME.BOARD_NOT_START && this.players.length < 2){
+      if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.LOGOUT){
         this.playerTimeout(player);
       }
-      if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.SIT_OUT_LEAVE){
-        this.playerTimeout(player);
+      if (this.gameType !== consts.GAME_TYPE.TOURNAMENT && this.status === consts.BOARD_STATUS.NOT_STARTED  && this.players.length < 2 && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START){
+        this.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+          msg: "Không có đối thủ thi đấu, bạn có muốn tiếp tục đợi không?",
+          time : 30,
+          btLabel: 'Xem',
+          actionId : 1
+        });
+        player.timeoutLeaveBoard = setTimeout(function (uid) {
+          var player = self.players.getPlayer(uid);
+          if (player && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START && self.status === consts.BOARD_STATUS.NOT_STARTED  && self.players.length < 2){
+            self.playerTimeout(player);
+          }
+        }, 30000 + 2000, player.uid);
       }
     }
   }
@@ -1238,7 +1250,7 @@ pro.checkStartGame = function () {
 
 pro.logout = function (uid) {
   var player = this.players.getPlayer(uid);
-  if(player && player.guest){
+  if(player){
     player.timeLogout = Date.now();
   }
   this.emit('logout', player);
@@ -1276,13 +1288,18 @@ pro.buyItem = function (uid, item, duration, price) {
 pro.hint = function (uid, msg) {
   var player = this.players.getPlayer(uid);
   if (!player) return;
-  switch (msg.actionId){
-    case consts.GAME_ACTION_ID.AFK_CHECK:
+  msg['actionId'] = msg['actionId '] || msg['actionId'];
+  switch (msg['actionId']){
+    case 1:
+      clearTimeout(player.timeoutLeaveBoard);
+      player.timeoutLeaveBoard = null;
       player.timeLogout = null;
+      player.timeAction = Date.now();
   }
 };
 
 pro.resetTournament = function (opts) {
+  var self = this;
   this.numMatchPlay = 0;
   this.username = lodash.map(opts.username, function (username) {
       return username.toLowerCase();

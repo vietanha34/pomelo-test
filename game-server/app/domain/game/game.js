@@ -24,8 +24,8 @@ var Game = function (opts) {
   this.gameId = opts.gameId;
   this.serverId = opts.serverId;
   this.district = {};
-  this.boardManager = boardPool;
-  this.boardManager.init({serverId: opts.serverId, gameId: this.gameId});
+  this.boardManager = new boardPool({serverId: opts.serverId, gameId: this.gameId});
+  //this.boardManager.init({serverId: opts.serverId, gameId: this.gameId});
   this.init = false;
 };
 

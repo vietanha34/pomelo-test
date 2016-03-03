@@ -66,7 +66,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
       var statusService = pomelo.app.get('statusService');
       return [
         UserDao.getUsersPropertiesByUids(uids, properties),
-        Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
+        Promise.promisify(statusService.getStatusByUids,{ context : statusService})(uids, true)
       ];
     })
     .spread(function(users, status) {

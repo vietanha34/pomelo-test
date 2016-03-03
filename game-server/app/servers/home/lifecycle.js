@@ -19,6 +19,7 @@ module.exports.beforeShutdown = function (app, cb) {
 };
 
 module.exports.afterStartAll = function (app) {
+  app.set('maintenance', true);
   app.get('statusService').clean();
   app.get('waitingService').clean();
 };

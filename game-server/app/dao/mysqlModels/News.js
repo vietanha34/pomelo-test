@@ -45,7 +45,7 @@ module.exports = function(sequelize, DataTypes) {
     tableName : 'News',
     indexes:[
       {
-        columns:["cate","status",'updatedAt']
+        fields:["cate","status",'updatedAt']
       }
     ]
   });

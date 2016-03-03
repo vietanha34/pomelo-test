@@ -154,7 +154,7 @@ Handler.prototype.getHistory = function (msg, session, next) {
 Handler.prototype.getChatLog = function (msg, session, next) {
   var uid = parseInt(session.uid);
   var redisClient = pomelo.app.get('redisInfo');
-  var getMessages = Promise.promisify(pomelo.app.get('chatService').getLastMessage, pomelo.app.get('chatService'));
+  var getMessages = Promise.promisify(pomelo.app.get('chatService').getLastMessage,{context: pomelo.app.get('chatService')});
   redisClient.lrangeAsync(redisKeyUtil.getUserChatLog(uid), 0, 15)
     .map(function (targetUid) {
       return Promise.props({

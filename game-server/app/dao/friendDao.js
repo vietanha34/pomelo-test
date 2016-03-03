@@ -191,7 +191,7 @@ FriendDao.getFullList = function getFullList(uid, limit, cb) {
         .then(function(users) {
           users = users || [];
           var statusService = pomelo.app.get('statusService');
-          return Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
+          return Promise.promisify(statusService.getStatusByUids,{ context : statusService})(uids, true)
             .then(function(statuses) {
               statuses = statuses || [];
               for (i = 0; i < users.length; i++) {
@@ -281,7 +281,7 @@ FriendDao.search = function search(params, cb) {
       var statusService = pomelo.app.get('statusService');
       return [
         UserDao.getUsersPropertiesByUids(uids, properties),
-        Promise.promisify(statusService.getStatusByUids, statusService)(uids, true)
+        Promise.promisify(statusService.getStatusByUids, { context : statusService})(uids, true)
       ];
     })
     .spread(function(users, statuses) {

@@ -73,20 +73,11 @@ exp.addEventFromBoard = function (board) {
         } else {
           if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.timePlay > Date.now()){
           }else {
-            console.log('gameType : ', board.gameType, board.timePlay, board.timePlay - Date.now());
             board.addJobReady(player.uid)
           }
         }
       }, 100, player);
     }
-    //setTimeout(function (player) {
-    //  board.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
-    //    msg: "vui lòng ấn vào nút nếu muốn tiếp tục sau ",
-    //    time : 10,
-    //    btLabel: 'Ấn đê',
-    //    actionId : 1
-    //  })
-    //}, 3000, player);
   });
 
   board.on('sitIn', function (player) {
@@ -100,7 +91,7 @@ exp.addEventFromBoard = function (board) {
       setTimeout(function (player) {
         if (board.gameId === consts.GAME_ID.CO_THE) {
           if (!board.formationMode) {
-            board.addJobReady(player.uid);
+            board.addJobReady(player.uid, 60000);
           } else if (board.owner !== player.uid && !player.guest) {
             board.addJobSelectFormation(board.owner);
           }

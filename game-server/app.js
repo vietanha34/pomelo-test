@@ -5,6 +5,11 @@ var utils = require('./app/util/utils');
 var Promise = require('bluebird');
 var consts = require('./app/consts/consts');
 
+Promise.config({
+  longStackTraces : true,
+  cancellable: true
+});
+
 process.env.LOGGER_LINE = true; // debug line number
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -260,12 +265,12 @@ app.configure('production|development', 'service|home|event', function () {
   app.set('videoAdsService', new VideoAdsService(app))
 });
 
-//app.configure('production', function () {
-//  app.set('maintenance', {
-//    enable: 1,
-//    type: consts.MAINTENANCE_TYPE.ALL
-//  });
-//});
+app.configure('development|production', function () {
+  app.set('maintenance', {
+    enable: 1,
+    type: consts.MAINTENANCE_TYPE.ALL
+  });
+});
 
 // start app
 app.start();

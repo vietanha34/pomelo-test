@@ -40,7 +40,7 @@ NotifyDao.push = function topup(params, cb) {
 
   if (scope == 99) { // push all
     var channelService = pomelo.app.get('channelService');
-    return Promise.promisify(channelService.broadcast, channelService)
+    return Promise.promisify(channelService.broadcast, { context : channelService})
       ('connector', 'onNotify', params, {})
       .then(function (res) {
         return utils.invokeCallback(cb, null, res);
@@ -55,7 +55,7 @@ NotifyDao.push = function topup(params, cb) {
       return utils.invokeCallback('Invalid params push notify', null);
     } else {
       var statusService = pomelo.app.get('statusService');
-      return Promise.promisify(statusService.pushByUids, statusService)
+      return Promise.promisify(statusService.pushByUids, { context : statusService})
         (users, 'onNotify', params)
         .then(function (res) {
           return utils.invokeCallback(cb, null, res);

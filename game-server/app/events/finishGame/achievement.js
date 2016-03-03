@@ -97,10 +97,8 @@ module.exports.process = function (app, type, param) {
       achievements[user2Index][gameName+typeMap[param.users[1].result.type]] += 1;
 
       achievements[0].save().then(function(e) {
-        if (e) console.error(e.stack || e);
       });
       achievements[1].save().then(function(e) {
-        if (e) console.error(e.stack || e);
       });
 
       var update1 = {};

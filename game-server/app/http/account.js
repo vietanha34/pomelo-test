@@ -407,7 +407,7 @@ var login = function (req, res) {
     })
     .then(function (uid) {
       if (uid) {
-        return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, pomelo.app.get('statusService'))(uid, null)
+        return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, { context : pomelo.app.get('statusService')})(uid, null)
       } else {
         Promise.reject({code: code.ACCOUNT_OLD.USER_NOT_EXISTS, messsage: "Người dùng không tồn tại", data: {}});
       }
