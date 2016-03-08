@@ -402,7 +402,16 @@ var login = function (req, res) {
       if (result && !result.code) {
         return UserDao.getUserIdByUsername(data.uname)
       } else {
-        res.json(result).end();
+        pomelo
+          .app
+          .get('redisInfo')
+          .zadd('onlineUser:oldVersion', Date.now(), data.uname, function (e, r) {
+            if (!e) {
+              res.json(this.result).end();
+            } else {
+              return res.json({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}}).end();
+            }
+          }.bind({result: result}));
       }
     })
     .then(function (uid) {
