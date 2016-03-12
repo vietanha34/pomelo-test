@@ -72,6 +72,7 @@ pro.reset = function () {
 };
 
 
+
 /**
  * Thêm mới người chơi vào bàn
  *
@@ -117,9 +118,8 @@ pro.addPlayer = function (opts) {
       data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.username[0], this.table.username[1], this.table.tourWinUser['username'])
     }
   }
-  console.log('player.userInfo.level : ', player.userInfo.level, self.table.level, this.table.username);
   if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
-    || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel)
+    || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel && self.table.gameType !== consts.GAME_TYPE.TOURNAMENT)
   ) {
     if (slotIndex > -1) {
       if (player.gold < self.table.bet) {
@@ -415,6 +415,15 @@ pro.getStatus = function () {
  */
 pro.getPlayer = function (uid) {
   return this.players[uid];
+};
+
+pro.getPlayerByUsername = function (username) {
+  var keys = Object.keys(this.players);
+  for (var i = 0, len = keys.length; i < len; i ++){
+    var player = this.players[keys[i]];
+    if (player.userInfo.username === username)
+      return player
+  }
 };
 
 /**

@@ -58,7 +58,6 @@ module.exports.process = function (app, type, param) {
   }
   var users = param.users;
   Promise.map(users, function (user) {
-    console.log('user: ', user);
     if(user.remain < 500){
       return pomelo.app.get('videoAdsService')
         .getAds({ platform : user.info.platform})

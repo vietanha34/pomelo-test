@@ -416,13 +416,13 @@ module.exports = {
     GAME_IDLE: 60 * 1000 * 10,
     GAME_STUCK: 60 * 10 * 1000,
     SIT_OUT_LEAVE: 120 * 60 * 1000,
-    BOARD_NOT_START :5 * 60 * 1000,
+    BOARD_NOT_START :15 * 60 * 1000,
     TIMEOUT_LEAVE_BOARD: 2000,
     LAYER_TIME : 4000,
     DELTA_TIME : 5000,
     SLEEP_TURN : 500,
     SLEEP_CHARGE : 1000,
-    GUEST : 5 * 60 * 1000,
+    GUEST : 30 * 60 * 1000,
     LOGOUT : 30 * 1000
   },
 
@@ -638,7 +638,8 @@ module.exports = {
       GO_TOPUP: 7,
       GO_TOP: 8,
       GET_GOLD: 9,
-      GO_CHAT: 10
+      GO_CHAT: 10,
+      GO_BOARD: 11
     },
     SCOPE: {
       ALL: 99,
@@ -756,6 +757,7 @@ module.exports = {
   },
 
   GUILD_MEMBER_STATUS:{
+    GUEST : 0,
     NORMAL_MEMBER : 1,
     PRESIDENT : 2,
     VICE_PRESIDENT : 3,
@@ -781,5 +783,20 @@ module.exports = {
     ROI_BAN:11,
     HET_LUOT :12,
     HET_TIME:13
+  },
+
+  GUILD_EVENT_ID :{
+    NORMAL : 0,
+    JOIN_GUILD : 1, // người chơi vào hội
+    LEAVE_GUILD : 2, // người chơi rời hội
+    ADD_GOLD : 3, // thành viên xung quỹ;
+    WIN_TOUR : 4, // Thắng tour;
+    JOIN_TOUR : 5, // người chơi tham gia giải đấu
+    UPGRADE_VICE_PRESIDENT : 6, //Thăng chức hội phó
+    DOWNGRADE_VICE_PRESIDENT : 7, // Giáng chức hội phó
+    UP_LEVEL : 8, // lên level
+    CHALLENGE_GUILD: 9, // Thách đấu hội quán,
+    WIN_GUILD : 10, // chiến thắng hội quán,
+    LOSE_GUILD : 11 // thua hội quán
   }
 };

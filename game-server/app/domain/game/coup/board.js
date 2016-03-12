@@ -39,14 +39,23 @@ Game.prototype.close = function () {
 Game.prototype.init = function () {
   this.table.status = consts.BOARD_STATUS.PLAY;
   var index = Math.round(Math.random());
-  if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
-    this.turn = this.table.looseUser;
+  var turnPlayer;
+  if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
+    var username = this.table.username[this.table.numMatchPlay % 2];
+    console.log('username : ', username, this.table.numMatchPlay, this.table.username);
+    turnPlayer = this.table.players.getPlayerByUsername(username);
+    this.table.firstUid = turnPlayer.uid;
+    this.turn = turnPlayer.uid;
   }else {
-    this.turn = this.playerPlayingId[index];
+    if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
+      this.turn = this.table.looseUser;
+    }else {
+      this.turn = this.playerPlayingId[index];
+    }
+    this.table.firstUid = this.turn;
+    this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
+    turnPlayer = this.table.players.getPlayer(this.turn);
   }
-  this.table.firstUid = this.turn;
-  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
-  var turnPlayer = this.table.players.getPlayer(this.turn);
   var color = turnPlayer.color;
   if (color !== consts.COLOR.WHITE){
     this.game.changeTurn();
@@ -228,7 +237,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       toUid : toUid,
       tax : 5,
       force : true
-    }, 1, function () {})
+    }, 1, function () {});
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;
@@ -244,7 +253,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
-  this.showKill = true;
+  this.showKill = opts.showKill || false;
   this.game = new Game(this);
   this.looseUser = null;
   var self = this;

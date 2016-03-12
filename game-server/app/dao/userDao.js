@@ -422,6 +422,19 @@ UserDao.login = function (msg, cb) {
         // TODO push event register
         return accountService.getInitBalance(msg);
       } else {
+        var avatar = utils.JSONParse(u.avatar, {});
+        if (userData.avatar){
+          if (avatar.id === userData.uid && avatar.version === userData.avatarVersion){
+            avatar = JSON.stringify(avatar);
+          }else {
+            avatar = JSON.stringify({
+              id : userData.uid,
+              version : userData.avatarVersion
+            });
+          }
+        }else {
+          avatar = null;
+        }
         pomelo.app.get('mysqlClient')
           .User
           .update({
@@ -429,10 +442,7 @@ UserDao.login = function (msg, cb) {
             phone: userData.phoneNumber,
             email: userData.email,
             birthday: userData.birthday,
-            avatar: u.avatar ? u.avatar : userData.avatar ? JSON.stringify({
-              id: userData.uid,
-              version: userData.avatarVersion
-            }) : null,
+            avatar: avatar,
             distributorId: userData.dtId
           }, {
             where: {uid: userData.uid}

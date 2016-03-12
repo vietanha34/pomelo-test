@@ -491,7 +491,6 @@ pro.hint = function (msg, session, next) {
   if (!board) {
     return next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   }
-  console.log('handler hint : ', msg, uid);
   board.hint(uid, msg);
   return next();
 };

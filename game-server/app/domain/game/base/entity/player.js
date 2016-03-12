@@ -86,7 +86,7 @@ Player.prototype.genMenu = function () {
     }
     this.pushMenu(this.table.genMenu(consts.ACTION.CHAT));
     if (this.userInfo.version >= '20160130'){
-      if (this.table.gameId <= 3){
+      if (this.table.gameId <= 4){
         this.pushMenu(this.table.genMenu(consts.ACTION.INFORMATION));
       }
     }else {

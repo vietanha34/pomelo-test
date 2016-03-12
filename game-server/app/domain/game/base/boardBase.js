@@ -98,6 +98,8 @@ var Board = function (opts, PlayerPool, Player) {
     this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
     this.tableTourFinish = false;
     this.tourWinUser = null;
+    this.tournamentLog = [];
+    this.mustWin = opts.mustWin || true;
     if (this.timePlay > Date.now()){
       setTimeout(function () {
         // thời gian tour đấu đã đến,
@@ -518,7 +520,6 @@ pro.clearIdlePlayer = function () {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
     if (player.guest){
-      console.log('guest hien thị pop up : ', Date.now() - player.timeAction);
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
@@ -531,7 +532,7 @@ pro.clearIdlePlayer = function () {
         });
         player.timeoutLeaveBoard = setTimeout(function (uid) {
           var player = self.players.getPlayer(uid);
-          if (player && player.guest && player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
+          if (player && player.guest && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
             self.playerTimeout(player);
           }
         }, 30000 + 2000, player.uid);
@@ -549,7 +550,7 @@ pro.clearIdlePlayer = function () {
         });
         player.timeoutLeaveBoard = setTimeout(function (uid) {
           var player = self.players.getPlayer(uid);
-          if (player && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START && self.status === consts.BOARD_STATUS.NOT_STARTED  && self.players.length < 2){
+          if (player && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START && self.status === consts.BOARD_STATUS.NOT_STARTED  && self.players.length < 2){
             self.playerTimeout(player);
           }
         }, 30000 + 2000, player.uid);
@@ -766,8 +767,8 @@ pro.standUp = function (uid) {
   var player = self.players.getPlayer(uid);
   if (player) {
     player.reset();
+    player.timeAction = Date.now();
   }
-  player.timeAction = Date.now();
   self.players.standUp(uid);
   if (self.owner == uid) {
     self.setOwner();

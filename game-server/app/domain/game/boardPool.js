@@ -64,11 +64,13 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
         }
         opts.username = [listPlayer['player1'], listPlayer['player2']];
         opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
-        opts.matchPlay = tableOpts.matchPlay || 1;
-        opts.timePlay = tableOpts.timePlay || 1456579800000;
+        opts.matchPlay = tableOpts.matchPlay || 2;
+        opts.timePlay = tableOpts.timePlay || Date.now() + 30000;
         opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
         opts.turnTime = tableOpts.turnTime || 180;
-        opts.totalTime = tableOpts.totalTime || 20 * 60;
+        opts.totalTime = tableOpts.totalTime || 15 * 60;
+        opts.showKill = false;
+        opts.mustWin = false;
         opts.bet = tableOpts.bet || 5000;
         opts.configTurnTime = [opts.turnTime * 1000];
         opts.configTotalTime = [opts.totalTime * 1000];
@@ -267,7 +269,7 @@ exp.delBoard = function (boardId) {
 exp.delRoom = function (roomId) {
   var self = this;
   return pomelo.app.get('boardService')
-    .delRoom({ roomId : roomId, gameId : gameId})
+    .delRoom({ roomId : roomId, gameId : this.gameId})
     .then(function () {
       async.forEach(Object.keys(self.boards), function (item, done) {
         var board = self.boards[item];
