@@ -329,7 +329,7 @@ exp.addEventFromBoard = function (board) {
       }else {
         board.tournamentLog.push(util.format(moment().format() + ' --- Ván đấu hoà'));
       }
-      if (Math.abs(board.score[0] - board.score[1]) > board.matchPlay / 2 || (board.numMathPlay >= board.matchPlay && board.score[0] > board.score[1])){
+      if (Math.abs(board.score[0] - board.score[1]) > board.matchPlay / 2 || (board.numMatchPlay >= board.matchPlay && (board.score[0] > board.score[1] || board.score[0] < board.score[1]))){
         // finish;
         var tourWinUid = board.score[0] > board.score[1] ? board.players.playerSeat[0] : board.players.playerSeat[1];
         var winPlayer = board.players.getPlayer(tourWinUid);
@@ -341,7 +341,8 @@ exp.addEventFromBoard = function (board) {
           };
           board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
         }
-      }if (board.numMathPlay >= board.matchPlay && board.score[0] === board.score[1] && !board.mustWin){
+      }
+      if (board.numMatchPlay >= board.matchPlay && board.score[0] === board.score[1] && !board.mustWin){
         // hoà rồi
         board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
       }

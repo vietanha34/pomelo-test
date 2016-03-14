@@ -260,7 +260,6 @@ function Table(opts) {
   this.addFunction = [
     function (properties, dataChanged, dataUpdate, changed, done) {
       // changeOwner
-      console.log('dataChanged : ', dataChanged);
       if (lodash.isNumber(properties.showKill) && self.showKill !== (properties.showKill ? true : false)){
         self.showKill = properties.showKill ? true : false;
         self.game.game.hasShowKilled = self.showKill;
@@ -424,7 +423,7 @@ Table.prototype.reset = function () {
 
 Table.prototype.joinBoard = function (opts) {
   var state = Table.super_.prototype.joinBoard.call(this, opts);
-  if (!state.ec){
+  if (!state.ec && this.gameType !== consts.GAME_TYPE.TOURNAMENT){
     if (this.showKill){
       state.notifyMsg = 'Cờ úp luật hiện quân ăn'
     }else {
