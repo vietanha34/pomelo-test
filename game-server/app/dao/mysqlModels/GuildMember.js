@@ -6,9 +6,9 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('Guild', {
+  return sequelize.define('GuildMember', {
     uid: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       primaryKey : true
     },
@@ -16,40 +16,39 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    acronym: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    detail: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
     gold: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue : 0
     },
-    avatar:{
-      type : DataTypes.STRING,
-      allowNull: true,
-      comment: 'avatar của hội quán'
+    role : {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     },
-    fame : {
-      type: DataTypes.INTEGER
+    fame: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     },
-    level : {
-      type: DataTypes.INTEGER
+    dateJoin: {
+      type: DataTypes.DATE
+      //defaultValue: 'CURRENT_TIMESTAMP'
     },
-    numPlayer : {
-      type: DataTypes.INTEGER
+    dateRequest: {
+      type: DataTypes.DATE
+      //defaultValue: 'CURRENT_TIMESTAMP'
     },
-    maxPlayer : {
-      type : DataTypes.INTEGER
+    lastActive: {
+      type: DataTypes.DATE
+      //defaultValue: 'CURRENT_TIMESTAMP'
     }
   }, {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
+        models.User.hasOne(models.GuildMember, { foreignKey : 'uid'});
+        models.GuildMember.belongsTo(models.User, { foreignKey : 'uid'});
       }
     }
   });

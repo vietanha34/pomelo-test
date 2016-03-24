@@ -7,7 +7,7 @@
     "password": "Aq2bF8L9JYNY",
     "dialert" : "mysql",
     "timezone": "+07:00",
-    "logging" : false,
+    "logging" : true,
     "pool": {
       "max": 100,
       "min": 0,
@@ -22,6 +22,7 @@
     "username": "u.cothu",
     "password": "b8PC5ZbLHMdt",
     "timezone": "+07:00",
+    "logging" : false,
     "pool": {
       "max": 100,
       "min": 0,

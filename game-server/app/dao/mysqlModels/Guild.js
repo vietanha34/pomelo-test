@@ -30,28 +30,48 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue : 0
     },
-    avatar:{
+    icon:{
       type : DataTypes.STRING,
       allowNull: true,
       comment: 'avatar của hội quán'
     },
+    exp: {
+      type : DataTypes.INTEGER(11),
+      allowNull: true,
+      defaultValue : 0
+    },
     fame : {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      defaultValue : 0
     },
     level : {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      defaultValue : 0
     },
-    numPlayer : {
-      type: DataTypes.INTEGER
-    },
-    maxPlayer : {
-      type : DataTypes.INTEGER
+    numMember : {
+      type: DataTypes.INTEGER,
+      defaultValue : 0
     }
   }, {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
+        models.Guild.hasMany(models.GuildMember, {as: 'Members', foreignKey : 'guildId'});
       }
-    }
+    },
+    index : [
+      {
+        fields : ['gold']
+      },
+      {
+        fields : ['fame']
+      },
+      {
+        fields : ['level']
+      },
+      {
+        fields : ['name']
+      }
+    ]
   });
 };

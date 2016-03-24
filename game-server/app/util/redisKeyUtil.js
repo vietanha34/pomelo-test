@@ -51,9 +51,20 @@ var ALL_MISSION = 'cothu:all_mission';
 var MISSION_PROGRESS = 'cothu:mission_progress:%d';
 var MISSION_STATUS = 'cothu:mission_status:%d';
 var INVITE_SOCIAL = 'cothu:invite_social:%d';
+var CHAT_GUILD_NAME = 'GUILD_{uid}';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
+
+
+RedisKeyUtil.getChatGuildName = function (guildId) {
+  return CHAT_GUILD_NAME.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return guildId;
+    }
+  );
+};
 
 
 RedisKeyUtil.getUserKeyVideoAds = function (uid) {

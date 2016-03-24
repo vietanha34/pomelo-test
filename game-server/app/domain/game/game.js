@@ -94,9 +94,6 @@ Game.prototype.initBoards = function () {
       }
       if (this.gameId === consts.GAME_ID.CO_UP && hallId === consts.HALL_ID.KIEN_TUONG){
         this.boardManager.createRoomTournament(hallConfig, 603);
-        this.boardManager.createRoomTournament(hallConfig, 604);
-        this.boardManager.createRoomTournament(hallConfig, 605);
-        this.boardManager.createRoomTournament(hallConfig, 606);
       }
     }
   }

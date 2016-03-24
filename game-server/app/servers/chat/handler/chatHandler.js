@@ -98,12 +98,13 @@ Handler.prototype.send = function (msg, session, next) {
         content: message.content,
         date: sendDate || Math.round(Date.now() / 1000),
         target: message.target,
+        channel : message.channel,
         targetType: message.targetType,
         status: 0
       };
       switch (targetType) {
         case consts.TARGET_TYPE.BOARD :
-          self.chatService.sendMessageToBoard(uid,  channelUtil.getBoardChannelName(tableId), data, done);
+          self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), data, done);
           return;
         case consts.TARGET_TYPE.BOARD_GUEST:
           self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);

@@ -181,18 +181,18 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
       pomelo.app.get('statusService').getStatusByUids(members, false, done);
     },
     function (status, done) {
-      for (var key in status) {
-        var stat = status[key];
-        var targetUid = key;
-        if (!stat.online) {
-          MessageDao.countUnreadMessage({
-            count: 1,
-            targetType: consts.TARGET_TYPE.GROUP,
-            uid: targetUid,
-            fromId: roomId
-          })
-        }
-      }
+      //for (var key in status) {
+      //  var stat = status[key];
+      //  var targetUid = key;
+      //  if (!stat.online) {
+      //    MessageDao.countUnreadMessage({
+      //      count: 1,
+      //      targetType: consts.TARGET_TYPE.GROUP,
+      //      uid: targetUid,
+      //      fromId: roomId
+      //    })
+      //  }
+      //}
       done()
     }
   ], function (err) {
