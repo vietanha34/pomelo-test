@@ -508,7 +508,7 @@ pro.clearIdlePlayer = function () {
         }else {
           // cả 2 người chơi cùng thua
           this.tableTourFinish = true;
-          this.emit('tourFinish', null, 'Cả 2 đối thủ không vào bàn chơi');
+          //this.emit('tourFinish', null, 'Cả 2 đối thủ không vào bàn chơi');
         }
       }
     }

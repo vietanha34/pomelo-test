@@ -197,7 +197,7 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          board.emit('tourFinish', board.tourWinUser, 'Đối thủ rời bàn chơi');
+          //board.emit('tourFinish', board.tourWinUser, 'Đối thủ rời bàn chơi');
         }
       }
     }
@@ -339,12 +339,12 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
+          //board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
         }
       }
       if (board.numMatchPlay >= board.matchPlay && board.score[0] === board.score[1] && !board.mustWin){
         // hoà rồi
-        board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
+        //board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
       }
     }
     return data;
@@ -366,7 +366,6 @@ exp.addEventFromBoard = function (board) {
     if (board.players.length === 0) {
       board.resetDefault()
     }
-    pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
     board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     //if (board.players.length < 2 && board.startTimeout) {
     //  board.clearTimeoutStart()
@@ -400,10 +399,11 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          board.emit('tourFinish', board.tourWinUser, 'Đối thủ đứng lên');
+          //board.emit('tourFinish', board.tourWinUser, 'Đối thủ đứng lên');
         }
       }
     }
+    pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
   });
 
 
@@ -528,14 +528,14 @@ exp.addEventFromBoard = function (board) {
       console.error(util.format(moment().format() + ' --- tournament -  cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc thắng nghiêng về : "%s" ' +
         'với lý do : %s , tỷ số : "%s", chi tiết ván chơi : %s', board.username[0], board.username[1], board.roomId, board.index, winner.username, reason, board.score, board.tournamentLog.join(' , ')));
     }else if (!board.mustWin){
-      board.pushMessage('onNotify', {
-        type: consts.NOTIFY.TYPE.POPUP,
-        title: 'Đấu trường',
-        msg: 'Cặp đấu kết thúc với tỉ số hoà. Bạn có thể theo dõi lịch thi đấu tiếp trong loa làng',
-        buttonLabel: 'Xác nhận',
-        command: {target: consts.NOTIFY.TARGET.NORMAL},
-        image:  consts.NOTIFY.IMAGE.NORMAL
-      });
+      //board.pushMessage('onNotify', {
+      //  type: consts.NOTIFY.TYPE.POPUP,
+      //  title: 'Đấu trường',
+      //  msg: 'Cặp đấu kết thúc với tỉ số hoà. Bạn có thể theo dõi lịch thi đấu tiếp trong loa làng',
+      //  buttonLabel: 'Xác nhận',
+      //  command: {target: consts.NOTIFY.TARGET.NORMAL},
+      //  image:  consts.NOTIFY.IMAGE.NORMAL
+      //});
       // hoà
       console.error(util.format(moment().format() + ' --- tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc hoà ' +
         'với lý do : %s , tỷ số : "%s", chi tiết ván chơi : %s', board.username[0], board.username[1], board.roomId, board.index, reason, board.score, board.tournamentLog.join(' , ')));

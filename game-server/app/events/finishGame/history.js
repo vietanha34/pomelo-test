@@ -14,6 +14,7 @@ var utils = require('../../util/utils');
 var Promise = require('bluebird');
 var moment = require('moment');
 var TopDao = require('../../dao/topDao');
+var util = require('util');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -55,7 +56,12 @@ module.exports.process = function (app, type, param) {
    console.error('wrong param finish game: ', param);
    return;
   }
-
+  for (var i = 0, len = param.users.length; i < len ; i++){
+    var user = param.users[i];
+    if (user && user.result.type === consts.WIN_TYPE.WIN){
+      param.tax = param.boardInfo.bet - user.result.money
+    }
+  }
   pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyIngameKey(), JSON.stringify(param));
 
   var mongoClient = pomelo.app.get('mongoClient');

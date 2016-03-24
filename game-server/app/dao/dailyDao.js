@@ -33,7 +33,7 @@ DailyDao.getData = function getData(uid, cb) {
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (result[0] || (result[2] && result[2] != 'VN')) throw new Error('received');
+      if (result[0] || (result[2] && result[2] != 'VN')) return Promise.reject({});
 
       loginCount = result[1] || 1;
 
@@ -47,7 +47,7 @@ DailyDao.getData = function getData(uid, cb) {
     .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
       if (achie.userCount > 3 && level < 1) {
-        throw new Error('spam user daily');
+        return utils.invokeCallback(cb, null, {received: 1});
       }
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
       var levelGold = (Number(config.firstLevel)||0) + (level-1)*(Number(config.levelStep)||0);
@@ -70,8 +70,10 @@ DailyDao.getData = function getData(uid, cb) {
       return utils.invokeCallback(cb, null, data);
     })
     .catch(function(e) {
-      console.error(e.stack || e);
-      utils.log(e.stack || e);
+      if (lodash.isError(e)){
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+      }
       return utils.invokeCallback(cb, null, {received: 1});
     });
 };

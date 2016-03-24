@@ -359,6 +359,9 @@ pro.kick = function (msg, session, next) {
   if (board.owner !== uid) {
     next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
   }
+  if (board.gameType === consts.GAME_TYPE.TOURNAMENT){
+    next (null, { ec : Code.FAIL, msg : "Trong đấu trường bạn không được quyền đuổi người chơi khác"})
+  }
   board.kick(cuid, function (err, res) {
     if (err) {
       next(null, {ec: Code.FAIL});

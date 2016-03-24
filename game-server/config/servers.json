@@ -1,7 +1,8 @@
 {
   "development":{
     "connector": [
-      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "natPort" : 6511 , "clientHost" :  "123.30.235.196", "frontend": true}
+      {"id": "connector-server-1", "host": "127.0.0.1", "port": 3251, "clientPort": 3511, "natPort" : 6511 , "clientHost" :  "123.30.235.196", "frontend": true},
+      {"id": "connector-server-2", "host": "127.0.0.1", "port": 3252, "clientPort": 3512, "natPort" : 6512 , "clientHost" :  "123.30.235.196", "frontend": true}
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "127.0.0.1" , "port" : 3250}
@@ -45,7 +46,9 @@
       {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.48", "frontend": true},
       {"id": "connector-server-2", "host": "172.16.20.40", "port": 3252, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true},
       {"id": "connector-server-3", "host": "172.16.20.40", "port": 3253, "clientPort": 3513, "clientHost" :  "123.30.235.48", "frontend": true},
-      {"id": "connector-server-4", "host": "172.16.20.40", "port": 3254, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true}
+      {"id": "connector-server-4", "host": "172.16.20.40", "port": 3254, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-5", "host": "172.16.20.40", "port": 3255, "clientPort": 3515, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-6", "host": "172.16.20.40", "port": 3256, "clientPort": 3516, "clientHost" :  "123.30.235.48", "frontend": true}
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3250}

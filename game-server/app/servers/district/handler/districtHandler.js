@@ -118,7 +118,9 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     }
   ], function (err) {
     if (err) {
-      console.trace(err);
+      if (err.ec !== Code.ON_QUICK_PLAY.FA_NOT_AVAILABLE_BOARD){
+        console.error("quickPlay err : ", err);
+      }
       next(null, utils.getError(err.ec || Code.FAIL));
     }
     user = null;

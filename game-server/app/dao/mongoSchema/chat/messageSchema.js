@@ -11,6 +11,7 @@ var MessageSchema = new Schema({
   target : { type : Number, default : ''},
   from : { type : Number , default : ''},
   type : { type : Number, default : 1 },
+  channel: { type : String, default : ''},
   content : { type : String, default: ''},
   date : { type : Date, default : Date.now()},
   status : { type : Number , default : 0},
