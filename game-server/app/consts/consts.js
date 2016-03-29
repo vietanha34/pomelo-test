@@ -14,6 +14,10 @@ module.exports = {
     AFK_CHECK : 1
   },
 
+  ACTION_ID : {
+    INVITE_GUILD: 1
+  },
+
   MAP_GAME_ID_OLD_VERSION : {
     20 : 5,
     21 : 1,
@@ -625,7 +629,9 @@ module.exports = {
     TYPE: {
       NOTIFY_CENTER: 0,
       POPUP: 1,
-      MARQUEE: 2
+      MARQUEE: 2,
+      TOP_DOWN : 3,
+      CONFIRM : 4
     },
     TARGET: {
       NORMAL: 0,

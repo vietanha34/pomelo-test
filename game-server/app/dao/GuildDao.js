@@ -389,36 +389,62 @@ GuildDao.createGuild = function (uid, opts, cb) {
     })
 };
 
-GuildDao.createMember = function (uid, guildId, opts, cb) {
+GuildDao.createMember = function (opts, cb) {
   return pomelo.app.get('mysqlClient')
     .GuildMember
-    .create({
-      uid : uid,
-      guildId: guildId
-    });
+    .findOrCreate({
+      where : {
+        uid : opts.uid,
+        guildId : opts.guildId
+      },
+      defaults: opts
+    })
+    .spread(function (member, created) {
+      if (!created)
+        member.updateAttributes(opts);
+      return utils.invokeCallback(cb, null, {});
+    })
+    .catch(function (err) {
+      console.error('createMember error : ', err)
+    })
 };
 
 GuildDao.updateMember = function (uid, guildId, opts, cb) {
+  var user;
   return pomelo.app.get('mysqlClient')
-    .GuildMember
-    .findOne(opts, {
-      where : {
-        uid: uid,
-        guildId: guildId
-      }
+    .User
+    .findOne({
+      where: {
+        uid : uid
+      },
+      raw : true,
+      attributes: ['fullname', 'uid', 'username']
+    })
+    .then(function (u) {
+      user = u;
+      return pomelo.app.get('mysqlClient')
+        .GuildMember
+        .findOne({
+          where : {
+            uid: uid,
+            guildId: guildId
+          }
+        })
     })
     .then(function (member) {
       if (member){
         return member.updateAttributes(opts);
       }else {
-        return Promise.reject()
+        return Promise.reject({})
       }
     })
     .then(function (result) {
-
+      return utils.invokeCallback(cb, null, user);
     })
     .catch(function (err) {
-      console.error(err);
+      if (lodash.isError(err)){
+        console.error(err);
+      }
       return utils.invokeCallback(cb, null, { ec : err.ec || Code.FAIL, msg : err.msg});
     })
 };
@@ -597,6 +623,21 @@ GuildDao.addEvent = function (opts) {
 
 GuildDao.deleteEvent = function (eventId) {
   
+};
+
+GuildDao.countInvite = function (opts) {
+  return pomelo.app.get('mysqlClient')
+    .GuildInvite
+    .count(opts);
+};
+
+GuildDao.removeInvite = function (opts) {
+  return pomelo.app.get('mysqlClient')
+    .GuildInvite
+    .destroy({ where : {
+      uid : opts.uid,
+      guildId : opts.guildId
+    }})
 };
 
 var RESOURCE_MAP = {

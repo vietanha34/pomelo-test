@@ -13,6 +13,7 @@ var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var util = require('util');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
+var ActionDao = require('../../../dao/actionDao');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -216,13 +217,19 @@ Handler.prototype.updateMember = function (msg, session, next) {
       if (resource && !resource.ec){
         switch(msg.type){
           case consts.GUILD_UPDATE_MEMBER_TYPE.ADD_MEMBER:
+            ActionDao.removeAction({
+              guildId : guildId,
+              type: consts.ACTION_ID.INVITE_GUILD
+            }, currentUid);
             GuildDao.addEvent({
               guildId : guildId,
               uid : session.uid,
-              fullname: fullname,
-              content: util.format('[%s] Xung quỹ hội %s gold', fullname, msg.gold),
+              fullname: resource.fullname,
+              content: util.format('[%s] gia nhập hội quán', resource.fullname, msg.gold),
               type: consts.GUILD_EVENT_TYPE.JOIN_GUILD
             });
+            // remove trong list invite
+            GuildDao.removeInvite({uid : currentUid, guildId : resource.guildId});
             RoomDao.addMember(redisKeyUtil.getChatGuildName(guildId), [currentUid]);
             break;
           case consts.GUILD_UPDATE_MEMBER_TYPE.REMOVE_MEMBER:
@@ -230,8 +237,8 @@ Handler.prototype.updateMember = function (msg, session, next) {
               GuildDao.addEvent({
                 guildId : guildId,
                 uid : session.uid,
-                fullname: fullname,
-                content: util.format('[%s] Xung quỹ hội %s gold', fullname, msg.gold),
+                fullname: resource.fullname,
+                content: util.format('[%s] rời hội quán', resource.fullname, msg.gold),
                 type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
               });
             }else {
@@ -264,8 +271,8 @@ Handler.prototype.requestJoinGuild = function (msg, session, next) {
       }
     })
     .then(function (result) {
-      if (!msg.cancel){
-        return GuildDao.createMember(uid, guildId)
+      if (!msg.cancel) {
+        return GuildDao.createMember({ uid : uid , guildId : guildId, role: consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER});
       }
     })
     .then(function (result) {
@@ -277,7 +284,76 @@ Handler.prototype.requestJoinGuild = function (msg, session, next) {
 };
 
 Handler.prototype.invitePlayer = function (msg, session, next) {
-  
+  var inviteUid = msg.uid;
+  if (!inviteUid){
+    return next(null, { ec :Code.FAIL, msg :"không có người mời cụ thể"})
+  }
+  var uid = session.uid;
+  var fullname = session.get('fullname');
+  var member;
+  var roleId;
+  var guildId;
+  return getRole(uid)
+    .then(function (user) {
+      var role = 0;
+      if (user){
+        member = user;
+        role = member.role;
+        guildId = member.guildId;
+      }
+      roleId = user;
+      return getPermission(role,1);
+    })
+    .then(function (permission) {
+      return [ GuildDao.countInvite({ where : { uid : inviteUid}}),
+        pomelo.app.get('mysqlClient')
+          .GuildInvite
+          .findOne({where:{uid:inviteUid}})
+        ]
+    })
+    .then(function (count, invite) {
+      if (count > 5){
+        return Promise.reject(null, {ec : Code.FAIL, msg: "Người chơi này đã nhận đc quá nhiều lời mời"})
+      }else if (!invite){
+        return pomelo.app.get('mysqlClient')
+          .GuildInvite
+          .findOrCreate(
+          { where : {uid : inviteUid, guildId: roleId.guildId}, defaults:{
+            uid : inviteUid,
+            guildId : roleId.guildId,
+            inviteUid : uid
+          }}
+        )
+      }else {
+        return Promise.reject(null, { ec : Code.FAIL, msg : "Người này đã đc mời vào hội quán"});
+      }
+    })
+    .spread(function (invite, created) {
+      if (created){
+        return Promise.reject({ec : Code.FAIL, msg : "Người chơi này đã nhận đc lời mời từ hội quán này rồi"});
+      }else {
+        return pomelo.app.get('mysqlClient').Guild.findOne({where:{id:guildId}, raw : true, attributes:['name']})
+      }
+    })
+    .spread(function (guild) {
+      // add action invite
+      ActionDao.addAction({
+        msg : util.format("Bạn nhận được lời mời vào hội quán '%s' từ người chơi '%s'. Bạn có muốn tham gia không?",guild.name, fullname),
+        title: "Lời mời",
+        action:{
+          id : Date.now(),
+          type: consts.ACTION_ID.INVITE_GUILD,
+          guildId : guildId
+        }
+      }, inviteUid);
+      return utils.invokeCallback(next, null, {});
+    })
+    .catch(function (err) {
+      if (lodash.isError(err)){
+        console.error('err : ', err);
+      }
+      return utils.invokeCallback(next, null, { ec : err.ec || Code.FAIL, msg : err.msg || Code.FAIL})
+    })
 };
 
 Handler.prototype.addFund = function (msg, session, next) {

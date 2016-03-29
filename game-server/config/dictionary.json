@@ -123,6 +123,7 @@
   "service.paymentHandler.getPayHistory" : 153,
   "service.guideHandler.getData" : 190,
   "service.guideHandler.getGuide" : 191,
+  "service.actionHandler.action" : 195,
   "onPlayerJoin" : 200,
   "game.gameHandler.demand" : 208,
   "onTurn" : 202,
