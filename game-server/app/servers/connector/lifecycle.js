@@ -23,5 +23,5 @@ module.exports.beforeShutdown = function (app, cb) {
 module.exports.afterStartAll = function (app) {
   // do some operations after all applications start up
   //app.get('boardService').clean();
-  app.set('maintenance', null);
+  //app.set('maintenance', null);
 };

@@ -21,12 +21,22 @@ Handler.prototype.action = function (msg, session, next) {
   var accept = msg.accept;
   var action = msg.action || {};
   var uid = session.uid;
+  var fullname = session.get('fullname');
   ActionDao.removeAction({id : action.id}, uid);
   switch(action.type){
     case consts.ACTION_ID.INVITE_GUILD:
       GuildDao.removeInvite({ uid : uid, guildId: action.guildId});
       if (accept){
-        GuildDao.createMember({ uid : uid, guildId : action.guildId, role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER});
+        GuildDao.createMember({ uid : uid, guildId : action.guildId, role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER})
+          .then(function () {
+            GuildDao.addEvent({
+              guildId : action.guildId,
+              uid : session.uid,
+              fullname: fullname,
+              content: util.format('[%s] rời hội quán', action.fullname),
+              type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
+            });
+          })
       }
       // action invite;
   }

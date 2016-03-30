@@ -58,7 +58,7 @@ GuildDao.getGuildRequest = function (role, permission, args, cb) {
     .findAll({
       where : {
         guildId : args.guildId,
-        role : 0
+        role : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
       },
       include: [{
         model: pomelo.app.get('mysqlClient').User,
@@ -405,6 +405,7 @@ GuildDao.createMember = function (opts, cb) {
       return utils.invokeCallback(cb, null, {});
     })
     .catch(function (err) {
+      return utils.invokeCallback(cb, null, { ec : Code.FAIL})
       console.error('createMember error : ', err)
     })
 };
@@ -497,7 +498,7 @@ GuildDao.getGuildMember = function (role, permission, args, cb) {
       where : {
         guildId : args.guildId,
         role : {
-          $ne : 0
+          $ne : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
         }
       },
       include: [{
