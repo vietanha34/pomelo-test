@@ -31,11 +31,6 @@ var RESOURCE_NAME = {
  * @param cb
  */
 GuildDao.getResource = function (role, permission, resourceId, cb) {
-  console.log('args : ', role, permission, resourceId, resourceId['id']);
-  //if (typeof RESOURCE_MAP[resourceId.id] !== 'function'){
-  //  return utils.invokeCallback(cb, null, {});
-  //}
-  console.log('resourceMap : ', RESOURCE_MAP);
   return RESOURCE_MAP[resourceId['id']](role, permission, resourceId)
     .then(function (result) {
       result = result || {};
@@ -90,7 +85,7 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
   var promise = {};
   promise['info'] = pomelo.app.get('mysqlClient')
     .Guild
-    .findOne({where: {id: args.guildId}, attributes: ['name', 'numMember', 'gold', 'level', 'fame', 'detail', 'icon', 'exp'], raw: true});
+    .findOne({where: {id: args.guildId}, attributes: ['name', 'numMember', 'gold', 'level', 'fame', 'detail', 'icon', 'exp', 'acronym'], raw: true});
 
   if (role === consts.GUILD_MEMBER_STATUS.PRESIDENT || role === consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT)
     promise['numRequest'] = pomelo.app.get('mysqlClient').GuildMember.count({where : { guildId : args.guildId, role : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER}});
@@ -99,6 +94,7 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
     .then(function (result) {
       var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
       result.info['numMember'] = [result.info['numMember'], guildLevel[result.info.level] ? guildLevel[result.info.level].maxMember : 20];
+      result.info['name'] = result['acronym'] + '.' + result['name'];
       result.info['exp'] = [result.info['exp'], 100];
       result.info['icon'] = utils.JSONParse(result.info['icon']);
       result.info['role'] = role ? role.role : 0;
@@ -400,13 +396,25 @@ GuildDao.createMember = function (opts, cb) {
       defaults: opts
     })
     .spread(function (member, created) {
-      if (!created)
+      if (!created){
         member.updateAttributes(opts);
+        if (opts.role < consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember + ' + 1)
+            }, {
+              where : {
+                id : opts.guildId
+              }
+            })
+        }
+      }
       return utils.invokeCallback(cb, null, {});
     })
     .catch(function (err) {
-      return utils.invokeCallback(cb, null, { ec : Code.FAIL})
-      console.error('createMember error : ', err)
+      console.error('createMember error : ', err);
+      return utils.invokeCallback(cb, null, { ec : Code.FAIL});
     })
 };
 

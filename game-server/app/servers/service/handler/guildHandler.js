@@ -235,6 +235,9 @@ Handler.prototype.updateMember = function (msg, session, next) {
               content: util.format('[%s] gia nhập hội quán', resource.fullname),
               type: consts.GUILD_EVENT_TYPE.JOIN_GUILD
             });
+            GuildDao.updateGuild(roleId, {}, {
+              numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember + ' + 1)
+            });
             // remove trong list invite
             GuildDao.removeInvite({uid : currentUid, guildId : resource.guildId});
             RoomDao.addMember(redisKeyUtil.getChatGuildName(guildId), [currentUid]);
