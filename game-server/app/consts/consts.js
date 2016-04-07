@@ -15,7 +15,8 @@ module.exports = {
   },
 
   ACTION_ID : {
-    INVITE_GUILD: 1
+    INVITE_GUILD: 1,
+    CONFIRM_INVITE_GUILD: 2
   },
 
   MAP_GAME_ID_OLD_VERSION : {
@@ -828,6 +829,8 @@ module.exports = {
     YELLOW : 3,
     WHITE: 4
   },
+
+  GUILD_INIT_FAME: 1000,
 
   GUILD_EVENT_TYPE_MAP :{
     0: {},

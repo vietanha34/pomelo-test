@@ -225,7 +225,7 @@ app.configure('production|development', 'home|game|chat', function () {
   app.set('gameService', gameService)
 });
 
-app.configure('production|development', 'chat|game', function () {
+app.configure('production|development', 'chat|game|service', function () {
   var ChatService = require('./app/services/chatService');
   app.set('chatService', new ChatService(app));
 });

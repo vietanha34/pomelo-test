@@ -116,7 +116,7 @@ Handler.prototype.send = function (msg, session, next) {
           messageService.pushMessageToPlayer(uids, route, data);
           return;
         case consts.TARGET_TYPE.GROUP:
-          self.chatService.sendMessageToGroup(uid, msg.target, data, done);
+          self.chatService.sendMessageToGroup(uid, msg.channel, data, done);
           return
       }
     }
