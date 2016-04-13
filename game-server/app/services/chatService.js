@@ -68,12 +68,12 @@ pro.getLastMessage = function (opts, cb) {
   var length = opts.length || 20;
   var target = opts.target;
   var from = opts.from;
-  var roomId = opts.roomId;
+  var channel = opts.channel;
   var targetType = opts.targetType;
   var projection;
   if (targetType == consts.TARGET_TYPE.GROUP) {
     projection = {
-      roomId: roomId
+      channel : channel
     }
   } else {
     projection = {
@@ -172,6 +172,7 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
       RoomDao.getMembers(roomId, done)
     },
     function (mems, done) {
+      console.log('members : ', mems );
       members = mems;
       pomelo.app.get('statusService').pushByUids(members, 'chat.chatHandler.send', data, done)
     },
@@ -181,18 +182,18 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
       pomelo.app.get('statusService').getStatusByUids(members, false, done);
     },
     function (status, done) {
-      for (var key in status) {
-        var stat = status[key];
-        var targetUid = key;
-        if (!stat.online) {
-          MessageDao.countUnreadMessage({
-            count: 1,
-            targetType: consts.TARGET_TYPE.GROUP,
-            uid: targetUid,
-            fromId: roomId
-          })
-        }
-      }
+      //for (var key in status) {
+      //  var stat = status[key];
+      //  var targetUid = key;
+      //  if (!stat.online) {
+      //    MessageDao.countUnreadMessage({
+      //      count: 1,
+      //      targetType: consts.TARGET_TYPE.GROUP,
+      //      uid: targetUid,
+      //      fromId: roomId
+      //    })
+      //  }
+      //}
       done()
     }
   ], function (err) {

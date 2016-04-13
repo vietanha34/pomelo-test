@@ -399,8 +399,9 @@ var login = function (req, res) {
       })
     })
     .then(function (result) {
+      console.error('login 1 : ', data.uname, result);
       if (result && !result.code) {
-        return UserDao.getUserIdByUsername(data.uname)
+        return UserDao.getUserIdByUsername(data.uname, result)
       } else {
         pomelo
           .app
@@ -418,11 +419,12 @@ var login = function (req, res) {
       if (uid) {
         return Promise.promisify(pomelo.app.get('statusService').getStatusByUid, { context : pomelo.app.get('statusService')})(uid, null)
       } else {
-        Promise.reject({code: code.ACCOUNT_OLD.USER_NOT_EXISTS, messsage: "Người dùng không tồn tại", data: {}});
+        Promise.reject({code: code.ACCOUNT_OLD.USER_NOT_EXISTS, message: "Người dùng không tồn tại", data: {}});
       }
     })
     .then(function (status) {
       if (status) {
+        console.error('login 2 : ', data.uname, status);
         if (status.online) {
           return Promise.reject({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}})
         } else {
@@ -432,6 +434,7 @@ var login = function (req, res) {
             .get('redisInfo')
             .zadd('onlineUser:oldVersion', Date.now(), data.uname, function (e, r) {
               if (!e) {
+                console.error('login 4 : ');
                 return res.json({
                   code: 0,
                   message: "",
@@ -442,6 +445,7 @@ var login = function (req, res) {
                   }
                 }).end();
               } else {
+                console.error('login 3 : ');
                 return res.json({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}}).end();
               }
             }.bind({uname: data.uname}));
@@ -451,7 +455,7 @@ var login = function (req, res) {
       }
     })
     .catch(function (err) {
-      console.log(err);
+      console.error(err, {message: err.message || 'có lỗi xảy ra', code: err.code || 99, data: {}});
       res.json({message: err.message || 'có lỗi xảy ra', code: err.code || 99, data: {}}).end()
     })
     .finally(function () {

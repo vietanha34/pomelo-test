@@ -245,7 +245,6 @@ UserDao.getUserAchievementProperties = function (uid, properties, achiProperties
       console.error(err);
       return utils.invokeCallback(cb, err);
     })
-
 };
 
 UserDao.getUserPropertiesByUsername = function (username, properties, cb) {
@@ -410,6 +409,9 @@ UserDao.login = function (msg, cb) {
           msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
         })
       }else {
+        if (pomelo.app.get('env') === 'development'){
+          userData.gold = 100000;
+        }
         return pomelo.app.get('mysqlClient')
           .User
           .findOrCreate({where: {uid: userData.uid}, raw: true, defaults: userData});
@@ -422,19 +424,22 @@ UserDao.login = function (msg, cb) {
         // TODO push event register
         return accountService.getInitBalance(msg);
       } else {
+        var updateData = {
+          fullname: userData.fullname,
+          phone: userData.phoneNumber,
+          email: userData.email,
+          birthday: userData.birthday,
+          distributorId: userData.dtId
+        };
+        if (userData.avatar){
+          updateData.avatar = JSON.stringify({
+            id: userData.uid,
+            version: userData.avatarVersion
+          })
+        }
         pomelo.app.get('mysqlClient')
           .User
-          .update({
-            fullname: userData.fullname,
-            phone: userData.phoneNumber,
-            email: userData.email,
-            birthday: userData.birthday,
-            avatar: u.avatar ? u.avatar : userData.avatar ? JSON.stringify({
-              id: userData.uid,
-              version: userData.avatarVersion
-            }) : null,
-            distributorId: userData.dtId
-          }, {
+          .update(updateData, {
             where: {uid: userData.uid}
           });
         return Promise.resolve({});

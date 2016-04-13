@@ -60,13 +60,13 @@ Handler.prototype.login = function (msg, session, next) {
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   msg.versionCode = msg.versionCode.length === 7 ? '0' + msg.versionCode : msg.versionCode;
   var version = '' + msg.versionCode.slice(4, 10) + msg.versionCode.slice(2, 4) + msg.versionCode.slice(0, 2);
-  console.log('version : ', version);
+  console.log('version : ', version, loginIp);
   //if (version >= '20160130'){
   //  self.app.sessionService.get(sessionId).useGzip(true);
   //}
   msg.ip = loginIp;
   var maintenance = this.app.get('maintenance');
-  if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL){
+  if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL && loginIp !== '113.190.233.178'){
     return next(null, {
       ec: Code.GATE.FA_MAINTENANCE,
       msg: Code.GATE.FA_MAINTENANCE

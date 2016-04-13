@@ -318,7 +318,7 @@ ProfileDao.getGameHistory = function getGameHistory(params, cb) {
           log = {
             uid: list[i].uids[otherIndex] || 0,
             name: list[i].usernames[otherIndex] || '',
-            time: moment(list[i].createdAt).format('hh:mm DD/MM'),
+            time: moment(list[i].createdAt).format('HH:mm DD/MM'),
             status: code.FIRST_LANGUAGE[(otherIndex?0:1)] + ' ' + code.WIN_LANGUAGE[status.toString()]
           };
           if (params.gameId != consts.GAME_ID.CARO && params.gameId != consts.GAME_ID.CO_VAY) {

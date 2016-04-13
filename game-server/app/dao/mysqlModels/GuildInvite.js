@@ -6,7 +6,7 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('GuildMember', {
+  return sequelize.define('GuildInvite', {
     uid: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
@@ -16,32 +16,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    gold: {
-      type: DataTypes.INTEGER,
+    inviteUid: {
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      defaultValue : 0
-    },
-    role : {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
-    fame: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
-    dateJoin: {
-      type: DataTypes.DATE
-      //defaultValue: 'CURRENT_TIMESTAMP'
-    },
-    dateRequest: {
-      type: DataTypes.DATE
-      //defaultValue: 'CURRENT_TIMESTAMP'
-    },
-    lastActive: {
-      type: DataTypes.DATE
-      //defaultValue: 'CURRENT_TIMESTAMP'
+      defaultValue : 0,
+      comment:"uid của người mời"
     }
   }, {
     classMethods: {

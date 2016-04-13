@@ -49,7 +49,6 @@ module.exports.process = function (app, type, param) {
       });
     }, 3000);
   }
-
   var userNotifyKey = redisKeyUtil.getUserNotifyKey(param.uid);
   var redisCache = pomelo.app.get('redisCache');
   redisCache
@@ -81,6 +80,16 @@ module.exports.process = function (app, type, param) {
 
   // push from CMS
   setTimeout(function(){
+    // push action
+    redisCache.zrangeAsync(redisKeyUtil.getUserAction(param.uid), 0, -1)
+      .then(function (values) {
+        for (var i = 0, len = values.length;  i< len; i ++){
+          var value = utils.JSONParse(values[i],{});
+          pomelo.app.get('statusService')
+            .pushByUids([param.uid], 'onNotify', value);
+        }
+      });
+    // push online
     redisCache.hgetall('cothu:pushOnline', function(e, notify) {
       utils.log('LOGIN', notify);
       if (!e && notify) {

@@ -22,6 +22,7 @@
     "username": "u.cothu",
     "password": "b8PC5ZbLHMdt",
     "timezone": "+07:00",
+    "logging" : false,
     "pool": {
       "max": 100,
       "min": 0,

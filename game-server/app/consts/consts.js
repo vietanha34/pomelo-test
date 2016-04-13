@@ -14,6 +14,11 @@ module.exports = {
     AFK_CHECK : 1
   },
 
+  ACTION_ID : {
+    INVITE_GUILD: 1,
+    CONFIRM_INVITE_GUILD: 2
+  },
+
   MAP_GAME_ID_OLD_VERSION : {
     20 : 5,
     21 : 1,
@@ -631,7 +636,9 @@ module.exports = {
     TYPE: {
       NOTIFY_CENTER: 0,
       POPUP: 1,
-      MARQUEE: 2
+      MARQUEE: 2,
+      TOP_DOWN : 3,
+      CONFIRM : 4
     },
     TARGET: {
       NORMAL: 0,
@@ -763,11 +770,21 @@ module.exports = {
   },
 
   GUILD_MEMBER_STATUS:{
-    GUEST : 0,
-    NORMAL_MEMBER : 1,
-    PRESIDENT : 2,
-    VICE_PRESIDENT : 3,
-    REQUEST_MEMBER : 4
+    GUEST : 100,
+    PRESIDENT : 1,
+    VICE_PRESIDENT : 2,
+    NORMAL_MEMBER : 3,
+    REQUEST_MEMBER : 4,
+    INVITE_MEMBER : 5
+  },
+
+
+  GUILD_UPDATE_MEMBER_TYPE : {
+    ADD_MEMBER : 1,
+    REMOVE_MEMBER : 2,
+    UPGRADE_MEMBER : 3,
+    DOWNGRADE_MEMBER : 4,
+    ABDICATE_MEMBER: 5
   },
 
   LOSING_REASON : {
@@ -791,7 +808,7 @@ module.exports = {
     HET_TIME:13
   },
 
-  GUILD_EVENT_ID :{
+  GUILD_EVENT_TYPE :{
     NORMAL : 0,
     JOIN_GUILD : 1, // người chơi vào hội
     LEAVE_GUILD : 2, // người chơi rời hội
@@ -804,5 +821,65 @@ module.exports = {
     CHALLENGE_GUILD: 9, // Thách đấu hội quán,
     WIN_GUILD : 10, // chiến thắng hội quán,
     LOSE_GUILD : 11 // thua hội quán
+  },
+
+  GUILD_EVENT_ALIGN : {
+    LEFT : 1,
+    RIGHT : 2,
+    MIDDLE : 3
+  },
+
+  GUILD_EVENT_COLOR : {
+    GREEN : 1,
+    RED : 2 ,
+    YELLOW : 3,
+    WHITE: 4
+  },
+
+  GUILD_INIT_FAME: 1000,
+
+  GUILD_EVENT_TYPE_MAP :{
+    0: {},
+    1 : {
+      color: 4,
+      align: 3
+    }, // người chơi vào hội
+    2 : {
+      align :3,
+      color :2
+    }, // người chơi rời hội
+    3 : {
+      color : 1
+    }, // thành viên xung quỹ;
+    4 : {
+      color : 3
+    }, // Thắng tour;
+    5 : {
+      color : 4
+    }, // người chơi tham gia giải đấu
+    6 : {
+      color : 1,
+      align : 3
+    }, //Thăng chức hội phó
+    7 : {
+      align :3,
+      color :2
+    }, // Giáng chức hội phó
+    8 : {
+      color : 1,
+      align : 3
+    }, // lên level
+    9: {
+      color: 3,
+      align: 3
+    }, // Thách đấu hội quán,
+    10 : {
+      color : 1,
+      align : 3
+    }, // chiến thắng hội quán,
+    11 : {
+      color : 2,
+      align : 3
+    } // thua hội quán
   }
 };
