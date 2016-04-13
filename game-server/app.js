@@ -6,7 +6,7 @@ var Promise = require('bluebird');
 var consts = require('./app/consts/consts');
 
 Promise.config({
-  longStackTraces : true,
+  longStackTraces: true,
   cancellable: true
 });
 
@@ -31,11 +31,11 @@ app.configure('production|development|local', function () {
   var kickUser = require('./app/modules/kickUser');
   var tournament = require('./app/modules/tournament');
   var globalChannel = require('pomelo-globalchannel-plugin');
-  if (typeof app.registerAdmin === 'function'){
+  if (typeof app.registerAdmin === 'function') {
     app.registerAdmin(onlineUser, {app: app});
     app.registerAdmin(maintenance, {app: app});
-    app.registerAdmin(tournament, { app : app});
-    app.registerAdmin(kickUser,  { app : app});
+    app.registerAdmin(tournament, {app: app});
+    app.registerAdmin(kickUser, {app: app});
   }
   app.loadConfig('redisConfig', app.getBase() + '/config/redis.json');
   app.loadConfig('mongoConfig', app.getBase() + '/config/mongo.json');
@@ -53,9 +53,9 @@ app.configure('production|development|local', function () {
       idx: 'id',
       interval: 30000,
       nameRow: 1,
-      typeRow : 2,
+      typeRow: 2,
       ignoreRows: [3],
-      indexColumn : 1
+      indexColumn: 1
     }
   });
 
@@ -100,7 +100,7 @@ app.configure('production|development|local', function () {
 
   // Đồng bộ mysql
   var models = require('./app/dao/mysqlModels/index');
-  var curServer  = app.curServer;
+  var curServer = app.curServer;
   var db = models();
   app.set('mongoClient', Mongo(utils.merge_options({schemaDir: path.join(app.getBase(), '/app/dao/mongoSchema/')}, app.get('mongoConfig'))))
   app.set('mysqlClient', db);
@@ -108,19 +108,343 @@ app.configure('production|development|local', function () {
     db.sequelize
       .sync()
       .then(function () {
+        console.log('create tournament');
+        return db
+          .Tournament
+          .bulkCreate([
+            {
+              tourId: 1,
+              name: "Kỳ Vương",
+              type: 2,
+              beginTime: '2016-04-13',
+              endTime: '2016-04-13',
+              numPlayer: 0,
+              fee: 10000,
+              roundId: 1,
+              battleType: 1,
+              status: 0,
+              tourType: 1
+            },
+            {
+              tourId: 2,
+              name: "Long Môn kì hội thách đấu",
+              type: 1,
+              beginTime: '2016-04-13',
+              endTime: '2016-04-13',
+              numPlayer: 2,
+              fee: 5000,
+              battleType: 1,
+              status: 0,
+              tourType: 1
+            },
+            {
+              tourId: 3,
+              name: "Đả lôi đài",
+              type: 2,
+              beginTime: '2016-04-13',
+              endTime: '2016-04-13',
+              numPlayer: 3,
+              fee: 5000,
+              battleType: 1,
+              status: 3,
+              roundId: 2,
+              tourType: 2
+            }
+          ])
+          .then(function () {
+            console.log('create tour round');
+            return [db.TourRound.bulkCreate([{
+              roundId: 1,
+              tourId: 1,
+              battleType: 1,
+              numGroup: 8,
+              type: 1,
+              scheduleId: 1
+            },
+              {
+                roundId: 2,
+                tourId: 3,
+                battleType: 2,
+                numGroup: 1,
+                type: 1,
+                scheduleId: 2
+              }
+            ]),
+              db.TourGroup.bulkCreate([
+                {
+                  id : 9,
+                  tourId: 3,
+                  index: 1,
+                  roundId:2,
+                  numPlayer: 8,
+                  player1: 31,
+                  player2: 33,
+                  player3: 34,
+                  player4: 35,
+                  player5: 55,
+                  player6: 57,
+                  player7: 62,
+                  player8: 68,
+                  player9: 31,
+                  player10: 34,
+                  player11: 57,
+                  player12: 68,
+                  player13: 31,
+                  player14: 68,
+                  player15: 68
+                },
+                {
+                  id: 1,
+                  tourId: 1,
+                  index: 1,
+                  roundId: 1,
+                  numPlayer: 3
+                },
+                {
+                  id: 2,
+                  tourId: 1,
+                  index: 2,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 3,
+                  tourId: 1,
+                  index: 3,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 4,
+                  tourId: 1,
+                  index: 4,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 5,
+                  tourId: 1,
+                  index: 5,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 6,
+                  tourId: 1,
+                  index: 6,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 7,
+                  tourId: 1,
+                  index: 7,
+                  roundId: 1,
+                  numPlayer: 0
+                },
+                {
+                  id: 8,
+                  tourId: 1,
+                  index: 8,
+                  roundId: 1,
+                  numPlayer: 0
+                }
+              ])
+            ]
+          })
+          .then(function () {
+            console.log('fill profile, prize');
+            return [db.TourProfile
+              .bulkCreate([
+                {
+                  uid: 31,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+                {
+                  uid: 33,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 2,
+                  groupId: 9
+                },
+                {
+                  uid: 34,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 3,
+                  groupId: 9
+                },
+                {
+                  uid: 35,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+                {
+                  uid: 55,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+                {
+                  uid: 57,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+                {
+                  uid: 62,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+                {
+                  uid: 68,
+                  tourId: 3,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 9
+                },
+
+                // tourId 1
+                //{
+                //  uid: 4,
+                //  tourId: 1,
+                //  win: 0,
+                //  lose: 0,
+                //  draw: 0,
+                //  status: 1,
+                //  point: 0,
+                //  rank: 1,
+                //  groupId: 1
+                //},
+                //{
+                //  uid: 5,
+                //  tourId: 1,
+                //  win: 0,
+                //  lose: 0,
+                //  draw: 0,
+                //  status: 1,
+                //  point: 0,
+                //  rank: 2,
+                //  groupId: 1
+                //},
+                //{
+                //  uid: 6,
+                //  tourId: 1,
+                //  win: 0,
+                //  lose: 0,
+                //  draw: 0,
+                //  status: 1,
+                //  point: 0,
+                //  rank: 3,
+                //  groupId: 1
+                //}
+              ]), db.TourPrize.bulkCreate([
+              {
+                content: '1 con sh',
+                gold: 1000000,
+                tourId: 1
+              },
+              {
+                content: '1 con lx',
+                gold: 100000,
+                tourId: 1
+              },
+              {
+                content: '1 con dylan',
+                gold: 10000,
+                tourId: 1
+              }
+            ])]
+          })
+          .then(function () {
+            console.log('create tourTable');
+            return db.TourTable
+              .bulkCreate([
+                {
+                  boardId: '123' + Date.now() + Math.random() * (100 - 1) + 1,
+                  tourId: 1,
+                  gameId: 1,
+                  index: 1,
+                  serverId: 'game-server-10',
+                  status: consts.BOARD_STATUS.FINISH,
+                  bet: 1000,
+                  numPlayer: 2,
+                  groupId: 1,
+                  roundId: 1,
+                  match: '6bd936ec-39ca-4892-867c-846b89b0e881,56777f78-b9b9-4c03-b280-8561461d59d7,176e397f-eb1c-4205-bd4a-5b8395ede903',
+                  scheduleId: 1,
+                  score: '0,5 - 0,5',
+                  player: JSON.stringify([
+                    {
+                      fullname: 'Tuấn Anh',
+                      avatar: {id: 0, version: 0},
+                      point: 7,
+                      inBoard: 1
+                    },
+                    {
+                      fullname: 'Việt Anh',
+                      avatar: {id: 0, version: 0},
+                      point: 8,
+                      inBoard: 0
+                    }
+                  ])
+                }
+              ])
+          })
       })
       .catch(function (err) {
-        console.error('err : ', err)
+        console.error('sync err : ', err)
       })
   }
-  else if (curServer.id === 'home-server-1'){
+  else if (curServer.id === 'home-server-1') {
     var ccuPlugin = require('pomelo-ccu-plugin');
     app.use(ccuPlugin, {
       ccu: {
         redis: app.get('redisCache'),
         username: 'monitor',
         password: 'monitor',
-        middleware : utils.getGameIdUser
+        middleware: utils.getGameIdUser
       }
     })
   }
@@ -131,13 +455,13 @@ app.configure('production', function () {
 });
 
 // app configuration
-app.configure('production|development', 'connector|gate', function(){
+app.configure('production|development', 'connector|gate', function () {
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');
   app.set('connectorConfig',
     {
       connector: pomelo.connectors.hybridconnector,
       useDict: true,
-      gzip : true,
+      gzip: true,
       useProtobuf: false,
       msgpack: false
     });
@@ -146,25 +470,25 @@ app.configure('production|development', 'connector|gate', function(){
 app.configure('production|development|local', 'master|service|connector|manager|event|worker', function () {
   var EventPlugin = require('pomelo-event-plugin');
   app.use(EventPlugin, {
-    event : {
-      db : app.get('mysqlClient'),
-      eventServerType : 'event',
-      listenerDir : app.getBase() + '/app/events',
-      emitterConfig : {
+    event: {
+      db: app.get('mysqlClient'),
+      eventServerType: 'event',
+      listenerDir: app.getBase() + '/app/events',
+      emitterConfig: {
         FINISH_GAME: 2, // chơi thắng 1 ván bài bất kì
         LOGIN: 3,
-        LOGOUT : 4,
+        LOGOUT: 4,
         TOPUP: 7, // nạp tiền
-        UPDATE_PROFILE : 8,
+        UPDATE_PROFILE: 8,
         ADD_FRIEND: 10, // kết bạn
         REGISTER: 15 // đăng kí
       },
-      dbName : {
-        mysql : 'mysqlClient',
-        redis : 'redisCache',
-        mongodb : 'mongoClient'
+      dbName: {
+        mysql: 'mysqlClient',
+        redis: 'redisCache',
+        mongodb: 'mongoClient'
       },
-      eventConfig : []
+      eventConfig: []
     }
   })
 });
@@ -178,7 +502,7 @@ app.configure('production|development|local', 'game', function () {
   var server = app.curServer;
   var gameId = server.gameId;
   var Game = require('./app/domain/game/game');
-  app.game = new Game({gameId: gameId, serverId: server.id, base : server.base});
+  app.game = new Game({gameId: gameId, serverId: server.id, base: server.base});
 });
 
 app.configure('production|development|local', 'chat', function () {
@@ -190,10 +514,10 @@ app.configure('production|development|local', 'chat', function () {
 app.configure('production|development|local', 'game|district|service|manager|master|worker', function () {
   var BoardService = require('pomelo-board-plugin');
   app.use(BoardService, {
-    board : {
-      db : app.get('mysqlClient'),
-      redis : app.get('redisCache'),
-      genBoardAttributes : ['gameId', 'hallId']
+    board: {
+      db: app.get('mysqlClient'),
+      redis: app.get('redisCache'),
+      genBoardAttributes: ['gameId', 'hallId']
     }
   });
 });
@@ -202,8 +526,8 @@ app.configure('production|development|local', 'game|district|service|manager|mas
 app.configure('production|development|local', 'district|connector|game|home', function () {
   var WaitingService = require('pomelo-waiting-plugin');
   app.use(WaitingService, {
-    waiting : {
-      db : app.get('mysqlClient')
+    waiting: {
+      db: app.get('mysqlClient')
     }
   })
 });
@@ -212,10 +536,12 @@ app.configure('production|development|local', 'district|connector|game|home', fu
 
 app.configure('production|development|local', function () {
   var AccountPlugin = require('pomelo-account-plugin');
-  app.use(AccountPlugin, { account : {
-    config : app.get('serviceConfig').account,
-    redis: app.get('redisCache')
-  }})
+  app.use(AccountPlugin, {
+    account: {
+      config: app.get('serviceConfig').account,
+      redis: app.get('redisCache')
+    }
+  })
 });
 
 app.configure('production|development', 'home|game|chat', function () {
@@ -230,7 +556,7 @@ app.configure('production|development', 'chat|game', function () {
   app.set('chatService', new ChatService(app));
 });
 
-app.configure('production|development', 'manager|game|service|event|worker|http', function () {
+app.configure('production|development', 'manager|game|service|event|worker|http|', function () {
   var PaymentService = require('./app/services/paymentService');
   var paymentService = new PaymentService(app, {});
   app.set('paymentService', paymentService);
@@ -254,8 +580,8 @@ app.configure('production|development', 'worker', function () {
 app.configure('production|development', 'event', function () {
   var geoIpPlugin = require('pomelo-geoip-plugin');
   app.use(geoIpPlugin, {
-    geoip : {
-      urlService : 'http://sdk.vgame.us:8888/iploc'
+    geoip: {
+      urlService: 'http://sdk.vgame.us:8888/iploc'
     }
   });
 });

@@ -159,6 +159,7 @@ module.exports = {
   BOARD_STATUS: {
     NOT_STARTED: 0,
     PLAY : 1,
+    FINISH : 2,
     PREFLOP: 3,
     FLOP: 4,
     TURN: 5,
@@ -398,6 +399,11 @@ module.exports = {
   TOUR_DAY_TYPE : {
     CN : 1,
     CK : -1
+  },
+
+  TOUR_TYPE:{
+    FRIENDLY : 1,
+    NORMAL : 2
   },
 
   BUTTON_TYPE :{
