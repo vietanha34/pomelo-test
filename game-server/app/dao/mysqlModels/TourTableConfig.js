@@ -17,32 +17,43 @@ module.exports = function(sequelize, DataTypes) {
       primaryKey : true,
       autoIncrement : true
     },
-    uid : {
-      type : DataTypes.STRING,
+    gameId : {
+      type : DataTypes.INTEGER,
       allowNull : false
     },
-    tourId : {
-      type : DataTypes.DATEONLY,
+    totalTime : {
+      type : DataTypes.INTEGER,
       allowNull: true
     },
-    win : {
-      type : DataTypes.DATEONLY,
+    turnTime : {
+      type : DataTypes.INTEGER,
       allowNull: true
     },
-    lose: {
-      type: DataTypes.INTEGER
+    timeWait: {
+      type: DataTypes.INTEGER,
+      defaultValue : 120000,
+      comment: "Thời gian giãn cách giữa 2 trận đấu"
     },
-    draw : {
-      type : DataTypes.INTEGER
+    tourTimeWait : {
+      type : DataTypes.INTEGER,
+      defaultValue : 600000,
+      comment: "Thời gian chờ đợi đấu thủ vào bàn đấu"
     },
-    point : {
-      type : DataTypes.INTEGER
+    showKill : {
+      type : DataTypes.INTEGER,
+      defaultValue : 1,
+      comment: 'cờ úp hiện quân ăn'
     },
-    status : {
-      type: DataTypes.DATE
+    lockMode : {
+      type: DataTypes.STRING
     },
-    groupId: {
-      type: DataTypes.INTEGER
+    matchPlay: {
+      type: DataTypes.INTEGER,
+      defaultValue : 2,
+      comment: 'Số ván có thể đấu'
+    },
+    mustWin: {
+      type: DataTypes.INTEGER(4)
     }
   }, {
     classMethods: {

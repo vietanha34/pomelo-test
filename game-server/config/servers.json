@@ -37,6 +37,9 @@
     "manager" : [
       {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
     ],
+    "tournament" : [
+      {"id": "tournament-server-1", "host" : "127.0.0.1", "port" : 3770}
+    ],
     "worker" : [
       {"id": "worker-server-1", "host" : "127.0.0.1", "port" : 3760, "httpPort" : 9000}
     ]

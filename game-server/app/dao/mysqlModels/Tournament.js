@@ -1,6 +1,7 @@
 /**
  * Created by vietanha34 on 3/25/16.
  */
+var consts = require('../../consts/consts');
 
 
 module.exports = function(sequelize, DataTypes) {
@@ -27,7 +28,8 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     numPlayer: {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      defaultValue : 0
     },
     fee : {
       type : DataTypes.INTEGER
@@ -39,20 +41,14 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE
     },
     status : {
-      type : DataTypes.INTEGER
+      type : DataTypes.INTEGER,
+      defaultValue : consts.TOUR_STATUS.PRE_START
     },
     tourType: {
       type: DataTypes.INTEGER
     },
     icon : {
       type: DataTypes.STRING
-    },
-    numGroup : {
-      type: DataTypes.INTEGER,
-      comment: ''
-    },
-    numRound: {
-      type: DataTypes.INTEGER
     },
     roundId : {
       type: DataTypes.INTEGER
@@ -68,12 +64,23 @@ module.exports = function(sequelize, DataTypes) {
     third: {
       type: DataTypes.INTEGER,
       comment : 'uid của người đứng thứ 3'
+    },
+    rule: {
+      type: DataTypes.STRING
+    },
+    fund : {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      comment: 'Số tiền góp quỹ giải thưởng'
+    },
+    resultString: {
+      type: DataTypes.STRING
     }
   }, {
     classMethods: {
       associate: function(models) {
-        models.Tournament.hasMany(models.TourPrize, {foreignKey : 'tourId', as : 'Prize'});
-        models.Tournament.hasOne(models.TourRound, { foreignKey : 'roundId', as : 'Round'});
+        //models.Tournament.hasMany(models.TourPrize, {foreignKey : 'tourId', as : 'Prize'});
+        //models.Tournament.hasOne(models.TourRound, { foreignKey : 'roundId', as : 'Round'});
       }
     }
   });

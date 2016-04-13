@@ -120,6 +120,7 @@
   "tournament.tourHandler.getTourTable" : 503,
   "tournament.tourHandler.getTourHistory" : 504,
   "tournament.tourHandler.addFund" : 505,
+  "tournament.tourHandler.registerTour" : 507,
   "onPlayerJoin" : 200,
   "game.gameHandler.demand" : 208,
   "onTurn" : 202,
