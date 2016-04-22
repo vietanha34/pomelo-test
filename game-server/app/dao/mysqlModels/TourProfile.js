@@ -34,7 +34,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     status : {
       type: DataTypes.INTEGER,
-      defaultValue : 0
+      defaultValue : 0,
+      comment : '0: normal, 1 : ban'
     },
     point : {
       type : DataTypes.INTEGER,

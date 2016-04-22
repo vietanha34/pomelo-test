@@ -25,7 +25,8 @@ ActionDao.addAction = function (opts, uid) {
       title: opts.title || '',
     msg: opts.msg || '',
     image: consts.NOTIFY.IMAGE.NORMAL,
-    action: opts.action
+    action: opts.action,
+    popup: opts.popup
   };
   pomelo.app.get('statusService').pushByUids([uid], 'onNotify', object);
   return pomelo.app.get('redisCache')

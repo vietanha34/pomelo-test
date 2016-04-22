@@ -362,6 +362,26 @@ UserDao.isExist = function (username, cb) {
 
 };
 
+
+UserDao.getUsernameByUid = function (uid, cb) {
+  return pomelo.app.get('mysqlClient')
+    .User
+    .findOne({
+      where : {
+        uid : uid
+      },
+      raw : true,
+      attributes : ['username']
+    })
+    .then(function (user) {
+      if (user){
+        return utils.invokeCallback(cb, null, user.username)
+      }else {
+        return utils.invokeCallback(cb, null, null)
+      }
+    })
+};
+
 /**
  * Login user
  *

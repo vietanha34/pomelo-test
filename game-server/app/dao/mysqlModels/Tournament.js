@@ -34,9 +34,6 @@ module.exports = function(sequelize, DataTypes) {
     fee : {
       type : DataTypes.INTEGER
     },
-    battleType : {
-      type : DataTypes.INTEGER
-    },
     registerTime : {
       type: DataTypes.DATE
     },
@@ -53,17 +50,9 @@ module.exports = function(sequelize, DataTypes) {
     roundId : {
       type: DataTypes.INTEGER
     },
-    first: {
-      type: DataTypes.INTEGER,
-      comment : 'uid của người dẫn đầu'
-    },
-    second: {
-      type: DataTypes.INTEGER,
-      comment : 'uid của người đứng thứ 2'
-    },
-    third: {
-      type: DataTypes.INTEGER,
-      comment : 'uid của người đứng thứ 3'
+    champion: {
+      type: DataTypes.TEXT,
+      comment : 'champion'
     },
     rule: {
       type: DataTypes.STRING
@@ -80,7 +69,7 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         //models.Tournament.hasMany(models.TourPrize, {foreignKey : 'tourId', as : 'Prize'});
-        //models.Tournament.hasOne(models.TourRound, { foreignKey : 'roundId', as : 'Round'});
+        models.Tournament.hasOne(models.TourRound, { foreignKey : 'roundId', targetKey : 'roundId'});
       }
     }
   });

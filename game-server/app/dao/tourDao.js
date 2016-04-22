@@ -30,7 +30,7 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'status', 'tourId', 'fee', 'icon', 'name', 'beginTime', 'endTime', 'numPlayer']
+    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion']
   };
 
   return pomelo.app.get('mysqlClient')
@@ -70,13 +70,13 @@ TourDao.getListTour = function (opts, cb) {
                     tourId: tour.tourId
                   },
                   attributes: ['gold', ['content', 'text'], ['type', 'stt']],
+                  order: 'type ASC',
                   raw: true
                 })
                 .then(function (prize) {
                   console.log('prize : ', prize);
                   tour['isRegister'] = isRegister;
                   tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
-                  tour['rule'] = 'Cờ tướng liệt C5';
                   tour['time'] = moment(tour.beginTime).format('YYYY:MM:DD');
                   tour.prize = prize;
                   return Promise.resolve(tour);
@@ -87,32 +87,7 @@ TourDao.getListTour = function (opts, cb) {
         default :
           tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
           tour['time'] = moment(tour.endTime).format('YYYY:MM:DD');
-          tour['champion'] = [
-            {
-              stt: 1,
-              uid: 1,
-              avatar: {"id": 4, "version": 1449114274},
-              fullname: 'Việt Anh',
-              gold: 100000,
-              text: '1 SHi'
-            },
-            {
-              stt: 2,
-              uid: 2,
-              avatar: {"version": 1449719551, "id": 5},
-              fullname: 'Văn gà',
-              gold: 100000,
-              text: '1 lx 150cc'
-            },
-            {
-              stt: 3,
-              uid: 3,
-              avatar: {"version": 1449026406, "id": 6},
-              fullname: 'Tuấn Anh',
-              gold: 100000,
-              text: 'dylan tàu'
-            }
-          ];
+          tour['champion'] = utils.JSONParse(tour.champion, []);
           return Promise.resolve(tour)
       }
     })
@@ -157,4 +132,10 @@ TourDao.getTourGroup = function (opts, cb) {
   return pomelo.app.get('mysqlClient')
     .TourGroup
     .findAll(opts)
+};
+
+TourDao.createTable = function (opts) {
+  return pomelo.app.get('mysqlClient')
+    .TourTable
+    .create(opts);
 };

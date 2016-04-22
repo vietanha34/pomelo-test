@@ -70,6 +70,7 @@
   "service.guildHandler.invitePlayer": 406,
   "service.guildHandler.requestJoinGuild": 407,
   "service.guildHandler.addFund": 408,
+  "service.guildHandler.duel": 409,
   "chat.chatHandler.send": 120,
   "chat.chatHandler.mute" : 121,
   "chat.chatHandler.enable" : 122,

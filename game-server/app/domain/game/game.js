@@ -10,6 +10,7 @@ var boardPool = require('./boardPool');
 var lodash = require('lodash');
 var consts = require('../../consts/consts');
 var async = require('async');
+var TourManager = require('../tournament/tourManager');
 
 /**
  * Tập hợp ,quản lý trò chơi, bàn chơi trong 1 process game
@@ -84,6 +85,7 @@ Game.prototype.getBoard = function (boardId) {
  * @api private
  */
 Game.prototype.initBoards = function () {
+  var tourManager = new TourManager();
   var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   for (var i = 1, len = 10; i < len; i++) {
     var hallConfig = hallConfigs['' + this.gameId + i];
@@ -93,7 +95,12 @@ Game.prototype.initBoards = function () {
         this.boardManager.createRoom(hallConfig, hallId * 100 + j)
       }
       if (this.gameId === consts.GAME_ID.CO_TUONG && hallId === consts.HALL_ID.CAO_THU){
-        this.boardManager.createRoomTournament(hallConfig, 403);
+        //this.boardManager.createRoomTournament(hallConfig, 403);
+        console.log('this.boardManager.createRoomTournament(hallConfig, 403)');
+        setTimeout(function () {
+          console.log('matchMaking');
+          //tourManager.matchMaking(1);
+        }, 30000)
       }
     }
   }

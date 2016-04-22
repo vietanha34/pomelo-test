@@ -17,6 +17,8 @@ var NotifyDao = require('../../../dao/notifyDao');
 var util = require('util');
 var moment = require('moment');
 var exp = module.exports;
+var TourManager = require('../../tournament/tourManager');
+var TourDao = require('../../../dao/tourDao');
 
 exp.addEventFromBoard = function (board) {
   /**
@@ -78,6 +80,36 @@ exp.addEventFromBoard = function (board) {
           }
         }
       }, 100, player);
+    }
+    if (board.gameType === consts.GAME_TYPE.TOURNAMENT && !player.guest){
+      TourDao.getTourTable({
+        where : {
+          boardId : board.tableId
+        },
+        attributes: ['player'],
+        raw : true
+      })
+        .then(function (tables) {
+          if (tables.length < 1) return;
+          var table = tables[0];
+          var players = utils.JSONParse(table.player,[]);
+          var index = lodash.findIndex(players, function (p) {
+            return p.uid === player.uid
+          });
+          console.log('index : ', index);
+          if (index > -1){
+            players[index].inBoard = 1;
+            return pomelo.app.get('mysqlClient')
+              .TourTable
+              .update({
+                player : JSON.stringify(players)
+              }, {
+                where: {
+                  boardId : board.tableId
+                }
+              })
+          }
+        })
     }
   });
 
@@ -197,9 +229,34 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          //board.emit('tourFinish', board.tourWinUser, 'Đối thủ rời bàn chơi');
+          board.emit('tourFinish', board.tourWinUser, 'Đối thủ rời bàn chơi');
         }
       }
+      TourDao.getTourTable({
+        where : {
+          boardId : board.tableId
+        },
+        attributes: ['player'],
+        raw : true
+      })
+        .then(function (tables) {
+          if (tables.length < 1) return;
+          var table = tables[0];
+          var players = utils.JSONParse(table.player,[]);
+          var index = lodash.findIndex(players, ['uid', userInfo.uid]);
+          if (index > -1){
+            players[index].inBoard = 0;
+            return pomelo.app.get('mysqlClient')
+              .TourTable
+              .update({
+                player : JSON.stringify(players)
+              }, {
+                where : {
+                  boardId : board.tableId
+                }
+              })
+          }
+        })
     }
   });
 
@@ -223,7 +280,7 @@ exp.addEventFromBoard = function (board) {
       board.timer.cancelJob(board.jobId);
       board.jobId = null;
     }
-    pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.PLAY});
+    board.emit('setBoard',{stt: consts.BOARD_STATUS.PLAY},true);
     var reserve = board.players.getPlayer(board.game.playerPlayingId[0]).color === consts.COLOR.BLACK;
     var status = board.getStatus();
     board.timeStart = Date.now();
@@ -288,12 +345,17 @@ exp.addEventFromBoard = function (board) {
       }
       if (user.result.type === consts.WIN_TYPE.WIN) {
         winUid = user.uid;
-        board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
+        board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1;
+        if (board.tourScore) board.tourScore[board.username.indexOf(player.userInfo.username)] += 1;
       } else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP) {
         if (!disableLooseUser) {
           board.looseUser = user.uid;
         }
         loseUid = user.uid;
+      }else if (user.result.type === consts.WIN_TYPE.DRAW) {
+        if (board.tourScore) board.tourScore = lodash.map(board.tourScore, function (playerScore) {
+          return playerScore + 0.5;
+        })
       }
     }
     var otherPlayerUid = board.players.getOtherPlayer();
@@ -320,9 +382,10 @@ exp.addEventFromBoard = function (board) {
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
-    pomelo.app.get('boardService').updateBoard(board.tableId, {stt: consts.BOARD_STATUS.NOT_STARTED});
+    board.emit('setBoard', {stt: consts.BOARD_STATUS.NOT_STARTED}, true);
     board.numMatchPlay += 1;
     if (board.gameType === consts.GAME_TYPE.TOURNAMENT && !board.tableTourFinish){
+      board.emit('setBoard', {score : board.tourScore ? board.tourScore.join(' - ') : null}, true)
       if (winUid) {
         winPlayer = board.players.getPlayer(winUid);
         if (winPlayer) board.tournamentLog.push(util.format(moment().format() + ' --- Người chơi %s giành chiến thắng', winPlayer.userInfo.username));
@@ -339,12 +402,12 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          //board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
+          board.emit('tourFinish', board.tourWinUser, 'Kết thúc đầy đủ các ván chơi');
         }
       }
       if (board.numMatchPlay >= board.matchPlay && board.score[0] === board.score[1] && !board.mustWin){
         // hoà rồi
-        //board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
+        board.emit('tourFinish', null, 'Hoà tất cả các ván chơi');
       }
     }
     return data;
@@ -399,7 +462,7 @@ exp.addEventFromBoard = function (board) {
             username : winPlayer.userInfo.username,
             uid : winPlayer.uid
           };
-          //board.emit('tourFinish', board.tourWinUser, 'Đối thủ đứng lên');
+          board.emit('tourFinish', board.tourWinUser, 'Đối thủ đứng lên');
         }
       }
     }
@@ -438,14 +501,23 @@ exp.addEventFromBoard = function (board) {
    *  @param {Object} opts
    *  @for BoardBase
    */
-  board.on('setBoard', function (opts) {
+  board.on('setBoard', function (opts, tournament) {
     if (board.players.length >= board.maxPlayer) {
       opts.isFull = 1;
     }
     else {
       opts.isFull = 0;
     }
-    pomelo.app.get('boardService').updateBoard(board.tableId, opts)
+    pomelo.app.get('boardService').updateBoard(board.tableId, opts);
+    if (tournament){
+      pomelo.app.get('mysqlClient')
+        .TourTable
+        .update(opts, {
+          where: {
+            boardId : board.tableId
+          }
+        })
+    }
   });
 
   /**
@@ -541,6 +613,27 @@ exp.addEventFromBoard = function (board) {
         'với lý do : %s , tỷ số : "%s", chi tiết ván chơi : %s', board.username[0], board.username[1], board.roomId, board.index, reason, board.score, board.tournamentLog.join(' , ')));
     }
     // ghi log
+    pomelo.app.get('mysqlClient')
+      .TourTable
+      .findOne({
+        where: {
+          boardId: board.tableId
+        }
+      })
+      .then(function (table) {
+        if (table.status !== consts.BOARD_STATUS.FINISH) {
+          table.updateAttributes({
+            stt: consts.BOARD_STATUS.FINISH,
+            winner: winner ? winner.uid : null
+          })
+        }
+      })
+      .then(function () {
+        //setTimeout(function () {
+        //  var tourManager = new TourManager();
+        //  tourManager.calPoint(1);
+        //}, 10000);
+      })
   });
   
   board.on('logout', function (player) {

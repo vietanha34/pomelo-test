@@ -109,21 +109,23 @@ app.configure('production|development|local', function () {
       .sync()
       .then(function () {
         console.log('create tournament');
+        return {};
         return db
           .Tournament
           .bulkCreate([
             {
               tourId: 1,
-              name: "Kỳ Vương",
-              type: 2,
+              name: "Kỳ Vương cờ tướng",
+              type: consts.TOUR_TYPE.NORMAL,
               beginTime: '2016-04-13',
-              endTime: '2016-04-13',
+              endTime: '2016-04-14',
               numPlayer: 0,
-              fee: 10000,
+              fee: 5000,
               roundId: 1,
               battleType: 1,
               status: 0,
-              tourType: 1
+              tourType: 1,
+              rule: 'Cờ tướng: liệt C5'
             },
             {
               tourId: 2,
@@ -152,14 +154,39 @@ app.configure('production|development|local', function () {
             }
           ])
           .then(function () {
+             //setup TourTableConfig
+            return [db.TourTableConfig
+              .create({
+                id : 1,
+                gameId : 1,
+                totalTime: 300,
+                turnTime : 30,
+                timeWait : 120000,
+                level : 0,
+                tourTimeWait : 600000,
+                showKill : 1,
+                matchPlay : 3,
+                mustWin : 1,
+                bet : 10000
+              }),
+              db.TourSchedule
+                .create({
+                  id : 1,
+                  matchTime : ((Date.now() + 60000) / 1000) | 0
+                })
+              ]
+          })
+          .spread(function () {
             console.log('create tour round');
-            return [db.TourRound.bulkCreate([{
+            return [
+              db.TourRound.bulkCreate([{
               roundId: 1,
               tourId: 1,
               battleType: 1,
-              numGroup: 8,
+              numGroup: 1,
               type: 1,
-              scheduleId: 1
+              scheduleId: 1,
+                tableConfigId :1
             },
               {
                 roundId: 2,
@@ -198,57 +225,57 @@ app.configure('production|development|local', function () {
                   tourId: 1,
                   index: 1,
                   roundId: 1,
-                  numPlayer: 3
-                },
-                {
-                  id: 2,
-                  tourId: 1,
-                  index: 2,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 3,
-                  tourId: 1,
-                  index: 3,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 4,
-                  tourId: 1,
-                  index: 4,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 5,
-                  tourId: 1,
-                  index: 5,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 6,
-                  tourId: 1,
-                  index: 6,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 7,
-                  tourId: 1,
-                  index: 7,
-                  roundId: 1,
-                  numPlayer: 0
-                },
-                {
-                  id: 8,
-                  tourId: 1,
-                  index: 8,
-                  roundId: 1,
                   numPlayer: 0
                 }
+                //{
+                //  id: 2,
+                //  tourId: 1,
+                //  index: 2,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 3,
+                //  tourId: 1,
+                //  index: 3,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 4,
+                //  tourId: 1,
+                //  index: 4,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 5,
+                //  tourId: 1,
+                //  index: 5,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 6,
+                //  tourId: 1,
+                //  index: 6,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 7,
+                //  tourId: 1,
+                //  index: 7,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //},
+                //{
+                //  id: 8,
+                //  tourId: 1,
+                //  index: 8,
+                //  roundId: 1,
+                //  numPlayer: 0
+                //}
               ])
             ]
           })
@@ -345,29 +372,28 @@ app.configure('production|development|local', function () {
                   groupId: 9
                 },
 
-                // tourId 1
-                //{
-                //  uid: 4,
-                //  tourId: 1,
-                //  win: 0,
-                //  lose: 0,
-                //  draw: 0,
-                //  status: 1,
-                //  point: 0,
-                //  rank: 1,
-                //  groupId: 1
-                //},
-                //{
-                //  uid: 5,
-                //  tourId: 1,
-                //  win: 0,
-                //  lose: 0,
-                //  draw: 0,
-                //  status: 1,
-                //  point: 0,
-                //  rank: 2,
-                //  groupId: 1
-                //},
+                {
+                  uid: 461405,
+                  tourId: 1,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 1,
+                  groupId: 1
+                },
+                {
+                  uid: 5,
+                  tourId: 1,
+                  win: 0,
+                  lose: 0,
+                  draw: 0,
+                  status: 1,
+                  point: 0,
+                  rank: 2,
+                  groupId: 1
+                }
                 //{
                 //  uid: 6,
                 //  tourId: 1,
@@ -381,56 +407,56 @@ app.configure('production|development|local', function () {
                 //}
               ]), db.TourPrize.bulkCreate([
               {
-                content: '1 con sh',
-                gold: 1000000,
+                content: '',
+                gold: 50000,
                 tourId: 1
               },
               {
-                content: '1 con lx',
-                gold: 100000,
+                content: '',
+                gold: 30000,
                 tourId: 1
               },
               {
-                content: '1 con dylan',
-                gold: 10000,
+                content: '',
+                gold: 20000,
                 tourId: 1
               }
             ])]
           })
           .then(function () {
             console.log('create tourTable');
-            return db.TourTable
-              .bulkCreate([
-                {
-                  boardId: '123' + Date.now() + Math.random() * (100 - 1) + 1,
-                  tourId: 1,
-                  gameId: 1,
-                  index: 1,
-                  serverId: 'game-server-10',
-                  status: consts.BOARD_STATUS.FINISH,
-                  bet: 1000,
-                  numPlayer: 2,
-                  groupId: 1,
-                  roundId: 1,
-                  match: '6bd936ec-39ca-4892-867c-846b89b0e881,56777f78-b9b9-4c03-b280-8561461d59d7,176e397f-eb1c-4205-bd4a-5b8395ede903',
-                  scheduleId: 1,
-                  score: '0,5 - 0,5',
-                  player: JSON.stringify([
-                    {
-                      fullname: 'Tuấn Anh',
-                      avatar: {id: 0, version: 0},
-                      point: 7,
-                      inBoard: 1
-                    },
-                    {
-                      fullname: 'Việt Anh',
-                      avatar: {id: 0, version: 0},
-                      point: 8,
-                      inBoard: 0
-                    }
-                  ])
-                }
-              ])
+            //return db.TourTable
+            //  .bulkCreate([
+            //    {
+            //      boardId: '123' + Date.now() + Math.random() * (100 - 1) + 1,
+            //      tourId: 1,
+            //      gameId: 1,
+            //      index: 1,
+            //      serverId: 'game-server-10',
+            //      status: consts.BOARD_STATUS.FINISH,
+            //      bet: 1000,
+            //      numPlayer: 2,
+            //      groupId: 1,
+            //      roundId: 1,
+            //      match: '6bd936ec-39ca-4892-867c-846b89b0e881,56777f78-b9b9-4c03-b280-8561461d59d7,176e397f-eb1c-4205-bd4a-5b8395ede903',
+            //      scheduleId: 1,
+            //      score: '0,5 - 0,5',
+            //      player: JSON.stringify([
+            //        {
+            //          fullname: 'Tuấn Anh',
+            //          avatar: {id: 0, version: 0},
+            //          point: 7,
+            //          inBoard: 1
+            //        },
+            //        {
+            //          fullname: 'Việt Anh',
+            //          avatar: {id: 0, version: 0},
+            //          point: 8,
+            //          inBoard: 0
+            //        }
+            //      ])
+            //    }
+            //  ])
           })
       })
       .catch(function (err) {
@@ -556,7 +582,7 @@ app.configure('production|development', 'chat|game|service', function () {
   app.set('chatService', new ChatService(app));
 });
 
-app.configure('production|development', 'manager|game|service|event|worker|http|', function () {
+app.configure('production|development', 'manager|game|service|event|worker|http|tournament', function () {
   var PaymentService = require('./app/services/paymentService');
   var paymentService = new PaymentService(app, {});
   app.set('paymentService', paymentService);

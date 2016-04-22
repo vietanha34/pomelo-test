@@ -52,7 +52,7 @@ Handler.prototype.getListTour = function (msg, session, next) {
 Handler.prototype.getTour = function (msg, session, next) {
   var uid = session.uid;
   var tourId = msg.tourId;
-  var tour, round;
+  var tour, round, groups;
   return TourDao.getTour({
     where: {
       tourId: tourId
@@ -83,14 +83,16 @@ Handler.prototype.getTour = function (msg, session, next) {
             roundId: round.id
           },
           raw: true,
-          attributes: ['index', 'id']
+          attributes: ['index', 'id', 'avatar']
         }),
         profile: TourDao.getTourProfile({
           where: {
             tourId: tourId,
             uid: uid
           },
+          limit : 1,
           raw: true,
+          order : 'createdAt DESC',
           include: {
             model: pomelo.app.get('mysqlClient').User,
             attributes: ['fullname', 'avatar']
@@ -99,7 +101,7 @@ Handler.prototype.getTour = function (msg, session, next) {
       })
     })
     .then(function (data) {
-      var groups = data.group || [];
+      groups = data.group || [];
       var profile = data.profile.length > 0 ? data.profile[0] : {};
       if (groups.length <= 0) {
         return Promise.reject({ec: Code.FAIL, msg: 'Hiện tại không có bảng đấu nào'});
@@ -109,7 +111,7 @@ Handler.prototype.getTour = function (msg, session, next) {
         return {
           index: group.index,
           groupId: group.id,
-          avatar: {id: 0, version: 0}
+          avatar: utils.JSONParse(group.avatar, { id : 0, version : 0})
         }
       });
       console.log('data : ', tourId, data);
@@ -151,7 +153,8 @@ Handler.prototype.getTour = function (msg, session, next) {
               result: tour.resultString
             })
           });
-      } else {
+      }
+      else {
         return next(null, {
           status: tour.status,
           isRegister: 0,
@@ -169,6 +172,9 @@ Handler.prototype.getTour = function (msg, session, next) {
         ec: err.ec || Code.FAIL,
         msg: err.msg || 'Không thể đăng kí đấu trường vào thời điểm này'
       })
+    })
+    .finally(function () {
+      groups = null;
     })
 };
 
@@ -194,17 +200,18 @@ Handler.prototype.getTourRank = function (msg, session, next) {
         }),
         rank: TourDao.getTourProfile({
           where: {
-            groupId: msg.groupId
+            groupId: groupId
           },
           raw: true,
           include: {
             model: pomelo.app.get('mysqlClient').User,
             attributes: ['fullname', 'avatar', 'sex']
-          }
+          },
+          order : 'point DESC'
         }),
         group: TourDao.getTourGroup({
           where: {
-            id: msg.groupId
+            id: groupId
           },
           raw: true
         })
@@ -221,9 +228,10 @@ Handler.prototype.getTourRank = function (msg, session, next) {
       var position;
       switch (round.battleType) {
         case 1 : // hệ thuỵ sĩ
+          var i = 1;
           rank = lodash.map(rank, function (item) {
             return {
-              rank: item.rank,
+              rank: i++ ,
               fullname: item['User.fullname'],
               avatar: utils.JSONParse(item['User.avatar'], {}),
               point: item.point,
@@ -234,7 +242,6 @@ Handler.prototype.getTourRank = function (msg, session, next) {
         case 2:
           position = [group.player1, group.player2, group.player3, group.player4, group.player5, group.player6, group.player7,
             group.player8, group.player9, group.player10, group.player11, group.player12, group.player13, group.player14, group.player15];
-          console.log('position : ', group, position);
           position = lodash.map(position, function (item) {
             if (item) {
               return item
@@ -324,7 +331,7 @@ Handler.prototype.getTourTable = function (msg, session, next) {
         return {
           index: table.index,
           boardId: table.boardId,
-          status: table.status,
+          status: table.stt,
           score: table.score,
           match: lodash.isString(table.match) ? lodash.compact(table.match.split(',')) : undefined,
           players: utils.JSONParse(table.player)
@@ -386,12 +393,19 @@ Handler.prototype.registerTour = function (msg, session, next) {
     .then(function (result) {
       if (result && !result.ec) {
         currentGold = result.gold;
-        return TourDao.getTourGroup({
+        return [TourDao.getTourGroup({
           where: {
             roundId: tour.roundId
           },
           attributes: ['numPlayer', 'id', 'index']
-        })
+        }),
+          TourDao.getTourRound({
+            where : {
+              id : tour.roundId
+            },
+            raw : true
+          })
+        ]
       } else {
         return Promise.reject({
           ec: Code.FAIL,
@@ -399,12 +413,15 @@ Handler.prototype.registerTour = function (msg, session, next) {
         })
       }
     })
-    .then(function (groups) {
+    .spread(function (groups, round) {
       // cho người chơi vào bảng
       var groupId;
       var minNumPlayer = 10000;
       for (var i = 0, len = groups.length; i < len; i++) {
         var group = groups[i];
+        if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE && group.numPlayer >= 8){
+          continue
+        }
         if (group.numPlayer < minNumPlayer) {
           minNumPlayer = group.numPlayer;
           groupId = group.id
@@ -419,7 +436,8 @@ Handler.prototype.registerTour = function (msg, session, next) {
               .create({
                 uid: uid,
                 tourId: tour.tourId,
-                groupId: groupId
+                groupId: groupId,
+                rank : minNumPlayer + 1
               }, {transaction: t})
               .then(function (create) {
                 return pomelo.app.get('mysqlClient')
@@ -434,11 +452,15 @@ Handler.prototype.registerTour = function (msg, session, next) {
                   })
               })
               .then(function () {
+                var updateData = {
+                  numPlayer: pomelo.app.get('mysqlClient').sequelize.literal('numPlayer + ' + 1)
+                };
+                if (round.battleType === consts.TOUR_BATTLE_TYPE){
+                  updateData['player'+(minNumPlayer+1)] = uid;
+                }
                 return pomelo.app.get('mysqlClient')
                   .TourGroup
-                  .update({
-                    numPlayer: pomelo.app.get('mysqlClient').sequelize.literal('numPlayer + ' + 1)
-                  }, {
+                  .update(updateData,{
                     where: {
                       tourId: tourId,
                       roundId: tour.roundId,
@@ -446,7 +468,6 @@ Handler.prototype.registerTour = function (msg, session, next) {
                     },
                     transaction: t
                   })
-
               })
               .then(function () {
                 console.log('push gold về');
@@ -465,8 +486,9 @@ Handler.prototype.registerTour = function (msg, session, next) {
                 gold: tour.fee
               })
           })
-      } else {
-        return Promise.reject({ec: Code.FAIL, msg: 'Đăng kí tham gia giải đấu không thành công'})
+      }
+      else {
+        return Promise.reject({ec: Code.FAIL, msg: 'Không còn bảng đấu nào phù hợp với bạn.'})
       }
     })
     .catch(function (err) {

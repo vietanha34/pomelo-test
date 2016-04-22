@@ -56,6 +56,26 @@ Handler.prototype.action = function (msg, session, next) {
 
       }
       break;
+    case consts.ACTION_ID.TOURNAMENT_DUEL:
+      if(accept){
+        // create giải đấu
+
+      }else {
+        GuildDao.addEvent({
+          guildId: action.currentGuildId,
+          uid: session.uid,
+          fullname: fullname,
+          content: util.format('Lời khiêu chiến bị huỷ'),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        GuildDao.addEvent({
+          guildId: action.targetGuildId,
+          uid: session.uid,
+          fullname: fullname,
+          content: util.format('loi khieu chien bị huỷ'),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+      }
       // action invite;
   }
 

@@ -27,6 +27,10 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.INTEGER,
       defaultValue : 0
     },
+    avatar : {
+      type : DataTypes.STRING,
+      allowNull: true
+    },
     player1: {
       type: DataTypes.INTEGER
     },

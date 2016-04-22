@@ -15,6 +15,12 @@ module.exports = function(sequelize, DataTypes) {
       primaryKey : true,
       autoIncrement : true
     },
+    name :{
+      type: DataTypes.STRING
+    },
+    status : {
+      type: DataTypes.INTEGER(4)
+    },
     tourId : {
       type : DataTypes.INTEGER,
       allowNull: true
@@ -27,10 +33,14 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER
     },
     numGroup : {
-      type : DataTypes.INTEGER
+      type: DataTypes.INTEGER
+    },
+    numRound : {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
     },
     type : {
-      type : DataTypes.INTEGER
+      type: DataTypes.INTEGER
     },
     scheduleId : {
       type: DataTypes.INTEGER
@@ -39,6 +49,7 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         //models.TourRound.hasMany(models.TourGroup,  {foreignKey : 'roundId'})
+        models.TourRound.hasOne(models.TourTableConfig, {foreignKey : 'tableConfigId'})
       }
     }
   });

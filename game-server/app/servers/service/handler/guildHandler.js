@@ -220,18 +220,18 @@ Handler.prototype.updateMember = function (msg, session, next) {
           return pomelo.app.get('mysqlClient')
             .GuildMember
             .count
-            ({
-              where :{
-                guildId : guildId,
-                role : {
-                  $ne : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
-                }
+          ({
+            where: {
+              guildId: guildId,
+              role: {
+                $ne: consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
               }
-            })
+            }
+          })
             .then(function (count) {
               if (currentUid === uid && roleId.role === consts.GUILD_MEMBER_STATUS.PRESIDENT && count > 1) {
                 return Promise.reject({ec: Code.FAIL, msg: "Hội chủ không được rời hội quán"});
-              }else {
+              } else {
                 return GuildDao.deleteMember(currentUid, guildId);
               }
             });
@@ -241,23 +241,23 @@ Handler.prototype.updateMember = function (msg, session, next) {
           if (msg.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
             return Promise.reject({ec: Code.FAIL, msg: "Không thể nâng cấp người chơi lên hội chủ"});
           }
-          if (msg.role === consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT){
+          if (msg.role === consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT) {
             return pomelo.app.get('mysqlClient')
               .GuildMember
               .count({
                 where: {
                   guildId: guildId,
-                  role : consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT
+                  role: consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT
                 }
               })
               .then(function (count) {
-                if (count >=2 ){
+                if (count >= 2) {
                   return Promise.reject({ec: Code.FAIL, msg: "Hội quán chỉ được tối đa 2 hội phó"});
                 } else {
                   return GuildDao.updateMember(currentUid, guildId, {role: msg.role});
                 }
               })
-          }else {
+          } else {
             return GuildDao.updateMember(currentUid, guildId, {role: msg.role});
           }
           break;
@@ -311,10 +311,13 @@ Handler.prototype.updateMember = function (msg, session, next) {
         switch (msg.type) {
           case consts.GUILD_UPDATE_MEMBER_TYPE.ADD_MEMBER:
             GuildDao.getGuild(currentUid)
-            .then(function (data) {
+              .then(function (data) {
                 data.push = 1;
                 pomelo.app.get('statusService').pushByUids([currentUid], 'service.guildHandler.getGuild', data);
-                pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', { ec : Code.FAIL, msg: 'bạn vừa được chấp nhận là thành viên của hội quán'})
+                pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', {
+                  ec: Code.FAIL,
+                  msg: 'bạn vừa được chấp nhận là thành viên của hội quán'
+                })
               });
             ActionDao.removeAction({
               guildId: guildId,
@@ -352,7 +355,10 @@ Handler.prototype.updateMember = function (msg, session, next) {
                 .then(function (data) {
                   data.push = 1;
                   pomelo.app.get('statusService').pushByUids([currentUid], 'service.guildHandler.getGuild', data);
-                  pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', { ec : Code.FAIL, msg: 'Bạn vừa bị đuổi khỏi hội quán'})
+                  pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', {
+                    ec: Code.FAIL,
+                    msg: 'Bạn vừa bị đuổi khỏi hội quán'
+                  })
                 });
               GuildDao.addEvent({
                 guildId: guildId,
@@ -375,7 +381,7 @@ Handler.prototype.updateMember = function (msg, session, next) {
               });
             var notifyMsg = '';
             var eventMsg = '';
-            switch(msg.role){
+            switch (msg.role) {
               case consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER:
                 notifyMsg = 'Bạn vừa bị giáng chức xuống làm hội viên';
                 eventMsg = '[%s] bị giáng chức xuống thành hội viên';
@@ -385,7 +391,7 @@ Handler.prototype.updateMember = function (msg, session, next) {
                 eventMsg = '[%s] được nâng chức lên thành hội phó';
                 break;
             }
-            pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', { ec : Code.FAIL, msg: notifyMsg});
+            pomelo.app.get('statusService').pushByUids([currentUid], 'undefined', {ec: Code.FAIL, msg: notifyMsg});
             GuildDao.addEvent({
               guildId: guildId,
               uid: session.uid,
@@ -505,7 +511,7 @@ Handler.prototype.invitePlayer = function (msg, session, next) {
           id: Date.now(),
           type: consts.ACTION_ID.INVITE_GUILD,
           guildId: guildId,
-          inviteUid : uid
+          inviteUid: uid
         }
       }, inviteUid);
       return utils.invokeCallback(next, null, {});
@@ -596,6 +602,103 @@ Handler.prototype.addFund = function (msg, session, next) {
     })
     .finally(function () {
       msg = null;
+    })
+};
+
+/**
+ * Khiêu chiến đấu trường
+ *
+ * @param msg
+ * @param session
+ * @param next
+ */
+Handler.prototype.duel = function (msg, session, next) {
+  var uid = session.uid;
+  var roleId;
+  var guildId;
+  var member;
+  var fullname = session.get('fullname');
+  return getRole(uid)
+    .then(function (user) {
+      console.log('members : ', user);
+      var role = 0;
+      if (user) {
+        member = user;
+        role = member.role;
+        guildId = member.guildId;
+      }
+      roleId = user || {};
+      return getPermission(role, 1);
+    })
+    .then(function (permission) {
+      if (roleId.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
+        return [
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .findOne({
+              where : {
+                id : guildId
+              },
+              raw : true,
+              attributes : ['name']
+            }),
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .findOne({
+              where: {id: msg.guildId},
+              raw: true
+            }),
+          pomelo.app.get('mysqlClient')
+            .GuildMember
+            .findOne({
+              where: {
+                guildId: guildId,
+                role: consts.GUILD_MEMBER_STATUS.PRESIDENT
+              },
+              raw: true
+            })
+        ]
+      } else {
+        return Promise.reject({
+          ec: Code.FAIL,
+          msg: "Bạn không có đủ quyền để khiêu chiến hội quán"
+        })
+      }
+    })
+    .spread(function (currentGuild, targetGuild, president) {
+      if (!targetGuild) {
+        return Promise.reject({ec: Code.FAIL, msg: 'Không có hội quán nào để khiêu chiến'})
+      } else {
+        msg.id = Date.now();
+        msg.type = consts.ACTION_ID.TOURNAMENT_DUEL;
+        GuildDao.addEvent({
+          guildId: guildId,
+          uid: session.uid,
+          fullname: fullname,
+          content: util.format('Gửi lời khiêu chiến hội quán [%s]', targetGuild.name),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        GuildDao.addEvent({
+          guildId: guildId,
+          uid: session.uid,
+          fullname: fullname,
+          content: util.format('Nhận được một lời mời khiêu chiến từ hội quán [%s]', currentGuild.name),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        return ActionDao.addAction({
+          msg: util.format("Bạn nhận được lời mời thách đấu từ hội quán '%s', bạn có muốn hội quán của mình ứng chiến không?. Vui lòng chạm vào thông báo để xem thông tin chi tiết", currentGuild.name),
+          title: "Thách đấu",
+          popup: {
+            type : consts.NOTIFY_NC_POPUP_TYPE.TOURNAMENT_DUEL,
+            data: msg
+          },
+          action: msg
+        }, uid)
+      }
+    })
+    .catch(function (err) {
+      console.error('err : ', err);
+      return utils.invokeCallback(next, null, {ec: err.ec || Code.FAIL, msg: err.msg || Code.FAIL});
     })
 };
 
