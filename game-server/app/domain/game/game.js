@@ -92,9 +92,6 @@ Game.prototype.initBoards = function () {
       for (var j = 1, lenj = parseInt(hallConfig.numRoom); j <= lenj; j++) {
         this.boardManager.createRoom(hallConfig, hallId * 100 + j)
       }
-      if (this.gameId === consts.GAME_ID.CO_TUONG && hallId === consts.HALL_ID.CAO_THU){
-        this.boardManager.createRoomTournament(hallConfig, 403);
-      }
     }
   }
 };

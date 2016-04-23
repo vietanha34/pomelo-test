@@ -83,7 +83,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
           where: whereClause,
           limit: 6,
           raw : true,
-          order: 'numPlayer DESC'
+          order: 'numPlayer DESC, bet DESC'
         }, done)
       } else {
         next(null, {ec: Code.FAIL});

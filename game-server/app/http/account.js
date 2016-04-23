@@ -258,6 +258,7 @@ module.exports = function (app) {
     UserDao.getUserIdByUsername(uname)
       .then(function (u) {
         uid = u;
+        if (gold < 20000) return Promise.resolve({online: false});
         var statusService = pomelo.app.get('statusService');
         return Promise.promisify(statusService.getStatusByUid,{ context : statusService})(uid, true)
       })
