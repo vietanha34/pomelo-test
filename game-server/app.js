@@ -544,7 +544,7 @@ app.configure('production|development|local', function () {
   })
 });
 
-app.configure('production|development', 'home|game|chat', function () {
+app.configure('production|development', 'home|game|chat|service', function () {
   var GameService = require('./app/services/gameService');
   var gameService = new GameService(app);
   gameService.init();

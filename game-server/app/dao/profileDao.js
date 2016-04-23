@@ -16,6 +16,7 @@ var moment = require('moment');
 var UserDao = require('./userDao');
 var ItemDao = require('./itemDao');
 var FriendDao = require('./friendDao');
+var wordFilter = require('../util/wordFilter');
 var request = require('request-promise').defaults({transform: true});
 
 /**
@@ -113,6 +114,16 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       || (params.phone && !regexValid.validPhone(params.phone))
       || (params.email && !regexValid.validEmail(params.email))) {
       return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'Thông tin sai định dạng. Bạn vui lòng nhập lại' });
+    }
+
+    var abuseWords = pomelo.app.get('gameService') ? pomelo.app.get('gameService').abuse : {};
+    if (params.fullname) {
+      var word = wordFilter(params.fullname, abuseWords);
+      params.fullname = word.msg;
+    }
+    if (params.statusMsg) {
+      var word = wordFilter(params.statusMsg, abuseWords);
+      params.statusMsg = word.msg;
     }
 
     if (params.phone) params.phoneNumber = params.phone;
