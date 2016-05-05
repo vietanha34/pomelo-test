@@ -106,7 +106,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     promote : gameStatus.promotionalMoves,
     redSquare : gameStatus.redSquare
   });
-  this.stringLog.push('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, player.turnTime, notifyMsg || '');
+  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, this.table.turnTime, notifyMsg || ''));
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
@@ -229,7 +229,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       toUid : toUid,
       tax : 5,
       force : true
-    }, 1, function () {})
+    }, 1, function () {});
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;
@@ -239,7 +239,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     finishData[loseIndex].result.remain = loseUser.gold;
     finishData[loseIndex].result.money = subGold;
   }
-  this.table.emit('finishGame', finishData, true);
+  this.table.emit('finishGame', finishData, true, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
   this.table.pushFinishGame({players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
@@ -349,7 +349,7 @@ Table.prototype.action = function (uid, opts, cb) {
       this.pushMessage('game.gameHandler.action', actionResponse);
     }
     this.game.actionLog.push(actionLog);
-    this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s'), moment().format(), player.userInfo.username, opts.move);
+    this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format(), player.userInfo.username, opts.move));
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {

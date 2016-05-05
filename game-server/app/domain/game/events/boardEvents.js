@@ -320,7 +320,7 @@ exp.addEventFromBoard = function (board) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
     if (board.game.stringLog && board.game.stringLog.length > 0){
-      board.game['stringLogs'] = JSON.stringify(board.game.stringLog);
+      board.game.logs['stringLogs'] = JSON.stringify(board.game.stringLog);
     }
     if (board.firstUid !== data[0].uid) {
       data.reverse();
@@ -335,8 +335,7 @@ exp.addEventFromBoard = function (board) {
       tax: 0,
       gameType: board.gameType,
       timeShow: consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD,
-      logs: board.game.logs,
-      stringLogs : board.game.stringLogs
+      logs: board.game.logs
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });

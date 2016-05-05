@@ -95,7 +95,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   });
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count : 1, time : [turnTime, player.totalTime]});
-  this.stringLog.push('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, player.turnTime, '');
+  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, this.table.turnTime, ''));
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (opts) {
     self.table.turnId = null;
@@ -244,7 +244,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     finishData[loseIndex].result.remain = loseUser.gold;
     finishData[loseIndex].result.money = subGold;
   }
-  this.table.emit('finishGame', finishData);
+  this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
   this.table.pushFinishGame({ players : players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
 };
 
@@ -342,7 +342,7 @@ Table.prototype.action = function (uid, opts, auto, cb) {
       this.pushMessage('game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }
   }
-  this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s'), moment().format(), player.userInfo.username, opts.move);
+  this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format(), player.userInfo.username, opts.move));
   this.game.progress();
   return utils.invokeCallback(cb, null, {});
 };
