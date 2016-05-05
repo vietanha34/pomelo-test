@@ -43,6 +43,9 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
     game.delBoard(tableId);
     return utils.invokeCallback(cb, null, {data : utils.getError(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   }
+  if (board.status === consts.BOARD_STATUS.FINISH || !board.players){
+    return utils.invokeCallback(cb, null, { data : {ec : Code.FAIL, msg : "Ván đấu đã kết thúc"}})
+  }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
       opts.effect = effect;

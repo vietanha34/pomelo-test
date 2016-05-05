@@ -415,6 +415,12 @@ module.exports = {
     CK : -1
   },
 
+  TOUR_HISTORY_ROUND_TYPE :{
+    TU_KET: 1,
+    BAN_KET : 2,
+    CHUNG_KET : 3
+  },
+
   TOUR_TYPE:{
     FRIENDLY : 1,
     NORMAL : 2
@@ -888,10 +894,9 @@ module.exports = {
     11 : {
       color : 2,
       align : 3
-    }, // thua hội quán
-
-    NOTIFY_NC_POPUP_TYPE:{
-      TOURNAMENT_DUEL : 1
-    }
+    } // thua hội quán
+  },
+  NOTIFY_NC_POPUP_TYPE:{
+    TOURNAMENT_DUEL : 1
   }
 };

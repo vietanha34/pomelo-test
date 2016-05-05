@@ -11,6 +11,7 @@ module.exports.beforeStartup = function (app, cb) {
 
 
 module.exports.afterStartup = function (app, cb) {
+  console.error('afterStartup');
   cb();
 };
 

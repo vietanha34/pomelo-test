@@ -30,9 +30,8 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion']
+    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime']
   };
-
   return pomelo.app.get('mysqlClient')
     .Tournament
     .findAll(condition)
@@ -62,6 +61,18 @@ TourDao.getListTour = function (opts, cb) {
               var isRegister = 0;
               if (count > 0) {
                 isRegister = 1
+              }
+              if (tour.status === consts.TOUR_STATUS.PRE_START && moment(tour.registerTime).isBefore(moment())){
+                tour.status = consts.TOUR_STATUS.STARTED;
+                pomelo.app.get('mysqlClient')
+                  .Tournament
+                  .update({
+                    status: consts.TOUR_STATUS.STARTED
+                  }, {
+                    where : {
+                      tourId : tour.tourId
+                    }
+                  })
               }
               return pomelo.app.get('mysqlClient')
                 .TourPrize

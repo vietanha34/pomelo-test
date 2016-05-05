@@ -672,14 +672,14 @@ Handler.prototype.duel = function (msg, session, next) {
         msg.id = Date.now();
         msg.type = consts.ACTION_ID.TOURNAMENT_DUEL;
         GuildDao.addEvent({
-          guildId: guildId,
+          guildId: currentGuild,
           uid: session.uid,
           fullname: fullname,
           content: util.format('Gửi lời khiêu chiến hội quán [%s]', targetGuild.name),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
         GuildDao.addEvent({
-          guildId: guildId,
+          guildId: targetGuild,
           uid: session.uid,
           fullname: fullname,
           content: util.format('Nhận được một lời mời khiêu chiến từ hội quán [%s]', currentGuild.name),
@@ -688,12 +688,13 @@ Handler.prototype.duel = function (msg, session, next) {
         return ActionDao.addAction({
           msg: util.format("Bạn nhận được lời mời thách đấu từ hội quán '%s', bạn có muốn hội quán của mình ứng chiến không?. Vui lòng chạm vào thông báo để xem thông tin chi tiết", currentGuild.name),
           title: "Thách đấu",
+          buttonLabel: 'Xem',
           popup: {
             type : consts.NOTIFY_NC_POPUP_TYPE.TOURNAMENT_DUEL,
             data: msg
           },
           action: msg
-        }, uid)
+        }, president.uid)
       }
     })
     .catch(function (err) {

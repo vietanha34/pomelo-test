@@ -16,6 +16,7 @@ var TourDao = require('../../../dao/tourDao');
 var moment = require('moment');
 var util = require('util');
 var lodash = require('lodash');
+var formula = require('../../../consts/formula');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -130,11 +131,11 @@ Handler.prototype.getTour = function (msg, session, next) {
         })
           .then(function (table) {
             var boardId;
-            var groupIndex = lodash.findIndex(groups, function (group) {
-              if (group.id === profile.groupId) {
-                return true
-              }
-            });
+            var groupIndex = -1;
+            for (var i = 0, len = groups.length; i < len; i ++){
+              if (groups[i].groupId === profile.groupId) groupIndex = i
+            }
+            console.log('groupIndex : ', groupIndex, profile);
             if (groupIndex > -1) {
               group = groups[groupIndex];
             }
@@ -147,8 +148,8 @@ Handler.prototype.getTour = function (msg, session, next) {
               tourId: tour.tourId,
               type: tour.type,
               group: groups,
-              name: tour.name,
-              groupIndex: group ? group.index : undefined,
+              name: tour.name + ' - ' + round.name,
+              groupIndex: groupIndex,
               boardId: boardId,
               result: tour.resultString
             })
@@ -175,6 +176,8 @@ Handler.prototype.getTour = function (msg, session, next) {
     })
     .finally(function () {
       groups = null;
+      tour = null;
+      round = null;
     })
 };
 
@@ -235,6 +238,7 @@ Handler.prototype.getTourRank = function (msg, session, next) {
               fullname: item['User.fullname'],
               avatar: utils.JSONParse(item['User.avatar'], {}),
               point: item.point,
+              bh: formula.calBuchholz(item.point, item.winWithoutEnemy,item.loseWithoutEnemy),
               win: util.format('%s/%s/%s', item.win, item.draw, item.lose)
             }
           });
@@ -320,22 +324,36 @@ Handler.prototype.getTourTable = function (msg, session, next) {
                 groupId: msg.groupId,
                 scheduleId: round.scheduleId
               },
+              order: '`TourTable`.`index` ASC',
               raw: true
             })
           })
       }
     })
     .then(function (tables) {
-      console.log('tables : ', tables);
       tables = lodash.map(tables, function (table) {
-        return {
+        var match = lodash.isString(table.match) ? lodash.compact(table.match.split(',')) : undefined;
+        var data = {
           index: table.index,
-          boardId: table.boardId,
           status: table.stt,
           score: table.score,
-          match: lodash.isString(table.match) ? lodash.compact(table.match.split(',')) : undefined,
           players: utils.JSONParse(table.player)
         };
+        if (match && match.length > 0){
+          data['match'] = match;
+        }
+        if (table.stt !== consts.BOARD_STATUS.FINISH){
+          data.boardId = table.boardId
+        }else if (!match || match.length === 0){
+          if (table.win === '0 - 0' && table.lose === '0 - 0'){
+            if (table.winner){
+              data.log = 'Ván đấu không tồn tại do đấu thủ bỏ cuộc';
+            } else {
+              data.log = 'Ván đấu không tồn tại do 2 đấu thủ đều bỏ cuộc';
+            }
+          }
+        }
+        return data;
       });
       return next(null, {table: tables, groupId: msg.groupId, tourId: msg.tourId, battleType: tourRound.battleType})
     })
@@ -351,16 +369,54 @@ Handler.prototype.getTourTable = function (msg, session, next) {
 Handler.prototype.getTourHistory = function (msg, session, next) {
   var uid = session.uid;
   var tourId = msg.tourId;
-  return next(null, {
-    tourId: tourId,
-    list: [{
-      name: 'Chung kết',
-      match: [['Việt Anh', 1, 'Tuấn Anh', '6bd936ec-39ca-4892-867c-846b89b0e881']]
-    }, {
-      name: 'Bán kết',
-      match: [['Việt Anh', 2, 'Tuấn Anh', '56777f78-b9b9-4c03-b280-8561461d59d7'], ['Việt Anh', 3, 'Tuấn Anh', '176e397f-eb1c-4205-bd4a-5b8395ede903']]
-    }]
-  })
+  return pomelo.app.get('mysqlClient')
+    .TourHistory
+    .findAll({
+      where: {
+        tourId : tourId
+      }
+    })
+    .then(function (histories) {
+      var list = {};
+      for (var i = 0, len = histories.length; i < len ; i++) {
+        var history = histories[i];
+        if (!list[history.round]){
+          list[history.round] = [];
+        }
+        var match = lodash.compact((history.match || '').split(','));
+        list[history.round].push([
+          history['firstPlayerName'],
+          history['result'],
+          history['secondPlayerName'],
+          match
+        ])
+      }
+      var keys = Object.keys(list);
+      keys.sort(function (a, b) {
+        return b -a;
+      });
+      var data = [];
+      for(i = 0, len = keys.length; i < len ; i ++){
+        var key = keys[i];
+        var name = '';
+        switch(parseInt(key)){
+          case consts.TOUR_HISTORY_ROUND_TYPE.TU_KET:
+            name = 'Vòng Tứ kết';
+            break;
+          case consts.TOUR_HISTORY_ROUND_TYPE.BAN_KET:
+            name = 'Vòng Bán Kết';
+            break;
+          case consts.TOUR_HISTORY_ROUND_TYPE.CHUNG_KET:
+            name = 'Trận Chung kết';
+            break;
+        }
+        data.push({
+          name : name,
+          match : list[key]
+        });
+      }
+      return utils.invokeCallback(next, null, { list : data, tourId : tourId});
+    })
 };
 
 
@@ -415,6 +471,7 @@ Handler.prototype.registerTour = function (msg, session, next) {
     })
     .spread(function (groups, round) {
       // cho người chơi vào bảng
+      round = round.length >= 1 ? round[0] : {};
       var groupId;
       var minNumPlayer = 10000;
       for (var i = 0, len = groups.length; i < len; i++) {
@@ -437,7 +494,8 @@ Handler.prototype.registerTour = function (msg, session, next) {
                 uid: uid,
                 tourId: tour.tourId,
                 groupId: groupId,
-                rank : minNumPlayer + 1
+                rank : minNumPlayer + 1,
+                roundId : round.id
               }, {transaction: t})
               .then(function (create) {
                 return pomelo.app.get('mysqlClient')
@@ -455,7 +513,7 @@ Handler.prototype.registerTour = function (msg, session, next) {
                 var updateData = {
                   numPlayer: pomelo.app.get('mysqlClient').sequelize.literal('numPlayer + ' + 1)
                 };
-                if (round.battleType === consts.TOUR_BATTLE_TYPE){
+                if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE){
                   updateData['player'+(minNumPlayer+1)] = uid;
                 }
                 return pomelo.app.get('mysqlClient')

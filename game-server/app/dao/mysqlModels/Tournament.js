@@ -50,6 +50,9 @@ module.exports = function(sequelize, DataTypes) {
     roundId : {
       type: DataTypes.INTEGER
     },
+    prevRoundId: {
+      type: DataTypes.INTEGER
+    },
     champion: {
       type: DataTypes.TEXT,
       comment : 'champion'
@@ -64,6 +67,12 @@ module.exports = function(sequelize, DataTypes) {
     },
     resultString: {
       type: DataTypes.STRING
+    },
+    info: {
+      type : DataTypes.TEXT
+    },
+    schedule : {
+      type : DataTypes.TEXT
     }
   }, {
     classMethods: {

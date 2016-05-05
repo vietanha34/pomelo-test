@@ -42,16 +42,24 @@ Game.prototype.init = function () {
   var i, len;
   this.table.timer.stop();
   this.table.status = consts.BOARD_STATUS.PLAY;
-  if (this.playerPlayingId.indexOf(this.table.looseUser) > -1) {
-    this.turn = this.table.looseUser;
-  } else {
-    var index = Math.round(Math.random());
-    this.turn = this.playerPlayingId[index];
+  var turnPlayer;
+  if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
+    var username = this.table.username[this.table.numMatchPlay % 2];
+    turnPlayer = this.table.players.getPlayerByUsername(username);
+    this.table.firstUid = turnPlayer.uid;
+    this.turn = turnPlayer.uid;
+  }else {
+    if (this.playerPlayingId.indexOf(this.table.looseUser) > -1) {
+      this.turn = this.table.looseUser;
+    } else {
+      var index = Math.round(Math.random());
+      this.turn = this.playerPlayingId[index];
+    }
+    this.table.firstUid = this.turn;
+    this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
+    turnPlayer = this.table.players.getPlayer(this.turn);
   }
-  this.table.firstUid = this.turn;
-  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
   var ownerPlayer = this.table.players.getPlayer(this.table.owner);
-  var turnPlayer = this.table.players.getPlayer(this.turn);
   if (turnPlayer.color !== consts.COLOR.WHITE) {
     this.game.changeTurn(null, ownerPlayer.color === consts.COLOR.WHITE);
   }
@@ -264,7 +272,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         toUid : toUid,
         tax : 5,
         force : true
-      }, 1, function () {})
+      }, 1, function () {});
       subGold = loseUser.subGold(bet);
       addGold = winUser.addGold(subGold, true);
       players[winIndex].gold = addGold;

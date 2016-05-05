@@ -28,6 +28,7 @@ ActionDao.addAction = function (opts, uid) {
     action: opts.action,
     popup: opts.popup
   };
+  if (opts.buttonLabel) object['buttonLabel'] = object['buttonLabel'];
   pomelo.app.get('statusService').pushByUids([uid], 'onNotify', object);
   return pomelo.app.get('redisCache')
     .zaddAsync(key, Date.now(), JSON.stringify(object));

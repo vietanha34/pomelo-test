@@ -66,7 +66,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
           opts.username = [listPlayer['player1'], listPlayer['player2']];
           opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
           opts.matchPlay = tableOpts.matchPlay || 2;
-          opts.timePlay = tableOpts.timePlay || 1459258200000;
+          opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
           opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
           opts.turnTime = tableOpts.turnTime || 180;
           opts.totalTime = tableOpts.totalTime || 15 * 60;
@@ -76,7 +76,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
           opts.configTurnTime = [opts.turnTime * 1000];
           opts.configTotalTime = [opts.totalTime * 1000];
           opts.base = true;
-          opts.tourTimeWait = 10 * 60 * 1000;
+          opts.tourTimeWait = 60 * 1000;
           opts.level = tableOpts.level || 0;
           opts.roomId = roomOpts.roomId;
           opts.gameType = consts.GAME_TYPE.TOURNAMENT;
@@ -93,19 +93,20 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
       opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
     }
     opts.username = tableOpts.username;
+    opts.fullname = tableOpts.fullname;
     opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
     opts.matchPlay = tableOpts.matchPlay || 2;
-    opts.timePlay = tableOpts.timePlay || 1459258200000;
+    opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
     opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
     opts.turnTime = tableOpts.turnTime || 180;
     opts.totalTime = tableOpts.totalTime || 15 * 60;
-    opts.showKill = false;
-    opts.mustWin = false;
+    opts.showKill = tableOpts.showKill || false;
+    opts.mustWin = tableOpts.mustWin || false;
     opts.bet = tableOpts.bet || 5000;
     opts.configTurnTime = [opts.turnTime * 1000];
     opts.configTotalTime = [opts.totalTime * 1000];
     opts.base = true;
-    opts.tourTimeWait = 10 * 60 * 1000;
+    opts.tourTimeWait = tableOpts.tourTimeWait || 10 * 60 * 1000;
     opts.level = tableOpts.level || 0;
     opts.roomId = tableOpts.roomId;
     opts.gameType = consts.GAME_TYPE.TOURNAMENT;
@@ -184,7 +185,7 @@ exp.create = function (params, cb) {
   return boardService.genBoardId({
     serverId: this.serverId,
     gameId: this.gameId,
-    gameType: consts.GAME_TYPE.NORMAL,
+    gameType: params.gameType || consts.GAME_TYPE.NORMAL,
     roomId: params.roomId
   })
     .then(function (boardId) {
@@ -344,7 +345,7 @@ exp.check = function () {
         var rooms = {};
         for (boardId in self.boards) {
           board = self.boards[boardId];
-          if (!board) {
+          if (!board || !board.players) {
             delete self.boards[boardId];
             continue
           }

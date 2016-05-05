@@ -83,13 +83,14 @@ pro.standUp = function (msg, session, next) {
   var board = session.board;
   next();
   if (!board) {
-    messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
+    return messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
       ec: Code.FA_HOME,
       msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
     });
-    return
   }
-
+  if (!msg.confirm && board.gameType === consts.GAME_TYPE.TOURNAMENT && board.numMatchPlay > 0){
+    return messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {uid: session.uid, confirm : 'Đứng lên bạn sẽ bị thua cuộc đấu trường, bạn có chắc muốn đứng lên hay không?'});
+  }
   var res = board.standUp(session.uid);
   if (res && res.ec) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, res);
@@ -357,19 +358,19 @@ pro.kick = function (msg, session, next) {
     return
   }
   if (board.owner !== uid) {
-    next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
+    return next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
   }
   if (board.gameType === consts.GAME_TYPE.TOURNAMENT){
-    next (null, { ec : Code.FAIL, msg : "Trong đấu trường bạn không được quyền đuổi người chơi khác"})
+    return next(null, { ec : Code.FAIL, msg : "Trong đấu trường bạn không được quyền đuổi người chơi khác"})
   }
   board.kick(cuid, function (err, res) {
     if (err) {
-      next(null, {ec: Code.FAIL});
+      return next(null, {ec: Code.FAIL});
     }
     else if (!res.ec) {
-      next(null, {});
+      return next(null, {});
     } else {
-      next(null, res);
+      return next(null, res);
     }
   })
 };

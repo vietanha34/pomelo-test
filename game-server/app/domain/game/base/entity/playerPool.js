@@ -109,13 +109,17 @@ pro.addPlayer = function (opts) {
       if (Date.now() < this.table.timePlay){
         data.notifyMsg = util.format('Còn %s nữa sẽ đến giờ thi đấu. Xin vui lòng xem danh sách thi đấu tại loa làng hoặc Tin Admin"', moment(this.table.timePlay).fromNow(true));
       }else if (this.table.numMatchPlay === 0 && !this.table.tableTourFinish){
-        data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong ít phút!', index === 0 ? this.table.username[1] : this.table.username[0]);
+        data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong %s nữa', index === 0 ? this.table.fullname[1] : this.table.fullname[0], moment(this.table.timePlay + this.table.tourTimeWait).fromNow(true));
       }
     }else {
-      data.notifyMsg = util.format('Bạn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s"', this.table.username[0], this.table.username[1]);
+      data.notifyMsg = util.format('Bàn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s, Trận đấu diễn ra vào : %s"', this.table.fullname[0], this.table.fullname[1], moment(this.table.timePlay).format('ss:mm:HH DD-MM-YYYY'));
     }
-    if (this.table.tableTourFinish && this.table.tourWinUser){
-      data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.username[0], this.table.username[1], this.table.tourWinUser['username'])
+    if (this.table.tableTourFinish){
+      if (this.table.tourWinUser){
+        data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
+      }else {
+        data.notifyMsg = util.format('Bàn đấu đã kết thúc mà không có người thắng cuộc', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
+      }
     }
   }
   if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
@@ -310,9 +314,7 @@ pro.sitIn = function (uid, slotId) {
     return {};
   }
   else {
-    var error = {};
-    error.ec = Code.ON_GAME.FA_SLOT_EXIST;
-    return error
+    return utils.getError(Code.ON_GAME.FA_SLOT_EXIST)
   }
 };
 
@@ -466,6 +468,7 @@ pro.close = function (cb) {
       player.close();
       player = null;
     }
+    done();
   }, function () {
     self.table = null;
     self.players = null;

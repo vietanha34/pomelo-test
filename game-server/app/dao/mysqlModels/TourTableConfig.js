@@ -61,6 +61,9 @@ module.exports = function(sequelize, DataTypes) {
     },
     mustWin: {
       type: DataTypes.INTEGER(4)
+    },
+    caroOpen : {
+      type : DataTypes.INTEGER(4)
     }
   }, {
     classMethods: {

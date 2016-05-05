@@ -75,6 +75,9 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
           case 'pickUser':
             tourManager.pickUser(msg.tourId, msg.prevRoundId, msg.nextRoundId, msg.numPlayer);
             break;
+          case 'finishTour' :
+            tourManager.finishTour(msg);
+            break;
           default:
             break;
         }

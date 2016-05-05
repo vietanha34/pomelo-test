@@ -46,6 +46,18 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       defaultValue : '0 - 0'
     },
+    win : {
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
+    draw : {
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
+    lose :{
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
     match: {
       type: DataTypes.STRING
     },
@@ -68,6 +80,9 @@ module.exports = function(sequelize, DataTypes) {
     calPoint: {
       type: DataTypes.INTEGER(4),
       defaultValue : 0
+    },
+    matchTime : {
+      type : DataTypes.DATE
     }
   }, {
     classMethods: {

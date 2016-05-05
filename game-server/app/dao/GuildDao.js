@@ -46,6 +46,29 @@ GuildDao.getResource = function (role, permission, resourceId, cb) {
 GuildDao.getGuildChat = function (role, permission, resourceId, cb) {
   var getMessages = Promise.promisify(pomelo.app.get('chatService').getLastMessage,{context: pomelo.app.get('chatService')});
   return getMessages({length:20, channel: redisKeyUtil.getChatGuildName(role.guildId), targetType: consts.TARGET_TYPE.GROUP, reverse : 1})
+    .map(function (message) {
+      return pomelo.app.get('mysqlClient')
+        .GuildMember
+        .findOne({
+          where:{
+            uid : message.from
+          },
+          include: [
+            {
+              model: pomelo.app.get('mysqlClient').User,
+              attributes : ['uid', 'fullname']
+            }
+          ],
+          attributes : ['role', 'uid']
+        })
+        .then(function (result) {
+          if (result){
+            message.role = result.role;
+            message.fullname  = result['User.fullname'] ? result['User.fullname'] : message.from;
+          }
+          return Promise.resolve(message);
+        })
+    })
     .then(function (messages) {
       return utils.invokeCallback(cb, null, { list  : messages})
     })
@@ -183,7 +206,7 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
   var condition = {
     offset : opts.offset,
     limit : opts.length,
-    attributes : ['name', 'fame', 'icon', 'numMember', 'acronym', 'level', 'detail', 'id'],
+    attributes : ['name', 'fame', 'icon', 'numMember', 'acronym', 'level', 'detail', 'id', 'gold'],
     order: sort + ' DESC',
     raw : true
   };
@@ -214,6 +237,8 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
           guildId: guild.id,
           name: guild.acronym + '.' + guild.name,
           fame: guild.fame,
+          level : guild.level,
+          gold : guild.gold,
           detail: guild.detail,
           icon: utils.JSONParse(guild.icon,{ id : 0}),
           numMember: [guild.numMember, guildLevel[guild.level] ? guildLevel[guild.level].maxMember: 20]

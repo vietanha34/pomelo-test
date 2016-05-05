@@ -18,6 +18,7 @@ var Code = require('../../../consts/code');
 var BoardConsts = require('./logic/consts');
 var NotifyDao = require('../../../dao/notifyDao');
 var UserDao = require('../../../dao/userDao');
+var Promise = require('bluebird');
 
 /**
  * Bàn chơi cơ bản của game cờ, developer có thể kế thửa để phát triển cho từng loại game
@@ -95,15 +96,19 @@ var Board = function (opts, PlayerPool, Player) {
     this.username = lodash.map(opts.username, function (username) {
         return username.toLowerCase();
       }) || null; // mảng người chơi đc phép chơi trong bàn
+    this.fullname = opts.fullname || [];
     this.timePlay = opts.timePlay || Date.now();
     this.matchPlay = opts.matchPlay || 3;
     this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
     this.tableTourFinish = false;
     this.tourScore = [0, 0];
+    this.tourWin = [0,0];
+    this.tourDraw = [0,0];
+    this.tourLose = [0,0];
     this.tourId = opts.tourId;
     this.tourWinUser = null;
     this.tournamentLog = [];
-    this.mustWin = opts.mustWin || true;
+    this.mustWin = opts.mustWin || false;
     if (this.timePlay > Date.now()) {
       setTimeout(function () {
         // thời gian tour đấu đã đến,
@@ -121,7 +126,17 @@ var Board = function (opts, PlayerPool, Player) {
             NotifyDao.push({
               type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
               title: 'Đấu trường',
-              msg: 'Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?',
+              msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
+              buttonLabel: 'Đến',
+              command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
+              scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+              users: result,
+              image: consts.NOTIFY.IMAGE.NORMAL
+            });
+            NotifyDao.push({
+              type: consts.NOTIFY.TYPE.POPUP,
+              title: 'Đấu trường',
+              msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
               buttonLabel: 'Đến',
               command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
               scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
@@ -496,7 +511,7 @@ pro.isAlive = function () {
   try {
     this.clearIdlePlayer();
   } catch (err) {
-    console.error('clearIdlePlayer error : ', error);
+    console.error('clearIdlePlayer error : ', err);
   }
   if (this.base) {
     return true
@@ -514,6 +529,7 @@ pro.clearIdlePlayer = function () {
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish) {
       if (this.players.length === 2) {
         // startGame
+        console.error('start Game đi chứ');
         this.startGame(this.owner);
       } else {
         // finishTourSession
@@ -522,8 +538,11 @@ pro.clearIdlePlayer = function () {
           this.tableTourFinish = true;
           this.tourWinUser = {
             username: winPlayer.userInfo.username,
-            uid: winPlayer.uid
+            uid: winPlayer.uid,
+            fullname : winPlayer.userInfo.fullname
           };
+          this.tourScore[this.username.indexOf(winPlayer.userInfo.username)] += 2;
+          this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
           this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc');
         } else {
           // cả 2 người chơi cùng thua
@@ -964,6 +983,9 @@ pro.ready = function (uid) {
     if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
       if (this.timePlay > Date.now()) {
         return {ec: 500, msg: "Chưa đến giờ thi đấu, xin vui lòng quay lại sau", menu: player.menu}
+      }
+      if (this.tableTourFinish){
+        return {ec: 500, msg: "Bàn chơi đấu trường đã xác định người thắng cuộc. Bạn không thể chơi tiếp.", menu: player.menu}
       }
     }
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid !== this.owner) {

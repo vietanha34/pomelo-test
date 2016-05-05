@@ -20,7 +20,7 @@ var BoardBase = require('../base/boardBase');
 
 
 function Game(table) {
-  this.game = new Rule(false, 'default');
+  this.game = new Rule(false, 'default', table.caroOpen);
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -236,6 +236,7 @@ function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
   this.game = new Game(this);
+  this.caroOpen = opts.caroOpen;
   this.addFunction = []
 }
 
@@ -349,6 +350,7 @@ Table.prototype.demand = function (opts) {
       return {};
   }
 };
+
 
 
 Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {

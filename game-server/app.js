@@ -595,6 +595,14 @@ app.configure('production|development', 'gate|home|service|event|worker', functi
   app.set('configService', configService)
 });
 
+app.configure('production|development', 'tournament', function () {
+  var TourManager = require('./app/domain/tournament/tourManager');
+  var tourManager = new TourManager({
+    app : app
+  });
+  app.set('tourManager', tourManager);
+});
+
 app.configure('production|development', 'worker', function () {
   var HttpServer = require('./app/util/httpServer');
   var httpServer = new HttpServer(app, {
