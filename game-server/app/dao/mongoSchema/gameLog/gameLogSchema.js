@@ -29,7 +29,8 @@ var gameLogSchema = new Schema({
     looser : { type : Number}
   },
   timeStart: {type: Date, default: Date.now},
-  logs: {type: String, default: ''}
+  logs: {type: String, default: ''},
+  stringLog : {type : String, default : ''}
 });
 
 module.exports = mongoose.model('GameLog', gameLogSchema);

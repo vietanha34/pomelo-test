@@ -17,7 +17,7 @@ var events = require('events');
 var Rule = require('luat-co-thu').Chess;
 var dictionary = require('../../../../config/dictionary.json');
 var BoardBase = require('../base/boardBase');
-
+var moment = require('moment');
 
 
 function Game(table) {
@@ -106,6 +106,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     promote : gameStatus.promotionalMoves,
     redSquare : gameStatus.redSquare
   });
+  this.stringLog.push('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, player.turnTime, notifyMsg || '');
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
@@ -211,8 +212,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  this.table.finishGame();
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  this.table.finishGame();
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -315,7 +316,9 @@ Table.prototype.action = function (uid, opts, cb) {
     var gameStatus = this.game.game.getBoardStatus();
     this.game.gameStatus = gameStatus;
     var actionResponse = { move : [opts.move], addLog : gameStatus.movesHistory3};
-    var actionLog = { move: [opts.move]};
+    var actionLog = { move: [opts.move],
+      t: Date.now() - this.timeStart
+    };
     switch (makeMoveResult['specialType']){
       case 'batTotQuaDuong':
         actionResponse.remove = [makeMoveResult['removingSquare']];
@@ -346,6 +349,7 @@ Table.prototype.action = function (uid, opts, cb) {
       this.pushMessage('game.gameHandler.action', actionResponse);
     }
     this.game.actionLog.push(actionLog);
+    this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s'), moment().format(), player.userInfo.username, opts.move);
     this.game.progress();
     return utils.invokeCallback(cb, null, {});
   }else {

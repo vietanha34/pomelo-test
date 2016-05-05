@@ -17,6 +17,7 @@ var events = require('events');
 var Rule = require('luat-co-thu').Go;
 var dictionary = require('../../../../config/dictionary.json');
 var BoardBase = require('../base/boardBase');
+var moment = require('moment');
 
 
 function Game(table) {
@@ -94,6 +95,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   });
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count : 1, time : [turnTime, player.totalTime]});
+  this.stringLog.push('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, player.turnTime, '');
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (opts) {
     self.table.turnId = null;
@@ -215,8 +217,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  this.table.finishGame();
   var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+  this.table.finishGame();
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -340,6 +342,7 @@ Table.prototype.action = function (uid, opts, auto, cb) {
       this.pushMessage('game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }
   }
+  this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s'), moment().format(), player.userInfo.username, opts.move);
   this.game.progress();
   return utils.invokeCallback(cb, null, {});
 };

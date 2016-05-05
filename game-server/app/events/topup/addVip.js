@@ -68,7 +68,7 @@ module.exports.process = function (app, type, param) {
       TopDao.updateVip({uid: param.uid, update: updateParams});
       return app.get('statusService').getSidsByUid(param.uid, function (err, list) {
         if (list && list.length > 0){
-          pomelo.app.get('backendService').getByUid(list[0], userId, function (err, backendService) {
+          pomelo.app.get('backendSessionService').getByUid(list[0], userId, function (err, backendService) {
             if (backendService){
               backendService.set('vipPoint', vipPoint);
               backendService.push('vipPoint');

@@ -130,6 +130,10 @@ exp.addEventFromBoard = function (board) {
       }
     }
     pomelo.app.get('globalChannelService').add(board.guestChannelName, userInfo.uid, userInfo.frontendId);
+    // resume lại bàn chơi
+    if (board.status !== consts.BOARD_STATUS.NOT_STARTED){
+      board.game.stringLog.push(util.format('%s --- Người chơi %s resume lại bàn chơi', moment().format(), userInfo.username))
+    }
   });
 
   /**
@@ -245,6 +249,7 @@ exp.addEventFromBoard = function (board) {
       result: {}
     };
     board.game.actionLog = [];
+    board.game.stringLog = [];
   });
 
 
@@ -274,9 +279,10 @@ exp.addEventFromBoard = function (board) {
    * @param {Object} data dữ liệu thắng thua của ván đấu , bao gồm
    * @for BoardBase
    */
-  board.on('finishGame', function (data, disableLooseUser) {
+  board.on('finishGame', function (data, disableLooseUser, losingReason) {
+    losingReason = losingReason || "Ván đầu kết thúc bình thường";
     board.timeStart = Date.now();
-    var player, winUid, loseUid;
+    var player, winUid, loseUid, winUser, loseUser;
     for (var i = 0, len = data.length; i < len; i++) {
       var user = data[i];
       player = board.players.getPlayer(user.uid);
@@ -288,20 +294,33 @@ exp.addEventFromBoard = function (board) {
       }
       if (user.result.type === consts.WIN_TYPE.WIN) {
         winUid = user.uid;
-        board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1
+        board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1;
+        winUser = player;
       } else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP) {
         if (!disableLooseUser) {
           board.looseUser = user.uid;
         }
         loseUid = user.uid;
+        loseUser = player;
       }
     }
+    var stringLog = util.format('%s --- Ván đấu kết thúc do "%s"', moment().format(), losingReason);
+    if (winUser){
+      stringLog = stringLog + util.format(' ,Người thắng cuộc là "%s"', winUser.userInfo.username);
+    }else {
+      stringLog = stringLog + util.format(' ,Ván đấu kết thúc hoà');
+    }
+    board.game.stringLog.push(stringLog);
     var otherPlayerUid = board.players.getOtherPlayer();
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid)) {
       board.addJobReady(otherPlayerUid);
     }
     if (board.game.actionLog && board.game.actionLog.length > 0) {
+      board.game.actionLog[board.game.actionLog.length -1]['notifyMsg'] = losingReason;
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
+    }
+    if (board.game.stringLog && board.game.stringLog.length > 0){
+      board.game['stringLogs'] = JSON.stringify(board.game.stringLog);
     }
     if (board.firstUid !== data[0].uid) {
       data.reverse();
@@ -316,7 +335,8 @@ exp.addEventFromBoard = function (board) {
       tax: 0,
       gameType: board.gameType,
       timeShow: consts.TIME.LAYER_TIME * board.winLayer + consts.TIME.TIMEOUT_LEAVE_BOARD,
-      logs: board.game.logs
+      logs: board.game.logs,
+      stringLogs : board.game.stringLogs
     };
     pomelo.app.rpc.manager.resultRemote.management(null, logsData, function () {
     });
@@ -404,6 +424,7 @@ exp.addEventFromBoard = function (board) {
       }
     }
     pomelo.app.get('globalChannelService').add(board.guestChannelName, player.uid, player.userInfo.frontendId);
+
   });
 
 
@@ -545,5 +566,8 @@ exp.addEventFromBoard = function (board) {
   
   board.on('logout', function (player) {
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
+    if (board.status !== consts.BOARD_STATUS.NOT_STARTED){
+      board.game.stringLog.push(util.format('%s --- Người chơi %s đứt kết nối giữa chừng', moment().format(), player.userInfo.username));
+    }
   })
 };

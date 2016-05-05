@@ -771,15 +771,15 @@ pro.standUp = function (uid) {
   if (player) {
     player.reset();
     player.timeAction = Date.now();
+    self.players.standUp(uid);
+    self.emit('standUp', player);
   }
-  self.players.standUp(uid);
   if (self.owner == uid) {
     self.setOwner();
     if (this.owner){
       this.emit('changeOwner');
     }
   }
-  self.emit('standUp', player);
 };
 
 /**
