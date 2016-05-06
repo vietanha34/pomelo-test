@@ -104,18 +104,37 @@ module.exports.process = function (app, type, param) {
           }
 
           if (bonus) {
+            TopupDao.topup({
+              uid: param.uid,
+              type: consts.CHANGE_GOLD_TYPE.REGISTER,
+              money: bonus,
+              msg: 'Cộng gold đăng ký, accountType: '+param.accountType+'; userCount: '+userCount
+            });
+
             setTimeout(function () {
               ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.SUA_THOI_GIAN, (7 * 1440));
               ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.VE_PHONG_THUONG, (7 * 1440));
               //ItemDao.donateItem(param.uid, consts.ITEM_EFFECT.LUAN_CO, (14 * 1440));
-              TopupDao.pushGoldAward({
-                uid: param.uid,
-                type: 'REGISTER',
-                gold: bonus,
+              //TopupDao.pushGoldAward({
+              //  uid: param.uid,
+              //  type: 'REGISTER',
+              //  gold: bonus,
+              //  msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
+              //  title: code.REGISTER_LANGUAGE.BONUS_TITLE
+              //})
+
+              NotifyDao.push({
+                type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                title: code.REGISTER_LANGUAGE.BONUS_TITLE,
                 msg: [code.REGISTER_LANGUAGE.BONUS, bonus.toString()],
-                title: code.REGISTER_LANGUAGE.BONUS_TITLE
-              })
-            }, 2500);
+                buttonLabel: 'OK',
+                command: {target: consts.NOTIFY.TARGET.NORMAL},
+                scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+                users: [param.uid],
+                image:  consts.NOTIFY.IMAGE.AWARD,
+                gold: bonus
+              });
+            }, 2000);
           }
           else {
             setTimeout(function () {

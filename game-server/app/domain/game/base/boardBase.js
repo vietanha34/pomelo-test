@@ -169,6 +169,9 @@ var Board = function (opts, PlayerPool, Player) {
             msg: util.format("Mức cược phải nằm trong khoảng từ %s đến %s Gold", self.configBet[0], self.configBet[1] * multi)
           });
         }
+        if (bet < self.configBet[0]){
+          return done({ec : Code.FAIL, msg : util.format("Mức cược không được phép nhỏ hơn %s Gold", self.configBet[0])});
+        }
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done(utils.getError(Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD))
         } else {

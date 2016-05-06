@@ -254,11 +254,20 @@ module.exports = function (app) {
       gold: gold,
       username: uname
     };
+    var uid;
     UserDao.getUserIdByUsername(uname)
-      .then(function (uid) {
+      .then(function (u) {
+        uid = u;
+        var statusService = pomelo.app.get('statusService');
+        return Promise.promisify(statusService.getStatusByUid,{ context : statusService})(uid, true)
+      })
+      .then(function (status) {
+        if (status && status.online){
+          return Promise.reject({ec : code.FAIL, msg : "Người chơi đang online trên cả 2 phiên bản"})
+        }
         opts.uid = uid;
         if (api === 'bank.subgold') {
-          pomelo
+          return pomelo
             .app
             .get('paymentService')
             .subBalance(opts)
@@ -278,7 +287,7 @@ module.exports = function (app) {
               res.json(response);
             })
         } else {
-          pomelo
+          return pomelo
             .app
             .get('paymentService')
             .addBalance(opts, function (err, bank) {
@@ -297,7 +306,11 @@ module.exports = function (app) {
         }
       })
       .catch(function (err) {
-        console.log('err : ', err);
+        if (err.ec  === code.FAIL){
+          console.error('account bank : Đăng nhập 2 tài khoản cùng lúc : ', uname);
+        }else {
+          console.error('account bank err : ', err);
+        }
         res.json({msg: err.msg || 'có lỗi xảy ra', code: 99}).end()
       })
       .finally(function () {

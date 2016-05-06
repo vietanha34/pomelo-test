@@ -190,7 +190,7 @@ function ProcessTopup(app, msg, numberRetry) {
         if (bonusPercent) {
           data.promotionMoney += Math.round(data.gameMoney * bonusPercent / 100);
         }
-        var addVip = formula.calVipPointByMoney(data.money);
+        var addVip = formula.calVipPointByMoney((data.currency == 'VND' ? data.money : data.money*22000));
         var vipAfter = (vipPoint+addVip);
         var opts = {
           uid: uid,
