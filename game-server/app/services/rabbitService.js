@@ -165,6 +165,7 @@ function ProcessTopup(app, msg, numberRetry) {
         UserDao.getUserPropertiesByUsername(data.username, ['uid', 'vipPoint'], done);
       },
       function (userInfo, done) {
+        userInfo = userInfo || {};
         userId = userInfo.uid;
         vipPoint = userInfo.vipPoint || 0;
         var uid = userId;
