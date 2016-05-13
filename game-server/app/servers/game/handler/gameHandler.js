@@ -51,7 +51,6 @@ pro.changeBoardProperties = function (msg, session, next) {
   var board = session.board;
   var uid = session.uid;
   msg.uid = uid;
-  next();
   if (!board) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
       ec: Code.FA_HOME,
@@ -70,6 +69,7 @@ pro.changeBoardProperties = function (msg, session, next) {
   }
 
   board.changeBoardProperties(parseInt(session.uid), msg, [], function (err, res) {
+    next();
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec : err.ec || Code.FAIL, msg : err.msg || [Code.FAIL]});
