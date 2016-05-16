@@ -43,7 +43,7 @@ NewsDao.getList = function getList(uid, cate, cb) {
       list.forEach(function(e,i) {
         list[i].updatedAt = moment(list[i].updatedAt).format('HH:mm DD/MM');
       });
-      return utils.invokeCallback(cb, null, {list: list});
+      return utils.invokeCallback(cb, null, {list: list, cate: cate});
     })
     .catch(function(e) {
       console.error(e.stack || e);

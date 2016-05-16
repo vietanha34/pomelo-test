@@ -107,7 +107,7 @@ module.exports.process = function (app, type, param) {
             TopupDao.topup({
               uid: param.uid,
               type: consts.CHANGE_GOLD_TYPE.REGISTER,
-              money: bonus,
+              gold: bonus,
               msg: 'Cộng gold đăng ký, accountType: '+param.accountType+'; userCount: '+userCount
             });
 
