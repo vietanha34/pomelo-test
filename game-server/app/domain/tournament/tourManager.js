@@ -52,13 +52,13 @@ pro.init = function () {
       raw: true
     })
     .each(function (tour) {
+      var tableConfig,  round;
+      if (!tour) return ;
       return TourDao.getTourRound({
         where: {
           id: tour.roundId
         },
-        include: [{
-          model: pomelo.app.get('mysqlClient').TourTableConfig
-        }]
+        raw : true
       })
         .then(function (round) {
           if (!round || round.length < 1) return Promise.reject();
@@ -73,6 +73,7 @@ pro.init = function () {
             })
         })
         .then(function (tc) {
+          tableConfig = tc;
           return TourDao.getTourTable({
             where: {
               tourId: tour.tourId,
@@ -85,6 +86,7 @@ pro.init = function () {
         })
         .each(function (table) {
           // tạo lại các bàn chơi chưa đc đấu
+
         })
     });
 };
@@ -1292,7 +1294,9 @@ pro.splitGroup = function (tourId, numGroup) {
 };
 
 pro.createTable = function (opts) {
+  var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   var params = utils.clone(opts.tc);
+  var hallConfig = hallConfigs['' + params.gameId + consts.HALL_ID.CAO_THU];
   params.username = opts.username;
   params.fullname = opts.fullname;
   params.uid = opts.uid;
@@ -1305,7 +1309,7 @@ pro.createTable = function (opts) {
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
   params.lockMode = typeof params.lockMode === 'string' ? lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
     return parseInt(lock)
-  }) : params.lockMode
+  }) : params.lockMode;
   if (params.lockMode.length >= 1) {
     params.hallId = consts.HALL_ID.LIET_CHAP
   }
@@ -1313,7 +1317,12 @@ pro.createTable = function (opts) {
   console.log('params Matchmaking: ', params);
   return Promise.delay(0)
     .then(function () {
-      return game.boardManager.createRoomTournament(hallConfig, null, params);
+      var curServer = pomelo.app.curServer;
+      if (curServer.gameId = opts.gameId){
+        return game.boardManager.createRoomTournament(hallConfig, null, params);
+      }else {
+
+      }
     })
     .then(function (data) {
       console.log('createRoomTournament : ', data);

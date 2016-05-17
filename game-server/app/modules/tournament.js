@@ -49,7 +49,6 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
         })
     })
     .then(function (round) {
-      console.log('round : ', round);
       if (!round || !round['tableConfigId']) return Promise.reject();
       return pomelo.app.get('mysqlClient')
         .TourTableConfig
@@ -62,7 +61,6 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
         })
     })
     .then(function (tc) {
-      console.log('tc : ',tc);
       tc = tc || {};
       if (curServer.id === 'game-server-' + (tc.gameId || consts.GAME_ID.CO_TUONG)* 10) {
         switch (func) {

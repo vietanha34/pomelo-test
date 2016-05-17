@@ -173,3 +173,7 @@ GameRemote.prototype.setBoard = function (boardId, msg, cb) {
   board.setBoard(msg);
   return utils.invokeCallback(cb)
 };
+
+GameRemote.prototype.createRoomTournament = function (opts, cb) {
+  
+}
