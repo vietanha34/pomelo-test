@@ -171,12 +171,12 @@ exp.addEventFromBoard = function (board) {
    * @for BoardBase
    */
   board.on('leaveBoard', function (userInfo, kick) {
-    console.log('handler emit leaveBoard : ', userInfo)
+    console.log('handler emit leaveBoard : ', userInfo);
     if (!userInfo.uid) {
       logger.error('LeaveBoard error, userInfo.uid is null : %j', userInfo);
       return
     }
-    if (board.jobId) {
+    if (board.jobId && board.timer) {
       board.timer.cancelJob(board.jobId);
     }
     var channel = board.getChannel();
@@ -225,8 +225,8 @@ exp.addEventFromBoard = function (board) {
         var tourWinUid = board.owner;
         var winPlayer = board.players.getPlayer(tourWinUid);
         var index = board.username.indexOf(userInfo.username);
-        board.tourWin[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
-        board.tourLose[index] += Math.abs(board.matchPlay - board.numMatchPlay);
+        //board.tourWin[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
+        //board.tourLose[index] += Math.abs(board.matchPlay - board.numMatchPlay);
         board.tourScore[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
         board.emit('setBoard', {score : board.tourScore ? board.tourScore.join(' - ') : null}, true);
         board.tableTourFinish = true;
@@ -506,8 +506,8 @@ exp.addEventFromBoard = function (board) {
         var tourWinUid = board.owner;
         var winPlayer = board.players.getPlayer(tourWinUid);
         var index = board.username.indexOf(player.userInfo.username);
-        board.tourWin[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
-        board.tourLose[index] += Math.abs(board.matchPlay - board.numMatchPlay);
+        //board.tourWin[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
+        //board.tourLose[index] += Math.abs(board.matchPlay - board.numMatchPlay);
         board.tourScore[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
         board.emit('setBoard', {score : board.tourScore ? board.tourScore.join(' - ') : null}, true);
         board.tableTourFinish = true;

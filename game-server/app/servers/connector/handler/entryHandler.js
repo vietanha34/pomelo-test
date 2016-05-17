@@ -133,7 +133,8 @@ Handler.prototype.login = function (msg, session, next) {
       deviceId: msg.deviceId,
       platform: msg.platform,
       version: version,
-      deviceName : msg.deviceName
+      deviceName : msg.deviceName,
+      frontendId : session.frontendId
     };
 
     if (boardId) {

@@ -667,7 +667,8 @@ module.exports = {
       GO_TOP: 8,
       GET_GOLD: 9,
       GO_CHAT: 10,
-      GO_BOARD: 11
+      GO_BOARD: 11,
+      GO_TOURNAMENT : 12
     },
     SCOPE: {
       ALL: 99,

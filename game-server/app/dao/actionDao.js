@@ -42,11 +42,11 @@ ActionDao.removeAction = function (opts, uid, cb) {
     .then(function (values) {
       console.log('values : ', values);
       var keys = Object.keys(opts);
-      for (var i = 0, len = values.length; i < len ; i ++){
+      for (var i = 0, len = values.length; i < len ; i++){
         var json = utils.JSONParse(values[i], {});
         console.log('json : ', json, values[i]);
         if (json.action){
-          for (var j = 0, lenj = keys.length; i < lenj; i ++){
+          for (var j = 0, lenj = keys.length; j < lenj; j++){
             console.log('compare keys : ', keys[j]);
             if (json.action[keys[j]] === opts[keys[j]]){
               pomelo.app.get('redisCache')

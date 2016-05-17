@@ -75,8 +75,20 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
           case 'pickUser':
             tourManager.pickUser(msg.tourId, msg.prevRoundId, msg.nextRoundId, msg.numPlayer);
             break;
-          case 'finishTour' :
-            tourManager.finishTour(msg);
+          case 'splitGroup':
+            tourManager.splitGroup(msg.tourId, msg.numGroup);
+            break;
+          case 'showTable':
+            tourManager.showTable(msg.tourId, msg.scheduleId);
+            break;
+          case 'refillTable':
+            tourManager.reFillTable(msg.tourId, msg.boardId);
+            break;
+          case 'finishTour':
+            tourManager.finishTour({
+              tourId : msg.tourId,
+              top: lodash.compact([msg.four, msg.third, msg.second, msg.first])
+            });
             break;
           default:
             break;
@@ -85,6 +97,7 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
       utils.invokeCallback(cb, null, {ec: Code.OK})
     })
     .catch(function (err) {
+      console.error('err : ', err);
       utils.invokeCallback(cb, null, {ec: Code.OK})
     })
 };

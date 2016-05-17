@@ -11,7 +11,7 @@ module.exports = function(sequelize, DataTypes) {
       autoIncrement : true
     },
     uid : {
-      type : DataTypes.NUMBER,
+      type : DataTypes.INTEGER.UNSIGNED,
       allowNull: true
     },
     tourId : {

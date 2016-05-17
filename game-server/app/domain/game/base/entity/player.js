@@ -145,7 +145,7 @@ Player.prototype.clearOwner = function () {
  * @method getState
  * @returns {{username: *, uid: *, level: *, money: *, status: *, avartarid: (*|number)}}
  */
-Player.prototype.getState = function (uid) {
+Player.prototype.getState = function () {
   return {
     fullname : this.userInfo.fullname,
     uid : this.uid,
@@ -153,6 +153,7 @@ Player.prototype.getState = function (uid) {
     elo : this.userInfo.elo,
     gold : this.gold,
     color : this.color,
+    sIcon: this.userInfo.sIcon,
     title : this.userInfo.title,
     totalTime : this.totalTime,
     status : this.status,

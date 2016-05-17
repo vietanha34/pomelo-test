@@ -14,6 +14,9 @@ var Promise = require('bluebird');
 var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var Code = require('../../consts/code');
+var Notify = require('../../dao/notifyDao');
+var util = require('util');
+var moment = require('moment');
 
 
 var TourManager = function (opts) {
@@ -21,6 +24,8 @@ var TourManager = function (opts) {
   this.tours = {};
   this.app = opts.app;
   this.status = false;
+  this.interval = opts.interval || 60000;
+  this.serverType = opts.serverType || 'tournament';
 };
 
 module.exports = TourManager;
@@ -29,30 +34,59 @@ pro = TourManager.prototype;
 
 pro.init = function () {
   if (this.status) return;
+  var curServer = pomelo.app.curServer;
+  // quét hệ thống xem có giải đấu nào sắp diễn ra k
+  if (curServer.serverType === this.serverType) {
+    setInterval(function () {
+
+    }, this.interval);
+  }
   return pomelo.app.get('mysqlClient')
     .Tournament
     .findAll({
-      where : {
-        status : {
-          $ne : consts.TOUR_STATUS.FINISHED
+      where: {
+        status: {
+          $ne: consts.TOUR_STATUS.FINISHED
         }
       },
-      raw : true
+      raw: true
     })
     .each(function (tour) {
       return TourDao.getTourRound({
         where: {
-          id : tour.roundId
+          id: tour.roundId
         },
         include: [{
           model: pomelo.app.get('mysqlClient').TourTableConfig
         }]
       })
-      .then(function (round) {
-          if (!round || round.length < 1) return;
+        .then(function (round) {
+          if (!round || round.length < 1) return Promise.reject();
           round = round[0];
+          return pomelo.app.get('mysqlClient')
+            .TourTableConfig
+            .findOne({
+              where: {
+                id: round.tableConfigId
+              },
+              raw: true
+            })
         })
-    })
+        .then(function (tc) {
+          return TourDao.getTourTable({
+            where: {
+              tourId: tour.tourId,
+              stt: {
+                $lt: consts.BOARD_STATUS.FINISH
+              }
+            },
+            raw: true
+          })
+        })
+        .each(function (table) {
+          // tạo lại các bàn chơi chưa đc đấu
+        })
+    });
 };
 
 pro.matchMaking = function (tourId) {
@@ -120,7 +154,8 @@ pro.matchMaking = function (tourId) {
             return [
               TourDao.getTourProfile({
                 where: {
-                  groupId: group.id
+                  groupId: group.id,
+                  status: 0
                 },
                 include: {
                   model: pomelo.app.get('mysqlClient').User,
@@ -141,128 +176,201 @@ pro.matchMaking = function (tourId) {
           })
           .spread(function (profiles, tables, group) {
             var game = pomelo.app.game;
-            if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE){
+            if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE) {
               var matchUid = [];
               var updateRound = {};
-              switch(round.numRound){
+              switch (round.numRound) {
                 case 0: // vòng loại đầu tiên 1/8
-                  if (!group.player1 || !group.player2){
-                    if (!group.player1 && group.player2){
+                  if (!group.player1 || !group.player2) {
+                    if (!group.player1 && group.player2) {
                       updateRound['player9'] = group.player2;
-                    }else if (group.player1 && !group.player2){
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 9
+                        }, {
+                          where: {
+                            uid: group.player2,
+                            groupId: group.id
+                          }
+                        })
+                    } else if (group.player1 && !group.player2) {
                       updateRound['player9'] = group.player1;
                     }
                   }
-                  if (!group.player3 || !group.player4){
-                    if (!group.player3 && group.player4){
+                  if (!group.player3 || !group.player4) {
+                    if (!group.player3 && group.player4) {
                       updateRound['player10'] = group.player4;
-                    }else if (group.player3 && !group.player4){
+                    } else if (group.player3 && !group.player4) {
                       updateRound['player10'] = group.player3;
                     }
                   }
-                  if (!group.player5 || !group.player6){
-                    if (!group.player5 && group.player6){
+                  if (!group.player5 || !group.player6) {
+                    if (!group.player5 && group.player6) {
                       updateRound['player11'] = group.player6;
-                    }else if (group.player5 && !group.player6){
+                    } else if (group.player5 && !group.player6) {
                       updateRound['player11'] = group.player5;
                     }
                   }
-                  if (!group.player7 || !group.player8){
-                    if (!group.player7 && group.player8){
+                  if (!group.player7 || !group.player8) {
+                    if (!group.player7 && group.player8) {
                       updateRound['player12'] = group.player8;
-                    }else if (group.player7 && !group.player8){
+                    } else if (group.player7 && !group.player8) {
                       updateRound['player12'] = group.player7;
                     }
                   }
-                  matchUid.push([group.player1,group.player2]);
-                  matchUid.push([group.player3,group.player4]);
-                  matchUid.push([group.player5,group.player6]);
-                  matchUid.push([group.player7,group.player8]);
+                  matchUid.push([group.player1, group.player2]);
+                  matchUid.push([group.player3, group.player4]);
+                  matchUid.push([group.player5, group.player6]);
+                  matchUid.push([group.player7, group.player8]);
                   break;
                 case 1: // vòng bán kết 1/4
-                  if (!group.player9 || !group.player10){
-                    if (!group.player9 && group.player10){
+                  if (!group.player9 || !group.player10) {
+                    if (!group.player9 && group.player10) {
                       updateRound['player13'] = group.player10;
-                    }else if (group.player9 && !group.player10){
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 13
+                        }, {
+                          where: {
+                            uid: group.player10,
+                            groupId: group.id
+                          }
+                        })
+                    } else if (group.player9 && !group.player10) {
                       updateRound['player13'] = group.player9;
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 13
+                        }, {
+                          where: {
+                            uid: group.player9,
+                            groupId: group.id
+                          }
+                        })
                     }
                   }
-                  if (!group.player11 || !group.player12){
-                    if (!group.player11 && group.player12){
+                  if (!group.player11 || !group.player12) {
+                    if (!group.player11 && group.player12) {
                       updateRound['player14'] = group.player12;
-                    }else if (group.player11 && !group.player12){
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 14
+                        }, {
+                          where: {
+                            uid: group.player12,
+                            groupId: group.id
+                          }
+                        })
+                    } else if (group.player11 && !group.player12) {
                       updateRound['player14'] = group.player11;
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 14
+                        }, {
+                          where: {
+                            uid: group.player11,
+                            groupId: group.id
+                          }
+                        })
                     }
                   }
-                  matchUid.push([group.player9,group.player10]);
-                  matchUid.push([group.player11,group.player12]);
+                  matchUid.push([group.player9, group.player10]);
+                  matchUid.push([group.player11, group.player12]);
                   break;
                 case 2: // trận chung kết 1/2
-                  if (!group.player13 || !group.player14){
-                    if (!group.player13 && group.player14){
+                  if (!group.player13 || !group.player14) {
+                    if (!group.player13 && group.player14) {
                       updateRound['player15'] = group.player14;
-                    }else if (group.player13 && !group.player14){
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 15
+                        }, {
+                          where: {
+                            uid: group.player14,
+                            groupId: group.id
+                          }
+                        })
+                    } else if (group.player13 && !group.player14) {
                       updateRound['player15'] = group.player13;
+                      pomelo.app.get('mysqlClient')
+                        .TourProfile
+                        .update({
+                          rank: 15
+                        }, {
+                          where: {
+                            uid: group.player13,
+                            groupId: group.id
+                          }
+                        })
                     }
                     var championUid = updateRound['player15'];
                     // tính toán người chơi vô địch
+                    var top = [];
                     var uids = [group.player9, group.player10, group.player11, group.player12];
                     var secondUid = group.player14 === championUid ? group.player13 : group.player14;
+                    top.push(championUid);
+                    top.push(secondUid);
                     var thirdUid, fourUid;
-                    for (i = 0, len = uids.length; i < len ; i++){
+                    for (i = 0, len = uids.length; i < len; i++) {
                       var uid = uids[i];
-                      if (!thirdUid){
-                        if (uid !== championUid && secondUid !== uid){
+                      if (!thirdUid) {
+                        if (uid !== championUid && secondUid !== uid) {
                           thirdUid = uid;
+                          top.push(thirdUid);
                         }
                       } else {
-                        if (uid !== championUid && secondUid !== uid && thirdUid !== uid){
+                        if (uid !== championUid && secondUid !== uid && championUid !== uid) {
                           fourUid = uid;
+                          top.push(fourUid);
                         }
                       }
                     }
-                    self.finishTour({
-                      tourId : tourId,
-                      first : championUid,
-                      second : secondUid,
-                      third : thirdUid,
-                      four : fourUid
+                    top = top.reverse();
+                    top = lodash.compact(top);
+                    return self.finishTour({
+                      tourId: tour.tourId,
+                      top: top
                     });
-                    console.log('first second third four : ', championUid, secondUid, thirdUid, fourUid);
                   }
-                  matchUid.push([group.player13,group.player14]);
+                  matchUid.push([group.player13, group.player14]);
                   break;
               }
-              if (Object.keys(updateRound).length > 0){
+              if (Object.keys(updateRound).length > 0) {
                 pomelo.app.get('mysqlClient')
                   .TourGroup
                   .update(updateRound, {
-                    where : {
-                      id : group.id
+                    where: {
+                      id: group.id
                     }
                   })
               }
+              var index = 0;
               return Promise.each(matchUid, function (match) {
-                var index = 0;
                 if (!match[0] || !match[1]) return Promise.resolve({});
-                console.log('match : ', match);
-                return Promise.map(match, function (uid, index) {
+                return Promise.map(match, function (uid) {
                   return UserDao.getUserProperties(uid, ['username', 'fullname', 'avatar', 'sex', 'uid'])
                 })
                   .then(function (players) {
                     console.log('players : ', players);
                     var player1 = players[0];
                     var player2 = players[1];
+                    index = index + 1;
                     var params = utils.clone(tc);
                     params.username = [player1['username'], player2['username']];
                     params.fullname = [player1['fullname'], player2['fullname']];
                     params.timePlay = schedule.matchTime * 1000;
-                    params.index = index + 1;
+                    params.index = index;
                     params.tourId = tour.tourId;
                     params.lockMode = lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
                       return parseInt(lock)
                     });
-                    if (params.lockMode.length >= 1){
+                    if (params.lockMode.length >= 1) {
                       params.hallId = consts.HALL_ID.LIET_CHAP
                     }
                     params.roomId = 1000;
@@ -277,13 +385,13 @@ pro.matchMaking = function (tourId) {
                           boardId: data.boardId,
                           serverId: data.serverId,
                           gameId: tc.gameId,
-                          index: index + 1,
+                          index: index,
                           bet: tc.bet,
                           numPlayer: 2,
                           status: consts.BOARD_STATUS.NOT_STARTED,
                           groupId: group.id,
                           scheduleId: schedule.id,
-                          matchTime : schedule.matchTime,
+                          matchTime: schedule.matchTime,
                           tourId: tour.tourId,
                           roundId: round.id,
                           player1: player1.uid,
@@ -316,6 +424,8 @@ pro.matchMaking = function (tourId) {
             var mapEnemy = {}, i, len;
             for (i = 0, len = tables.length; i < len; i++) {
               var table = tables[i];
+              console.log('table : ', table);
+              //player1
               if (mapEnemy[table.player1]) {
                 if (mapEnemy[table.player1][table.player2]) {
                   mapEnemy[table.player1][table.player2] += 1;
@@ -326,6 +436,7 @@ pro.matchMaking = function (tourId) {
                 mapEnemy[table.player1] = {};
                 mapEnemy[table.player1][table.player2] = 1;
               }
+              // player2
               if (mapEnemy[table.player2]) {
                 if (mapEnemy[table.player2][table.player1]) {
                   mapEnemy[table.player2][table.player1] += 1;
@@ -341,15 +452,14 @@ pro.matchMaking = function (tourId) {
             var matchs = [];
             while (profilesClone.length >= 2) {
               var profile = profilesClone.splice(0, 1)[0];
-              var enemyIndex = 0, numMatchPlay = 10000;
+              var enemyIndex = 0;
               for (i = 0, len = profilesClone.length; i < len; i++) {
-                if (Math.abs(profilesClone[i].point - profile.point) <= 4) {
-                  if (!mapEnemy[profile.uid] || (mapEnemy[profile.uid][profilesClone[i]] || 0) < numMatchPlay) {
-                    enemyIndex = i;
-                  }
+                if (!mapEnemy[profile.uid] || !mapEnemy[profile.uid][profilesClone[i].uid]) {
+                  enemyIndex = i;
+                  break;
                 }
               }
-              console.log('enemyIndex :', enemyIndex, mapEnemy);
+              console.log('enemyIndex :', profile.uid, enemyIndex, mapEnemy);
               var enemy = profilesClone.splice(enemyIndex, 1)[0];
               matchs.push([profile, enemy]);
             }
@@ -359,9 +469,9 @@ pro.matchMaking = function (tourId) {
                 .update({
                   point: pomelo.app.get('mysqlClient').sequelize.literal('point + ' + 2)
                 }, {
-                  where : {
-                    uid : profilesClone[0].uid,
-                    tourId : tour.tourId,
+                  where: {
+                    uid: profilesClone[0].uid,
+                    tourId: tour.tourId,
                     groupId: group.id
                   }
                 })
@@ -380,7 +490,7 @@ pro.matchMaking = function (tourId) {
               params.lockMode = lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
                 return parseInt(lock)
               });
-              if (params.lockMode.length >= 1){
+              if (params.lockMode.length >= 1) {
                 params.hallId = consts.HALL_ID.LIET_CHAP
               }
               params.roomId = 1000;
@@ -403,7 +513,7 @@ pro.matchMaking = function (tourId) {
                     scheduleId: schedule.id,
                     tourId: tour.tourId,
                     roundId: round.id,
-                    matchTime : schedule.matchTime,
+                    matchTime: moment(schedule.matchTime * 1000).toDate(),
                     player1: player1.uid,
                     player2: player2.uid,
                     player: JSON.stringify([
@@ -424,7 +534,7 @@ pro.matchMaking = function (tourId) {
                     ])
                   };
                   console.log('createTourTable opts : ', opts);
-                  TourDao.createTable(opts);
+                  return TourDao.createTable(opts);
                 })
             });
           })
@@ -446,8 +556,8 @@ pro.matchMaking = function (tourId) {
           .update({
             numRound: pomelo.app.get('mysqlClient').sequelize.literal('numRound + ' + 1)
           }, {
-            where : {
-              id : round.id
+            where: {
+              id: round.id
             }
           })
       ]
@@ -462,7 +572,7 @@ pro.matchMaking = function (tourId) {
 };
 
 pro.calPoint = function (tourId) {
-  var tour, round;
+  var tour, round, self = this;
   return pomelo.app.get('mysqlClient')
     .Tournament
     .findOne({
@@ -497,46 +607,46 @@ pro.calPoint = function (tourId) {
         .TourTable
         .update({
           calPoint: 1,
-          stt : consts.BOARD_STATUS.FINISH
+          stt: consts.BOARD_STATUS.FINISH
         }, {
           where: {
             boardId: table.boardId
           }
         });
       if (round.battleType === consts.TOUR_BATTLE_TYPE.THUY_SY) {
-        var score = table.score.split(' - ');
+        var score = table.score.split('-');
         score = lodash.map(score, function (s) {
-          return parseFloat(s);
+          return parseFloat(s.trim());
         });
-        var win = lodash.map(table.win.split(' - '), function (s) {
-          return parseInt(s);
+        var win = lodash.map(table.win.split('-'), function (s) {
+          return parseInt(s.trim());
         });
-        var draw = lodash.map(table.draw.split(' - '), function (s) {
-          return parseInt(s);
+        var draw = lodash.map(table.draw.split('-'), function (s) {
+          return parseInt(s.trim());
         });
-        var lose = lodash.map(table.lose.split(' - '), function (s) {
-          return parseInt(s);
+        var lose = lodash.map(table.lose.split('-'), function (s) {
+          return parseInt(s.trim());
         });
         Promise.delay(0)
           .then(function () {
             var result = [];
-            for (var i = 1, len = win.length; i<= len; i ++){
-              var winWithoutEnemy = score[i - 1] - (win[i-1] + draw[i-1] * 0.5);
-              var loseWithoutEnemy = score[!(i-1 )? 1 : 0] - (lose[i-1] + draw[i-1] * 0.5);
+            for (var i = 1, len = win.length; i <= len; i++) {
+              var winWithoutEnemy = score[i - 1] - (win[i - 1] + draw[i - 1] * 0.5);
+              var loseWithoutEnemy = score[!(i - 1 ) ? 1 : 0] - (lose[i - 1] + draw[i - 1] * 0.5);
               var updateData = {
-                point: pomelo.app.get('mysqlClient').sequelize.literal('point + ' + score[i-1]),
-                win: pomelo.app.get('mysqlClient').sequelize.literal('win + ' + win[i-1]),
-                draw: pomelo.app.get('mysqlClient').sequelize.literal('draw + ' + draw[i-1]),
-                lose: pomelo.app.get('mysqlClient').sequelize.literal('lose + ' + lose[i-1])
+                point: pomelo.app.get('mysqlClient').sequelize.literal('point + ' + score[i - 1]),
+                win: pomelo.app.get('mysqlClient').sequelize.literal('win + ' + win[i - 1]),
+                draw: pomelo.app.get('mysqlClient').sequelize.literal('draw + ' + draw[i - 1]),
+                lose: pomelo.app.get('mysqlClient').sequelize.literal('lose + ' + lose[i - 1])
               };
               if (winWithoutEnemy) updateData['winWithoutEnemy'] = pomelo.app.get('mysqlClient').sequelize.literal('winWithoutEnemy + ' + winWithoutEnemy);
               if (loseWithoutEnemy) updateData['loseWithoutEnemy'] = pomelo.app.get('mysqlClient').sequelize.literal('loseWithoutEnemy + ' + loseWithoutEnemy);
               result.push(pomelo.app.get('mysqlClient')
                 .TourProfile
                 .update(updateData, {
-                  where : {
-                    uid : table['player'+i],
-                    roundId : table.roundId
+                  where: {
+                    uid: table['player' + i],
+                    roundId: table.roundId
                   }
                 }))
             }
@@ -546,27 +656,27 @@ pro.calPoint = function (tourId) {
             return pomelo.app.get('mysqlClient')
               .TourProfile
               .findOne({
-                where : {
-                  groupId : table.groupId
+                where: {
+                  groupId: table.groupId
                 },
                 include: [
                   {
-                    model : pomelo.app.get('mysqlClient').User,
-                    attributes : ['avatar']
+                    model: pomelo.app.get('mysqlClient').User,
+                    attributes: ['avatar']
                   }
                 ],
-                raw : true,
-                order : 'point DESC'
+                raw: true,
+                order: 'point DESC'
               })
               .then(function (profile) {
-                if (profile && profile['User.avatar']){
+                if (profile && profile['User.avatar']) {
                   pomelo.app.get('mysqlClient')
                     .TourGroup
                     .update({
-                      avatar : profile['User.avatar']
-                    },{
-                      where : {
-                        id : table.groupId
+                      avatar: profile['User.avatar']
+                    }, {
+                      where: {
+                        id: table.groupId
                       }
                     })
                 }
@@ -583,12 +693,12 @@ pro.calPoint = function (tourId) {
                 where: {
                   tourId: tourId,
                   uid: table.player1,
-                  groupId : table.groupId
+                  groupId: table.groupId
                 },
-                include : [
+                include: [
                   {
-                    model : pomelo.app.get('mysqlClient').User,
-                    attributes : ['fullname', 'uid']
+                    model: pomelo.app.get('mysqlClient').User,
+                    attributes: ['fullname', 'uid']
                   }
                 ],
                 raw: true
@@ -599,12 +709,12 @@ pro.calPoint = function (tourId) {
                   where: {
                     tourId: tourId,
                     uid: table.player2,
-                    groupId : table.groupId
+                    groupId: table.groupId
                   },
-                  include : [
+                  include: [
                     {
-                      model : pomelo.app.get('mysqlClient').User,
-                      attributes : ['fullname', 'uid']
+                      model: pomelo.app.get('mysqlClient').User,
+                      attributes: ['fullname', 'uid']
                     }
                   ],
                   raw: true
@@ -613,27 +723,27 @@ pro.calPoint = function (tourId) {
           })
           .spread(function (player1, player2) {
             console.log('player1, player2 : ', arguments);
-            if (round.type === consts.TOUR_ROUND_TYPE.FINAL){
+            if (round.type === consts.TOUR_ROUND_TYPE.FINAL) {
               pomelo.app.get('mysqlClient')
                 .TourHistory
                 .create({
                   firstPlayerName: player1['User.fullname'],
-                  firstPlayerUid : player1['uid'],
-                  secondPlayerName : player2['User.fullname'],
-                  secondPlayerUid : player2['uid'],
-                  result : table.score,
-                  tourId : tour.tourId,
+                  firstPlayerUid: player1['uid'],
+                  secondPlayerName: player2['User.fullname'],
+                  secondPlayerUid: player2['uid'],
+                  result: table.score,
+                  tourId: tour.tourId,
                   match: table.match,
-                  round : round.numRound
+                  round: round.numRound
                 });
             }
-            if (table.winner){
-              if (table.player1 === table.winner){
+            if (table.winner) {
+              if (table.player1 === table.winner) {
                 profile = player1
-              }else {
+              } else {
                 profile = player2
               }
-            }else {
+            } else {
               return
             }
             var newRank;
@@ -652,15 +762,15 @@ pro.calPoint = function (tourId) {
             } else if (profile.rank >= 13 && profile.rank <= 14) {
               newRank = 15
             }
-            if (round.type === consts.TOUR_ROUND_TYPE.FINAL && newRank === 15){
+            if (round.type === consts.TOUR_ROUND_TYPE.FINAL && newRank === 15) {
               // finish Tour
               pomelo.app.get('mysqlClient')
                 .TourGroup
                 .findOne({
-                  where : {
-                    id : table.groupId
+                  where: {
+                    id: table.groupId
                   },
-                  raw : true
+                  raw: true
                 })
                 .then(function (group) {
                   if (!group) return;
@@ -670,15 +780,15 @@ pro.calPoint = function (tourId) {
                   top.push(profile.uid);
                   top.push(secondUid);
                   var thirdUid, fourUid;
-                  for (var i = 0, len = uids.length; i < len ; i++){
+                  for (var i = 0, len = uids.length; i < len; i++) {
                     var uid = uids[i];
-                    if (!thirdUid){
-                      if (uid !== profile.uid && secondUid !== uid){
+                    if (!thirdUid) {
+                      if (uid !== profile.uid && secondUid !== uid) {
                         thirdUid = uid;
                         top.push(thirdUid);
                       }
                     } else {
-                      if (uid !== profile.uid && secondUid !== uid && thirdUid !== uid){
+                      if (uid !== profile.uid && secondUid !== uid && thirdUid !== uid) {
                         fourUid = uid;
                         top.push(fourUid);
                       }
@@ -686,119 +796,10 @@ pro.calPoint = function (tourId) {
                   }
                   top = top.reverse();
                   top = lodash.compact(top);
-                  console.log('first second third four : ', profile.uid, secondUid, thirdUid, fourUid);
-                  return Promise.props({
-                    first : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : top.pop()},raw : true,
-                      include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-                    second : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : top.pop()},raw : true,
-                      include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-                    third : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : top.pop()},raw : true,
-                      include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-                    four : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : top.pop()},raw : true,
-                      include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-                    prize: pomelo.app.get('mysqlClient')
-                      .TourPrize
-                      .findAll({
-                        where: {
-                          tourId: tour.tourId
-                        },
-                        attributes: ['gold', ['content', 'text'], ['type', 'stt']],
-                        order: 'type ASC',
-                        raw: true
-                      })
+                  return self.finishTour({
+                    tourId: tour.tourId,
+                    top: top
                   });
-                })
-                .then(function (data) {
-                  console.log('data : ', data);
-                  var champion = [];
-                  var prizes = data.prize;
-                  var prize, prizeIndex;
-                  if (data.first) {
-                    prizeIndex = lodash.findIndex(prizes, function (p) {
-                      if (p.stt === 1){
-                        return true
-                      }
-                    });
-                    if (prizeIndex > -1) {
-                      prize = prizes[prizeIndex]
-                    }else {
-                      prize = {};
-                    }
-                    champion.push({
-                      uid : data.first.uid,
-                      fullname : data.first['User.fullname'],
-                      stt : 1,
-                      text : prize.text,
-                      gold : prize.gold
-                    })
-                  }
-                  if(data.second){
-                    prizeIndex = lodash.findIndex(prizes, function (p) {
-                      if (p.stt === 2){
-                        return true
-                      }
-                    });
-                    if (prizeIndex > -1) {
-                      prize = prizes[prizeIndex]
-                    }else {
-                      prize = {};
-                    }
-                    champion.push({
-                      uid : data.second.uid,
-                      fullname : data.second['User.fullname'],
-                      stt : 2,
-                      text : prize.text,
-                      gold : prize.gold
-                    })
-                  }
-                  if(data.third){
-                    prizeIndex = lodash.findIndex(prizes, function (p) {
-                      if (p.stt === 3){
-                        return true
-                      }
-                    });
-                    if (prizeIndex > -1) {
-                      prize = prizes[prizeIndex]
-                    }else {
-                      prize = {};
-                    }
-                    champion.push({
-                      uid : data.third.uid,
-                      fullname : data.third['User.fullname'],
-                      stt : 3,
-                      text : prize.text,
-                      gold : prize.gold
-                    })
-                  }
-                  if(data.four){
-                    prizeIndex = lodash.findIndex(prizes, function (p) {
-                      if (p.stt === 3){
-                        return true
-                      }
-                    });
-                    if (prizeIndex > -1) {
-                      prize = prizes[prizeIndex]
-                    }else {
-                      prize = {};
-                    }
-                    champion.push({
-                      uid : data.four.uid,
-                      fullname : data.four['User.fullname'],
-                      stt : 3,
-                      text : prize.text,
-                      gold : prize.gold
-                    })
-                  }
-                  pomelo.app.get('mysqlClient')
-                    .Tournament
-                    .update({
-                      champion : JSON.stringify(champion),
-                      status : consts.TOUR_STATUS.FINISHED
-                    }, {
-                      where : {
-                        tourId : tour.tourId
-                      }
-                    })
                 })
             }
             var updateField = {};
@@ -811,7 +812,7 @@ pro.calPoint = function (tourId) {
                 }, {
                   where: {
                     tourId: tourId,
-                    groupId : table.groupId,
+                    groupId: table.groupId,
                     uid: table.winner
                   }
                 }),
@@ -821,7 +822,7 @@ pro.calPoint = function (tourId) {
             ]
           })
       }
-    }) table
+    })
 };
 
 pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
@@ -856,12 +857,12 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
       if (rounds.length < 2) return Promise.reject();
       prevRound = rounds[0];
       nextRound = rounds[1];
-      if (prevRound.numPlayer < numPlayer * prevRound.numGroup){
+      if (prevRound.numPlayer < numPlayer * prevRound.numGroup) {
         return Promise.reject();
       }
       return TourDao.getTourGroup({
-        where : {
-          roundId : prevRound.id
+        where: {
+          roundId: prevRound.id
         },
         raw: true
       })
@@ -869,28 +870,28 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
     .map(function (group) {
       console.log('group : ', group);
       return TourDao.getTourProfile({
-        where : {
-          groupId : group.id
+        where: {
+          groupId: group.id
         },
-        order : 'point DESC, rank DESC',
-        raw : true,
+        order: 'point DESC, rank DESC',
+        raw: true,
         limit: numPlayer
       })
     })
     .then(function (data) {
       console.log('map data : ', data);
       var profiles = [];
-      for (var i = 0, len = data.length; i < len; i++){
+      for (var i = 0, len = data.length; i < len; i++) {
         profiles = profiles.concat(data[i]);
       }
       return [
         Promise.resolve(profiles),
         TourDao.getTourGroup({
-          where :{
-            roundId : nextRound.id
+          where: {
+            roundId: nextRound.id
           },
-          raw : true,
-          attributes : ['id','numPlayer']
+          raw: true,
+          attributes: ['id', 'numPlayer']
         }),
         Promise.resolve(nextRound)
       ]
@@ -902,7 +903,7 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
         var minNumPlayer = 10000;
         for (var i = 0, len = groups.length; i < len; i++) {
           var group = groups[i];
-          if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE && group.numPlayer >= 8){
+          if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE && group.numPlayer >= 8) {
             continue
           }
           if (group.numPlayer < minNumPlayer) {
@@ -920,32 +921,32 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
                   uid: profile.uid,
                   tourId: tour.tourId,
                   groupId: groupId,
-                  roundId : nextRoundId,
-                  rank : minNumPlayer + 1
+                  roundId: nextRoundId,
+                  rank: minNumPlayer + 1
                 }, {transaction: t})
                 .then(function () {
                   var updateData = {
                     numPlayer: pomelo.app.get('mysqlClient').sequelize.literal('numPlayer + ' + 1)
                   };
                   if (round.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE) {
-                    updateData['player'+(minNumPlayer+1)] = profile.uid;
+                    updateData['player' + (minNumPlayer + 1)] = profile.uid;
                   }
                   return pomelo.app.get('mysqlClient')
                     .TourGroup
-                    .update(updateData,{
+                    .update(updateData, {
                       where: {
                         tourId: tourId,
                         roundId: tour.roundId,
-                        id : groupId
+                        id: groupId
                       },
                       transaction: t
                     })
                 })
                 .then(function () {
-                  var index=  lodash.findIndex(groups, function (group) {
+                  var index = lodash.findIndex(groups, function (group) {
                     return group.id === groupId;
                   });
-                  if (index > -1){
+                  if (index > -1) {
                     group = groups[index];
                     group.numPlayer += 1;
                   }
@@ -962,34 +963,43 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
     })
     .catch(function (err) {
       // cộng lại tiền cho người dùng
-      console.error('err : ',err);
+      console.error('err : ', err);
     })
 };
 
 
 pro.finishTour = function (msg) {
   var tourId = msg.tourId;
+  var top = lodash.isArray(msg.top) ? msg.top : [];
   var tour;
   pomelo.app.get('mysqlClient')
     .Tournament
     .findOne({
-      where : {
-        tourId :tourId
+      where: {
+        tourId: tourId
       },
-      raw : true
+      raw: true
     })
     .then(function (t) {
       tour = t;
       if (!tour) return;
       return Promise.props({
-        first : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : msg.first},raw : true,
-          include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-        second : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : msg.second},raw : true,
-          include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-        third : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : msg.third},raw : true,
-          include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
-        four : pomelo.app.get('mysqlClient').TourProfile.findOne({where: {uid : msg.four},raw : true,
-          include: [{model:pomelo.app.get('mysqlClient').User, attributes : ['avatar', 'sex', 'fullname']}]}),
+        first: pomelo.app.get('mysqlClient').TourProfile.findOne({
+          where: {uid: top.pop()}, raw: true,
+          include: [{model: pomelo.app.get('mysqlClient').User, attributes: ['avatar', 'sex', 'fullname']}]
+        }),
+        second: pomelo.app.get('mysqlClient').TourProfile.findOne({
+          where: {uid: top.pop()}, raw: true,
+          include: [{model: pomelo.app.get('mysqlClient').User, attributes: ['avatar', 'sex', 'fullname']}]
+        }),
+        third: pomelo.app.get('mysqlClient').TourProfile.findOne({
+          where: {uid: top.pop()}, raw: true,
+          include: [{model: pomelo.app.get('mysqlClient').User, attributes: ['avatar', 'sex', 'fullname']}]
+        }),
+        four: pomelo.app.get('mysqlClient').TourProfile.findOne({
+          where: {uid: top.pop()}, raw: true,
+          include: [{model: pomelo.app.get('mysqlClient').User, attributes: ['avatar', 'sex', 'fullname']}]
+        }),
         prize: pomelo.app.get('mysqlClient')
           .TourPrize
           .findAll({
@@ -1009,88 +1019,136 @@ pro.finishTour = function (msg) {
       var prize, prizeIndex;
       if (data.first) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
-          if (p.stt === 1){
+          if (p.stt === 1) {
             return true
           }
         });
         if (prizeIndex > -1) {
           prize = prizes[prizeIndex]
-        }else {
+        } else {
           prize = {};
         }
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhất tại giải đấu "%s". Vui lòng truy cập đấu trường để xem thông tin chi tiết', data.first['User.fullname'], tour.name),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [data.first.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
         champion.push({
-          uid : data.first.uid,
-          fullname : data.first['User.fullname'],
-          stt : 1,
-          text : prize.text,
-          gold : prize.gold
+          uid: data.first.uid,
+          fullname: data.first['User.fullname'],
+          avatar: utils.JSONParse(data.first['User.avatar'], {id : 0, version: 0}),
+          sex : data.first['User.sex'],
+          stt: 1,
+          text: prize.text || '',
+          gold: prize.gold || 0
         })
       }
-      if(data.second){
+      if (data.second) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
-          if (p.stt === 2){
+          if (p.stt === 2) {
             return true
           }
         });
         if (prizeIndex > -1) {
           prize = prizes[prizeIndex]
-        }else {
+        } else {
           prize = {};
         }
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhì tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.second['User.fullname'], tour.name),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [data.second.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
         champion.push({
-          uid : data.second.uid,
-          fullname : data.second['User.fullname'],
-          stt : 2,
-          text : prize.text,
-          gold : prize.gold
+          uid: data.second.uid,
+          fullname: data.second['User.fullname'],
+          avatar: utils.JSONParse(data.second['User.avatar'], {id : 0, version: 0}),
+          sex : data.second['User.sex'],
+          stt: 2,
+          text: prize.text || '',
+          gold: prize.gold || 0
         })
       }
-      if(data.third){
+      if (data.third) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
-          if (p.stt === 3){
+          if (p.stt === 3) {
             return true
           }
         });
         if (prizeIndex > -1) {
           prize = prizes[prizeIndex]
-        }else {
+        } else {
           prize = {};
         }
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.third['User.fullname'], tour.name),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [data.third.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
         champion.push({
-          uid : data.third.uid,
-          fullname : data.third['User.fullname'],
-          stt : 3,
-          text : prize.text,
-          gold : prize.gold
+          uid: data.third.uid,
+          fullname: data.third['User.fullname'],
+          avatar: utils.JSONParse(data.third['User.avatar'], {id : 0, version: 0}),
+          sex : data.third['User.sex'],
+          stt: 3,
+          text: prize.text || '',
+          gold: prize.gold || 0
         })
       }
-      if(data.four){
+      if (data.four) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
-          if (p.stt === 3){
+          if (p.stt === 3) {
             return true
           }
         });
         if (prizeIndex > -1) {
           prize = prizes[prizeIndex]
-        }else {
+        } else {
           prize = {};
         }
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.four['User.fullname'], tour.name),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [data.four.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
         champion.push({
-          uid : data.four.uid,
-          fullname : data.four['User.fullname'],
-          stt : 3,
-          text : prize.text,
-          gold : prize.gold
+          uid: data.four.uid,
+          fullname: data.four['User.fullname'],
+          avatar: utils.JSONParse(data.four['User.avatar'], {id : 0, version: 0}),
+          sex : data.four['User.sex'],
+          stt: 3,
+          text: prize.text || '',
+          gold: prize.gold || 0
         })
       }
       pomelo.app.get('mysqlClient')
         .Tournament
         .update({
-          champion : JSON.stringify(champion),
-          status : consts.TOUR_STATUS.FINISHED
+          champion: JSON.stringify(champion),
+          status: consts.TOUR_STATUS.FINISHED
         }, {
-          where : {
-            tourId : tour.tourId
+          where: {
+            tourId: tour.tourId
           }
         })
     })
@@ -1105,6 +1163,312 @@ pro.finishTour = function (msg) {
  * @param tourId
  * @param numGroup
  */
-pro.spitGroup = function (tourId, numGroup) {
+pro.splitGroup = function (tourId, numGroup) {
+  if (!lodash.isNumber(numGroup) || !numGroup) {
+    return
+  }
+  var tour;
+  return TourDao.getTour({
+    where: {
+      tourId: tourId
+    },
+    raw: true
+  })
+    .then(function (t) {
+      tour = t;
+      if (tour) {
+        return pomelo.app.get('mysqlClient')
+          .TourGroup
+          .destroy({
+            where: {
+              roundId: tour.roundId
+            }
+          })
+      } else {
+        return Promise.reject()
+      }
+    })
+    .then(function () {
+      var res = [];
+      for (var i = 0; i < numGroup; i++) {
+        res.push({
+          tourId: tourId,
+          index: i + 1,
+          roundId: tour.roundId,
+          numPlayer: 0
+        })
+      }
+      return [pomelo.app.get('mysqlClient')
+        .TourGroup
+        .bulkCreate(res),
+        TourDao.getTourProfile({
+          where: {
+            tourId: tourId,
+            roundId: tour.roundId
+          }
+        }),
+        pomelo.app.get('mysqlClient')
+          .TourRound
+          .update({
+            numGroup: numGroup
+          }, {
+            where: {
+              id: tour.roundId
+            }
+          })
+      ]
+    })
+    .spread(function (created, profiles) {
+      return [
+        TourDao.getTourGroup({
+          where: {
+            roundId: tour.roundId
+          },
+          attributes: ['numPlayer', 'id', 'index']
+        }),
+        Promise.resolve(profiles)
+      ]
+    })
+    .spread(function (groups, profiles) {
+      var groupId;
+      return Promise.mapSeries(profiles, function (profile) {
+        var minNumPlayer = 10000;
+        for (var i = 0, len = groups.length; i < len; i++) {
+          var group = groups[i];
+          if (group.numPlayer < minNumPlayer) {
+            minNumPlayer = group.numPlayer;
+            groupId = group.id
+          }
+        }
+        if (groupId) {
+          return pomelo.app.get('mysqlClient')
+            .sequelize
+            .transaction(function (t) {
+              return pomelo.app.get('mysqlClient')
+                .TourProfile
+                .update({
+                  groupId: groupId
+                }, {
+                  where: {
+                    uid: profile.uid,
+                    roundId: tour.roundId
+                  },
+                  transaction: t
+                })
+                .then(function () {
+                  var updateData = {
+                    numPlayer: pomelo.app.get('mysqlClient').sequelize.literal('numPlayer + ' + 1)
+                  };
+                  return pomelo.app.get('mysqlClient')
+                    .TourGroup
+                    .update(updateData, {
+                      where: {
+                        tourId: tourId,
+                        roundId: tour.roundId,
+                        id: groupId
+                      },
+                      transaction: t
+                    })
+                })
+                .then(function () {
+                  var index = lodash.findIndex(groups, function (group) {
+                    return group.id === groupId;
+                  });
+                  if (index > -1) {
+                    group = groups[index];
+                    group.numPlayer += 1;
+                  }
+                })
+            })
+        }
+        else {
+          return Promise.reject({ec: Code.FAIL, msg: 'Không còn bảng đấu nào phù hợp với bạn.'})
+        }
+      })
+        .finally(function () {
+          groups = null;
+        })
+    })
+};
 
+pro.createTable = function (opts) {
+  var params = utils.clone(opts.tc);
+  params.username = opts.username;
+  params.fullname = opts.fullname;
+  params.uid = opts.uid;
+  params.guildId = opts.guildId;
+  params.timePlay = opts.matchTime * 1000;
+  params.index = opts.index;
+  params.tourId = opts.tourId;
+  params.battleType = opts.battleType;
+  params.tourType = opts.tourType;
+  params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
+  params.lockMode = typeof params.lockMode === 'string' ? lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
+    return parseInt(lock)
+  }) : params.lockMode
+  if (params.lockMode.length >= 1) {
+    params.hallId = consts.HALL_ID.LIET_CHAP
+  }
+  params.roomId = 1000;
+  console.log('params Matchmaking: ', params);
+  return Promise.delay(0)
+    .then(function () {
+      return game.boardManager.createRoomTournament(hallConfig, null, params);
+    })
+    .then(function (data) {
+      console.log('createRoomTournament : ', data);
+      var opts = {
+        boardId: data.boardId,
+        serverId: data.serverId,
+        gameId: opts.tc.gameId,
+        index: opts.index,
+        bet: opts.tc.bet,
+        numPlayer: 2,
+        status: consts.BOARD_STATUS.NOT_STARTED,
+        groupId: opts.groupId,
+        scheduleId: opts.scheduleId,
+        tourId: opts.tourId,
+        roundId: opts.roundId,
+        matchTime: moment(opts.matchTime * 1000).toDate(),
+        player1: opts.uid[0],
+        player2: opts.uid[1],
+        player: opts.player || JSON.stringify([{},{}])
+      };
+      console.log('createTourTable opts : ', opts);
+      return TourDao.createTable(opts);
+    })
+};
+
+pro.reFillTable = function (tourId, boardId) {
+  var board;
+  pomelo.app.get('mysqlClient')
+    .TourTable
+    .findOne({
+      where: {
+        boardId: boardId
+      },
+      raw: true
+    })
+    .then(function (b) {
+      board = b;
+      if (!board) return Promise.reject();
+      if (board.stt === consts.BOARD_STATUS.FINISH) {
+        return Promise.reject();
+      }
+      return [
+        pomelo.app.get('mysqlClient')
+          .User
+          .findOne({
+            where: {
+              uid: board.player1
+            },
+            attributes: ['uid', 'username', 'fullname'],
+            raw: true
+          }),
+        pomelo.app.get('mysqlClient')
+          .User
+          .findOne({
+            where: {
+              uid: board.player2
+            },
+            attributes: ['uid', 'username', 'fullname'],
+            raw: true
+          })
+      ]
+    })
+    .spread(function (player1, player2) {
+      if (moment().isAfter(board.matchTime)) {
+        // push lại cho người dùng về cặp đấu;
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Bạn được sắp xếp lại cặp đấu với kỳ thủ "%s" tại bàn số %s', player2['fullname'], board.index),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [player1.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+        Notify.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Đấu trường",
+          msg: util.format('Bạn được sắp xếp lại cặp đấu với kỳ thủ "%s" tại bàn số %s', player1['fullname'], board.index),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [player2.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+      }
+      return pomelo.app.rpc.game.gameRemote.setBoard.toServer(board.serverId, board.boardId, {
+        username: [player1.username, player2.username],
+        fullname: [player1.fullname, player2.fullname],
+        matchTime: moment(board.matchTime).unix() * 1000
+      }, function () {
+      })
+    })
+    .finally(function () {
+      board = null;
+    })
+};
+
+pro.showTable = function (tourId, scheduleId) {
+  var tour;
+  return TourDao.getTour({
+    where: {
+      tourId: tourId
+    },
+    attributes : ['name'],
+    raw: true
+  })
+    .then(function (t) {
+      tour = t;
+      if (!tour) return Promise.reject();
+      return TourDao.getTourTable({
+        where: {
+          tourId: tourId,
+          scheduleId: scheduleId
+        }
+      })
+    })
+    .each(function (table) {
+      Promise.map([table.player1, table.player2], function (uid) {
+        return UserDao.getUserProperties(uid, ['username', 'fullname', 'avatar', 'sex', 'uid'])
+      })
+        .then(function (players) {
+          var player1 = players[0];
+          var player2 = players[1];
+          Notify.push({
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường",
+            msg: util.format('Bạn được sắp cặp đấu trong đấu trường "%s" với kỳ thủ "%s" tại bàn số %s. Vui lòng truy cập đấu trường để xem thông tin chi tiết', tour.name, player2['fullname'], table.index),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
+            scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+            users: [player1.uid],
+            image: consts.NOTIFY.IMAGE.NORMAL
+          });
+          Notify.push({
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường",
+            msg: util.format('Bạn được sắp cặp đấu trong đấu trường "%s" với kỳ thủ "%s" tại bàn số %s. Vui lòng truy cập đấu trường để xem thông tin chi tiết', tour.name, player1['fullname'], table.index),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
+            scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+            users: [player2.uid],
+            image: consts.NOTIFY.IMAGE.NORMAL
+          });
+        });
+    })
+    .then(function () {
+      return pomelo.app.get('mysqlClient')
+        .TourSchedule
+        .update({
+          show: 1
+        }, {
+          where: {
+            id: scheduleId
+          }
+        })
+    })
 };

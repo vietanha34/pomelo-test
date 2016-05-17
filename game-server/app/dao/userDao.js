@@ -212,11 +212,38 @@ var charCode = [192,
   122];
 
 UserDao.getUserProperties = function (uid, properties, cb) {
-  return pomelo.app.get('mysqlClient')
+  var promises = [];
+  if (properties.indexOf('guildName') > -1 || properties.indexOf('sIcon') > -1){
+    promises.push(pomelo.app.get('mysqlClient')
+      .GuildMember
+      .findOne({
+          where : {
+            uid : uid
+          },
+          include : [{
+            model : pomelo.app.get('mysqlClient').Guild,
+            attributes : ['name', 'sIcon', 'id']
+          }],
+          raw : true
+        })
+    );
+    properties = lodash.remove(properties, function (property) {
+      return property !== 'guildName' && property !== 'sIcon'
+    });
+  }
+  promises.push(pomelo.app.get('mysqlClient')
     .User
-    .findOne({where: {uid: uid}, attributes: properties, raw: true})
-    .then(function (user) {
-      console.log('properties : ', user);
+    .findOne({where: {uid: uid}, attributes: properties, raw: true}));
+  return Promise.delay(0)
+    .then(function () {
+      return promises
+    })
+    .spread(function (guild, user) {
+      if (guild && user) {
+        user['guildName'] = guild['Guild.name'];
+        user['sIcon'] = guild['Guild.sIcon'];
+        user['guildId'] = guild['Guild.id'];
+      }
       return utils.invokeCallback(cb, null, user);
     })
     .catch(function (err) {
@@ -630,7 +657,7 @@ UserDao.createUser = function (msg, cb) {
     .createUser({
       username: msg.uname,
       password: msg.pass,
-      dtId: msg.dtid || msg.dtId,
+      dtId: 1,
       spId: msg.spId || msg.spid,
       gold: msg.money,
       platform: msg.platform,
@@ -657,7 +684,7 @@ UserDao.createUser = function (msg, cb) {
             avatar: null,
             platform : msg.platform,
             accountType: consts.ACCOUNT_TYPE.ACCOUNT_TYPE_USER,
-            distributorId: msg.dtid || msg.dtId || 1,
+            distributorId: 1,
             deviceId: msg.deviceId || msg.deviceid,
             spId: msg.spid || msg.spId || ''
           });

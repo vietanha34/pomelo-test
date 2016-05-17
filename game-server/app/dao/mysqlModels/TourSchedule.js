@@ -19,14 +19,26 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue : 0
     },
     roundId : {
-      type: DataTypes.INTEGER(4),
+      type: DataTypes.INTEGER,
       allowNull: true
+    },
+    show : {
+      type : DataTypes.INTEGER(4),
+      defaultValue : 0
     }
   }, {
     classMethods: {
       associate: function(models) {
         models.TourSchedule.hasOne(models.TourRound, { foreignKey : 'roundId'})
       }
-    }
+    },
+    index : [
+      {
+        fields : ['matchTime']
+      },
+      {
+        fields : ['roundId']
+      }
+    ]
   });
 };

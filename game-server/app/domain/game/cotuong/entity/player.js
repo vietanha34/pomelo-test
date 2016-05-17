@@ -71,11 +71,15 @@ Player.prototype.move = function (numMove) {
   this.totalTime -= Math.floor((Date.now() - this.timeTurnStart));
   if (!this.firstMove){
     this.firstMove = true;
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
+    if (this.table.gameType !== consts.GAME_TYPE.TOURNAMENT){
+      this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
+    }
     return true
   }else if (this.disableDelay && numMove - this.timeDelay >= 20 && this.numDelay > 0){
     this.disableDelay = false;
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
+    if (this.table.gameType !== consts.GAME_TYPE.TOURNAMENT){
+      this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, { count : this.numDelay}));
+    }
     return true
   }if (this.disableDraw && numMove - this.timeDraw >= 10 && this.numDraw > 0){
     this.disableDraw = false;
@@ -98,7 +102,9 @@ Player.prototype.reset = function () {
 Player.prototype.genStartMenu = function () {
   Player.super_.prototype.genStartMenu.call(this);
   if (!this.guest){
-    this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, {disable : 1, count : this.numDelay}));
+    if (this.table.gameType !== consts.GAME_TYPE.TOURNAMENT){
+      this.pushMenu(this.table.genMenu(consts.ACTION.DE_LAY, {disable : 1, count : this.numDelay}));
+    }
     this.pushMenu(this.table.genMenu(consts.ACTION.DRAW, { count : this.numDraw}));
     this.pushMenu(this.table.genMenu(consts.ACTION.SURRENDER));
   }

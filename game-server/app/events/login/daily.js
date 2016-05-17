@@ -9,7 +9,6 @@ var utils = require('../../util/utils');
 var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var ItemDao = require('../../dao/itemDao');
-var NotifyDao = require('../../dao/notifyDao');
 var moment = require('moment');
 
 module.exports.type = Config.TYPE.LOGIN;

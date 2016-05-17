@@ -51,7 +51,6 @@ pro.changeBoardProperties = function (msg, session, next) {
   var board = session.board;
   var uid = session.uid;
   msg.uid = uid;
-  next();
   if (!board) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {
       ec: Code.FA_HOME,
@@ -63,13 +62,13 @@ pro.changeBoardProperties = function (msg, session, next) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
     return
   }
-
   if (board.status !== consts.BOARD_STATUS.NOT_STARTED) {
     messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED));
     return
   }
 
   board.changeBoardProperties(parseInt(session.uid), msg, [], function (err, res) {
+    next();
     if (err) {
       console.error(err);
       messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {ec : err.ec || Code.FAIL, msg : err.msg || [Code.FAIL]});
@@ -88,7 +87,7 @@ pro.standUp = function (msg, session, next) {
       msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
     });
   }
-  if (!msg.confirm && board.gameType === consts.GAME_TYPE.TOURNAMENT && board.numMatchPlay > 0){
+  if (!msg.confirm && board.gameType === consts.GAME_TYPE.TOURNAMENT && board.numMatchPlay > 0 && !board.tableTourFinish){
     return messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {uid: session.uid, confirm : 'Đứng lên bạn sẽ bị thua cuộc đấu trường, bạn có chắc muốn đứng lên hay không?'});
   }
   var res = board.standUp(session.uid);
@@ -424,7 +423,6 @@ pro.startGame = function (msg, session, next) {
     next(null);
     return;
   }
-
   next(null);
   return board.startGame(uid, function (err, res) {
     if (res && res.ec) {

@@ -86,8 +86,9 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
       })
   }
   else {
+    var hallId = tableOpts.hallId || hallConfig.hallId;
     var opts = utils.clone(hallConfig);
-    if (opts.hallId === consts.HALL_ID.LIET_CHAP) {
+    if (hallId === consts.HALL_ID.LIET_CHAP) {
       opts.lockMode = tableOpts.lockMode || [3]; // liệt tốt 5;
       opts.removeMode = [];
       opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
@@ -101,6 +102,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
     opts.turnTime = tableOpts.turnTime || 180;
     opts.totalTime = tableOpts.totalTime || 15 * 60;
     opts.showKill = tableOpts.showKill || false;
+    opts.caroOpen = tableOpts.caroOpen || 0;
     opts.mustWin = tableOpts.mustWin || false;
     opts.bet = tableOpts.bet || 5000;
     opts.configTurnTime = [opts.turnTime * 1000];
@@ -162,9 +164,10 @@ exp.createRoom = function (hallConfig, roomId) {
 
 
 exp.createBoard = function (params, cb) {
+  var self = this;
   return this.create(params)
     .then(function (res) {
-      return utils.invokeCallback(cb, null, {boardId: res, serverId: this.serverId, roomId: params.roomId})
+      return utils.invokeCallback(cb, null, {boardId: res, serverId: self.serverId, roomId: params.roomId})
     })
     .catch(function (err) {
       return utils.invokeCallback(cb, err)

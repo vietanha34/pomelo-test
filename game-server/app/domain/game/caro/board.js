@@ -235,8 +235,11 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+    console.log('opts : ', opts);
+  }
+  this.caroOpen = opts.caroOpen || 0;
   this.game = new Game(this);
-  this.caroOpen = opts.caroOpen;
   this.addFunction = []
 }
 
@@ -295,7 +298,7 @@ Table.prototype.action = function (uid, opts, cb) {
   if (this.turnId){
     this.timer.cancelJob(this.turnId);
   }
-  player.move();
+  player.move(this.game.numMove);
   this.game.progress();
   return utils.invokeCallback(cb, null, {});
 };

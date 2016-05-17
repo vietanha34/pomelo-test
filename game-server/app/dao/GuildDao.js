@@ -14,6 +14,7 @@ var GuildDao = module.exports;
 var UserDao = require('./userDao');
 var FriendDao = require('./friendDao');
 var moment = require('moment');
+var RoomDao = require('./roomChatDao');
 
 var RESOURCE_NAME = {
   1: 'info',
@@ -59,18 +60,37 @@ GuildDao.getGuildChat = function (role, permission, resourceId, cb) {
               attributes : ['uid', 'fullname']
             }
           ],
+          raw :true,
           attributes : ['role', 'uid']
         })
         .then(function (result) {
           if (result){
             message.role = result.role;
             message.fullname  = result['User.fullname'] ? result['User.fullname'] : message.from;
+            message['date'] = moment(message.date).unix();
+            console.log('message: ', message , result);
+            return Promise.resolve(message);
+          }else {
+            return pomelo.app.get('mysqlClient')
+              .User
+              .findOne({
+                where : {
+                  uid : message.from
+                },
+                raw : true,
+                attributes : ['fullname', 'uid']
+              })
+              .then(function (user) {
+                message.role = consts.GUILD_MEMBER_STATUS.GUEST;
+                message.fullname  = user.fullname ? user.fullname : message.from;
+                message['date'] = moment(message.date).unix();
+                return Promise.resolve(message);
+              })
           }
-          return Promise.resolve(message);
         })
     })
     .then(function (messages) {
-      return utils.invokeCallback(cb, null, { list  : messages})
+      return utils.invokeCallback(cb, null, { list  : messages.reverse()})
     })
     .catch(function (err) {
       console.error('err : ', err);
@@ -78,7 +98,9 @@ GuildDao.getGuildChat = function (role, permission, resourceId, cb) {
     })
 };
 
-GuildDao.getGuildHistoryFund = function (role, permission, resource, cb) {};
+GuildDao.getGuildHistoryFund = function (role, permission, resource, cb) {
+  return utils.invokeCallback(cb, null, {});
+};
 
 GuildDao.getGuildRequest = function (role, permission, args, cb) {
   return pomelo.app.get('mysqlClient')
@@ -118,7 +140,7 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
   var promise = {};
   promise['info'] = pomelo.app.get('mysqlClient')
     .Guild
-    .findOne({where: {id: args.guildId}, attributes: ['name', 'numMember', 'gold', 'level', 'fame', 'detail', 'icon', 'exp', 'acronym'], raw: true});
+    .findOne({where: {id: args.guildId}, attributes: ['name', 'numMember', 'gold', 'level', 'fame', 'detail', 'icon', 'exp', 'acronym', 'sIcon'], raw: true});
   if (role.role === consts.GUILD_MEMBER_STATUS.PRESIDENT || role.role === consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT)
     promise['numRequest'] = pomelo.app.get('mysqlClient').GuildMember.count({where : { guildId : args.guildId, role : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER}});
 
@@ -126,10 +148,11 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
     .then(function (result) {
       var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
       result.info['numMember'] = [result.info['numMember'], guildLevel[result.info.level] ? guildLevel[result.info.level].maxMember : 20];
-      result.info['name'] = result.info['acronym'] + '.' + result.info['name'];
+      result.info['name'] = result.info['name'];
       result.info['exp'] = [result.info['exp'], 100];
       result.info['icon'] = utils.JSONParse(result.info['icon']);
       result.info['role'] = role ? role.role : 0;
+      result.info['sIcon'] = utils.JSONParse(result.info.sIcon, []);
       result.info['numRequest'] = result.numRequest || 0;
       if (role && role.role === consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER && role.guildId === args.guildId){
         result.info['isReq'] = 1;
@@ -166,10 +189,13 @@ GuildDao.getGuildFund = function (role, permission, args, cb) {
                 $ne: consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
               }
             },
+            offset : args.offset || 0,
+            limit : args.length || 100,
             include: [{
               model: pomelo.app.get('mysqlClient').User,
               attributes: ['fullname', 'avatar', 'sex']
             }],
+            order: 'gold DESC',
             attributes: ['uid', 'role', 'fame', 'gold'],
             raw: true
           }),
@@ -212,6 +238,7 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
   };
   if (opts.keyword){
     condition['where'] = {
+      status : 1,
       $or : [ {name : {
         $like : '%' + opts.keyword + '%'
       }},
@@ -219,13 +246,17 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
         $like : '%' + opts.keyword + '%'
       }}]
     }
+  }else {
+    condition['where'] = {
+      status : 1
+    }
   }
   return pomelo.app.get('mysqlClient')
     .Guild
     .findAll(condition)
     .then(function (guilds) {
       console.log('guilds : ', guilds);
-      var stt = 1;
+      var stt = opts.offset + 1;
       guilds = lodash.map(guilds, function (guild) {
         var isReq;
         if (roleId.guildId === guild.id){
@@ -241,6 +272,7 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
           gold : guild.gold,
           detail: guild.detail,
           icon: utils.JSONParse(guild.icon,{ id : 0}),
+          sIcon : utils.JSONParse(guild.sIcon, { id : 0, version : 0}),
           numMember: [guild.numMember, guildLevel[guild.level] ? guildLevel[guild.level].maxMember: 20]
         }
       });
@@ -251,7 +283,8 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
     })
 };
 
-GuildDao.getGuild = function (uid, cb ) {
+GuildDao.getGuild = function (uid, cb) {
+  var member;
   return pomelo.app.get('mysqlClient')
     .User
     .findOne({
@@ -262,7 +295,30 @@ GuildDao.getGuild = function (uid, cb ) {
       include: [ { model: pomelo.app.get('mysqlClient').GuildMember, attributes: ['role', 'guildId']} ],
       raw: true
     })
-    .then(function (member) {
+    .then(function (m) {
+      member = m;
+      if (!member){
+        return Promise.reject();
+      }else {
+        var data =[pomelo.app.get('mysqlClient')
+          .GuildConfig
+          .findOne({
+            raw : true
+          })
+        ];
+        if (member && member['GuildMember.role'] === consts.GUILD_MEMBER_STATUS.PRESIDENT){
+          data.push(pomelo.app.get('mysqlClient').Guild.findOne(
+            {where :{
+              id : member['GuildMember.guildId']
+            },
+              raw : true
+            }
+          ))
+        }
+        return data
+      }
+    })
+    .spread(function (config, guild) {
       if (!member['GuildMember.role'] || member['GuildMember.role'] === consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER){
         var request = 0;
         if (member['GuildMember.role'] === consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER){
@@ -273,10 +329,11 @@ GuildDao.getGuild = function (uid, cb ) {
           numRequest : 0,
           requested : request,
           condition: {
-            level : 0,
-            gold: 10000,
+            level : config.level || 0,
+            gold: config.fee || 10000,
             id : Date.now() / 1000 | 0
           },
+          sIcon : utils.JSONParse(config.sIcon, []),
           userInfo: {
             uid: member.uid,
             gold: member.gold,
@@ -285,14 +342,22 @@ GuildDao.getGuild = function (uid, cb ) {
           role: 0
         })
       }else if (member){
+        var msg;
+        var status = 1;
+        if (guild && !guild.status){
+          status = 2;
+          msg = "Bạn đã gửi yêu cầu thành lập hội quán.\nBQTsẽ gửi lại kết quả xét duyệt trong 24\nMọi ý kiến thắc mắc xin liên lạc sđt hỗ trợ hoặc trên fanpage:\n\nhttp://www.facebook.com/groups/cothu"
+        }
         return Promise.resolve({
-          status : 1,
+          status : status,
           requested : 0,
+          msg : msg,
           condition: {
-            level : 0,
-            gold: 10000,
+            level : config.level || 0,
+            gold: config.fee || 10000,
             id : Date.now() / 1000 | 0
           },
+          sIcon : utils.JSONParse(config.sIcon, []),
           userInfo: {
             uid: member.uid,
             gold: member.gold,
@@ -319,9 +384,33 @@ GuildDao.getGuild = function (uid, cb ) {
     })
   .catch(function (err) {
       console.error('err : ', err);
-    })
+      return utils.invokeCallback(cb, null, { ec : err.ec || Code.FAIL, msg : err.msg || Code.FAIL})
+    });
 };
 
+GuildDao.deleteGuild = function (guildId) {
+  return pomelo.app.get('mysqlClient')
+    .Guild
+    .destroy({
+      where : {
+        id: guildId
+      }
+    })
+    .then(function () {
+      // xoá member
+      return pomelo.app.get('mysqlClient')
+        .GuildMember
+        .destroy({
+          where : {
+            guildId : guildId
+          }
+        })
+    })
+    .then(function () {
+      // xoá roomChat
+      return RoomDao.deleteRoom(redisKeyUtil.getChatGuildName(guildId))
+    })
+};
 
 /**
  * Lây các thông tin sự kiện của guild
@@ -372,26 +461,36 @@ GuildDao.getGuildEvent = function (role, permission, args, cb) {
 GuildDao.createGuild = function (uid, opts, cb) {
   // kiểm tra người chơi k nằm trong số lượng
   var guild = {};
+  var config;
   return GuildDao.checkUserInGuild(uid)
     .then(function (status) {
       if (!status || status === consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER){
         // người chơi đủ điều kiện để vào guild;
         // lấy thông tin của người chơi
-        return UserDao.getUserProperties(uid, ['username', 'fullname', 'gold'])
+        return [ UserDao.getUserProperties(uid, ['username', 'fullname', 'gold']),
+          pomelo.app.get('mysqlClient')
+            .GuildConfig
+            .findOne({
+              raw : true
+            })
+        ]
       }else {
         //
         return Promise.reject({ec : Code.FAIL, msg: "Người chơi đã ở trong hội quán khác trước đó"})
       }
     })
-    .then(function (user) {
+    .spread(function (user, c) {
+      config = c || {};
+      var level = config.level || 0;
+      var fee = config.fee || 10000;
       if (user){
         // check điều kiện để có thể vào guild
-        if (user.level < 0 && user.gold < 10000){
+        if (user.level < level && user.gold < fee){
           return Promise.reject({ec : Code.FAIL, msg : "Bạn không đủ điều kiện để có thể tạo mới Hội quán"})
         } else {
           return pomelo.app.get('paymentService').subBalance({
             uid : uid,
-            gold : 10000,
+            gold : fee,
             msg : "Phí lập hội quán"
           })
         }
@@ -413,9 +512,11 @@ GuildDao.createGuild = function (uid, opts, cb) {
                 acronym: opts.acronym,
                 detail: opts.detail,
                 icon: JSON.stringify({id :opts.iconId || 0, version: opts.iconVersion || 0}),
-                numMember: 1,
+                numMember: 0,
                 fame : consts.GUILD_INIT_FAME,
-                gold : parseInt(10000 / 100 * 90)
+                gold : parseInt((config.fee || 10000) / 100 * 10),
+                requireText : opts.require,
+                sIcon : JSON.stringify(opts.sIcon || {id : 0, version: 0})
               }, { transaction : t})
               .then(function (g) {
                 guild = g;
@@ -428,15 +529,14 @@ GuildDao.createGuild = function (uid, opts, cb) {
                   }, { transaction : t})
               })
               .then(function () {
-                return pomelo.app.get('mysqlClient')
-                  .GuildMember
-                  .create({
-                    uid : uid,
-                    guildId : guild.id,
-                    role : consts.GUILD_MEMBER_STATUS.PRESIDENT
-                  }, { transaction : t})
+                return GuildDao.createMember({
+                  uid : uid,
+                  guildId : guild.id,
+                  role : consts.GUILD_MEMBER_STATUS.PRESIDENT
+                })
               })
               .catch(function (err) {
+                console.log('err : ', err);
                 var msg = 'Có lỗi xảy ra, xin vui lòng thử lại sau';
                 if (err.name === 'SequelizeUniqueConstraintError'){
                   msg = 'Tên hội quán hoặc kí tự viết tắt không được trùng với hội quán khác'
@@ -456,8 +556,11 @@ GuildDao.createGuild = function (uid, opts, cb) {
       if (err.ec){
         return utils.invokeCallback(cb, null, err);
       }else if (1){
-
       }
+    })
+    .finally(function () {
+      config = null;
+      guild = null;
     })
 };
 
@@ -490,7 +593,9 @@ GuildDao.createMember = function (opts, deleted, cb) {
       .spread(function (member, created) {
       if (!created){
         member.updateAttributes(opts);
+      }else {
         if (opts.role <= consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
+          RoomDao.addMember(redisKeyUtil.getChatGuildName(opts.guildId),[opts.uid]);
           pomelo.app.get('mysqlClient')
             .Guild
             .update({
@@ -555,20 +660,27 @@ GuildDao.deleteMember = function (uid, guildId, cb) {
   var destroyData = {
     uid : uid
   };
-  var user;
+  var member;
   if (guildId) destroyData['guildId'] = guildId;
   return pomelo.app.get('mysqlClient')
-    .User
+    .GuildMember
     .findOne({
       where: {
         uid : uid
       },
+      include: [
+        {
+          model: pomelo.app.get('mysqlClient').User,
+          attributes : ['uid', 'fullname', 'username']
+        }
+      ],
       raw : true,
-      attributes: ['fullname', 'uid', 'username']
+      attributes: ['uid', 'role']
     })
-    .then(function (u) {
-      if (u){
-        user = u;
+    .then(function (m) {
+      member = m;
+      console.log('delete member : ', member);
+      if (member){
         return pomelo.app.get('mysqlClient')
           .GuildMember
           .destroy({
@@ -580,11 +692,14 @@ GuildDao.deleteMember = function (uid, guildId, cb) {
         })
       }
     })
-    .then(function (data) {
-      GuildDao.updateGuild({ guildId : guildId}, { }, {
-        numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember - ' + 1)
-      });
-      return utils.invokeCallback(cb, null,{ member:  [{uid : uid, role: consts.GUILD_MEMBER_STATUS.GUEST, fullname : user.fullname }]});
+    .then(function () {
+      if (member && member.role <= consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
+        RoomDao.kickUser(redisKeyUtil.getChatGuildName(guildId), [uid]);
+        GuildDao.updateGuild({ guildId : guildId}, { }, {
+          numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember - ' + 1)
+        });
+      }
+      return utils.invokeCallback(cb, null,{ member:  [{uid : uid, role: consts.GUILD_MEMBER_STATUS.GUEST, fullname : member['User.fullname'] }]});
     })
     .catch(function (err) {
       console.error(err);
@@ -642,6 +757,8 @@ GuildDao.delGuild = function (guildId) {
 GuildDao.getGuildMember = function (role, permission, args, cb) {
   var statusService = pomelo.app.get('statusService');
   var list;
+  var offset = args.offset || 0;
+  var length = args.length || 100;
   return pomelo.app.get('mysqlClient')
     .GuildMember
     .findAll({
@@ -651,6 +768,8 @@ GuildDao.getGuildMember = function (role, permission, args, cb) {
           $ne : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
         }
       },
+      offset : offset,
+      limit : length,
       include: [{
         model: pomelo.app.get('mysqlClient').User,
         attributes : ['gold', 'fullname', 'avatar']
@@ -691,21 +810,8 @@ GuildDao.getGuildMember = function (role, permission, args, cb) {
           list[i].boardId = statuses[list[i].uid].board;
         }
         else list[i].status = consts.ONLINE_STATUS.ONLINE;
-
-        //list[i].avatar = utils.JSONParse(list[i].avatar, {id: 0});
-        //if (list[i].uid == uid) {
-        //  var me = utils.clone(list[i]);
-        //  if (inTop) {
-        //    list[i].isMe = 1;
-        //    me.rank = i+1;
-        //  }
-        //  else {
-        //    list.splice(i,1);
-        //    i--;
-        //  }
-        //}
       }
-      return utils.invokeCallback(cb, null, {member : list})
+      return utils.invokeCallback(cb, null, {member : list, offset: offset})
     });
   // lấy thông tin của member rồi lấy thông tin đang chơi nếu có
 };
@@ -778,7 +884,10 @@ GuildDao.getGuildSearchFriend = function (role, permission, args, cb) {
             .GuildMember
             .count({
               where : {
-                uid : friend.uid
+                uid : friend.uid,
+                role: {
+                  $lte : consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+                }
               }
             })
             .then(function (count) {
@@ -817,7 +926,7 @@ GuildDao.addEvent = function (opts) {
 };
 
 GuildDao.deleteEvent = function (eventId) {
-  
+
 };
 
 GuildDao.countInvite = function (opts) {

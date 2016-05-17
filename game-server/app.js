@@ -595,10 +595,11 @@ app.configure('production|development', 'gate|home|service|event|worker', functi
   app.set('configService', configService)
 });
 
-app.configure('production|development', 'tournament', function () {
+app.configure('production|development', 'tournament|service|game', function () {
   var TourManager = require('./app/domain/tournament/tourManager');
   var tourManager = new TourManager({
-    app : app
+    app : app,
+    serverType : 'tournament'
   });
   app.set('tourManager', tourManager);
 });

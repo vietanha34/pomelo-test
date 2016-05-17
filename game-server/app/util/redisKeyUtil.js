@@ -52,11 +52,20 @@ var MISSION_PROGRESS = 'cothu:mission_progress:%d';
 var MISSION_STATUS = 'cothu:mission_status:%d';
 var INVITE_SOCIAL = 'cothu:invite_social:%d';
 var CHAT_GUILD_NAME = 'GUILD_{uid}';
+var LEAVE_GUILD = 'cothu:guild:leave:{uid}';
 var USER_ACTION = 'cothu:action:{uid}';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
 
+RedisKeyUtil.getLeaveGuild = function (uid) {
+  return LEAVE_GUILD.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return uid;
+    }
+  );
+};
 
 RedisKeyUtil.getUserAction = function (uid) {
   return USER_ACTION.replace(

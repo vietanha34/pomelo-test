@@ -44,6 +44,10 @@ module.exports = function(sequelize, DataTypes) {
     },
     scheduleId : {
       type: DataTypes.INTEGER
+    },
+    showMember : {
+      type : DataTypes.INTEGER,
+      defaultValue : 0
     }
   }, {
     classMethods: {

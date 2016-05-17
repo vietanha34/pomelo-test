@@ -97,6 +97,8 @@ var Board = function (opts, PlayerPool, Player) {
         return username.toLowerCase();
       }) || null; // mảng người chơi đc phép chơi trong bàn
     this.fullname = opts.fullname || [];
+    this.guildId = opts.guildId || [];
+    this.tourType = opts.tourType || consts.TOUR_TYPE.NORMAL;
     this.timePlay = opts.timePlay || Date.now();
     this.matchPlay = opts.matchPlay || 3;
     this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
@@ -110,44 +112,7 @@ var Board = function (opts, PlayerPool, Player) {
     this.tournamentLog = [];
     this.mustWin = opts.mustWin || false;
     if (this.timePlay > Date.now()) {
-      setTimeout(function () {
-        // thời gian tour đấu đã đến,
-        // push ready cho người chơi
-        self.pushMessage('onNotify', {
-          type: consts.NOTIFY.TYPE.POPUP,
-          title: 'Đấu trường',
-          msg: 'Đã đến giờ thi đấu, 2 đối thủ vui lòng sẵn sàng thi đấu.',
-          buttonLabel: 'OK',
-          command: {target: consts.NOTIFY.TARGET.NORMAL},
-          image: consts.NOTIFY.IMAGE.NORMAL
-        });
-        Promise.map(self.username, UserDao.getUserIdByUsername)
-          .then(function (result) {
-            NotifyDao.push({
-              type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
-              title: 'Đấu trường',
-              msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
-              buttonLabel: 'Đến',
-              command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
-              scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-              users: result,
-              image: consts.NOTIFY.IMAGE.NORMAL
-            });
-            NotifyDao.push({
-              type: consts.NOTIFY.TYPE.POPUP,
-              title: 'Đấu trường',
-              msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
-              buttonLabel: 'Đến',
-              command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
-              scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
-              users: result,
-              image: consts.NOTIFY.IMAGE.NORMAL
-            });
-          });
-        if (self.players.length > 1) {
-          self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
-        }
-      }, this.timePlay - Date.now());
+      this.setTourTimeout();
     }
   }
   this.changePropertiesFunction = [
@@ -533,7 +498,10 @@ pro.clearIdlePlayer = function () {
       if (this.players.length === 2) {
         // startGame
         console.error('start Game đi chứ');
-        this.startGame(this.owner);
+        this.players.readyAll();
+        this.startGame(this.owner, function (err, res) {
+          console.error('autoStartGame : ', arguments);
+        });
       } else {
         // finishTourSession
         var winPlayer = this.players.getPlayer(this.owner);
@@ -565,7 +533,7 @@ pro.clearIdlePlayer = function () {
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
-      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST) {
+      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST && player.version >= '20160516') {
         this.pushMessageToPlayer(player.uid, 'game.gameHandler.hint', {
           msg: "Vui lòng xác nhận bạn vẫn còn theo dõi trận đấu này!",
           time: 30,
@@ -1389,5 +1357,56 @@ pro.resetTournament = function (opts) {
 
 
 pro.setBoard = function (opts) {
+  console.log('board setBoard : ', opts);
+  if (opts.username) this.username = opts.username;
+  if (opts.totalTime) this.totalTime = opts.totalTime;
+  if (opts.turnTime) this.turnTime = opts.turnTime;
+  if (opts.fullname) this.fullname = opts.fullname;
+  if (opts.matchTime) {
+    this.timePlay = opts.matchTime;
+    clearTimeout(this.tourTimeout);
+    this.setTourTimeout();
+  }
+};
 
+pro.setTourTimeout  = function () {
+  var self = this;
+  this.tourTimeout = setTimeout(function () {
+    // thời gian tour đấu đã đến,
+    // push ready cho người chơi
+    self.pushMessage('onNotify', {
+      type: consts.NOTIFY.TYPE.POPUP,
+      title: 'Đấu trường',
+      msg: 'Đã đến giờ thi đấu, 2 đối thủ vui lòng sẵn sàng thi đấu.',
+      buttonLabel: 'OK',
+      command: {target: consts.NOTIFY.TARGET.NORMAL},
+      image: consts.NOTIFY.IMAGE.NORMAL
+    });
+    Promise.map(self.username, UserDao.getUserIdByUsername)
+      .then(function (result) {
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: 'Đấu trường',
+          msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
+          buttonLabel: 'Đến',
+          command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: result,
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.POPUP,
+          title: 'Đấu trường',
+          msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
+          buttonLabel: 'Đến',
+          command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: result,
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+      });
+    if (self.players.length > 1) {
+      self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
+    }
+  }, this.timePlay - Date.now());
 };

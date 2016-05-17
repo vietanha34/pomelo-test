@@ -9,6 +9,7 @@ var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var ItemDao = require('../../../dao/itemDao');
 var async = require('async');
+var GuildDao = require('../../../dao/guildDao');
 
 
 module.exports = function (app) {
@@ -48,7 +49,27 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
+      if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.tourType === consts.TOUR_TYPE.FRIENDLY){
+        // lấy thêm thông tin về tour của người chơi
+        return [
+          Promise.resolve(effect),
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .findOne({
+              where : {
+
+              }
+            })
+        ]
+      }else {
+        return [Promise.resolve(effect)]
+      }
+    })
+    .spread(function (effect, guild) {
+      guild = guild || {};
       opts.effect = effect;
+      opts.guildId = guild.guildId;
+      console.log('state :', opts);
       var state = board.joinBoard(opts);
       if (state && !state.ec) {
         return utils.invokeCallback(cb, null,
@@ -142,11 +163,13 @@ GameRemote.prototype.setBoard = function (boardId, msg, cb) {
   var game = this.app.game;
   var board = game.getBoard(boardId);
   var err;
+  console.log('gameRemote setboard: ', boardId,msg);
   if (!board) {
     game.delBoard(boardId);
     err = new Error('Khong co ban phu hop');
     err.code = Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST;
     return utils.invokeCallback(cb, err);
   }
-  return utils.invokeCallback()
+  board.setBoard(msg);
+  return utils.invokeCallback(cb)
 };

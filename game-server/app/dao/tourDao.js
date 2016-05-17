@@ -30,77 +30,111 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime']
+    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId']
   };
+  if (opts.tourId){
+    condition['where']['tourId'] = opts.tourId;
+  }
   return pomelo.app.get('mysqlClient')
     .Tournament
     .findAll(condition)
     .map(function (tour) {
       console.log('tour : ', tour);
-      switch (tour.status) {
-        case consts.TOUR_STATUS.STARTED:
-        case consts.TOUR_STATUS.RUNNING:
-        case consts.TOUR_STATUS.PRE_START:
-          return Promise.delay(0)
-            .then(function () {
-              if (tour.type === 1) {
-                return Promise.resolve(0)
-              } else {
-                return pomelo.app.get('mysqlClient')
-                  .TourProfile
-                  .count({
-                    where: {
-                      tourId: tour.tourId,
-                      uid: opts.uid
-                    },
-                    raw: true
-                  })
-              }
-            })
-            .then(function (count) {
-              var isRegister = 0;
-              if (count > 0) {
-                isRegister = 1
-              }
-              if (tour.status === consts.TOUR_STATUS.PRE_START && moment(tour.registerTime).isBefore(moment())){
-                tour.status = consts.TOUR_STATUS.STARTED;
-                pomelo.app.get('mysqlClient')
-                  .Tournament
-                  .update({
-                    status: consts.TOUR_STATUS.STARTED
-                  }, {
-                    where : {
-                      tourId : tour.tourId
-                    }
-                  })
-              }
-              return pomelo.app.get('mysqlClient')
-                .TourPrize
-                .findAll({
-                  where: {
-                    tourId: tour.tourId
-                  },
-                  attributes: ['gold', ['content', 'text'], ['type', 'stt']],
-                  order: 'type ASC',
-                  raw: true
+      return pomelo.app.get('mysqlClient')
+        .TourSchedule
+        .findOne({
+          where : {
+            roundId : tour.roundId
+          },
+          raw : true,
+          order : 'matchTime DESC'
+        })
+        .then(function (schedule) {
+          switch (tour.status) {
+            case consts.TOUR_STATUS.STARTED:
+            case consts.TOUR_STATUS.RUNNING:
+            case consts.TOUR_STATUS.PRE_START:
+              return Promise.delay(0)
+                .then(function () {
+                  if (tour.type === 1) {
+                    return Promise.resolve(0)
+                  } else {
+                    return pomelo.app.get('mysqlClient')
+                      .TourProfile
+                      .count({
+                        where: {
+                          tourId: tour.tourId,
+                          uid: opts.uid
+                        },
+                        raw: true
+                      })
+                  }
                 })
-                .then(function (prize) {
-                  console.log('prize : ', prize);
-                  tour['isRegister'] = isRegister;
-                  tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
-                  tour['time'] = moment(tour.beginTime).format('YYYY:MM:DD');
-                  tour.prize = prize;
-                  return Promise.resolve(tour);
+                .then(function (count) {
+                  var isRegister = 0;
+                  if (count > 0) {
+                    isRegister = 1
+                  }
+                  return pomelo.app.get('mysqlClient')
+                    .TourPrize
+                    .findAll({
+                      where: {
+                        tourId: tour.tourId
+                      },
+                      attributes: ['gold', ['content', 'text'], ['type', 'stt']],
+                      order: 'type ASC',
+                      raw: true
+                    })
+                    .then(function (prize) {
+                      tour['isRegister'] = isRegister;
+                      tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
+                      switch (tour.status) {
+                        case consts.TOUR_STATUS.STARTED:
+                        case consts.TOUR_STATUS.RUNNING:
+                          console.log('schedule : ', schedule);
+                          if (schedule && schedule.show){
+                            if (moment(schedule.matchTime * 1000).isAfter(moment())){
+                              tour['text'] = 'Chờ thi đấu';
+                              tour['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
+                              //tour['remain'] = 10;
+                              tour['time'] = moment(schedule.matchTime * 1000).format('HH:mm DD/MM');
+                            }else if (moment(schedule.matchTime * 1000).add(4, 'hours').isAfter(moment())){
+                              tour['text'] = 'Đang thi đấu';
+                              tour['remain'] = moment(schedule.matchTime * 1000).add(4, 'hours').diff(moment(), 'second');
+                            }else {
+                              tour['text'] = 'Chờ tính điểm';
+                              tour['time'] = '--:--'
+                            }
+                          }else {
+                            tour['text'] = 'Đang xếp cặp';
+                            tour['time'] = '--:--';
+                          }
+                          break;
+                        case consts.TOUR_STATUS.PRE_START:
+                          if (moment(tour.registerTime).isAfter(moment())){
+                            tour['text'] = 'Nhận đăng kí';
+                            tour['remain'] = moment(tour.registerTime).diff(moment(), 'second');
+                            tour['time'] = moment(tour.registerTime).format('HH:mm DD/MM');
+                          }else {
+                            tour['text'] = 'Sắp diễn ra';
+                            tour['remain'] = -1;
+                            tour['time'] = moment(tour.beginTime).format('HH:mm DD/MM');
+                          }
+                      }
+                      tour.prize = prize;
+                      return Promise.resolve(tour);
+                    });
                 });
-            });
-          break;
-        case consts.TOUR_STATUS.FINISHED:
-        default :
-          tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
-          tour['time'] = moment(tour.endTime).format('YYYY:MM:DD');
-          tour['champion'] = utils.JSONParse(tour.champion, []);
-          return Promise.resolve(tour)
-      }
+              break;
+            case consts.TOUR_STATUS.FINISHED:
+            default :
+              tour['icon'] = utils.JSONParse(tour.icon, {id: 0, version: 0});
+              tour['text'] = 'Đã kết thúc';
+              tour['time'] = moment(tour.endTime).format('HH:mm DD/MM');
+              tour['champion'] = utils.JSONParse(tour.champion, []);
+              return Promise.resolve(tour)
+          }
+        });
     })
     .then(function (tours) {
       tours = lodash.compact(tours);
