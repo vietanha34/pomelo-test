@@ -164,7 +164,7 @@ exp.addEventFromBoard = function (board) {
     pomelo.app.get('globalChannelService').add(board.guestChannelName, userInfo.uid, userInfo.frontendId);
     // resume lại bàn chơi
     if (board.status !== consts.BOARD_STATUS.NOT_STARTED){
-      board.game.stringLog.push(util.format('%s --- Người chơi %s resume lại bàn chơi', moment().format(), userInfo.username))
+      board.game.stringLog.push(util.format('%s --- Người chơi %s resume lại bàn chơi', moment().format('LTS'), userInfo.username))
     }
   });
 
@@ -387,7 +387,7 @@ exp.addEventFromBoard = function (board) {
         }
       }
     }
-    var stringLog = util.format('%s --- Ván đấu kết thúc do "%s"', moment().format(), losingReason);
+    var stringLog = util.format('%s --- Ván đấu kết thúc do "%s"', moment().format('LTS'), losingReason);
     if (winUser){
       stringLog = stringLog + util.format(' ,Người thắng cuộc là "%s"', winUser.userInfo.username);
     }else {
@@ -720,7 +720,7 @@ exp.addEventFromBoard = function (board) {
     if (player){
       pomelo.app.get('globalChannelService').leave(board.guestChannelName, player.uid, player.userInfo.frontendId);
       if (board.status !== consts.BOARD_STATUS.NOT_STARTED){
-        board.game.stringLog.push(util.format('%s --- Người chơi %s đứt kết nối giữa chừng', moment().format(), player.userInfo.username));
+        board.game.stringLog.push(util.format('%s --- Người chơi %s đứt kết nối với máy chủ', moment().format('LTS'), player.userInfo.username));
       }
     }
   })

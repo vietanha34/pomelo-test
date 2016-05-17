@@ -38,7 +38,6 @@ module.exports.process = function (app, type, param) {
 
   UserDao.getUserProperties(param.uid, ['lastLogin', 'username'])
     .then(function(user) {
-
       var opts = {
         appId: consts.PR_ID,
         register: 0,

@@ -234,11 +234,13 @@ UserDao.getUserProperties = function (uid, properties, cb) {
   promises.push(pomelo.app.get('mysqlClient')
     .User
     .findOne({where: {uid: uid}, attributes: properties, raw: true}));
+
   return Promise.delay(0)
     .then(function () {
       return promises
     })
     .spread(function (guild, user) {
+      user = user || guild;
       if (guild && user) {
         user['guildName'] = guild['Guild.name'];
         user['sIcon'] = guild['Guild.sIcon'];

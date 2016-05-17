@@ -92,7 +92,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   });
   var self = this;
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid,count:1, time : [turnTime, player.totalTime]});
-  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, this.table.turnTime, ''));
+  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s', moment().format('LTS'), player.userInfo.username, player.totalTime, this.table.turnTime));
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
     var player = self.table.players.getPlayer(uid);
@@ -237,9 +237,6 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
-    console.log('opts : ', opts);
-  }
   this.caroOpen = opts.caroOpen || 0;
   this.game = new Game(this);
   this.addFunction = []
@@ -301,7 +298,7 @@ Table.prototype.action = function (uid, opts, cb) {
     this.timer.cancelJob(this.turnId);
   }
   player.move(this.game.numMove);
-  this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format(), player.userInfo.username, opts.move));
+  this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format('LTS'), player.userInfo.username, opts.move));
   this.game.progress();
   return utils.invokeCallback(cb, null, {});
 };

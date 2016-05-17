@@ -116,7 +116,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
     isCheck : isCheck
   });
   var self = this;
-  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, NotifyMsg : "%s"', moment().format(), player.userInfo.username, player.totalTime, this.table.turnTime, notifyMsg || ''));
+  this.stringLog.push(util.format('%s --- Chuyển lượt đánh cho người chơi %s với tổng thời gian %s, thời gian 1 lượt %s, %s', moment().format('LTS'), player.userInfo.username, player.totalTime, this.table.turnTime, notifyMsg ? util.format('NotifyMsg : "%s"', notifyMsg) : ''));
   this.table.pushMessageWithOutUid(player.uid, 'onTurn', {uid : player.uid, count : 1, time : [turnTime, player.totalTime],isCheck : isCheck});
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
@@ -360,12 +360,11 @@ Table.prototype.action = function (uid, opts, cb) {
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
       this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }else {
-      //this.pushMessage('game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
       this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }
     this.game.actionLog.push({ move : [opts.move], id : boardStatus.hohohaha, t: Date.now() - this.timeStart});
-    this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format(), player.userInfo.username, opts.move));
+    this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format('LTS'), player.userInfo.username, boardStatus.movesHistory3));
     this.game.progress(boardStatus);
     return utils.invokeCallback(cb, null, {});
   }else {
