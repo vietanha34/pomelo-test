@@ -32,12 +32,21 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.INTEGER,
       defaultValue : 0
     },
-    status : {
-      type: DataTypes.INTEGER,
+    winWithoutEnemy : {
+      type : DataTypes.INTEGER,
       defaultValue : 0
     },
-    point : {
+    loseWithoutEnemy :{
       type : DataTypes.INTEGER,
+      defaultValue : 0
+    },
+    status : {
+      type: DataTypes.INTEGER,
+      defaultValue : 0,
+      comment : '0: normal, 1 : ban'
+    },
+    point : {
+      type : DataTypes.FLOAT,
       defaultValue : 0
     },
     rank : {
@@ -46,6 +55,12 @@ module.exports = function(sequelize, DataTypes) {
     groupId: {
       type: DataTypes.INTEGER
     },
+    bh: {
+      type : DataTypes.FLOAT
+    },
+    roundId : {
+      type : DataTypes.INTEGER
+    },
     joinDate : {
       type: DataTypes.DATE
     }
@@ -53,7 +68,6 @@ module.exports = function(sequelize, DataTypes) {
     classMethods: {
       associate: function(models) {
         models.TourProfile.belongsTo(models.User, { foreignKey : 'uid'});
-
       }
     }
   });

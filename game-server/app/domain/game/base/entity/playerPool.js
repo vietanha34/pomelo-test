@@ -102,20 +102,30 @@ pro.addPlayer = function (opts) {
   });
   self.players[uid] = player;
   data.newPlayer = true;
-  var slotIndex = self.getSlotAvailable(slotId, uid, player.userInfo.username, this.table.timePlay);
+  var slotIndex = self.getSlotAvailable(slotId, userInfo, this.table.timePlay);
   if(this.table.username) {
     var index = this.table.username.indexOf(player.userInfo.username);
     if (index > -1){
       if (Date.now() < this.table.timePlay){
         data.notifyMsg = util.format('Còn %s nữa sẽ đến giờ thi đấu. Xin vui lòng xem danh sách thi đấu tại loa làng hoặc Tin Admin"', moment(this.table.timePlay).fromNow(true));
       }else if (this.table.numMatchPlay === 0 && !this.table.tableTourFinish){
-        data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong ít phút!', index === 0 ? this.table.username[1] : this.table.username[0]);
+        data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong %s nữa', index === 0 ? this.table.fullname[1] : this.table.fullname[0], moment(this.table.timePlay + this.table.tourTimeWait).fromNow(true));
       }
     }else {
-      data.notifyMsg = util.format('Bạn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s"', this.table.username[0], this.table.username[1]);
+      data.notifyMsg = util.format('Bàn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s, Trận đấu diễn ra vào : %s"', this.table.fullname[0], this.table.fullname[1], moment(this.table.timePlay).format('HH:mm:ss DD-MM-YYYY'));
     }
-    if (this.table.tableTourFinish && this.table.tourWinUser){
-      data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.username[0], this.table.username[1], this.table.tourWinUser['username'])
+    if (this.table.tableTourFinish){
+      if (this.table.tourWinUser){
+        data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
+      }else {
+        data.notifyMsg = util.format('Bàn đấu đã kết thúc mà không có người thắng cuộc', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
+      }
+    }
+  }else if (this.table.guildId && this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+    // valid người chơi thuộc các bang
+    if (this.table.guildId.indexOf(player.userInfo.guildId) < 0){
+      slotIndex = -1;
+      data.notifyMsg = util.format('Bạn không thuộc 2 hội quán tham gia đấu trường này')
     }
   }
   if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
@@ -165,18 +175,18 @@ pro.addPlayer = function (opts) {
  * Lấy về vị trí ngồi thích hợp cho người chơi
  *
  * @param slotId
- * @param uid
- * @param username
+ * @param userInfo
  */
-pro.getSlotAvailable = function (slotId, uid, username) {
+pro.getSlotAvailable = function (slotId, userInfo) {
   var slot = -1;
   for (var i = 0, len = this.playerSeat.length; i < len; i++) {
     var index = this.playerSeat[i];
-    if ((index === undefined && slot === -1) || index === uid) {
+    if ((index === undefined && slot === -1) || index === userInfo.uid) {
       slot = i
     }
   }
-  if (this.table.username && this.table.username.indexOf(username) < 0) return -1;
+  if (this.table.username && this.table.username.indexOf(userInfo.username) < 0) return -1;
+  if (this.table.guildId && this.table.guildId.indexOf(userInfo.guildId) > -1) return this.table.guildId.indexOf(userInfo.guildId);
   return slot
 };
 
@@ -310,9 +320,7 @@ pro.sitIn = function (uid, slotId) {
     return {};
   }
   else {
-    var error = {};
-    error.ec = Code.ON_GAME.FA_SLOT_EXIST;
-    return error
+    return utils.getError(Code.ON_GAME.FA_SLOT_EXIST)
   }
 };
 
@@ -466,6 +474,7 @@ pro.close = function (cb) {
       player.close();
       player = null;
     }
+    done();
   }, function () {
     self.table = null;
     self.players = null;
@@ -611,6 +620,19 @@ pro.unReadyAll = function () {
     var player = this.players[playerId];
     if (this.table.owner !== player.uid) {
       player.unReady();
+    }
+  }
+};
+
+pro.readyAll = function () {
+  for (var i = 0, len = this.playerSeat.length; i < len; i++) {
+    var playerId = this.playerSeat[i];
+    if (playerId === undefined) {
+      continue
+    }
+    var player = this.players[playerId];
+    if (this.table.owner !== player.uid) {
+      player.Ready();
     }
   }
 };

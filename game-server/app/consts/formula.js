@@ -83,3 +83,10 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
 formula.calVipPointByMoney = function calVipPointByMoney(money) {
   return Math.round(money*(1+Math.sqrt(money/500000))/1000);
 };
+
+formula.calBuchholz = function (point, win, lose) {
+  point = point || 0;
+  win = win || 0;
+  lose = lose || 0;
+  return point + (lose - win)*0.5;
+};

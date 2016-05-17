@@ -11,7 +11,6 @@ var code = require('../consts/code');
 var formula = require('../consts/formula');
 var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
-var NotifyDao = require('./notifyDao');
 var ItemDao = require('./itemDao');
 var UserDao = require('./userDao');
 

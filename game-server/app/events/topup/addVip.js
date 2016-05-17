@@ -69,9 +69,10 @@ module.exports.process = function (app, type, param) {
       return app.get('statusService').getSidsByUid(param.uid, function (err, list) {
         if (list && list.length > 0){
           pomelo.app.get('backendSessionService').getByUid(list[0], userId, function (err, backendService) {
-            if (backendService){
-              backendService.set('vipPoint', vipPoint);
-              backendService.push('vipPoint');
+            if (backendService && backendService.length > 0){
+              var session = backendService[0];
+              session.set('vipPoint', vipPoint);
+              session.push('vipPoint');
             }
           })
         }

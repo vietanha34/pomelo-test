@@ -87,6 +87,8 @@ pro.getLastMessage = function (opts, cb) {
   this.app.get('mongoClient').model('message').find(projection)
     .sort({date: -1})
     .limit(length)
+    .select('targetType status date content channel type from target roomId')
+    .lean()
     .exec(cb);
 };
 
@@ -172,7 +174,7 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
       RoomDao.getMembers(roomId, done)
     },
     function (mems, done) {
-      console.log('members : ', mems );
+      console.log('chat members : ', mems );
       members = mems;
       pomelo.app.get('statusService').pushByUids(members, 'chat.chatHandler.send', data, done)
     },
@@ -182,18 +184,6 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
       pomelo.app.get('statusService').getStatusByUids(members, false, done);
     },
     function (status, done) {
-      //for (var key in status) {
-      //  var stat = status[key];
-      //  var targetUid = key;
-      //  if (!stat.online) {
-      //    MessageDao.countUnreadMessage({
-      //      count: 1,
-      //      targetType: consts.TARGET_TYPE.GROUP,
-      //      uid: targetUid,
-      //      fromId: roomId
-      //    })
-      //  }
-      //}
       done()
     }
   ], function (err) {

@@ -49,6 +49,7 @@ module.exports = function(sequelize, DataTypes) {
         // associations can be defined here
         models.User.hasOne(models.GuildMember, { foreignKey : 'uid'});
         models.GuildMember.belongsTo(models.User, { foreignKey : 'uid'});
+        models.GuildMember.belongsTo(models.Guild,  { foreignKey : 'guildId'});
       }
     }
   });

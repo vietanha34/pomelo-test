@@ -21,7 +21,7 @@ var moment = require('moment');
 
 
 function Game(table) {
-  this.game = new Rule(false, 'default');
+  this.game = new Rule(false, 'default', table.caroOpen);
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -202,8 +202,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }
   var gameStatus = this.game.getBoardStatus();
   var winningLine = gameStatus.winningLines;
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   this.table.finishGame();
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -237,6 +237,10 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.looseUser = null;
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+    console.log('opts : ', opts);
+  }
+  this.caroOpen = opts.caroOpen || 0;
   this.game = new Game(this);
   this.addFunction = []
 }
@@ -296,7 +300,7 @@ Table.prototype.action = function (uid, opts, cb) {
   if (this.turnId){
     this.timer.cancelJob(this.turnId);
   }
-  player.move();
+  player.move(this.game.numMove);
   this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format(), player.userInfo.username, opts.move));
   this.game.progress();
   return utils.invokeCallback(cb, null, {});
@@ -352,6 +356,7 @@ Table.prototype.demand = function (opts) {
       return {};
   }
 };
+
 
 
 Table.prototype.changeBoardProperties = function (uid, properties, addFunction, cb) {

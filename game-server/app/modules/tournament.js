@@ -8,6 +8,8 @@ var lodash = require('lodash');
 var Code = require('../consts/code');
 var logger = require('pomelo-logger').getLogger(__filename);
 var consts = require('../consts/consts');
+var TourManager = require('../domain/tournament/tourManager');
+var TourDao = require('../dao/tourDao');
 
 
 module.exports = function (opts) {
@@ -23,22 +25,81 @@ var Module = function (opts) {
 };
 
 Module.prototype.monitorHandler = function (agent, msg, cb) {
-  var gameId = msg.gameId;
+  var tourManager = new TourManager();
   var curServer = this.app.curServer;
   var game = this.app.game;
-  if (curServer.id === 'game-server-' + gameId * 10){
-    // tạo mới bàn chơi;
-    // tạo mới room;
-    var hallConfigs = this.app.get('dataService').get('hallConfig').data;
-    var hallConfig = hallConfigs['' + gameId + msg.hallId];
-    game
-      .boardManager
-      .delRoom(msg.roomId)
-      .then(function () {
-        game.boardManager.createRoomTournament(hallConfig, msg.roomId, msg);
-      });
-  }
-  utils.invokeCallback(cb, null, { ec :Code.OK})
+  var func = msg.func;
+  TourDao.getTour({
+    where: {
+      tourId: msg.tourId
+    },
+    attributes: ['roundId', 'tourId'],
+    raw: true
+  })
+    .then(function (tour) {
+      if (!tour || !tour['roundId']) return Promise.reject();
+      return pomelo.app.get('mysqlClient')
+        .TourRound
+        .findOne({
+          where: {
+            id: tour['roundId']
+          },
+          attributes: ['id', 'tableConfigId'],
+          raw : true
+        })
+    })
+    .then(function (round) {
+      console.log('round : ', round);
+      if (!round || !round['tableConfigId']) return Promise.reject();
+      return pomelo.app.get('mysqlClient')
+        .TourTableConfig
+        .findOne({
+          where: {
+            id: round['tableConfigId']
+          },
+          attributes: ['gameId'],
+          raw : true
+        })
+    })
+    .then(function (tc) {
+      console.log('tc : ',tc);
+      tc = tc || {};
+      if (curServer.id === 'game-server-' + (tc.gameId || consts.GAME_ID.CO_TUONG)* 10) {
+        switch (func) {
+          case 'matchMaking':
+            tourManager.matchMaking(msg.tourId);
+            break;
+          case 'calPoint':
+            tourManager.calPoint(msg.tourId);
+            break;
+          case 'pickUser':
+            tourManager.pickUser(msg.tourId, msg.prevRoundId, msg.nextRoundId, msg.numPlayer);
+            break;
+          case 'splitGroup':
+            tourManager.splitGroup(msg.tourId, msg.numGroup);
+            break;
+          case 'showTable':
+            tourManager.showTable(msg.tourId, msg.scheduleId);
+            break;
+          case 'refillTable':
+            tourManager.reFillTable(msg.tourId, msg.boardId);
+            break;
+          case 'finishTour':
+            tourManager.finishTour({
+              tourId : msg.tourId,
+              top: lodash.compact([msg.four, msg.third, msg.second, msg.first])
+            });
+            break;
+          default:
+            break;
+        }
+      }
+      utils.invokeCallback(cb, null, {ec: Code.OK})
+    })
+    .catch(function (err) {
+      console.error('err : ', err);
+      utils.invokeCallback(cb, null, {ec: Code.OK})
+    })
 };
 
 Module.prototype.masterHandler = function (agent, msg, cb) {
@@ -47,9 +108,6 @@ Module.prototype.masterHandler = function (agent, msg, cb) {
 
 Module.prototype.clientHandler = function (agent, msg, cb) {
   console.error('handler message : ', msg);
-  var gameId = msg.gameId;
-  if (gameId) {
-    agent.notifyByType('game', module.exports.moduleId, msg);
-  }
-  utils.invokeCallback(cb, null, { ec :Code.OK})
+  agent.notifyByType('game', module.exports.moduleId, msg);
+  utils.invokeCallback(cb, null, {ec: Code.OK})
 };

@@ -10,30 +10,35 @@ module.exports = function(sequelize, DataTypes) {
       primaryKey : true,
       autoIncrement : true
     },
-    tourId : {
+    matchTime : {
       type : DataTypes.INTEGER,
       allowNull: true
     },
-    battleType : {
-      type : DataTypes.INTEGER,
+    matchMaking : {
+      type : DataTypes.INTEGER(4),
+      defaultValue : 0
+    },
+    roundId : {
+      type: DataTypes.INTEGER,
       allowNull: true
     },
-    tableConfigId: {
-      type: DataTypes.INTEGER
-    },
-    numGroup : {
-      type : DataTypes.INTEGER
-    },
-    type : {
-      type : DataTypes.INTEGER
-    },
-    scheduleId : {
-      type: DataTypes.INTEGER
+    show : {
+      type : DataTypes.INTEGER(4),
+      defaultValue : 0
     }
   }, {
     classMethods: {
       associate: function(models) {
+        models.TourSchedule.hasOne(models.TourRound, { foreignKey : 'roundId'})
       }
-    }
+    },
+    index : [
+      {
+        fields : ['matchTime']
+      },
+      {
+        fields : ['roundId']
+      }
+    ]
   });
 };

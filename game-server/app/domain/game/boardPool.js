@@ -39,50 +39,84 @@ var exp = BoardPool.prototype;
 exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
   tableOpts = tableOpts || {};
   var self = this;
-  var roomOpts = {
-    serverId: this.serverId,
-    gameId: this.gameId,
-    roomId: roomId,
-    hallId: parseInt(hallConfig.hallId)
-  };
-  return pomelo.app.get('boardService')
-    .addRoom(roomOpts)
-    .then(function () {
-      if (lodash.isArray(tableOpts.players)){
-        listPlayer = tableOpts.players;
-      }else {
-        var data = pomelo.app.get('dataService').get(''+roomId).data;
-        var listPlayers = lodash.values(data);
-      }
-      for (var i = 0, len = listPlayers.length; i < len ; i++){
-        var listPlayer = listPlayers[i];
-        var opts = utils.clone(hallConfig);
-        if (opts.hallId === consts.HALL_ID.LIET_CHAP) {
-          opts.lockMode = tableOpts.lockMode || [3]; // liệt tốt 5;
-          opts.removeMode = [];
-          opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+  if (roomId) {
+    var roomOpts = {
+      serverId: this.serverId,
+      gameId: this.gameId,
+      roomId: roomId,
+      hallId: parseInt(hallConfig.hallId)
+    };
+    return pomelo.app.get('boardService')
+      .addRoom(roomOpts)
+      .then(function () {
+        if (lodash.isArray(tableOpts.players)) {
+          listPlayer = tableOpts.players;
+        } else {
+          var data = pomelo.app.get('dataService').get('' + roomId).data;
+          var listPlayers = lodash.values(data);
         }
-        opts.username = [listPlayer['player1'], listPlayer['player2']];
-        opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
-        opts.matchPlay = tableOpts.matchPlay || 2;
-        opts.timePlay = tableOpts.timePlay || 1459258200000;
-        opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
-        opts.turnTime = tableOpts.turnTime || 180;
-        opts.totalTime = tableOpts.totalTime || 15 * 60;
-        opts.showKill = false;
-        opts.mustWin = false;
-        opts.bet = tableOpts.bet || 5000;
-        opts.configTurnTime = [opts.turnTime * 1000];
-        opts.configTotalTime = [opts.totalTime * 1000];
-        opts.base = true;
-        opts.tourTimeWait = 10 * 60 * 1000;
-        opts.level = tableOpts.level || 0;
-        opts.roomId = roomOpts.roomId;
-        opts.gameType = consts.GAME_TYPE.TOURNAMENT;
-        opts.index = listPlayer['id'] || i + 1;
-        self.createBoard(opts);
-      }
-    })
+        for (var i = 0, len = listPlayers.length; i < len; i++) {
+          var listPlayer = listPlayers[i];
+          var opts = utils.clone(hallConfig);
+          if (opts.hallId === consts.HALL_ID.LIET_CHAP) {
+            opts.lockMode = tableOpts.lockMode || [3]; // liệt tốt 5;
+            opts.removeMode = [];
+            opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+          }
+          opts.username = [listPlayer['player1'], listPlayer['player2']];
+          opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
+          opts.matchPlay = tableOpts.matchPlay || 2;
+          opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
+          opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
+          opts.turnTime = tableOpts.turnTime || 180;
+          opts.totalTime = tableOpts.totalTime || 15 * 60;
+          opts.showKill = false;
+          opts.mustWin = false;
+          opts.bet = tableOpts.bet || 5000;
+          opts.configTurnTime = [opts.turnTime * 1000];
+          opts.configTotalTime = [opts.totalTime * 1000];
+          opts.base = true;
+          opts.tourTimeWait = 60 * 1000;
+          opts.level = tableOpts.level || 0;
+          opts.roomId = roomOpts.roomId;
+          opts.gameType = consts.GAME_TYPE.TOURNAMENT;
+          opts.index = listPlayer['id'] || i + 1;
+          self.createBoard(opts);
+        }
+      })
+  }
+  else {
+    var hallId = tableOpts.hallId || hallConfig.hallId;
+    var opts = utils.clone(hallConfig);
+    if (hallId === consts.HALL_ID.LIET_CHAP) {
+      opts.lockMode = tableOpts.lockMode || [3]; // liệt tốt 5;
+      opts.removeMode = [];
+      opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
+    }
+    opts.username = tableOpts.username;
+    opts.fullname = tableOpts.fullname;
+    opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
+    opts.matchPlay = tableOpts.matchPlay || 2;
+    opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
+    opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
+    opts.turnTime = tableOpts.turnTime || 180;
+    opts.totalTime = tableOpts.totalTime || 15 * 60;
+    opts.showKill = tableOpts.showKill || false;
+    opts.caroOpen = tableOpts.caroOpen || 0;
+    opts.mustWin = tableOpts.mustWin || false;
+    opts.bet = tableOpts.bet || 5000;
+    opts.configTurnTime = [opts.turnTime * 1000];
+    opts.configTotalTime = [opts.totalTime * 1000];
+    opts.base = true;
+    opts.tourTimeWait = tableOpts.tourTimeWait || 10 * 60 * 1000;
+    opts.level = tableOpts.level || 0;
+    opts.roomId = tableOpts.roomId;
+    opts.gameType = consts.GAME_TYPE.TOURNAMENT;
+    opts.index = tableOpts.index;
+    opts.tourId = tableOpts.tourId;
+    console.log('createBoard : ', opts);
+    return self.createBoard(opts);
+  }
 };
 
 exp.createRoom = function (hallConfig, roomId) {
@@ -100,24 +134,24 @@ exp.createRoom = function (hallConfig, roomId) {
       var opts;
       for (var i = 1; i <= 51; i++) {
         opts = utils.clone(hallConfig);
-        if (hallId === consts.HALL_ID.LIET_CHAP){
+        if (hallId === consts.HALL_ID.LIET_CHAP) {
           opts.lockMode = [consts.LOCK_MODE[Math.floor(Math.random() * consts.LOCK_MODE.length)]];
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
         opts.turnTime = 3 * 60;
-        if (hallId === consts.HALL_ID.MIEN_PHI){
+        if (hallId === consts.HALL_ID.MIEN_PHI) {
           opts.totalTime = 30 * 60;
           opts.configTurnTime = [3 * 60 * 1000];
           opts.configTotalTime = [30 * 60 * 1000];
-        }else {
+        } else {
           opts.totalTime = 15 * 60;
           opts.configTurnTime = [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
           opts.configTotalTime = [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
         }
         var betConfig = hallConfig.betConfig;
         opts.configBet = [hallConfig.goldMin, hallConfig.goldMax];
-        opts.bet = (betConfig[Math.floor((i-1) / 6)] ? betConfig[Math.floor((i-1) / 6)]: betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0) || 0;
+        opts.bet = (betConfig[Math.floor((i - 1) / 6)] ? betConfig[Math.floor((i - 1) / 6)] : betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0) || 0;
         opts.base = true;
         opts.level = hallConfig.level;
         opts.roomId = roomId;
@@ -125,21 +159,19 @@ exp.createRoom = function (hallConfig, roomId) {
         self.createBoard(opts);
       }
     })
-    .then(function () {
-    })
+    .then(function () {})
 };
 
 
 exp.createBoard = function (params, cb) {
-  this.create(params, function (err, res) {
-    if (res) {
-      return utils.invokeCallback(cb, err, {boardId: res, serverId: this.serverId, roomId: params.roomId})
-    }
-    else if (!!err) {
-      logger.error(err);
+  var self = this;
+  return this.create(params)
+    .then(function (res) {
+      return utils.invokeCallback(cb, null, {boardId: res, serverId: self.serverId, roomId: params.roomId})
+    })
+    .catch(function (err) {
       return utils.invokeCallback(cb, err)
-    }
-  });
+    });
 };
 
 /**
@@ -156,7 +188,7 @@ exp.create = function (params, cb) {
   return boardService.genBoardId({
     serverId: this.serverId,
     gameId: this.gameId,
-    gameType: consts.GAME_TYPE.NORMAL,
+    gameType: params.gameType || consts.GAME_TYPE.NORMAL,
     roomId: params.roomId
   })
     .then(function (boardId) {
@@ -269,7 +301,7 @@ exp.delBoard = function (boardId) {
 exp.delRoom = function (roomId) {
   var self = this;
   return pomelo.app.get('boardService')
-    .delRoom({ roomId : roomId, gameId : this.gameId})
+    .delRoom({roomId: roomId, gameId: this.gameId})
     .then(function () {
       async.forEach(Object.keys(self.boards), function (item, done) {
         var board = self.boards[item];
@@ -316,7 +348,7 @@ exp.check = function () {
         var rooms = {};
         for (boardId in self.boards) {
           board = self.boards[boardId];
-          if (!board) {
+          if (!board || !board.players) {
             delete self.boards[boardId];
             continue
           }
@@ -336,7 +368,7 @@ exp.check = function () {
             progress: progress
           })
         }
-      }catch(err){
+      } catch (err) {
         console.error('error ', err)
       }
     }, 40000);

@@ -67,6 +67,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       if (userInfo) {
         user = userInfo;
         user.elo = user['Achievement.elo'];
+        user.sIcon = session.get('sIcon');
         user.level = Formula.calLevel(user.exp) || 0;
         user.frontendId = session.frontendId;
         user.version = session.get('version');
@@ -167,6 +168,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           gold: userInfo.gold,
           username: userInfo.username,
           uid: userInfo.uid,
+          sIcon : session.get('sIcon'),
           vipPoint : userInfo.vipPoint,
           fullname: userInfo.fullname,
           sex: userInfo.sex,

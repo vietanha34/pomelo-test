@@ -32,6 +32,7 @@ Handler.prototype.getGameLog = function (msg, session, next) {
     })
     .lean()
     .then(function (match) {
+      if (!match) return Promise.reject();
       match.logs  = utils.JSONParse(match.logs, []);
       logs = match;
       gameId = match.info['gameId'];
@@ -54,7 +55,9 @@ Handler.prototype.getGameLog = function (msg, session, next) {
       return next(null, logs);
     })
     .catch(function (err) {
-      console.error(err);
+      if (err){
+        console.error(err);
+      }
       return next(null, { ec: code.FAIL, msg: 'Không thể lấy được ván chơi này'})
     })
     .finally(function () {

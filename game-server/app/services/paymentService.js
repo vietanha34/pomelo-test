@@ -52,15 +52,15 @@ pro.subBalance = function (opts) {
             gold = gold ? user.gold > gold ? gold : user.gold : user.gold;
           } else if (user.gold < gold) {
             pomelo.app.get('videoAdsService')
-              .getAds({ platform : user.platform})
+              .getAds({platform: user.platform})
               .then(function (data) {
                 var ads;
-                if (!data.ec){
+                if (!data.ec) {
                   ads = JSON.stringify(data.data);
                 }
                 pomelo.app.get('statusService')
                   .pushByUids([user.uid], 'onSuggestCharge', {
-                    ads : ads,
+                    ads: ads,
                     msg: "Bạn không đủ tiền để thực hiện thao tác này, bạn có muốn nạp thêm tiền không?"
                   })
               });
@@ -83,12 +83,12 @@ pro.subBalance = function (opts) {
           }, {transaction: t});
         }
       })
-    })
+  })
     .then(function (results) {
       return Promises.resolve({ec: Code.OK, gold: goldAfter, subGold: goldSub})
     })
     .catch(function (err) {
-      return Promises.resolve({ec : Code.FAIL});
+      return Promises.resolve({ec: Code.FAIL});
     })
     .finally(function () {
       goldAfter = null;
@@ -148,88 +148,114 @@ pro.transfer = function (opts, cb) {
   if (isNaN(gold) || gold < 0)
     return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
   console.log('handler transfer : ', opts);
-  return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
-    return Promises.delay(0)
+  return Promises.delay(0)
     .then(function () {
-        return [
-          pomelo.app.get('mysqlClient')
-            .User
-            .findOne({
-              where: {
-                uid: opts.fromUid
-              },
-              raw: true,
-              attributes: ['gold', 'username', 'uid']
-            }),
-          pomelo.app.get('mysqlClient')
-            .User
-            .findOne({
-              where : {
-                uid : opts.toUid
-              },
-              raw : true,
-              attributes : ['gold', 'username', 'uid']
-            })
-        ];
-      })
+      return [
+        pomelo.app.get('mysqlClient')
+          .User
+          .findOne({
+            where: {
+              uid: opts.fromUid
+            },
+            raw: true,
+            attributes: ['gold', 'username', 'uid']
+          }),
+        pomelo.app.get('mysqlClient')
+          .User
+          .findOne({
+            where: {
+              uid: opts.toUid
+            },
+            raw: true,
+            attributes: ['gold', 'username', 'uid']
+          })
+      ];
+    })
     .spread(function (fromUser, toUser) {
-        var subGold = gold;
-        if (fromUser.gold >= gold) {
-          fromUser.gold -= gold
-        } else {
-          subGold = fromUser.gold;
-          fromUser.gold = 0;
+      var subGold = gold;
+      if (fromUser.gold >= gold) {
+        fromUser.gold -= gold
+      } else {
+        subGold = fromUser.gold;
+        fromUser.gold = 0;
+      }
+      var addGold = opts.tax ? Math.round(subGold * (100 - opts.tax) / 100) : subGold;
+      updateGoldInCache(fromUser.username, fromUser.gold);
+      updateGoldInCache(toUser.username, toUser.gold + addGold);
+      var logFromUser = {
+        before: fromUser.gold + gold
+        ,
+        after: fromUser.gold
+        ,
+        temp: 0
+        ,
+        time: new Date().getTime()
+        ,
+        opts: {
+          uid: fromUser.uid,
+          gold: gold,
+          type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
+          gameId: opts.gameId,
+          msg: opts.msg
         }
-        var addGold = opts.tax ? Math.round(subGold * (100-opts.tax) / 100) : subGold;
-        updateGoldInCache(fromUser.username, fromUser.gold);
-        updateGoldInCache(toUser.username, toUser.gold + addGold);
-        var logFromUser = {
-          before: fromUser.gold + gold
-          , after: fromUser.gold
-          , temp: 0
-          , time: new Date().getTime()
-          , opts: { uid : fromUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME, gameId : opts.gameId, msg: opts.msg}
-          , cmd: 'addGold'
-        };
-        pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
-        var logToUser = {
-          before: toUser.gold
-          , after: toUser.gold + gold
-          , temp: 0
-          , time: new Date().getTime()
-          , opts: { uid : toUser.uid, gold : gold, type : consts.CHANGE_GOLD_TYPE.PLAY_GAME, gameId: opts.gameId, msg: opts.msg}
-          , cmd: 'addGold'
-        };
-        pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
-        return [
-          pomelo.app.get('mysqlClient')
-            .User
-            .update({
-              gold: fromUser.gold
-            }, {
-              where: {
-                uid: opts.fromUid
-              },
-              transaction: t
-            }),
-          pomelo.app.get('mysqlClient')
-            .User
-            .update({
-              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + addGold)
-            }, {
-              where: {
-                uid: opts.toUid
-              },
-              transaction: t
-            })
-        ]
+        ,
+        cmd: 'addGold'
+      };
+      pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
+      var logToUser = {
+        before: toUser.gold
+        ,
+        after: toUser.gold + gold
+        ,
+        temp: 0
+        ,
+        time: new Date().getTime()
+        ,
+        opts: {
+          uid: toUser.uid,
+          gold: gold,
+          type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
+          gameId: opts.gameId,
+          msg: opts.msg
+        }
+        ,
+        cmd: 'addGold'
+      };
+      pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
+      return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
+        console.log('transaction : ');
+        return pomelo.app.get('mysqlClient')
+          .User
+          .update({
+            gold: fromUser.gold
+          }, {
+            where: {
+              uid: opts.fromUid
+            },
+            transaction: t
+          })
+          .then(function () {
+            return pomelo.app.get('mysqlClient')
+              .User
+              .update({
+                gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + addGold)
+              }, {
+                where: {
+                  uid: opts.toUid
+                },
+                transaction: t
+              })
+          });
       })
+        .catch(function (err) {
+          console.log('err : ', err);
+        })
     })
     .spread(function () {
       return utils.invokeCallback(cb, null);
     })
     .catch(function (err) {
-      console.log('err : ',err);
+      console.log('err : ', err);
       return utils.invokeCallback(cb, err);
     })
 };
@@ -283,7 +309,7 @@ var updateGoldInCache = function (username, gold) {
     .get('redisInfo')
     .existsAsync(key)
     .then(function (exist) {
-      if (exist){
+      if (exist) {
         return pomelo
           .app
           .get('redisInfo')

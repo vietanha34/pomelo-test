@@ -16,6 +16,9 @@ var Players = require('./entity/playerPool');
 var EventEmitter = require('events').EventEmitter;
 var Code = require('../../../consts/code');
 var BoardConsts = require('./logic/consts');
+var NotifyDao = require('../../../dao/notifyDao');
+var UserDao = require('../../../dao/userDao');
+var Promise = require('bluebird');
 
 /**
  * Bàn chơi cơ bản của game cờ, developer có thể kế thửa để phát triển cho từng loại game
@@ -66,7 +69,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
   this.tax = opts.tax || 5;
   this.tableType = 1; // loại bàn đá;
-  this.score = [0,0];
+  this.score = [0, 0];
   this.firstUid = null;
   this.turnId = null;
   this.jobId = null;
@@ -88,51 +91,48 @@ var Board = function (opts, PlayerPool, Player) {
   this.totalTimeDefault = this.totalTime;
   var self = this;
   // TOURNAMENT
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
     this.numMatchPlay = 0;
     this.username = lodash.map(opts.username, function (username) {
         return username.toLowerCase();
       }) || null; // mảng người chơi đc phép chơi trong bàn
+    this.fullname = opts.fullname || [];
+    this.guildId = opts.guildId || [];
+    this.tourType = opts.tourType || consts.TOUR_TYPE.NORMAL;
     this.timePlay = opts.timePlay || Date.now();
     this.matchPlay = opts.matchPlay || 3;
     this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
     this.tableTourFinish = false;
+    this.tourScore = [0, 0];
+    this.tourWin = [0,0];
+    this.tourDraw = [0,0];
+    this.tourLose = [0,0];
+    this.tourId = opts.tourId;
     this.tourWinUser = null;
     this.tournamentLog = [];
-    this.mustWin = opts.mustWin || true;
-    if (this.timePlay > Date.now()){
-      setTimeout(function () {
-        // thời gian tour đấu đã đến,
-        // push ready cho người chơi
-        self.pushMessage('onNotify', {
-          type: consts.NOTIFY.TYPE.POPUP,
-          title: 'Đấu trường',
-          msg: 'Đã đến giờ thi đấu',
-          buttonLabel: 'OK',
-          command: {target: consts.NOTIFY.TARGET.NORMAL},
-          image:  consts.NOTIFY.IMAGE.NORMAL
-        });
-        if (self.players.length > 1){
-          self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
-        }
-      }, this.timePlay - Date.now());
+    this.mustWin = opts.mustWin || false;
+    if (this.timePlay > Date.now()) {
+      this.setTourTimeout();
     }
   }
   this.changePropertiesFunction = [
     // thay đổi tiền cược
-    function (properties, dataChanged, dataUpdate, changed ,done) {
+    function (properties, dataChanged, dataUpdate, changed, done) {
       // change bet;
       var bet = Math.abs(properties.bet);
       if (bet && bet !== self.bet) {
         var ownerPlayer = self.players.getPlayer(self.owner);
         var multi = 1;
-        if (ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)){
+        if (ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)) {
           multi = 5;
-        }else if(ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)){
+        } else if (ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX3)) {
           multi = 3;
         }
         if ((bet < self.configBet[0] || bet > self.configBet[1] * multi) && !ownerPlayer.userInfo.vipLevel) {
-          return done({ec : Code.FAIL, msg : util.format("Mức cược phải nằm trong khoảng từ %s đến %s Gold", self.configBet[0], self.configBet[1] * multi)});
+          return done({
+            ec: Code.FAIL,
+            msg: util.format("Mức cược phải nằm trong khoảng từ %s đến %s Gold", self.configBet[0], self.configBet[1] * multi)
+          });
         }
         if (bet < self.configBet[0]){
           return done({ec : Code.FAIL, msg : util.format("Mức cược không được phép nhỏ hơn %s Gold", self.configBet[0])});
@@ -149,7 +149,7 @@ var Board = function (opts, PlayerPool, Player) {
       return done(null, properties, dataChanged, dataUpdate, changed);
     },
     // thay đổi password
-    function (properties, dataChanged, dataUpdate, changed ,done) {
+    function (properties, dataChanged, dataUpdate, changed, done) {
       // change bet;
       var lock = properties.password;
       if (lodash.isString(lock) && lock !== self.lock && self.gameType !== consts.GAME_TYPE.TOURNAMENT) {
@@ -161,25 +161,25 @@ var Board = function (opts, PlayerPool, Player) {
       return done(null, properties, dataChanged, dataUpdate, changed);
     },
     // thay đổi thời gian
-    function (properties, dataChanged, dataUpdate,changed, done) {
+    function (properties, dataChanged, dataUpdate, changed, done) {
       // TODO change turn Time
       var turnTime = properties.turnTime;
       var totalTime = properties.totalTime;
       var tableType = properties.tableType;
-      if (turnTime && turnTime !== self.turnTime &&(self.configTurnTime.indexOf(turnTime) > -1)){
+      if (turnTime && turnTime !== self.turnTime && (self.configTurnTime.indexOf(turnTime) > -1)) {
         self.turnTime = turnTime;
-        changed.push(util.format(' thời gian 1 lượt đi: %s giây', turnTime /1000));
+        changed.push(util.format(' thời gian 1 lượt đi: %s giây', turnTime / 1000));
         dataChanged.turnTime = turnTime;
         dataUpdate.turnTime = turnTime / 1000;
       }
-      if (totalTime && self.totalTime !== totalTime &&(self.configTotalTime.indexOf(totalTime) > -1)){
+      if (totalTime && self.totalTime !== totalTime && (self.configTotalTime.indexOf(totalTime) > -1)) {
         self.totalTime = totalTime;
-        changed.push(util.format(' thời gian tổng: %s phút', totalTime /1000/60));
+        changed.push(util.format(' thời gian tổng: %s phút', totalTime / 1000 / 60));
         dataChanged.totalTime = totalTime;
         dataUpdate.totalTime = totalTime / 1000;
-        self.players.changePlayerOption({ totalTime : totalTime, totalTimeDefault : totalTime})
+        self.players.changePlayerOption({totalTime: totalTime, totalTimeDefault: totalTime})
       }
-      if(lodash.isNumber(tableType) && tableType !== self.tableType){
+      if (lodash.isNumber(tableType) && tableType !== self.tableType) {
         dataChanged.tableType = tableType;
         changed.push(' ' + consts.TABLE_TYPE_NAME_MAP[tableType]);
         self.tableType = tableType;
@@ -205,18 +205,18 @@ var Board = function (opts, PlayerPool, Player) {
       if (!lodash.isNumber(color) || (color !== 1 && color !== 2 && color !== 0)) return done(null, properties, dataChanged, dataUpdate, changed);
       var uid = properties.uid;
       var player = self.players.getPlayer(uid);
-      if (player && player.color !== color){
+      if (player && player.color !== color) {
         var otherPlayerUid = self.players.getOtherPlayer(player.uid);
         var otherPlayer = self.players.getPlayer(otherPlayerUid);
-        if (!color){ // color === 0
+        if (!color) { // color === 0
           changed.push(' đổi bên');
-          if (!self.formationMode){
+          if (!self.formationMode) {
             if (otherPlayer) otherPlayer.color = otherPlayer.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
             player.color = player.color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
             dataChanged.color = player.color;
             self.score.reverse();
           }
-        }else {
+        } else {
           changed.push(' đổi màu quân');
           player.color = color;
           if (otherPlayer) otherPlayer.color = color === consts.COLOR.BLACK ? consts.COLOR.WHITE : consts.COLOR.BLACK;
@@ -269,7 +269,7 @@ pro.chargeMoney = function (uid, gold, msg, cb) {
           shop: 1
         }], sleep: consts.TIME.SLEEP_CHARGE
       });
-    }else {
+    } else {
       this.pushMessageToPlayer(player.uid, 'onChargeMoney', {
         punish: [{
           from: '',
@@ -449,7 +449,7 @@ pro.pushLeaveBoard = function (uid, data) {
     if (uid === playerUid) {
       continue
     }
-    console.log('pushMessage leaveBoard : ',uid);
+    console.log('pushMessage leaveBoard : ', uid);
   }
   this.pushMessageWithMenu('district.districtHandler.leaveBoard', data);
 };
@@ -478,8 +478,8 @@ pro.isAlive = function () {
   }
   try {
     this.clearIdlePlayer();
-  } catch (err){
-    console.error('clearIdlePlayer error : ', error);
+  } catch (err) {
+    console.error('clearIdlePlayer error : ', err);
   }
   if (this.base) {
     return true
@@ -493,25 +493,32 @@ pro.clearIdlePlayer = function () {
     return
   }
   var self = this;
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
-    if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish){
-      if (this.players.length === 2){
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
+    if (this.status === consts.BOARD_STATUS.NOT_STARTED && Date.now() > this.timePlay + this.tourTimeWait && !this.numMatchPlay && !this.tableTourFinish) {
+      if (this.players.length === 2) {
         // startGame
-        this.startGame(this.owner);
-      }else{
+        console.error('start Game đi chứ');
+        this.players.readyAll();
+        this.startGame(this.owner, function (err, res) {
+          console.error('autoStartGame : ', arguments);
+        });
+      } else {
         // finishTourSession
         var winPlayer = this.players.getPlayer(this.owner);
-        if (winPlayer){
+        if (winPlayer) {
           this.tableTourFinish = true;
           this.tourWinUser = {
-            username : winPlayer.userInfo.username,
-            uid : winPlayer.uid
+            username: winPlayer.userInfo.username,
+            uid: winPlayer.uid,
+            fullname : winPlayer.userInfo.fullname
           };
+          this.tourScore[this.username.indexOf(winPlayer.userInfo.username)] += 2;
+          this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
           this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc');
-        }else {
+        } else {
           // cả 2 người chơi cùng thua
           this.tableTourFinish = true;
-          //this.emit('tourFinish', null, 'Cả 2 đối thủ không vào bàn chơi');
+          this.emit('tourFinish', null, 'Cả 2 đối thủ không vào bàn chơi');
         }
       }
     }
@@ -522,38 +529,38 @@ pro.clearIdlePlayer = function () {
     if (playerSeat.indexOf(player.uid) > -1) {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
-    if (player.guest){
+    if (player.guest) {
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
-      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
-        this.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST && player.version >= '20160516') {
+        this.pushMessageToPlayer(player.uid, 'game.gameHandler.hint', {
           msg: "Vui lòng xác nhận bạn vẫn còn theo dõi trận đấu này!",
-          time : 30,
+          time: 30,
           btLabel: 'Xem',
-          actionId : 1
+          actionId: 1
         });
         player.timeoutLeaveBoard = setTimeout(function (uid) {
           var player = self.players.getPlayer(uid);
-          if (player && player.guest && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST){
+          if (player && player.guest && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST) {
             self.playerTimeout(player);
           }
         }, 30000 + 2000, player.uid);
       }
-    }else {
-      if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.LOGOUT){
+    } else {
+      if (player.timeLogout && this.status === consts.BOARD_STATUS.NOT_STARTED && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
-      if (this.gameType !== consts.GAME_TYPE.TOURNAMENT && this.status === consts.BOARD_STATUS.NOT_STARTED  && this.players.length < 2 && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START){
-        this.pushMessageToPlayer(player.uid,'game.gameHandler.hint',  {
+      if (this.gameType !== consts.GAME_TYPE.TOURNAMENT && this.status === consts.BOARD_STATUS.NOT_STARTED && this.players.length < 2 && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START) {
+        this.pushMessageToPlayer(player.uid, 'game.gameHandler.hint', {
           msg: "Không có đối thủ thi đấu, bạn có muốn tiếp tục đợi không?",
-          time : 30,
+          time: 30,
           btLabel: 'Xem',
-          actionId : 1
+          actionId: 1
         });
         player.timeoutLeaveBoard = setTimeout(function (uid) {
           var player = self.players.getPlayer(uid);
-          if (player && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START && self.status === consts.BOARD_STATUS.NOT_STARTED  && self.players.length < 2){
+          if (player && !player.timeLogout && player.timeAction < Date.now() - consts.TIME.BOARD_NOT_START && self.status === consts.BOARD_STATUS.NOT_STARTED && self.players.length < 2) {
             self.playerTimeout(player);
           }
         }, 30000 + 2000, player.uid);
@@ -581,11 +588,11 @@ pro.joinBoard = function (opts) {
   var userInfo = opts.userInfo;
   var uid = userInfo.uid;
   var self = this;
-  if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password){
+  if (this.lock && !this.players.getPlayer(uid) && this.lock !== opts.password) {
     var err = utils.getError(Code.ON_GAME.FA_WRONG_PASSWORD);
     err.tableId = this.tableId;
     err.gameId = this.gameId;
-    err.roomId = this.roomId ;
+    err.roomId = this.roomId;
     return err;
   }
   var result = this.players.addPlayer(opts);
@@ -597,8 +604,8 @@ pro.joinBoard = function (opts) {
     state.notifyMsg = result.notifyMsg;
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
-    }else {
-      state.msg = result.msg ;
+    } else {
+      state.msg = result.msg;
     }
     return state;
   } else {
@@ -640,7 +647,7 @@ pro.leaveBoard = function (uid, kick) {
   self.players.removePlayer(uid);
   if (self.owner == uid) {
     self.setOwner();
-    if (this.owner){
+    if (this.owner) {
       this.emit('changeOwner');
     }
   }
@@ -658,16 +665,16 @@ pro.leaveBoard = function (uid, kick) {
  */
 pro.getStatus = function () {
   var status = {
-    stt : this.status
+    stt: this.status
   };
   var turnId = this.jobId || this.turnId;
   var player = this.players.getPlayer(this.turnUid);
-  if (lodash.isNumber(turnId) && player){
+  if (lodash.isNumber(turnId) && player) {
     var timeLeft = this.timer.getLeftTime(turnId);
     status.turn = {
-      uid : this.turnUid,
-      count : this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
-      time : [timeLeft,
+      uid: this.turnUid,
+      count: this.status === consts.BOARD_STATUS.NOT_STARTED ? 0 : 1,
+      time: [timeLeft,
         player.totalTime - (this.turnTime - timeLeft),
         this.status === consts.BOARD_STATUS.NOT_STARTED ? 30000 + 4000 : this.turnTime
       ]
@@ -678,7 +685,7 @@ pro.getStatus = function () {
 
 pro.setOwner = function () {
   var owner = null;
-  for (var i = 0; i< 2 ; i ++){
+  for (var i = 0; i < 2; i++) {
     if (this.players.playerSeat[i]) owner = this.players.playerSeat[i];
   }
   this.owner = owner;
@@ -702,7 +709,7 @@ pro.getBoardState = function (uid) {
     status: this.getStatus(uid),
     players: this.players.getPlayerState(uid)
   };
-  if(this.owner){
+  if (this.owner) {
     state['owner'] = this.owner;
   }
   state.menu = this.players.getMenu(uid);
@@ -712,12 +719,12 @@ pro.getBoardState = function (uid) {
 pro.getBoardInfo = function (finish, uid) {
   var player = this.players.getPlayer(uid);
   var multi = 1;
-  if (player && player.checkItems(consts.ITEM_EFFECT.CUOCX5)){
+  if (player && player.checkItems(consts.ITEM_EFFECT.CUOCX5)) {
     multi = 5;
-  }else if(player && player.checkItems(consts.ITEM_EFFECT.CUOCX3)){
+  } else if (player && player.checkItems(consts.ITEM_EFFECT.CUOCX3)) {
     multi = 3;
   }
-  if (player && player.userInfo.vipLevel){
+  if (player && player.userInfo.vipLevel) {
     multi = 1000;
   }
   if (finish) {
@@ -728,9 +735,11 @@ pro.getBoardInfo = function (finish, uid) {
       districtId: this.districtId,
       matchId: this.game ? this.game.matchId : '',
       bet: this.bet,
-      owner : this.owner,
+      owner: this.owner,
       tableType: this.tableType,
-      gameType: this.gameType
+      gameType: this.gameType,
+      finishTour: this.tableTourFinish,
+      tourWinner: this.tourWinUser ? this.tourWinUser.uid : undefined
     }
   } else {
     return {
@@ -738,18 +747,22 @@ pro.getBoardInfo = function (finish, uid) {
       tableId: this.tableId,
       roomId: this.roomId,
       turnTime: this.turnTime,
-      totalTime : this.totalTime,
+      totalTime: this.totalTime,
       password: this.lock,
       configBet: this.configBet.map(function (x, index) {
-        if (index === 1) {return x  * multi }else { return x}
+        if (index === 1) {
+          return x * multi
+        } else {
+          return x
+        }
       }),
-      configTurnTime : this.configTurnTime || [],
-      configTotalTime : this.configTotalTime || [],
+      configTurnTime: this.configTurnTime || [],
+      configTotalTime: this.configTotalTime || [],
       gameType: this.gameType,
-      hallId : this.hallId,
-      index : this.index,
+      hallId: this.hallId,
+      index: this.index,
       tableType: this.tableType,
-      bet  :this.bet,
+      bet: this.bet,
       guest: this.players.guestIds.length
     }
   }
@@ -776,7 +789,7 @@ pro.standUp = function (uid) {
   }
   if (self.owner == uid) {
     self.setOwner();
-    if (this.owner){
+    if (this.owner) {
       this.emit('changeOwner');
     }
   }
@@ -808,11 +821,11 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
   }
   properties = properties || {};
   var resultString = this.checkEffectSetting(properties);
-  if(resultString){
-    return utils.invokeCallback(cb, null, { ec :Code.FAIL, msg : resultString});
+  if (resultString) {
+    return utils.invokeCallback(cb, null, {ec: Code.FAIL, msg: resultString});
   }
-  if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
-    return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : "Không thể thay đổi bàn chơi trong giải đấu"});
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
+    return utils.invokeCallback(cb, null, {ec: Code.FAIL, msg: "Không thể thay đổi bàn chơi trong giải đấu"});
   }
   var propertiesFunction = [
     function (done) {
@@ -827,10 +840,10 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
       if (changed.length > 0) {
         self.players.unReadyAll();
         var otherPlayer = self.players.getPlayer(self.players.getOtherPlayer());
-        if(otherPlayer){
-          if (dataChanged.bet && otherPlayer.gold < dataChanged.bet){
+        if (otherPlayer) {
+          if (dataChanged.bet && otherPlayer.gold < dataChanged.bet) {
             self.standUp(otherPlayer.uid);
-          }else {
+          } else {
             self.addJobReady(otherPlayer.uid);
           }
         }
@@ -850,17 +863,17 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
 pro.checkEffectSetting = function (properties) {
   var self = this;
   var ownerPlayer = self.players.getPlayer(self.owner);
-  if (lodash.isString(properties.password) && properties.password.length > 0){
-    if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN) && !ownerPlayer.userInfo.vipLevel){
+  if (lodash.isString(properties.password) && properties.password.length > 0) {
+    if (!ownerPlayer.checkItems(consts.ITEM_EFFECT.KHOA_BAN) && !ownerPlayer.userInfo.vipLevel) {
       this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.KHOA_BAN);
       return 'Bạn không có vật phẩm khoá bàn chơi';
     }
   }
-  if((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)){
+  if ((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)) {
     this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.SUA_THOI_GIAN);
     return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
   }
-  if(properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])){
+  if (properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])) {
     this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.BAN_CO_TOI);
     return 'Bạn cần có item tương ứng để kích hoạt loại bàn cờ này'
   }
@@ -935,12 +948,15 @@ pro.getLocale = function (locale) {
 pro.ready = function (uid) {
   var player = this.players.getPlayer(uid);
   if (player) {
-    if(player.gold < this.bet){
+    if (player.gold < this.bet) {
       return utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED);
     }
-    if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
-      if (this.timePlay > Date.now()){
-        return { ec : 500, msg : "Chưa đến giờ thi đấu, xin vui lòng quay lại sau", menu : player.menu}
+    if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
+      if (this.timePlay > Date.now()) {
+        return {ec: 500, msg: "Chưa đến giờ thi đấu, xin vui lòng quay lại sau", menu: player.menu}
+      }
+      if (this.tableTourFinish){
+        return {ec: 500, msg: "Bàn chơi đấu trường đã xác định người thắng cuộc. Bạn không thể chơi tiếp.", menu: player.menu}
       }
     }
     if (this.status === consts.BOARD_STATUS.NOT_STARTED && !player.ready && player.uid !== this.owner) {
@@ -954,7 +970,7 @@ pro.ready = function (uid) {
     }
   } else {
     // TODO change msg here
-    return  {ec: 500, msg: 'người chơi không tồn tại '}
+    return {ec: 500, msg: 'người chơi không tồn tại '}
   }
 };
 
@@ -998,23 +1014,23 @@ pro.kick = function (uid, cb) {
   }
   var notifyMsg = Code.ON_GAME.FA_KICK;
   var ownerPlayer = this.players.getPlayer(this.owner);
-  if (ownerPlayer.userInfo.vipLevel < player.userInfo.vipLevel){
+  if (ownerPlayer.userInfo.vipLevel < player.userInfo.vipLevel) {
     return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
-  }else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel){
-    if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint){
+  } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel) {
+    if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint) {
       return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_POINT_NOT_ENOUGH))
-    }else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint){
+    } else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint) {
       if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
         return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
       }
     }
     notifyMsg = 'Bạn bị đuổi bởi người có điểm vip lớn hơn';
-  }else if(ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel){
+  } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel) {
     if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
       return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
     }
   }
-  if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel){
+  if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel) {
     notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
   }
   this.emit('kick', player);
@@ -1071,7 +1087,7 @@ pro.genMenu = function (menuId, extraData) {
   )
 };
 
-pro.mixGiveUpUsers= function (data) {
+pro.mixGiveUpUsers = function (data) {
   for (var i = 0, len = this.giveUpUsers.length; i < len; i++) {
     var giveUpUser = this.giveUpUsers[i];
     var index = lodash.findIndex(data, {uid: giveUpUser.uid});
@@ -1114,18 +1130,18 @@ pro.pushFinishGame = function (msg, finish, extraData) {
 pro.addJobReady = function (uid, time) {
   var self = this;
   time = time || this.timeWait;
-  if (this.jobId){
+  if (this.jobId) {
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
-    uid : uid,
-    count : 0,
-    time : [time, this.totalTime, time]
+    uid: uid,
+    count: 0,
+    time: [time, this.totalTime, time]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
-    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid){
+    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || player.ready || self.owner === player.uid) {
       return
     }
     self.jobId = null;
@@ -1136,18 +1152,18 @@ pro.addJobReady = function (uid, time) {
 pro.addJobStart = function (uid, time) {
   var self = this;
   time = time || this.timeWait;
-  if (this.jobId){
+  if (this.jobId) {
     this.timer.cancelJob(this.jobId);
   }
   this.pushMessage('onTurn', {
-    uid : uid,
-    count : 0,
-    time : [time, this.totalTime, time]
+    uid: uid,
+    count: 0,
+    time: [time, this.totalTime, time]
   });
   this.turnUid = uid;
   this.jobId = this.timer.addJob(function (uid) {
     var player = self.players.getPlayer(uid);
-    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || self.owner !== player.uid){
+    if (self.status !== consts.BOARD_STATUS.NOT_STARTED || !player || self.owner !== player.uid) {
       return
     }
     self.jobId = null;
@@ -1156,12 +1172,12 @@ pro.addJobStart = function (uid, time) {
 };
 
 pro.cancelJob = function () {
-  if (this.jobId){
+  if (this.jobId) {
     this.timer.cancelJob(this.jobId);
     this.pushMessage('onTurn', {
-      uid : -10,
-      count : 0,
-      time : [0,0,0]
+      uid: -10,
+      count: 0,
+      time: [0, 0, 0]
     })
   }
 };
@@ -1189,11 +1205,17 @@ pro.resetDefault = function () {
   this.lock = '';
   this.minPlayer = 2;
   this.maxPlayer = 2;
-  this.score = [0,0];
+  this.score = [0, 0];
   this.tableType = 1;
   this.turnTime = this.turnTimeDefault;
   this.totalTime = this.totalTimeDefault;
-  this.emit('setBoard', {max_player: this.maxPlayer, bet: this.bet, password : null, totalTime : this.totalTime / 1000, turnTime : this.turnTime /1000});
+  this.emit('setBoard', {
+    max_player: this.maxPlayer,
+    bet: this.bet,
+    password: null,
+    totalTime: this.totalTime / 1000,
+    turnTime: this.turnTime / 1000
+  });
   this.emit('resetDefault');
 };
 
@@ -1217,7 +1239,7 @@ pro.addItems = function (items) {
   for (var i = 0, len = item.length; i < len; i++) {
     if (lodash.isNumber(item[i].gold)) {
       this.chargeMoney(uid, item[i].gold, utils.getMessage(Code.ON_GAME.CHARGE_MISSION_MONEY, [item[i].gold]));
-      if (!this.maxBuyIn){
+      if (!this.maxBuyIn) {
         player.addGold(items[i].gold, null, items[i].msg || 'Nhận tiền từ ngoài vào')
       }
     }
@@ -1229,7 +1251,7 @@ pro.addItems = function (items) {
 pro.plusScore = function (whiteWin) {
   if (whiteWin) {
     this.score[0] += 1;
-  }else {
+  } else {
     this.score[1] += 1;
   }
 };
@@ -1240,21 +1262,21 @@ pro.getGuest = function () {
 
 pro.checkStartGame = function () {
   var result = this.players.checkStartGame();
-  if (!result){
+  if (!result) {
     return utils.getError(Code.ON_GAME.FA_NOT_READY);
-  }else {
-    if (this.gameType === consts.GAME_TYPE.TOURNAMENT){
-      if (this.timePlay > Date.now()){
-        return { ec : 500, msg : "Chưa đến giờ thi đấu, xin vui lòng quay lại sau"}
+  } else {
+    if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
+      if (this.timePlay > Date.now()) {
+        return {ec: 500, msg: "Chưa đến giờ thi đấu, xin vui lòng quay lại sau"}
       }
     }
-    return {ec : Code.OK};
+    return {ec: Code.OK};
   }
 };
 
 pro.logout = function (uid) {
   var player = this.players.getPlayer(uid);
-  if(player){
+  if (player) {
     player.timeLogout = Date.now();
   }
   this.emit('logout', player);
@@ -1265,20 +1287,21 @@ pro.buyItem = function (uid, item, duration, price) {
   itemDao
     .buy(uid, item, duration)
     .then(function (result) {
-      if (result && !result.ec){
+      if (result && !result.ec) {
         var player = self.players.getPlayer(uid);
-        if (player){
+        if (player) {
           player.gold = result.gold;
           self.pushMessageToPlayer(uid, 'onChargeMoney', {
-            uid : player.uid,
-            deltaMoney : -price,
-            money : player.gold,
-            notifyMsg : 'Bạn vừa mua vật phẩm "' + consts.ITEM_EFFECT_NAME[item] + '" Thành công'
+            uid: player.uid,
+            deltaMoney: -price,
+            money: player.gold,
+            notifyMsg: 'Bạn vừa mua vật phẩm "' + consts.ITEM_EFFECT_NAME[item] + '" Thành công'
           });
           self.pushMessageWithMenuWithOutUid(uid, 'onChargeMoney', {
-            uid : player.uid,
-            deltaMoney : -price,
-            money : player.gold});
+            uid: player.uid,
+            deltaMoney: -price,
+            money: player.gold
+          });
           itemDao.checkEffect(uid, null)
             .then(function (effect) {
               var player = self.players.getPlayer(uid);
@@ -1293,7 +1316,7 @@ pro.hint = function (uid, msg) {
   var player = this.players.getPlayer(uid);
   if (!player) return;
   msg['actionId'] = msg['actionId '] || msg['actionId'];
-  switch (msg['actionId']){
+  switch (msg['actionId']) {
     case 1:
       clearTimeout(player.timeoutLeaveBoard);
       player.timeoutLeaveBoard = null;
@@ -1313,7 +1336,7 @@ pro.resetTournament = function (opts) {
   this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
   this.tableTourFinish = false;
   this.tourWinUser = null;
-  if (this.timePlay > Date.now()){
+  if (this.timePlay > Date.now()) {
     setTimeout(function () {
       // thời gian tour đấu đã đến,
       // push ready cho người chơi
@@ -1323,9 +1346,9 @@ pro.resetTournament = function (opts) {
         msg: 'Đã đến giờ thi đấu',
         buttonLabel: 'OK',
         command: {target: consts.NOTIFY.TARGET.NORMAL},
-        image:  consts.NOTIFY.IMAGE.NORMAL
+        image: consts.NOTIFY.IMAGE.NORMAL
       });
-      if (self.players.length > 1){
+      if (self.players.length > 1) {
         self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
       }
     }, this.timePlay - Date.now());
@@ -1334,5 +1357,56 @@ pro.resetTournament = function (opts) {
 
 
 pro.setBoard = function (opts) {
+  console.log('board setBoard : ', opts);
+  if (opts.username) this.username = opts.username;
+  if (opts.totalTime) this.totalTime = opts.totalTime;
+  if (opts.turnTime) this.turnTime = opts.turnTime;
+  if (opts.fullname) this.fullname = opts.fullname;
+  if (opts.matchTime) {
+    this.timePlay = opts.matchTime;
+    clearTimeout(this.tourTimeout);
+    this.setTourTimeout();
+  }
+};
 
+pro.setTourTimeout  = function () {
+  var self = this;
+  this.tourTimeout = setTimeout(function () {
+    // thời gian tour đấu đã đến,
+    // push ready cho người chơi
+    self.pushMessage('onNotify', {
+      type: consts.NOTIFY.TYPE.POPUP,
+      title: 'Đấu trường',
+      msg: 'Đã đến giờ thi đấu, 2 đối thủ vui lòng sẵn sàng thi đấu.',
+      buttonLabel: 'OK',
+      command: {target: consts.NOTIFY.TARGET.NORMAL},
+      image: consts.NOTIFY.IMAGE.NORMAL
+    });
+    Promise.map(self.username, UserDao.getUserIdByUsername)
+      .then(function (result) {
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: 'Đấu trường',
+          msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
+          buttonLabel: 'Đến',
+          command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: result,
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.POPUP,
+          title: 'Đấu trường',
+          msg: util.format('Đã đến giờ thi đấu Đấu trường, bạn có muốn vào bàn chơi không?'),
+          buttonLabel: 'Đến',
+          command: {target: consts.NOTIFY.TARGET.GO_BOARD, boardId: self.tableId},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: result,
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+      });
+    if (self.players.length > 1) {
+      self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
+    }
+  }, this.timePlay - Date.now());
 };

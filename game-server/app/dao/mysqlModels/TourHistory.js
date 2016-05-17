@@ -2,10 +2,6 @@
  * Created by vietanha34 on 4/11/16.
  */
 
-/**
- * Created by vietanha34 on 3/25/16.
- */
-
 
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('TourHistory', {
@@ -30,10 +26,14 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.INTEGER
     },
     result: {
-      type : DataTypes.INTEGER
+      type : DataTypes.STRING
     },
-    matchId: {
+    match: {
       type: DataTypes.STRING
+    },
+    round : {
+      type : DataTypes.INTEGER,
+      comment: '1 : vòng 1/8, 2 : vòng 1/4, 3 : trận chung kết'
     },
     tourId: {
       type: DataTypes.INTEGER

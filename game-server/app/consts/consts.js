@@ -16,7 +16,7 @@ module.exports = {
 
   ACTION_ID : {
     INVITE_GUILD: 1,
-    CONFIRM_INVITE_GUILD: 2
+    TOURNAMENT_DUEL : 2
   },
 
   MAP_GAME_ID_OLD_VERSION : {
@@ -319,6 +319,11 @@ module.exports = {
     FINISHED : 3
   },
 
+  TOUR_ROUND_TYPE: {
+    NORMAL :1,
+    FINAL : 2
+  },
+
   WHERE_TYPE : {
     EQUAL : 0,
     GREATER : 1,
@@ -400,10 +405,20 @@ module.exports = {
     }
   },
 
+  TOUR_BATTLE_TYPE :{
+    THUY_SY : 1,
+    FACE_TO_FACE : 2
+  },
 
   TOUR_DAY_TYPE : {
     CN : 1,
     CK : -1
+  },
+
+  TOUR_HISTORY_ROUND_TYPE :{
+    TU_KET: 1,
+    BAN_KET : 2,
+    CHUNG_KET : 3
   },
 
   TOUR_TYPE:{
@@ -652,7 +667,8 @@ module.exports = {
       GO_TOP: 8,
       GET_GOLD: 9,
       GO_CHAT: 10,
-      GO_BOARD: 11
+      GO_BOARD: 11,
+      GO_TOURNAMENT : 12
     },
     SCOPE: {
       ALL: 99,
@@ -807,7 +823,6 @@ module.exports = {
     HET_LUOT :12,
     HET_TIME:13
   },
-
   GUILD_EVENT_TYPE :{
     NORMAL : 0,
     JOIN_GUILD : 1, // người chơi vào hội
@@ -881,5 +896,8 @@ module.exports = {
       color : 2,
       align : 3
     } // thua hội quán
+  },
+  NOTIFY_NC_POPUP_TYPE:{
+    TOURNAMENT_DUEL : 1
   }
 };

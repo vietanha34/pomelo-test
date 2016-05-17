@@ -16,7 +16,7 @@ module.exports.afterStartup = function (app, cb) {
 };
 
 module.exports.beforeShutdown = function (app, cb) {
-  utils.invokeCallback(cb);
+  cb();
 };
 
 module.exports.afterStartAll = function (app) {

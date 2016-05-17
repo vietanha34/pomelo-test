@@ -24,7 +24,7 @@ module.exports = function(sequelize, DataTypes) {
     serverId : {
       type: DataTypes.STRING
     },
-    status : {
+    stt : {
       type: DataTypes.INTEGER
     },
     bet : {
@@ -46,6 +46,18 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       defaultValue : '0 - 0'
     },
+    win : {
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
+    draw : {
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
+    lose :{
+      type: DataTypes.STRING,
+      defaultValue : '0 - 0'
+    },
     match: {
       type: DataTypes.STRING
     },
@@ -57,6 +69,20 @@ module.exports = function(sequelize, DataTypes) {
     },
     player: {
       type: DataTypes.TEXT
+    },
+    winner : {
+      type: DataTypes.INTEGER
+    },
+    result : {
+      type : DataTypes.INTEGER(4),
+      defaultValue : 0
+    },
+    calPoint: {
+      type: DataTypes.INTEGER(4),
+      defaultValue : 0
+    },
+    matchTime : {
+      type : DataTypes.DATE
     }
   }, {
     classMethods: {

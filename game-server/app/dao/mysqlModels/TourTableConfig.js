@@ -21,6 +21,9 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.INTEGER,
       allowNull : false
     },
+    bet : {
+      type: DataTypes.INTEGER
+    },
     totalTime : {
       type : DataTypes.INTEGER,
       allowNull: true
@@ -44,6 +47,10 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue : 1,
       comment: 'cờ úp hiện quân ăn'
     },
+    level : {
+      type : DataTypes.INTEGER,
+      comment : 'level đc phép vào đấu trường'
+    },
     lockMode : {
       type: DataTypes.STRING
     },
@@ -54,6 +61,9 @@ module.exports = function(sequelize, DataTypes) {
     },
     mustWin: {
       type: DataTypes.INTEGER(4)
+    },
+    caroOpen : {
+      type : DataTypes.INTEGER(4)
     }
   }, {
     classMethods: {

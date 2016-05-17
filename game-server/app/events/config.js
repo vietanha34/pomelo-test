@@ -15,5 +15,6 @@ CONFIG.TYPE = {
   TOPUP: 7, // nạp tiền
   UPDATE_PROFILE : 8,
   ADD_FRIEND: 10, // kết bạn
-  REGISTER: 15 // đăng kí
+  REGISTER: 15, // đăng kí
+  TOURNAMENT : 16
 };

@@ -51,6 +51,17 @@ module.exports = function(sequelize, DataTypes) {
     numMember : {
       type: DataTypes.INTEGER,
       defaultValue : 0
+    },
+    status:{
+      type: DataTypes.INTEGER(1),
+      defaultValue : 0
+    },
+    sIcon : {
+      type : DataTypes.STRING
+    },
+    requireText : {
+      type : DataTypes.TEXT,
+      comment : "yêu cầu thiết kế"
     }
   }, {
     classMethods: {

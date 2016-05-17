@@ -217,13 +217,12 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
         return utils.invokeCallback(cb, null, res);
       }
       else {
-        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp','sex'];
+        var properties = ['uid', 'statusMsg', 'username', 'fullname', 'avatar', 'vipPoint', 'gold', 'exp','sex', 'guildName', 'sIcon'];
         var checkEffects = [
           consts.ITEM_EFFECT.LEVEL,
           consts.ITEM_EFFECT.THE_VIP,
           consts.ITEM_EFFECT.CAM_KICK
         ];
-
         return Promise.all([
             UserDao.getUserProperties(params.other, properties),
             FriendDao.checkFriendStatus(params.uid, params.other),
@@ -248,6 +247,10 @@ ProfileDao.getAchievement = function getAchievement(params, cb) {
             user = null;
 
             res.friendStatus = status;
+            res.info.nameGuild = res.info.guildName;
+            res.info.guildName = undefined;
+            res.info.iconGuild = utils.JSONParse(res.info.sIcon, undefined);
+            res.info.sIcon = undefined;
             res.info.level += (effects[consts.ITEM_EFFECT.LEVEL]||0);
             res.info.vipLevel = Math.max(res.info.vipLevel, (effects[consts.ITEM_EFFECT.THE_VIP]||0));
             res.camKick = (effects[consts.ITEM_EFFECT.CAM_KICK]||0);
