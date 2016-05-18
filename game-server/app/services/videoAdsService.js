@@ -57,7 +57,7 @@ VideoAdsService.prototype.available = function (platform, cb) {
       } else {
         return rp({
           uri: 'http://10.2.10.88:8090/ads/available',
-          qs: {appId: consts.PR_ID},
+          qs: {appId: consts.PR_ID, version: '2.0.1'},
           json: true,
           timeout: 5000
         })
