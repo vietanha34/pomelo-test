@@ -225,6 +225,24 @@ UserDao.getUserProperties = function (uid, properties, cb) {
     })
 };
 
+UserDao.getUserPropertiesRedis = function (uid, properties, cb) {
+  return pomelo.app.get('redisInfo')
+    .hmgetAsync(redisKeyUtil.getPlayerInfoKey(uid), properties)
+    .then(function(data) {
+      if (!data) return utils.invokeCallback(cb, null, null);
+      var result = {uid: uid};
+      for (var i = 0, len = data.length; i < len; i++) {
+        result[properties[i]] = data[i];
+
+      }
+      return utils.invokeCallback(cb, null, result);
+    })
+    .catch(function (e) {
+      console.error(e.stack || e);
+      return utils.invokeCallback(cb, null, null);
+    });
+};
+
 UserDao.getUserAchievementProperties = function (uid, properties, achiProperties, cb) {
   return pomelo.app.get('mysqlClient')
     .User

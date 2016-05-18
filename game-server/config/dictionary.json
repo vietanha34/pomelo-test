@@ -143,5 +143,6 @@
   "onMission" : 211,
   "onMarquee" : 212,
   "onUpdateGuest" : 213,
+  "onHomeChange" : 214,
   "undefined" : 10000
 }

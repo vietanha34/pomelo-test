@@ -397,3 +397,7 @@ RedisKeyUtil.getMissionStatusKey = function getMissionStatusKey(uid) {
 RedisKeyUtil.getInviteSocialKey = function getInviteSocialKey(uid) {
   return util.format(INVITE_SOCIAL, uid);
 };
+
+RedisKeyUtil.userVideoAdsKey = function(uid) {
+  return 'cothu:videoAds:'+uid;
+};
