@@ -13,6 +13,7 @@ var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
 var ItemDao = require('./itemDao');
 var UserDao = require('./userDao');
+var initCache = require('sequelize-redis-cache');
 
 HomeDao.defaultData = {
   newCount: 0,
@@ -48,6 +49,10 @@ HomeDao.getHome = function getHome(params, cb) {
   data.userInfo = utils.clone(HomeDao.defaultUser);
   data.userInfo.uid = params.uid;
 
+  params.platform = params.platform || 1;
+
+  var cacher = initCache(pomelo.app.get('mysqlClient').sequelize, pomelo.app.get('redisCache'));
+
   var effects = [
     consts.ITEM_EFFECT.LEVEL,
     consts.ITEM_EFFECT.THE_VIP
@@ -57,12 +62,23 @@ HomeDao.getHome = function getHome(params, cb) {
     userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
-    cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'markVideo'),
-    ads: pomelo.app.get('videoAdsService').available(consts.VIDEO_ADS_PLATFORM_UMAP[params.platform]),
-    videoAds : pomelo.app.get('redisCache').getAsync(redisKeyUtil.getUserKeyVideoAds(params.uid))
+    cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'adsCount'),
+    available: pomelo.app.get('videoAdsService').available(consts.VIDEO_ADS_PLATFORM_UMAP[params.platform]),
+    viewed: pomelo.app.get('redisCache').getAsync(redisKeyUtil.userVideoAdsKey(params.uid)),
+    adsConfig: cacher('AdsConfig')
+      .ttl(HomeDao.CONFIG.ADS_CONFIG_CACHE_TIME)
+      .findOne({
+        attributes: ['gold', 'limit'],
+        where: {
+          platform: params.platform,
+          location: params.location || 'VN'
+        },
+        raw: true
+      })
   })
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
+
       data.received = ((globalConfig.IS_REVIEW || (props.cacheInfo[1] && props.cacheInfo[1] != 'VN')) ? 1 : (Number(props.cacheInfo[0]) || 0));
       data.userInfo = props.userInfo;
 
@@ -76,15 +92,23 @@ HomeDao.getHome = function getHome(params, cb) {
 
       data.userInfo.level += (props.effect[consts.ITEM_EFFECT.LEVEL]||0);
       data.userInfo.vipLevel = Math.max(data.userInfo.vipLevel, (props.effect[consts.ITEM_EFFECT.THE_VIP]||0));
-      var adsDisappear = data.userInfo.vipLevel ? 1 : 0;
-      if (params.version < '20160217') {
-        adsDisappear = 1;
-      }
+
+      var adsGold = (props.adsConfig ? props.adsConfig.gold : 0) || globalConfig.adsGold || 100;
+      var adsLimit = (props.adsConfig ? props.adsConfig.limit : 0) || globalConfig.adsLimit || 100;
+      var enable = props.viewed || (props.cacheInfo.adsCount && props.cacheInfo.adsCount > adsLimit) || (params.version >= '20160217') ? 0 : 1;
+
       data.ads = {
-        data : props.ads,
-        gold : 500,
-        disable: (props.videoAds ? 1 : 0) | adsDisappear
+        data : enable ? props.available : '[]',
+        gold : adsGold,
+        disable: enable?0:1
       };
+
+      data.videoAds = {
+        enable: enable,
+        gold: adsGold,
+        data: enable ? props.available : '[]'
+      };
+
       props.achievement = props.achievement || {};
       var list = Object.keys(consts.UMAP_GAME_NAME);
       var max = 0;
@@ -174,3 +198,7 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
     });
   }
 });
+
+HomeDao.CONFIG = {
+  ADS_CONFIG_CACHE_TIME: 180
+};

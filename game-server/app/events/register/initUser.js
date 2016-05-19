@@ -103,6 +103,10 @@ module.exports.process = function (app, type, param) {
             else if (userCount == 3) bonus = 1000;
           }
 
+          if (app.get('env') == 'development') {
+            bonus = 100000;
+          }
+
           if (bonus) {
             TopupDao.topup({
               uid: param.uid,
