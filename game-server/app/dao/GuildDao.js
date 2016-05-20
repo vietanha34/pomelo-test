@@ -147,7 +147,9 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
   return Promise.props(promise)
     .then(function (result) {
       var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
-      result.info['numMember'] = [result.info['numMember'], guildLevel[result.info.level] ? guildLevel[result.info.level].maxMember : 20];
+      var maxMember = guildLevel[result.info.level + 1] ? guildLevel[result.info.level + 1].maxMember : guildLevel['1'].maxMember;
+      maxMember = result.info.numMember > maxMember ? result.info.numMember : maxMember;
+      result.info['numMember'] = [result.info['numMember'], maxMember];
       result.info['name'] = result.info['name'];
       result.info['exp'] = [result.info['exp'], 100];
       result.info['icon'] = utils.JSONParse(result.info['icon']);
@@ -262,18 +264,20 @@ GuildDao.getListGuild = function (roleId, opts, cb) {
         if (roleId.guildId === guild.id){
           isReq = 1;
         }
+        var maxPlayer = guildLevel[guild.level + 1] ? guildLevel[guild.level + 1].maxMember: guildLevel[1];
+        maxPlayer = guild.numMember >= maxPlayer ? guild.numMember : maxPlayer
         return {
           isReq: isReq,
           stt : stt++,
           guildId: guild.id,
-          name: guild.acronym + '.' + guild.name,
+          name: guild.name,
           fame: guild.fame,
           level : guild.level,
           gold : guild.gold,
           detail: guild.detail,
           icon: utils.JSONParse(guild.icon,{ id : 0}),
           sIcon : utils.JSONParse(guild.sIcon, { id : 0, version : 0}),
-          numMember: [guild.numMember, guildLevel[guild.level] ? guildLevel[guild.level].maxMember: 20]
+          numMember : [guild.numMember, maxPlayer]
         }
       });
       return utils.invokeCallback(cb, null, guilds);
@@ -465,9 +469,7 @@ GuildDao.createGuild = function (uid, opts, cb) {
   return GuildDao.checkUserInGuild(uid)
     .then(function (status) {
       if (!status || status === consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER){
-        // người chơi đủ điều kiện để vào guild;
-        // lấy thông tin của người chơi
-        return [ UserDao.getUserProperties(uid, ['username', 'fullname', 'gold']),
+        return [UserDao.getUserProperties(uid, ['username', 'fullname', 'gold']),
           pomelo.app.get('mysqlClient')
             .GuildConfig
             .findOne({
@@ -501,54 +503,44 @@ GuildDao.createGuild = function (uid, opts, cb) {
     })
     .then(function (data) {
       if (!data.ec){
+        console.error('eo hieu tai sao luon');
         pomelo.app.get('statusService').pushByUids([uid], 'service.dailyHandler.getGoldAward', { gold : data.gold});
         return pomelo.app.get('mysqlClient')
-          .sequelize
-          .transaction(function (t) {
-            return pomelo.app.get('mysqlClient')
-              .Guild
-              .create({
-                name: opts.name,
-                acronym: opts.acronym,
-                detail: opts.detail,
-                icon: JSON.stringify({id :opts.iconId || 0, version: opts.iconVersion || 0}),
-                numMember: 0,
-                fame : consts.GUILD_INIT_FAME,
-                gold : parseInt((config.fee || 10000) / 100 * 10),
-                requireText : opts.require,
-                sIcon : JSON.stringify(opts.sIcon || {id : 0, version: 0})
-              }, { transaction : t})
-              .then(function (g) {
-                guild = g;
-                return pomelo.app.get('mysqlClient')
-                  .GuildMember
-                  .destroy({
-                    where : {
-                      uid : uid
-                    }
-                  }, { transaction : t})
-              })
-              .then(function () {
-                return GuildDao.createMember({
-                  uid : uid,
-                  guildId : guild.id,
-                  role : consts.GUILD_MEMBER_STATUS.PRESIDENT
-                })
-              })
-              .catch(function (err) {
-                console.log('err : ', err);
-                var msg = 'Có lỗi xảy ra, xin vui lòng thử lại sau';
-                if (err.name === 'SequelizeUniqueConstraintError'){
-                  msg = 'Tên hội quán hoặc kí tự viết tắt không được trùng với hội quán khác'
-                }
-                return Promise.reject({ec : Code.FAIL, msg: msg})
-              })
-          });
+          .Guild
+          .create({
+            name: opts.name,
+            acronym: opts.acronym,
+            detail: opts.detail,
+            icon: JSON.stringify({id :opts.iconId || 0, version: opts.iconVersion || 0}),
+            numMember: 0,
+            fame : consts.GUILD_INIT_FAME,
+            gold : parseInt((config.fee || 10000) / 100 * 10),
+            requireText : opts.require,
+            sIcon : JSON.stringify(opts.sIcon || {id : 0, version: 0})
+          })
+          .then(function (g) {
+            console.error('guild Create : ', g);
+            guild = g;
+            return GuildDao.createMember({
+              uid : uid,
+              guildId : guild.id,
+              role : consts.GUILD_MEMBER_STATUS.PRESIDENT
+            }, true)
+          })
+          .catch(function (err) {
+            console.error('err : ', err);
+            var msg = 'Có lỗi xảy ra, xin vui lòng thử lại sau';
+            if (err.name === 'SequelizeUniqueConstraintError'){
+              msg = 'Tên hội quán với các hội quán khác'
+            }
+            return Promise.reject({ec : err.ec || Code.FAIL, msg: err.msg || msg})
+          })
       }else {
         return Promise.reject({ec: Code.FAIL, msg: "Bạn không đủ tiền để lập hội"});
       }
     })
     .then(function () {
+      console.error('finish Create guild');
       return utils.invokeCallback(cb, null, { guildId : guild.guildId})
     })
     .catch(function (err) {
@@ -565,53 +557,41 @@ GuildDao.createGuild = function (uid, opts, cb) {
 };
 
 GuildDao.createMember = function (opts, deleted, cb) {
+  console.log('createMember');
   return Promise.delay(0)
-      .then(function () {
-        if (deleted){
-          return pomelo.app.get('mysqlClient')
-            .GuildMember
-            .destroy({
-              where : {
-                uid : opts.uid
-              }
-            })
-        }else {
-          return Promise.resolve({});
-        }
-      })
-      .then(function () {
-        return pomelo.app.get('mysqlClient')
+    .then(function () {
+      if (deleted){
+        return [pomelo.app.get('mysqlClient')
           .GuildMember
-          .findOrCreate({
+          .destroy({
             where : {
-              uid : opts.uid,
-              guildId : opts.guildId
-            },
-            defaults: opts
-          })
-      })
-      .spread(function (member, created) {
-      if (!created){
-        member.updateAttributes(opts);
-      }else {
-        if (opts.role <= consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
-          RoomDao.addMember(redisKeyUtil.getChatGuildName(opts.guildId),[opts.uid]);
-          pomelo.app.get('mysqlClient')
-            .Guild
-            .update({
-              numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember + ' + 1)
-            }, {
-              where : {
-                id : opts.guildId
-              }
-            })
+              uid : opts.uid
+            }
+          }), pomelo.app.get('mysqlClient').Guild.findOne({where : {id : opts.guildId}, attributes: ['level', 'exp', 'numMember'], raw : true})]
+        }else {
+          return [Promise.resolve(),
+            pomelo.app.get('mysqlClient').Guild.findOne({where : {id : opts.guildId}, attributes: ['level', 'exp', 'numMember'], raw : true})
+          ]
         }
+      })
+    .spread(function (destroy, guild) {
+      if (!guild) { return Promise.reject({})}
+      var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
+      var level = guildLevel[(guild.level || 0) + 1];
+      var maxPlayer = level ? level.maxMember : guildLevel[1].maxMember;
+      if (guild.numMember >= maxPlayer){
+        return Promise.reject({ec : Code.FAIL, msg : "Hội quán đã đạt giới hạn hội viên, không thể thêm mới hội viên"})
       }
-      return utils.invokeCallback(cb, null, {});
-    })
-    .catch(function (err) {
-      console.error('createMember error : ', err);
-      return utils.invokeCallback(cb, null, { ec : Code.FAIL});
+      return pomelo.app.get('mysqlClient')
+        .GuildMember
+        .create(opts)
+      })
+    .then(function (member) {
+      if (opts.role <= consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
+        RoomDao.addMember(redisKeyUtil.getChatGuildName(opts.guildId),[opts.uid]);
+      }
+      GuildDao.updateNumMember(opts.guildId);
+      return utils.invokeCallback(cb, null, {member : [{role : member.role, uid : member.uid, guildId : member.guildId}]});
     })
 };
 
@@ -695,10 +675,8 @@ GuildDao.deleteMember = function (uid, guildId, cb) {
     .then(function () {
       if (member && member.role <= consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER){
         RoomDao.kickUser(redisKeyUtil.getChatGuildName(guildId), [uid]);
-        GuildDao.updateGuild({ guildId : guildId}, { }, {
-          numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember - ' + 1)
-        });
       }
+      GuildDao.updateNumMember(guildId);
       return utils.invokeCallback(cb, null,{ member:  [{uid : uid, role: consts.GUILD_MEMBER_STATUS.GUEST, fullname : member['User.fullname'] }]});
     })
     .catch(function (err) {
@@ -942,6 +920,30 @@ GuildDao.removeInvite = function (opts) {
       uid : opts.uid,
       guildId : opts.guildId
     }})
+};
+
+GuildDao.updateNumMember = function (guildId) {
+  pomelo.app.get('mysqlClient')
+    .GuildMember
+    .count({
+      where : {
+        guildId : guildId,
+        role : {
+          $lte : consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+        }
+      }
+    })
+    .then(function (count) {
+      pomelo.app.get('mysqlClient')
+        .Guild
+        .update({
+          numMember: count
+        }, {
+          where : {
+            id : guildId
+          }
+        })
+    })
 };
 
 var RESOURCE_MAP = {

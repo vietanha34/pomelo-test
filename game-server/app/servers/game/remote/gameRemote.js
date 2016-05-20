@@ -9,7 +9,7 @@ var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var ItemDao = require('../../../dao/itemDao');
 var async = require('async');
-var GuildDao = require('../../../dao/guildDao');
+var GuildDao = require('../../../dao/GuildDao');
 
 
 module.exports = function (app) {
