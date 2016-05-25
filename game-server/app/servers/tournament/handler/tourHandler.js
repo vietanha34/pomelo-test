@@ -39,8 +39,10 @@ var Handler = function (app) {
  */
 Handler.prototype.getListTour = function (msg, session, next) {
   msg.uid = session.uid;
+  console.error('handler getListTour');
   return TourDao.getListTour(msg)
     .then(function (tours) {
+      console.error('getListTour : ', tours)
       tours.type = msg.type;
       return utils.invokeCallback(next, null, tours)
     })
@@ -55,7 +57,7 @@ Handler.prototype.getTourSummery = function (msg, session, next) {
   msg.type = consts.TOUR_TYPE.NORMAL;
   return TourDao.getListTour(msg)
     .then(function (tours) {
-      console.log('tours : ', tours);
+      console.error('tours : ', tours);
       if (tours.tour && tours.tour.length > 0){
         var tour = tours.tour[0];
         return utils.invokeCallback(next, null, tour)

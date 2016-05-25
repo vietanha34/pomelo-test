@@ -8,7 +8,7 @@ var consts = require('../../../consts/consts');
 var utils = require('../../../util/utils');
 var ActionDao = require('../../../dao/actionDao');
 var TourDao = require('../../../dao/tourDao');
-var GuildDao = require('../../../dao/guildDao');
+var GuildDao = require('../../../dao/GuildDao');
 var UserDao = require('../../../dao/userDao');
 var Promise = require('bluebird');
 var util = require('util');
@@ -58,8 +58,6 @@ Handler.prototype.action = function (msg, session, next) {
                     })
                     .then(function (member) {
                       if (member && member.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
-                        pomelo.app.get('statusService')
-                          .pushByUids([uid], 'undefined', {ec: Code.FAIL, msg: "Chúc mừng bạn đã trở thành thành viên của hội quán"});
                         return GuildDao.createMember({
                           uid: uid,
                           guildId: action.guildId,
@@ -81,6 +79,14 @@ Handler.prototype.action = function (msg, session, next) {
                               content: util.format('[%s] gia nhập hội quán', user.fullname),
                               type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
                             });
+                          })
+                          .then(function () {
+                            pomelo.app.get('statusService')
+                              .pushByUids([uid], 'undefined', {ec: Code.FAIL, msg: "Chúc mừng bạn đã trở thành thành viên của hội quán"});
+                          })
+                          .catch(function (err) {
+                            pomelo.app.get('statusService')
+                              .pushByUids([uid], 'undefined', {ec: Code.FAIL, msg: err.ec || Code.FAILs});
                           })
                       } else {
                         pomelo.app.get('statusService')

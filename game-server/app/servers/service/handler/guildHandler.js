@@ -7,7 +7,7 @@ var utils = require('../../../util/utils');
 var Code = require('../../../consts/code');
 var pomelo = require('pomelo');
 var Promise = require('bluebird');
-var GuildDao = require('../../../dao/guildDao');
+var GuildDao = require('../../../dao/GuildDao');
 var RoomDao = require('../../../dao/roomChatDao');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
@@ -113,7 +113,7 @@ Handler.prototype.updateGuild = function (msg, session, next) {
       updateData.guildId = guildId;
       if (msg.detail) updateData['detail'] = msg.detail;
       if (msg.icon) updateData['icon'] = JSON.stringify(msg.icon);
-      if (msg.sIcon) updateData['sIcon'] = JSON.stringify(msg.sIcon)
+      if (msg.sIcon) updateData['sIcon'] = JSON.stringify(msg.sIcon);
       return GuildDao.updateGuild(roleId, permission, updateData);
     })
     .then(function (resource) {
@@ -216,7 +216,21 @@ Handler.prototype.updateMember = function (msg, session, next) {
       switch (msg.type) {
         case consts.GUILD_UPDATE_MEMBER_TYPE.ADD_MEMBER:
           // add event
-          return GuildDao.updateMember(currentUid, guildId, {role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER});
+          return pomelo.app.get('mysqlClient')
+            .GuildMember
+            .count({
+              where : {
+                uid : currentUid,
+                guildId : guildId,
+                role : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
+              },
+              raw : true
+            })
+            .then(function (count) {
+              if (count){
+                return GuildDao.createMember({ uid : currentUid, guildId : guildId, role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER}, true);
+              }
+            });
           break;
         case consts.GUILD_UPDATE_MEMBER_TYPE.REMOVE_MEMBER:
           return pomelo.app.get('mysqlClient')
@@ -440,13 +454,14 @@ Handler.prototype.updateMember = function (msg, session, next) {
 Handler.prototype.requestJoinGuild = function (msg, session, next) {
   var uid = session.uid;
   var guildId = msg.guildId;
+  var fullname = session.get('fullname');
   return pomelo.app.get('redisCache')
-    .getAsync(redisKeyUtil.getLeaveGuild(uid))
-    .then(function (result) {
-      if (result) {
+    .ttlAsync(redisKeyUtil.getLeaveGuild(uid))
+    .then(function (expire) {
+      if (expire > -1){
         return Promise.reject({
           ec: Code.FAIL,
-          msg: "Bạn vừa rời hội quán, vui lòng đợi 1 ngày để gia nhập họi quán khác"
+          msg: util.format("Bạn vừa rời hội quán, vui lòng đợi %s nữa để gia nhập hội quán khác", moment().add(expire, 'seconds').from(moment(), true))
         })
       }
       return GuildDao.getGuild(uid)
@@ -466,9 +481,34 @@ Handler.prototype.requestJoinGuild = function (msg, session, next) {
       }
     })
     .then(function (result) {
+      return pomelo.app.get('mysqlClient')
+        .GuildMember
+        .findOne({
+          where : {
+            guildId : guildId,
+            role : consts.GUILD_MEMBER_STATUS.PRESIDENT
+          },
+          raw : true,
+          attributes : ['uid']
+        });
+    })
+    .then(function (member) {
+      if(member){
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+          title: "Hội quán",
+          msg: util.format('Người chơi "%s" xin gia nhập hội quán của bạn. Vui lòng vào phần hội quán để xem thêm thông tin', fullname),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.NORMAL},
+          scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+          users: [member.uid],
+          image: consts.NOTIFY.IMAGE.NORMAL
+        });
+      }
       return utils.invokeCallback(next, null, {cancel: msg.cancel});
     })
     .catch(function (err) {
+      console.error('err : ', err);
       return utils.invokeCallback(next, null, {ec: err.ec || Code.FAIL, msg: err.msg || Code.FAIL});
     })
 };
