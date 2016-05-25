@@ -55,7 +55,7 @@ Handler.prototype.getTourSummery = function (msg, session, next) {
   msg.type = consts.TOUR_TYPE.NORMAL;
   return TourDao.getListTour(msg)
     .then(function (tours) {
-      console.log('tours : ', tours);
+      console.error('tours : ', tours);
       if (tours.tour && tours.tour.length > 0){
         var tour = tours.tour[0];
         return utils.invokeCallback(next, null, tour)

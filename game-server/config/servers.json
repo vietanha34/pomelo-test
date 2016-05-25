@@ -95,6 +95,9 @@
       {"id": "worker-server-2", "host" : "172.16.10.28", "port" : 3761, "httpPort": 9001},
       {"id": "worker-server-3", "host" : "172.16.10.28", "port" : 3762, "httpPort": 9002},
       {"id": "worker-server-4", "host" : "172.16.10.28", "port" : 3763, "httpPort": 9003}
+    ],
+    "tournament" : [
+      {"id": "tournament-server-1", "host" : "172.16.20.40", "port" : 3770}
     ]
   },
   "local":{
