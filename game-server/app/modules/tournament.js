@@ -95,7 +95,7 @@ Module.prototype.monitorHandler = function (agent, msg, cb) {
       utils.invokeCallback(cb, null, {ec: Code.OK})
     })
     .catch(function (err) {
-      console.error('err : ', err);
+      console.error('module tournament err : ', err);
       utils.invokeCallback(cb, null, {ec: Code.OK})
     })
 };

@@ -113,6 +113,9 @@ Handler.prototype.action = function (msg, session, next) {
               .create({
                 type: consts.TOUR_TYPE.FRIENDLY,
                 tourType: 1,
+                numBoard : action.numBoard || 0,
+                numMatch : action.numMatch || 0,
+                fee : action.bet,
                 name: action.name
               }) 
               .then(function (tour) {

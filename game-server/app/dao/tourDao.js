@@ -30,7 +30,7 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId']
+    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','groupId1', 'groupId2']
   };
   if (opts.tourId){
     condition['where']['tourId'] = opts.tourId;
@@ -39,6 +39,10 @@ TourDao.getListTour = function (opts, cb) {
     .Tournament
     .findAll(condition)
     .map(function (tour) {
+      if (tour.type === consts.TOUR_TYPE.FRIENDLY){
+        tour['scale'] = util.format('%s bàn x %s trận', tour.numBoard, tour.numMatch);
+        tour['guild'] = [tour.guildName1, tour.guildName2]
+      }
       console.log('tour : ', tour);
       return pomelo.app.get('mysqlClient')
         .TourSchedule

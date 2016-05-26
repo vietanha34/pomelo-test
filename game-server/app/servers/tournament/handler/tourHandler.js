@@ -103,12 +103,11 @@ Handler.prototype.getTourGroup = function (msg, session, next) {
           if (schedule && schedule.show){
             if (moment(schedule.matchTime * 1000).isAfter(moment())){
               data['text'] = 'Chờ thi đấu';
-              //tour['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
-              data['remain'] = 10;
+              tour['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
               data['time'] = moment(schedule.matchTime * 1000).format('HH:mm MM:DD');
             }else if (moment(schedule.matchTime * 1000).add(4, 'hours').isAfter(moment())){
               data['text'] = 'Đang thi đấu';
-              data['time'] = moment(tour.schedule.matchTime).format('HH:mm MM:DD');
+              data['time'] = moment(schedule.matchTime).format('HH:mm MM:DD');
               data['remain'] = moment(schedule.matchTime * 1000).add(4, 'hours').diff(moment(), 'second');
             }else {
               data['text'] = 'Chờ tính điểm';

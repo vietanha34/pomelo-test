@@ -67,7 +67,11 @@ pro.subBalance = function (opts, transaction, cb) {
 };
 
 pro.transfer = function (opts, transaction, cb) {
-  this.app.get('paymentService').transfer(opts, cb);
+  if (opts.gameType === consts.GAME_TYPE.TOURNAMENT && opts.tourType === consts.TOUR_TYPE.FRIENDLY){
+    this.app.get('paymentService').transferGuild(opts, cb);
+  }else {
+    this.app.get('paymentService').transfer(opts, cb);
+  }
 };
 
 /**
