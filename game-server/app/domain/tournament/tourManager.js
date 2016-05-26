@@ -1615,7 +1615,7 @@ pro.showTable = function (tourId, scheduleId) {
   })
     .then(function (t) {
       tour = t;
-      if (!tour) return Promise.reject();
+      if (!tour) return Promise.reject({msg: "không có tour nào phù hợp"});
       return TourDao.getTourTable({
         where: {
           tourId: tourId,

@@ -188,6 +188,8 @@ Handler.prototype.action = function (msg, session, next) {
                     roundId: tour.roundId,
                     guildId : [action.currentGuildId, action.targetGuildId],
                     matchTime: action.time / 1000 | 0,
+                    timePlay : action.matchTime / 1000 | 0,
+                    mustWin : 0,
                     battleType: consts.TOUR_BATTLE_TYPE.THUY_SY,
                     tc : {
                       gameId : action.gameId,
@@ -211,6 +213,7 @@ Handler.prototype.action = function (msg, session, next) {
                   tourManager.createTable(dataCreateTable)
                 }
               })
+
           } else {
             GuildDao.addEvent({
               guildId: action.currentGuildId,

@@ -68,6 +68,18 @@ module.exports = function(sequelize, DataTypes) {
     resultString: {
       type: DataTypes.STRING
     },
+    numMatch : {
+      type: DataTypes.INTEGER
+    },
+    numBoard : {
+      type : DataTypes.INTEGER
+    },
+    guildName1 : {
+      type : DataTypes.STRING
+    },
+    guildName2 : {
+      type : DataTypes.STRING
+    },
     info: {
       type : DataTypes.TEXT
     },

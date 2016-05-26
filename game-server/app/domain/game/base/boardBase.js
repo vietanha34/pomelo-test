@@ -1422,3 +1422,27 @@ pro.setTourTimeout  = function () {
     }
   }, this.timePlay - Date.now());
 };
+
+pro.transfer = function (bet, fromUid, toUid) {
+  var fromIndex = this.players.playerSeat.indexOf(fromUid);
+  var toIndex = this.players.playerSeat.indexOf(toUid);
+  if (this.gameType === consts.GAME_TYPE.TOURNAMENT && this.tourType === consts.TOUR_TYPE.FRIENDLY) {
+    this.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+      gold : bet,
+      fromUid : this.guildId[fromIndex],
+      toUid : this.guildId[toIndex],
+      tax : 5,
+      force : true,
+      gameType : this.gameType,
+      tourType : this.tourType
+    }, 1, function () {});
+  }else {
+    this.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
+      gold : bet,
+      fromUid : fromUid,
+      toUid : toUid,
+      tax : 5,
+      force : true
+    }, 1, function () {});
+  }
+};
