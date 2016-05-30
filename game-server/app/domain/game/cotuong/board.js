@@ -158,7 +158,6 @@ Game.prototype.setOnTurn = function (gameStatus) {
   }, turnUid, turnTime + 2000);
 };
 
-
 Game.prototype.progress = function () {
   var gameStatus = this.gameStatus;
   if (gameStatus.matchResult) {
@@ -435,14 +434,6 @@ Table.prototype.action = function (uid, opts, cb) {
   }
 };
 
-//Table.prototype.finishGame = function () {
-//  this.status = consts.BOARD_STATUS.NOT_STARTED;
-//  this.turnUid = null;
-//  this.jobId = null;
-//  this.players.reset();
-//  this.timer.stop();
-//};
-
 Table.prototype.reset = function () {
   this.game.close();
   this.game = null;
@@ -452,7 +443,6 @@ Table.prototype.reset = function () {
     if (ownerPlayer && ownerPlayer.color !== consts.COLOR.WHITE){
       this.game.game.changeTurn(null, false);
       this.game.gameStatus = this.game.game.getBoardStatus();
-      console.log('gameStatus : ', this.game.gameStatus);
     }
   }
 };

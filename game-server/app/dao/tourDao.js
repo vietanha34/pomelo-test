@@ -30,7 +30,7 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','groupId1', 'groupId2']
+    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','groupName1', 'groupName2']
   };
   if (opts.tourId){
     condition['where']['tourId'] = opts.tourId;

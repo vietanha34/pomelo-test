@@ -190,6 +190,8 @@ Handler.prototype.action = function (msg, session, next) {
                     matchTime: action.time / 1000 | 0,
                     timePlay : action.matchTime / 1000 | 0,
                     mustWin : 0,
+                    caroOpen : action.caroOpen,
+                    mustKill : action.mustKill
                     battleType: consts.TOUR_BATTLE_TYPE.THUY_SY,
                     tc : {
                       gameId : action.gameId,
@@ -205,7 +207,6 @@ Handler.prototype.action = function (msg, session, next) {
                       caroOpen : action.caroOpen || 1
                     },
                     lockMode : action.lockMode,
-                    mustWin : 0,
                     username : [],
                     fullname : [],
                     tourId : tour.tourId

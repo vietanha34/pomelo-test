@@ -1489,6 +1489,8 @@ pro.createTable = function (opts) {
   params.matchPlay = opts.matchPlay || 2;
   params.battleType = opts.battleType;
   params.tourType = opts.tourType;
+  params.caroOpen = opts.caroOpen || 0;
+  params.mustKill = opts.mustKill || 0;
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
   params.lockMode = typeof params.lockMode === 'string' ? lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
     return parseInt(lock)
