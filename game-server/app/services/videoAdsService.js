@@ -73,13 +73,16 @@ VideoAdsService.prototype.available = function (platform, cb) {
                 return utils.invokeCallback(cb, null, '[]')
               }
             }
+            else {
+              return utils.invokeCallback(cb, null, '[]');
+            }
           })
       }
     })
     .catch(function (err) {
       console.error(err);
       utils.log(err);
-      return utils.invokeCallback(cb, null, JSON.stringify([]));
+      return utils.invokeCallback(cb, null, '[]');
     })
 };
 
