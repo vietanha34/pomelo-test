@@ -15,6 +15,7 @@ var UserDao = require('./userDao');
 var FriendDao = require('./friendDao');
 var moment = require('moment');
 var RoomDao = require('./roomChatDao');
+var ActionDao = require('./actionDao');
 
 var RESOURCE_NAME = {
   1: 'info',
@@ -68,7 +69,6 @@ GuildDao.getGuildChat = function (role, permission, resourceId, cb) {
             message.role = result.role;
             message.fullname  = result['User.fullname'] ? result['User.fullname'] : message.from;
             message['date'] = moment(message.date).unix();
-            console.log('message: ', message , result);
             return Promise.resolve(message);
           }else {
             return pomelo.app.get('mysqlClient')
@@ -418,19 +418,20 @@ GuildDao.deleteGuild = function (guildId) {
  *
  */
 GuildDao.getGuildEvent = function (role, permission, args, cb) {
-  var offset = args.offset || 0;
-  var length = args.length || 20;
+  var offset = 0;
+  var length = 50;
   return pomelo.app.get('mongoClient')
     .model('GuildEvent')
     .find({
       guildId : args.guildId
     })
+    .sort({time: -1})
     .skip(offset)
     .limit(length)
-    .sort({time: 1})
     .select({content: 1, time: 1, type: 1, fullname : 1 , uid : 1})
     .lean()
     .then(function (events) {
+      events.reverse();
       if (events){
         var startOfDayUnix = moment().startOf('day').unix();
         for (var i = 0, len = events.length; i < len; i++){
@@ -897,6 +898,24 @@ GuildDao.addEvent = function (opts) {
     type : opts.type,
     time : Date.now() / 1000 | 0
   })
+};
+
+GuildDao.removeAction = function (guildId, action) {
+  return pomelo.app.get('mysqlClient')
+    .GuildMember
+    .findOne({
+      where : {
+        guildId : guildId,
+        role : consts.GUILD_MEMBER_STATUS.PRESIDENT
+      },
+      raw : true
+    })
+    .then(function (member) {
+      if (!member) {
+        return
+      }
+      return ActionDao.removeAction(action, member.uid)
+    })
 };
 
 GuildDao.deleteEvent = function (eventId) {

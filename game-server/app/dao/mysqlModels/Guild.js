@@ -58,6 +58,9 @@ module.exports = function(sequelize, DataTypes) {
     requireText : {
       type : DataTypes.TEXT,
       comment : "yêu cầu thiết kế"
+    },
+    nextBattle : {
+      type : DataTypes.DATE
     }
   }, {
     classMethods: {

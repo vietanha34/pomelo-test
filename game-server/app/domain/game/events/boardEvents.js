@@ -262,9 +262,7 @@ exp.addEventFromBoard = function (board) {
           board.tournamentLog.push(util.format(moment().format() + ' --- Người chơi %s rời bàn', userInfo.username));
           var tourWinUid = board.owner;
           var winPlayer = board.players.getPlayer(tourWinUid);
-          var index = board.username.indexOf(userInfo.username);
-          //board.tourWin[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
-          //board.tourLose[index] += Math.abs(board.matchPlay - board.numMatchPlay);
+          var index = board.getTourScoreIndex(userInfo.uid);
           board.tourScore[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
           board.emit('setBoard', {score: board.tourScore ? board.tourScore.join(' - ') : null}, true);
           board.tableTourFinish = true;
@@ -430,8 +428,9 @@ exp.addEventFromBoard = function (board) {
         winUser = player;
         board.score[user.result.color === consts.COLOR.WHITE ? 0 : 1] += 1;
         if (board.tourScore) {
-          board.tourScore[board.username.indexOf(player.userInfo.username)] += 1;
-          board.tourWin[board.username.indexOf(player.userInfo.username)] += 1;
+          var scoreIndex = board.getTourScoreIndex(player.uid);
+          board.tourScore[scoreIndex] += 1;
+          board.tourWin[scoreIndex] += 1;
         }
       } else if (user.result.type === consts.WIN_TYPE.LOSE || user.result.type === consts.WIN_TYPE.GIVE_UP) {
         if (!disableLooseUser) {
@@ -440,11 +439,13 @@ exp.addEventFromBoard = function (board) {
         loseUid = user.uid;
         loseUser = player;
         if (board.tourLose){
-          board.tourLose[board.username.indexOf(player.userInfo.username)] += 1;
+          scoreIndex = board.getTourScoreIndex(player.uid);
+          board.tourLose[scoreIndex] += 1;
         }
       }else if (user.result.type === consts.WIN_TYPE.DRAW) {
         if (board.tourScore) {
-          board.tourScore[board.username.indexOf(player.userInfo.username)] += 0.5;
+          scoreIndex = board.getTourScoreIndex(player.uid);
+          board.tourScore[scoreIndex] += 0.5;
           board.tourDraw = lodash.map(board.tourDraw, function (score) {
             return score + 0.5;
           })
@@ -596,7 +597,7 @@ exp.addEventFromBoard = function (board) {
           board.tournamentLog.push(util.format(moment().format() + ' --- Người chơi %s rời bàn', player.userInfo.username));
           var tourWinUid = board.owner;
           var winPlayer = board.players.getPlayer(tourWinUid);
-          var index = board.username.indexOf(player.userInfo.username);
+          var index = board.getTourScoreIndex(player.uid);
           board.tourScore[index ? 0 : 1] += Math.abs(board.matchPlay - board.numMatchPlay);
           board.emit('setBoard', {score : board.tourScore ? board.tourScore.join(' - ') : null}, true);
           board.tableTourFinish = true;
@@ -800,7 +801,8 @@ exp.addEventFromBoard = function (board) {
       gameId : board.gameId,
       tourId : board.tourId,
       boardId : board.tableId,
-      tourType : board.tourType
+      type : board.tourType,
+      player : board.players.playerSeat
     }, function () {
     });
     // ghi log

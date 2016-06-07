@@ -87,7 +87,7 @@ pro.standUp = function (msg, session, next) {
       msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)
     });
   }
-  if (!msg.confirm && board.gameType === consts.GAME_TYPE.TOURNAMENT && board.numMatchPlay > 0 && !board.tableTourFinish){
+  if (!msg.confirm && board.gameType === consts.GAME_TYPE.TOURNAMENT && board.tourType === consts.TOUR_TYPE.NORMAL && board.numMatchPlay > 0 && !board.tableTourFinish){
     return messageService.pushMessageToPlayer(utils.getUids(session), msg.__route__, {uid: session.uid, confirm : 'Đứng lên bạn sẽ bị thua cuộc đấu trường, bạn có chắc muốn đứng lên hay không?'});
   }
   var res = board.standUp(session.uid);
@@ -194,6 +194,7 @@ pro.invitePlayer = function (msg, session, next) {
       msg: "Đã gửi lời mời thành công đến người chơi khác"
     });
   }
+
   pomelo.app.get('waitingService').getList({
     where : {
       gold: {
@@ -356,11 +357,26 @@ pro.kick = function (msg, session, next) {
     });
     return
   }
-  if (board.owner !== uid) {
-    return next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
-  }
   if (board.gameType === consts.GAME_TYPE.TOURNAMENT){
-    return next(null, { ec : Code.FAIL, msg : "Trong đấu trường bạn không được quyền đuổi người chơi khác"})
+    if (board.tourType === consts.TOUR_TYPE.NORMAL){
+      return next(null, { ec : Code.FAIL, msg : "Trong đấu trường bạn không được quyền đuổi người chơi khác"})
+    }else {
+      var kickPlayer = board.players.getPlayer(cuid);
+      var currentPlayer = board.players.getPlayer(uid);
+      if (currentPlayer && kickPlayer){
+        var guildIndex = board.guildId.indexOf(currentPlayer.userInfo.guildId);
+        if (guildIndex < 0 && currentPlayer.userInfo.role !== consts.GUILD_MEMBER_STATUS.PRESIDENT){
+          return next(null, { ec: Code.FAIL, msg : "Bạn không phải là hội chủ của hội quán đang thi đấu, không thể kick người chơi ra khỏi bàn"})
+        }
+        if (currentPlayer.userInfo.guildId !== kickPlayer.userInfo.guildId){
+          return next(null, { ec : Code.FAIL, msg : "Bạn không thể đuổi người chơi của hội quán khác"})
+        }
+      }
+    }
+  }else {
+    if (board.owner !== uid) {
+      return next(null, utils.getError(Code.ON_GAME.FA_NOT_OWNER));
+    }
   }
   board.kick(cuid, function (err, res) {
     if (err) {

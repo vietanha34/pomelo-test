@@ -13,6 +13,7 @@ var lodash = require('lodash');
 var TourDao = module.exports;
 var UserDao = require('./userDao');
 var moment = require('moment');
+var util = require('util');
 
 /**
  * Lấy danh sách giải đấu
@@ -30,7 +31,7 @@ TourDao.getListTour = function (opts, cb) {
     limit: length,
     offset: offset,
     raw: true,
-    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','groupName1', 'groupName2']
+    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','guild1', 'guild2']
   };
   if (opts.tourId){
     condition['where']['tourId'] = opts.tourId;
@@ -41,7 +42,7 @@ TourDao.getListTour = function (opts, cb) {
     .map(function (tour) {
       if (tour.type === consts.TOUR_TYPE.FRIENDLY){
         tour['scale'] = util.format('%s bàn x %s trận', tour.numBoard, tour.numMatch);
-        tour['guild'] = [tour.guildName1, tour.guildName2]
+        tour['guild'] = [utils.JSONParse(tour.guild1), utils.JSONParse(tour.guild2)];
       }
       console.log('tour : ', tour);
       return pomelo.app.get('mysqlClient')

@@ -45,8 +45,13 @@ Game.prototype.init = function () {
   this.table.status = consts.BOARD_STATUS.PLAY;
   var turnPlayer;
   if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
-    var username = this.table.username[this.table.numMatchPlay % 2];
-    turnPlayer = this.table.players.getPlayerByUsername(username);
+    if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+      var guildId = this.table.guildId[this.table.numMatchPlay %2];
+      turnPlayer = this.table.players.getPlayerByGuildId(guildId);
+    }else {
+      var username = this.table.username[this.table.numMatchPlay % 2];
+      turnPlayer = this.table.players.getPlayerByUsername(username);
+    }
     this.table.firstUid = turnPlayer.uid;
     this.turn = turnPlayer.uid;
   }else {

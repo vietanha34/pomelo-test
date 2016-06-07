@@ -53,16 +53,47 @@ var MISSION_STATUS = 'cothu:mission_status:%d';
 var INVITE_SOCIAL = 'cothu:invite_social:%d';
 var CHAT_GUILD_NAME = 'GUILD_{uid}';
 var LEAVE_GUILD = 'cothu:guild:leave:{uid}';
+var GUILD_DUEL_FAIL = 'cothu:guild:dule:fail:{guildId1}:{guildId2}';
+var GUILD_DUEL_SUCCESS = 'cothu:guild:dule:success:{guildId1}:{guildId2}';
 var USER_ACTION = 'cothu:action:{uid}';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
 
-RedisKeyUtil.getLeaveGuild = function (uid) {
-  return LEAVE_GUILD.replace(
+RedisKeyUtil.getGuildDuelFail = function (guild1, guild2) {
+
+};
+
+RedisKeyUtil.getGuildDuelSuccess = function (guild1, guild2) {
+  return GUILD_DUEL_FAIL.replace(
     /\{(\w+)\}/g,
     function (u) {
-      return uid;
+      switch (u) {
+        case '{guildId1}':
+          return guildId1;
+        case '{guildId2}' :
+          return guildId2;
+        default :
+          return guildId1
+      }
+    }
+  );
+};
+
+
+
+RedisKeyUtil.getLeaveGuild = function (guildId1, guildId2) {
+  return GUILD_DUEL_SUCCESS.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      switch (u) {
+        case '{guildId1}':
+          return guildId1;
+        case '{guildId2}' :
+          return guildId2;
+        default :
+          return guildId1
+      }
     }
   );
 };

@@ -134,6 +134,7 @@
   "tournament.tourHandler.getTourSummery" : 508,
   "tournament.tourHandler.getTourGroup" : 509,
   "service.actionHandler.action" : 195,
+  "game.gameHandler.upTableScore" : 196,
   "onPlayerJoin" : 200,
   "game.gameHandler.demand" : 208,
   "onTurn" : 202,

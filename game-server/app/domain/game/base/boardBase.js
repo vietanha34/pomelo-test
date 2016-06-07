@@ -512,7 +512,7 @@ pro.clearIdlePlayer = function () {
             uid: winPlayer.uid,
             fullname : winPlayer.userInfo.fullname
           };
-          this.tourScore[this.username.indexOf(winPlayer.userInfo.username)] += this.matchPlay - this.numMatchPlay;
+          this.tourScore[this.getTourScoreIndex(winPlayer.uid)] += this.matchPlay - this.numMatchPlay;
           this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
           this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc hoặc không bắt đầu ván tiếp theo sau thời gian quy định');
         } else {
@@ -713,6 +713,8 @@ pro.getBoardState = function (uid) {
     state['owner'] = this.owner;
   }
   state.menu = this.players.getMenu(uid);
+  var player = this.players.getPlayer(uid);
+  if (player) state.role = player.userInfo.role;
   return state
 };
 
@@ -1260,14 +1262,6 @@ pro.addItems = function (items) {
   return player.goldAfter
 };
 
-pro.plusScore = function (whiteWin) {
-  if (whiteWin) {
-    this.score[0] += 1;
-  } else {
-    this.score[1] += 1;
-  }
-};
-
 pro.getGuest = function () {
   return this.players.getGuest();
 };
@@ -1421,6 +1415,16 @@ pro.setTourTimeout  = function () {
       self.addJobReady(self.players.getOtherPlayer(), self.timeWait);
     }
   }, this.timePlay - Date.now());
+};
+
+pro.getTourScoreIndex = function (uid) {
+  var player = this.players.getPlayer(uid);
+  if(!player)return;
+  if (this.tourType === consts.TOUR_TYPE.FRIENDLY) {
+    return this.guildId.indexOf(player.userInfo.guildId);
+  }else {
+    return this.username.indexOf(player.userInfo.username);
+  }
 };
 
 pro.transfer = function (bet, fromUid, toUid) {

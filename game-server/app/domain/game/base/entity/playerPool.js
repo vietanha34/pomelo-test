@@ -103,7 +103,20 @@ pro.addPlayer = function (opts) {
   self.players[uid] = player;
   data.newPlayer = true;
   var slotIndex = self.getSlotAvailable(slotId, userInfo, this.table.timePlay);
-  if(this.table.username) {
+  console.log('this.table.guildId :' , this.table.guildId, this.table.tourType);
+  if (this.table.guildId && this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+    // valid người chơi thuộc các bang
+    if (this.table.guildId.indexOf(player.userInfo.guildId) < 0){
+      slotIndex = -1;
+      data.notifyMsg = util.format('Bạn không thuộc 2 hội quán tham gia đấu trường này')
+    }else {
+      slotIndex = this.table.guildId.indexOf(player.userInfo.guildId);
+      if (slotIndex > -1 && this.table.players.playerSeat[slotIndex]){
+        data.notifyMsg = util.format('Đã có người khác trong hội quán của bạn ứng chiến');
+        slotIndex = -1;
+      }
+    }
+  }else if(this.table.username) {
     var index = this.table.username.indexOf(player.userInfo.username);
     if (index > -1){
       if (Date.now() < this.table.timePlay){
@@ -121,13 +134,8 @@ pro.addPlayer = function (opts) {
         data.notifyMsg = util.format('Bàn đấu đã kết thúc mà không có người thắng cuộc', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
       }
     }
-  }else if (this.table.guildId && this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
-    // valid người chơi thuộc các bang
-    if (this.table.guildId.indexOf(player.userInfo.guildId) < 0){
-      slotIndex = -1;
-      data.notifyMsg = util.format('Bạn không thuộc 2 hội quán tham gia đấu trường này')
-    }
   }
+
   if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
     || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel && self.table.gameType !== consts.GAME_TYPE.TOURNAMENT)
   ) {
@@ -288,7 +296,14 @@ pro.sitIn = function (uid, slotId) {
   } else {
     index = self.getAvailableIndex(uid);
   }
-  if (index > -1 && (!this.table.username || this.table.username.indexOf(player.userInfo.username) > -1)){
+  if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
+    if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+      index = this.table.guildId.indexOf(player.userInfo.guildId);
+    }else {
+      index = this.table.username.indexOf(player.userInfo.username)
+    }
+  }
+  if (index > -1){
     var result = {};
     utils.arrayRemove(self.guestIds, uid);
     self.playerSeat[index] = uid;
@@ -430,6 +445,15 @@ pro.getPlayerByUsername = function (username) {
   for (var i = 0, len = keys.length; i < len; i ++){
     var player = this.players[keys[i]];
     if (player.userInfo.username === username)
+      return player
+  }
+};
+
+pro.getPlayerByGuildId = function (guildId) {
+  var keys = Object.keys(this.players);
+  for (var i = 0, len = keys.length; i < len; i ++){
+    var player = this.players[keys[i]];
+    if (player.userInfo.guildId === guildId)
       return player
   }
 };

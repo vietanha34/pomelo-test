@@ -66,12 +66,12 @@ module.exports.process = function (app, type, param) {
   pomelo.app.get('mysqlClient')
     .TourTable
     .findOne({
-      where : {
-        boardId : boardInfo.boardId
+      where: {
+        boardId: boardInfo.boardId
       },
-      order : 'createdAt DESC',
-      attributes : ['match'],
-      raw : true
+      order: 'createdAt DESC',
+      attributes: ['match'],
+      raw: true
     })
     .then(function (table) {
       if (!table) return;
@@ -82,12 +82,99 @@ module.exports.process = function (app, type, param) {
       pomelo.app.get('mysqlClient')
         .TourTable
         .update({
-          match : match.join(',')
+          match: match.join(',')
         }, {
-          where : {
-            boardId : boardInfo.boardId
+          where: {
+            boardId: boardInfo.boardId
           }
         })
     });
-   //xử lý kết quả trả về của đấu trường
+  //xử lý kết quả trả về của đấu trường
+  if (param.boardInfo.tourType === consts.TOUR_TYPE.FRIENDLY) {
+    return Promise.props({
+      guild1: pomelo.app.get('mysqlClient')
+        .Guild
+        .findOne({
+          where: {
+            id: param.boardInfo.guildId[0]
+          },
+          raw: true
+        }),
+      guild2: pomelo.app.get('mysqlClient')
+        .Guild
+        .findOne({
+          where: {
+            id: param.boardInfo.guildId[1]
+          },
+          raw: true
+        }),
+      player1 : pomelo.app.get('mysqlClient')
+        .GuildMember
+        .findOne({
+          where : {
+            uid : param.users[0].uid,
+            guildId : param.boardInfo.guildId[0]
+          },
+          raw : true
+        }),
+      player2 : pomelo.app.get('mysqlClient')
+        .GuildMember
+        .findOne({
+          where : {
+            uid : param.users[1].uid,
+            guildId : param.boardInfo.guildId[1]
+          },
+          raw : true
+        })
+    })
+      .then(function (data) {
+        var guild1 = data.guild1;
+        var guild2 = data.guild2;
+        var player1 = data.player1;
+        var player2 = data.player2;
+        var fame = Math.round(Math.abs((player1.fame - player2.fame)  / 5));
+        fame = fame < 5 ? 5 : fame;
+        if (param.users[0].result.type === consts.WIN_TYPE.WIN){
+          fame = guild2.fame < fame ? guild2.fame : fame;
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
+            }, {
+              where: {
+                id: guild1.id
+              }
+            });
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
+            }, {
+              where: {
+                id: guild2.id
+              }
+            });
+        }else if (param.users[0].result.type === consts.WIN_TYPE.LOSE){
+          fame = guild1.fame < fame ? guild2.fame : fame;
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
+            }, {
+              where: {
+                id: guild2.id
+              }
+            });
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
+            }, {
+              where: {
+                id: guild1.id
+              }
+            });
+        }
+      })
+  }
 };

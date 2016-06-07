@@ -47,28 +47,12 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   if (board.status === consts.BOARD_STATUS.FINISH || !board.players){
     return utils.invokeCallback(cb, null, { data : {ec : Code.FAIL, msg : "Ván đấu đã kết thúc"}})
   }
+  if (board.tourType !== consts.TOUR_TYPE.FRIENDLY){
+    opts.role = consts.GUILD_MEMBER_STATUS.GUEST;
+  }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
-      if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.tourType === consts.TOUR_TYPE.FRIENDLY){
-        // lấy thêm thông tin về tour của người chơi
-        return [
-          Promise.resolve(effect),
-          pomelo.app.get('mysqlClient')
-            .Guild
-            .findOne({
-              where : {
-
-              }
-            })
-        ]
-      }else {
-        return [Promise.resolve(effect)]
-      }
-    })
-    .spread(function (effect, guild) {
-      guild = guild || {};
       opts.effect = effect;
-      opts.guildId = guild.guildId;
       console.log('state :', opts);
       var state = board.joinBoard(opts);
       if (state && !state.ec) {

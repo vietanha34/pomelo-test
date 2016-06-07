@@ -10,8 +10,9 @@ var consts = require('../../consts/consts');
 var NotifyDao = require('../../dao/notifyDao');
 var Promise = require('bluebird');
 var GuildDao = require('../../dao/GuildDao');
+var lodash = require('lodash');
 
-module.exports.type = Config.TYPE.TOPUP;
+module.exports.type = Config.TYPE.TOURNAMENT;
 
 /**
  * Event Gửi về khi phát sinh 1 giao dịch
@@ -20,6 +21,7 @@ module.exports.type = Config.TYPE.TOPUP;
  * * tourId :
  * * gameId :
  * * type : type của tour
+ * * player : [] mảng 2 uid của người chơi ở 2 hội quán
  *
  * @event
  * @param {Object} app
@@ -104,7 +106,7 @@ module.exports.process = function (app, type, param) {
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
         guild2Fame = 30
-      }else if (point[0] < point[1]){
+      }else if (totalPoint[0] < totalPoint[1]){
         GuildDao.addEvent({
           guildId: guild1.id,
           uid: 1,
@@ -143,7 +145,7 @@ module.exports.process = function (app, type, param) {
         pomelo.app.get('mysqlClient')
           .Guild
           .update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + guild1Fame)
+            exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild1Fame)
           }, {
             where: {
               id : guild1.id
@@ -152,7 +154,7 @@ module.exports.process = function (app, type, param) {
         pomelo.app.get('mysqlClient')
           .Guild
           .update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + guild2Fame)
+            exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild2Fame)
           }, {
             where: {
               id : guild2.id

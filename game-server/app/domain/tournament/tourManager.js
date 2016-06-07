@@ -1489,8 +1489,6 @@ pro.createTable = function (opts) {
   params.matchPlay = opts.matchPlay || 2;
   params.battleType = opts.battleType;
   params.tourType = opts.tourType;
-  params.caroOpen = opts.caroOpen || 0;
-  params.mustKill = opts.mustKill || 0;
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
   params.lockMode = typeof params.lockMode === 'string' ? lodash.map(lodash.compact((params.lockMode || '').split(',')), function (lock) {
     return parseInt(lock)
@@ -1506,12 +1504,12 @@ pro.createTable = function (opts) {
       if (curServer.gameId === opts.gameId) {
         return pomelo.app.game.boardManager.createRoomTournament(hallConfig, null, params);
       } else {
-        return Promise.promisify(pomelo.app.rpc.game.gameRemote.createRoomTournament.toServer)(hallConfig, null, params);
+        return Promise.promisify(pomelo.app.rpc.game.gameRemote.createRoomTournament.toServer)(utils.getServerIdFromServerIndex(opts.gameId * 10), hallConfig, null, params);
       }
     })
     .then(function (data) {
       console.log('createRoomTournament : ', data);
-      var opts = {
+      var createTableData = {
         boardId: data.boardId,
         serverId: data.serverId,
         gameId: opts.tc.gameId,
@@ -1528,8 +1526,8 @@ pro.createTable = function (opts) {
         player2: opts.tourType === consts.TOUR_TYPE.FRIENDLY ? opts.guildId[1] : opts.uid[1],
         player: opts.player || JSON.stringify([{}, {}])
       };
-      console.log('createTourTable opts : ', opts);
-      return TourDao.createTable(opts);
+      console.log('createTourTable opts : ', createTableData);
+      return TourDao.createTable(createTableData);
     })
 };
 

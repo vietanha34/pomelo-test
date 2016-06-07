@@ -107,7 +107,7 @@ Handler.prototype.send = function (msg, session, next) {
           self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), data, done);
           return;
         case consts.TARGET_TYPE.BOARD_GUEST:
-          self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
+          //self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
           var dataClone = utils.clone(data);
           dataClone.targetType = consts.TARGET_TYPE.BOARD;
           return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), dataClone, done);
@@ -116,7 +116,7 @@ Handler.prototype.send = function (msg, session, next) {
           messageService.pushMessageToPlayer(uids, route, data);
           return;
         case consts.TARGET_TYPE.GROUP:
-          self.chatService.sendMessageToGroup(uid, msg.channel, data, done);
+          self.chatService.sendMessageToGroup(msg.channel, data, done);
           return
       }
     }

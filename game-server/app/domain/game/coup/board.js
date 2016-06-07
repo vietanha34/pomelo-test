@@ -42,9 +42,13 @@ Game.prototype.init = function () {
   var index = Math.round(Math.random());
   var turnPlayer;
   if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
-    var username = this.table.username[this.table.numMatchPlay % 2];
-    console.log('username : ', username, this.table.numMatchPlay, this.table.username);
-    turnPlayer = this.table.players.getPlayerByUsername(username);
+    if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+      var guildId = this.table.guildId[this.table.numMatchPlay %2];
+      turnPlayer = this.table.players.getPlayerByGuildId(guildId);
+    }else {
+      var username = this.table.username[this.table.numMatchPlay % 2];
+      turnPlayer = this.table.players.getPlayerByUsername(username);
+    }
     this.table.firstUid = turnPlayer.uid;
     this.turn = turnPlayer.uid;
   }else {

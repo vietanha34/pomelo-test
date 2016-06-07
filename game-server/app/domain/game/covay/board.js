@@ -43,15 +43,27 @@ Game.prototype.init = function () {
   var i;
   this.table.timer.stop();
   this.table.status = consts.BOARD_STATUS.PLAY;
-  if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
-    this.turn = this.table.looseUser;
+  if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
+    if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+      var guildId = this.table.guildId[this.table.numMatchPlay %2];
+      turnPlayer = this.table.players.getPlayerByGuildId(guildId);
+    }else {
+      var username = this.table.username[this.table.numMatchPlay % 2];
+      turnPlayer = this.table.players.getPlayerByUsername(username);
+    }
+    this.table.firstUid = turnPlayer.uid;
+    this.turn = turnPlayer.uid;
   }else {
-    var index = Math.round(Math.random());
-    this.turn = this.playerPlayingId[index];
+    if (this.playerPlayingId.indexOf(this.table.looseUser) > -1){
+      this.turn = this.table.looseUser;
+    }else {
+      var index = Math.round(Math.random());
+      this.turn = this.playerPlayingId[index];
+    }
+    this.table.firstUid = this.turn;
+    this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
+    var turnPlayer = this.table.players.getPlayer(this.turn);
   }
-  this.table.firstUid = this.turn;
-  this.table.looseUser = this.table.players.getOtherPlayer(this.turn);
-  var turnPlayer = this.table.players.getPlayer(this.turn);
   if(turnPlayer.color !== consts.COLOR.BLACK){
     var colorMap = this.table.players.changeColor(turnPlayer.uid, consts.COLOR.BLACK);
   }

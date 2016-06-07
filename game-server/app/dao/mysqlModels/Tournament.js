@@ -74,17 +74,23 @@ module.exports = function(sequelize, DataTypes) {
     numBoard : {
       type : DataTypes.INTEGER
     },
-    guildName1 : {
+    guild1 : {
       type : DataTypes.STRING
     },
-    guildName2 : {
+    guild2 : {
       type : DataTypes.STRING
+    },
+    guildId1 : {
+      type : DataTypes.INTEGER
+    },
+    guildId2: {
+      type : DataTypes.INTEGER
     },
     info: {
       type : DataTypes.TEXT
     },
     schedule : {
-      type : DataTypes.TEXT
+      type : DataTypes.INTEGER
     }
   }, {
     classMethods: {

@@ -67,7 +67,9 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       if (userInfo) {
         user = userInfo;
         user.elo = user['Achievement.elo'];
-        user.sIcon = session.get('sIcon');
+        user.sIcon = session.get('guild').sIcon;
+        user.guildId = session.get('guild').id;
+        user.role = session.get('guild').role;
         user.level = Formula.calLevel(user.exp) || 0;
         user.frontendId = session.frontendId;
         user.version = session.get('version');
@@ -77,7 +79,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         whereClause['bet'] = {
           $and : {
             $lte : user.gold,
-            $gt : 0
+            $gte : 0
           }
         };
         self.app.get('boardService').getBoard({
@@ -168,7 +170,9 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           gold: userInfo.gold,
           username: userInfo.username,
           uid: userInfo.uid,
-          sIcon : session.get('sIcon'),
+          sIcon: session.get('guild').sIcon,
+          guildId: session.get('guild').id,
+          role: session.get('guild').role,
           vipPoint : userInfo.vipPoint,
           fullname: userInfo.fullname,
           sex: userInfo.sex,
@@ -177,6 +181,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
           version : session.get('version'),
           frontendId: session.frontendId
         };
+        console.log('userInfo : ', user, session);
         self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
       } else {
         next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));

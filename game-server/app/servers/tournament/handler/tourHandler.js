@@ -460,24 +460,39 @@ Handler.prototype.getTourRank = function (msg, session, next) {
  */
 Handler.prototype.getTourTable = function (msg, session, next) {
   var tourId = msg.tourId;
-  var tourRound;
+  var tour;
+  var tourRound = {battleType : consts.TOUR_BATTLE_TYPE.THUY_SY};
+  var schedule;
   return TourDao.getTour({
     where: {
       tourId: tourId
     },
     raw: true
   })
-    .then(function (tour) {
+    .then(function (t) {
+      tour = t;
       if (!tour) {
         return Promise.reject({ec: Code.FAIL, msg: 'Không có đấu trường này'})
       }
       if (tour.type === consts.TOUR_TYPE.FRIENDLY) {
-        return TourDao.getTourTable({
-          where: {
-            tourId: tour.tourId
-          },
-          raw: true
-        })
+        return pomelo.app.get('mysqlClient')
+          .TourSchedule
+          .findOne({
+            where : {
+              roundId : tour.roundId
+            },
+            raw : true,
+            order : 'matchTime DESC'
+          })
+          .then(function (sch) {
+            schedule = sch;
+            return TourDao.getTourTable({
+              where: {
+                tourId: tour.tourId
+              },
+              raw: true
+            })
+          })
       } else {
         return TourDao.getTourRound({
           where: {
@@ -549,7 +564,57 @@ Handler.prototype.getTourTable = function (msg, session, next) {
         }
         return data;
       });
-      return next(null, {table: tables, groupId: msg.groupId, tourId: msg.tourId, battleType: tourRound.battleType})
+      if (tour.type === consts.TOUR_TYPE.FRIENDLY){
+        var data = {
+          table: tables,
+          groupId: msg.groupId,
+          tourId: msg.tourId,
+          battleType: tourRound.battleType,
+          isFriendly : tour.type === consts.TOUR_TYPE.FRIENDLY ? 1 : 0,
+          name : tour.name
+        };
+        switch (tour.status) {
+          case consts.TOUR_STATUS.STARTED:
+          case consts.TOUR_STATUS.RUNNING:
+            console.log('schedule : ', schedule);
+            if (schedule && schedule.show){
+              if (moment(schedule.matchTime * 1000).isAfter(moment())){
+                data['text'] = 'Chờ thi đấu';
+                data['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
+                //tour['remain'] = 10;
+                data['time'] = moment(schedule.matchTime * 1000).format('HH:mm DD/MM');
+              }else if (moment(schedule.matchTime * 1000).add(4, 'hours').isAfter(moment())){
+                data['text'] = 'Đang thi đấu';
+                data['remain'] = moment(schedule.matchTime * 1000).add(4, 'hours').diff(moment(), 'second');
+              }else {
+                data['text'] = 'Chờ tính điểm';
+                data['time'] = '--:--'
+              }
+            }else {
+              data['text'] = 'Đang xếp cặp';
+              data['time'] = '--:--';
+            }
+            break;
+          case consts.TOUR_STATUS.PRE_START:
+            if (moment(tour.registerTime).isAfter(moment())){
+              data['text'] = 'Nhận đăng kí';
+              data['remain'] = moment(tour.registerTime).diff(moment(), 'second');
+              data['time'] = moment(tour.registerTime).format('HH:mm DD/MM');
+            }else {
+              data['text'] = 'Sắp diễn ra';
+              data['remain'] = -1;
+              data['time'] = moment(tour.beginTime).format('HH:mm DD/MM');
+            }
+        }
+        return next(null, data)
+      }else {
+        return next(null, {
+          table: tables,
+          groupId: msg.groupId,
+          tourId: msg.tourId,
+          battleType: tourRound.battleType
+        })
+      }
     })
     .catch(function (err) {
       if (err){
@@ -559,6 +624,10 @@ Handler.prototype.getTourTable = function (msg, session, next) {
           msg: err.msg || 'Không thể lấy danh sách bàn vào thời điểm này'
         })
       }
+    })
+    .finally(function () {
+      tour = null;
+      schedule = null;
     })
 };
 
