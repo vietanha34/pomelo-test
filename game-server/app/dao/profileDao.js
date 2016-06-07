@@ -5,6 +5,7 @@
 var ProfileDao = module.exports;
 var pomelo = require('pomelo');
 var Promise = require('bluebird');
+var request = require('request-promise');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
 var formula = require('../consts/formula');
@@ -178,6 +179,115 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
         UserDao.deleteCache(null, uid);
       })
   }
+};
+
+/**
+ *
+ * @param uid
+ * @param params
+ *  phone
+ *  email
+ * @param session
+ * @param cb
+ */
+ProfileDao.updateProfileOTP = function updateProfileOTP(uid, params, session, cb) {
+  if (!uid || (!params.phone && !params.email)) {
+    return utils.invokeCallback(cb, 'invalid params update profile otp');
+  }
+
+  var globalConfig = pomelo.app.get('configService').getConfig();
+  if ((params.phone && !globalConfig.phoneOTP) || (params.email && !globalConfig.emailOTP)) {
+    return UserDao.updateProperties(uid, params)
+      .then(function(){
+        params.msg = code.PROFILE_LANGUAGE.SUCCESS;
+        params.phoneOTP = globalConfig.phoneOTP;
+        params.emailOTP = globalConfig.emailOTP;
+        return utils.invokeCallback(cb, null, params);
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+        return utils.invokeCallback(cb, e.stack || e);
+      });
+  }
+  else {
+    var serviceConfig = pomelo.app.get('serviceConfig');
+    var qs = {};
+    if (params.phone) qs.phoneNumber = params.phone;
+    if (params.email) qs.email = params.email;
+
+    console.log({
+      method: 'POST',
+      uri: serviceConfig.account.authUrl + serviceConfig.account.verifyUserInfo,
+      form: qs,
+      headers: {Authorization: 'Bearer '+session.get('accessToken')},
+      json: true
+    });
+
+    return request({
+      method: 'POST',
+      uri: serviceConfig.account.authUrl + serviceConfig.account.verifyUserInfo,
+      form: qs,
+      headers: {Authorization: 'Bearer '+session.get('accessToken')},
+      json: true
+    })
+      .then(function(data) {
+        var res = {};
+        var attr = (params.phone ? 'phone' : 'email');
+        res[attr+'OTP'] = globalConfig[attr+'OTP'];
+        return utils.invokeCallback(cb, null, res);
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+        return utils.invokeCallback(cb, e.stack || e);
+      });
+  }
+};
+
+/**
+ *
+ * @param uid
+ * @param params
+ *  type (1: email, 2: phone)
+ *  code
+ * @param session
+ * @param cb
+ */
+ProfileDao.confirmOTP = function confirmOTP(uid, params, session, cb) {
+  if (!uid || !params.code || !params.type) {
+    return utils.invokeCallback(cb, 'invalid params confirm otp');
+  }
+
+  var serviceConfig = pomelo.app.get('serviceConfig');
+
+  console.log({
+    method: 'POST',
+    uri: serviceConfig.account.authUrl + serviceConfig.account.checkOTP,
+    form: params,
+    headers: {Authorization: 'Bearer '+session.get('accessToken')},
+    json: true
+  });
+
+  return request({
+    method: 'POST',
+    uri: serviceConfig.account.authUrl + serviceConfig.account.checkOTP,
+    form: params,
+    headers: {Authorization: 'Bearer '+session.get('accessToken')},
+    json: true
+  })
+    .then(function(data) {
+      var attribute = (params.type==1) ? 'email' : 'phone';
+      var res = {};
+      res[attribute] = data.value || '';
+      res.msg = code.PROFILE_LANGUAGE.SUCCESS;
+      return utils.invokeCallback(cb, null, res);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb, e.stack || e);
+    });
 };
 
 /**
