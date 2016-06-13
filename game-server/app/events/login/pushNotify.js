@@ -100,7 +100,6 @@ module.exports.process = function (app, type, param) {
         var now = Date.now()/1000|0;
         for (var i=0; i<keys.length; i++) {
           notifyObj = utils.JSONParse(notify[keys[i]], null);
-          utils.log(notifyObj, now, notifyObj.startTime <= now && notifyObj.endTime >= now, notifyObj.scope == consts.NOTIFY.SCOPE.ALL, notifyObj.users.indexOf(param.uid)>=0);
           if (notifyObj && notifyObj.startTime <= now && notifyObj.endTime >= now
             && (notifyObj.scope == consts.NOTIFY.SCOPE.ALL || notifyObj.users.indexOf(param.uid)>=0)) {
             pushObj = {
@@ -127,4 +126,48 @@ module.exports.process = function (app, type, param) {
       }
     });
   }, 4000);
+
+  setTimeout(function() {
+    var pushObj = {
+      type: consts.NOTIFY_TYPE.POPUP,
+      title: 'Lưu ý',
+      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+      buttonLabel: 'OK',
+      command: {target: 0},
+      scope: consts.NOTIFY.SCOPE.USER,
+      users: [param.uid],
+      image: consts.NOTIFY.IMAGE.ALERT
+    };
+    NotifyDao.push(pushObj, function (e, reply) {
+      if (e) console.error(e.stack || e);
+    });
+    var pushObj1 = {
+      type: consts.NOTIFY_TYPE.MARQUEE,
+      title: 'Lưu ý',
+      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+      buttonLabel: 'OK',
+      command: {target: 0},
+      scope: consts.NOTIFY.SCOPE.USER,
+      users: [param.uid],
+      image: consts.NOTIFY.IMAGE.ALERT
+    };
+    NotifyDao.push(pushObj1, function (e, reply) {
+      if (e) console.error(e.stack || e);
+    });
+  }, 3000);
+  utils.interval(function() {
+    var pushObj = {
+      type: consts.NOTIFY_TYPE.POPUP,
+      title: 'Lưu ý',
+      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+      buttonLabel: 'OK',
+      command: {target: 0},
+      scope: consts.NOTIFY.SCOPE.USER,
+      users: [param.uid],
+      image: consts.NOTIFY.IMAGE.ALERT
+    };
+    NotifyDao.push(pushObj, function (e, reply) {
+      if (e) console.error(e.stack || e);
+    });
+  }, 180000);
 };
