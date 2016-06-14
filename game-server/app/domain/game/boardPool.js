@@ -51,7 +51,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
       .addRoom(roomOpts)
       .then(function () {
         if (lodash.isArray(tableOpts.players)) {
-          listPlayer = tableOpts.players;
+          listPlayers = tableOpts.players;
         } else {
           var data = pomelo.app.get('dataService').get('' + roomId).data;
           var listPlayers = lodash.values(data);
@@ -64,9 +64,9 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
             opts.removeMode = [];
             opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
           }
-          opts.username = [listPlayer['player1'], listPlayer['player2']];
-          opts.fullname = [listPlayer['player1'], listPlayer['player2']];
-          opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
+          opts.username = [listPlayer[0], listPlayer[1]];
+          opts.fullname = [listPlayer[0], listPlayer[1]];
+          opts.timeWait = tableOpts.timeWait * 1000 || 120000; // thời gian chờ là 1 phút
           opts.matchPlay = tableOpts.matchPlay || 2;
           opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
           opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
@@ -82,7 +82,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
           opts.configTurnTime = [opts.turnTime * 1000];
           opts.configTotalTime = [opts.totalTime * 1000];
           opts.base = true;
-          opts.tourTimeWait = tableOpts.tourTimeWait || 10 * 60 * 1000;
+          opts.tourTimeWait = tableOpts.tourTimeWait * 1000 || 10 * 60 * 1000;
           opts.level = tableOpts.level || 0;
           opts.roomId = roomOpts.roomId;
           opts.gameType = consts.GAME_TYPE.TOURNAMENT;
@@ -204,7 +204,8 @@ exp.create = function (params, cb) {
           serverId: self.serverId,
           gameId: self.gameId,
           gameType: params.gameType || consts.GAME_TYPE.NORMAL,
-          roomId: params.roomId
+          roomId: params.roomId,
+          hallId: params.hallId
         })
       }
     })

@@ -918,6 +918,26 @@ GuildDao.removeAction = function (guildId, action) {
     })
 };
 
+
+GuildDao.pushToPresident = function (guildId, data, route) {
+  return pomelo.app.get('mysqlClient')
+    .GuildMember
+    .findOne({
+      where : {
+        guildId : guildId,
+        role : consts.GUILD_MEMBER_STATUS.PRESIDENT
+      },
+      attributes : ['uid'],
+      raw : true
+    })
+    .then(function (member) {
+      if (!member) {
+        return
+      }
+      return pomelo.app.get('statusService').pushByUids([member.uid], route, data);
+    })
+};
+
 GuildDao.deleteEvent = function (eventId) {
 
 };

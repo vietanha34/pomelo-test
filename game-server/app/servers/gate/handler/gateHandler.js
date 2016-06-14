@@ -56,7 +56,7 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = configService.getConfig();
-      if (msg.packageName === 'com.chesscotuong.onekool' && msg.platform === 'android'){
+      if (msg.versionCode === 13062016 && msg.platform === 'ios'){
         config['IS_REVIEW'] = 1
       }
       var responseData = {
