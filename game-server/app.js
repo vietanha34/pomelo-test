@@ -240,7 +240,7 @@ app.configure('production|development', 'manager|game|service|event|worker|http|
   app.set('paymentService', paymentService);
 });
 
-app.configure('production|development', 'gate|home|service|event|worker', function () {
+app.configure('production|development', 'gate|home|service|event|worker|manager', function () {
   var ConfigService = require('./app/services/configService');
   var configService = new ConfigService(app);
   configService.init();

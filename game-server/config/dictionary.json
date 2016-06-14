@@ -123,6 +123,7 @@
   "service.paymentHandler.useCard" : 151,
   "service.paymentHandler.verifyIap" : 152,
   "service.paymentHandler.getPayHistory" : 153,
+  "service.paymentHandler.sdk" : 154,
   "service.guideHandler.getData" : 190,
   "service.guideHandler.getGuide" : 191,
   "tournament.tourHandler.getListTour": 500,
