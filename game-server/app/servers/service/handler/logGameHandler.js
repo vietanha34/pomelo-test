@@ -43,6 +43,7 @@ Handler.prototype.getGameLog = function (msg, session, next) {
     })
     .then(function (players) {
       for (var i = 0, len = players.length; i< len; i++){
+        if (!players[i]) continue;
         players[i]['avatar'] = utils.JSONParse(players[i]['avatar'], {});
         players[i]['level'] = Formula.calLevel(players[i]['exp']);
         players[i]['elo'] = players[i]['Achievement.elo'];

@@ -727,7 +727,7 @@ Handler.prototype.duel = function (msg, session, next) {
       if (guildId === msg.guildId){
         return Promise.reject({ec :Code.FAIL, msg : "Bạn không thể khiêu chiến với chính hội quán của mình"})
       }
-      // if (msg.time - Date.now() < 30 * 60 * 1000 ){
+      // if (msg.time - Date.now() < 5 * 60 * 1000 ){
       //   return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại ít nhất 4 tiếng"});
       // }
       if (msg.time - Date.now() > 7 * 24 * 60 * 60 * 1000){
@@ -756,6 +756,40 @@ Handler.prototype.duel = function (msg, session, next) {
               allow : null
             }
           }),
+          pomelo.app.get('mysqlClient')
+            .GuildBattle
+            .findOne({
+              where : {
+                $or : [
+                  {
+                    guildId1 : msg.guildId
+                  },
+                  {
+                    guildId2 : msg.guildId
+                  }
+                ],
+                allow : 1
+              },
+              attributes : ['time'],
+              order : 'createdAt DESC'
+            }),
+          pomelo.app.get('mysqlClient')
+            .GuildBattle
+            .findOne({
+              where : {
+                $or : [
+                  {
+                    guildId1 : guildId
+                  },
+                  {
+                    guildId2 : guildId
+                  }
+                ],
+                allow : 1
+              },
+              attributes : ['time'],
+              order : 'createdAt DESC'
+            }),
           pomelo.app.get('redisCache')
             .ttlAsync(redisKeyUtil.getGuildDuelFail(guildId, msg.guildId)),
           pomelo.app.get('redisCache')
@@ -768,13 +802,20 @@ Handler.prototype.duel = function (msg, session, next) {
         })
       }
     })
-    .spread(function (count, guildCount, timeoutFail, timeoutSuccess) {
+    .spread(function (count, guildCount, guildTargetBattle, guildCurrentBattle, timeoutFail, timeoutSuccess) {
       if (count >= 3){
         return Promise.reject({ec: Code.FAIL, msg: "Hội quán của bạn không được gửi quá 3 lời mời khiêu chiến hội quán khác"})
       }
 
       if (guildCount >= 1){
-        return Promise.reject({ec : Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối thủ chấp nhập"})
+        return Promise.reject({ec : Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
+      }
+
+      if (guildTargetBattle && moment(guildTargetBattle.time).unix() + 60 * 4 * 60 > ((msg.time / 1000 | 0))){
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối phương đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildTargetBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
+      }
+      if (guildCurrentBattle && moment(guildCurrentBattle.time).unix() + 60 * 4 * 60 > ((msg.time / 1000 | 0))){
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán của bạn đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildCurrentBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
       }
       // if (timeoutFail > 0){
       //   return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối thủ vừa từ chối yêu cầu của bạn, vui lòng đợi %s nữa để gửi lời mời khác", moment().add(timeoutFail, 'seconds').from(moment(), true))})
@@ -814,9 +855,9 @@ Handler.prototype.duel = function (msg, session, next) {
       if (currentGuild.gold < msg.numBoard * msg.numMatch * msg.bet){
         return Promise.reject({ ec: Code.FAIL, msg : util.format("Hội quán của bạn cần tối thiểu %s gold quỹ hội, để có thể khiêu chiến %s bàn x %s trận với số gold mỗi trân là %s", msg.numBoard * msg.numMatch * msg.bet, msg.numBoard, msg.numMatch, msg.bet)})
       }
-      if (currentGuild.numMember < msg.numBoard){
-        return Promise.reject({ ec: Code.FAIL, msg : util.format("Hội quán của bạn cần tối thiểu %s thành viên để khiêu chiến với số bàn là %s", msg.numBoard, msg.numBoard )})
-      }
+      // if (currentGuild.numMember < msg.numBoard){
+      //   return Promise.reject({ ec: Code.FAIL, msg : util.format("Hội quán của bạn cần tối thiểu %s thành viên để khiêu chiến với số bàn là %s", msg.numBoard, msg.numBoard )})
+      // }
       if (!targetGuild) {
         return Promise.reject({ec: Code.FAIL, msg: 'Không có hội quán nào để khiêu chiến'})
       } else {

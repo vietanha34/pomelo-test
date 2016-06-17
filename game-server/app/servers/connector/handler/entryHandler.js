@@ -137,7 +137,6 @@ Handler.prototype.login = function (msg, session, next) {
       deviceName : msg.deviceName,
       frontendId : session.frontendId
     };
-
     if (boardId) {
       session.set('tableId', boardId);
       session.push('tableId');

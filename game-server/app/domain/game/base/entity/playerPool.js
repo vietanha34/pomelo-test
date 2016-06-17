@@ -124,7 +124,8 @@ pro.addPlayer = function (opts) {
       }else if (this.table.numMatchPlay === 0 && !this.table.tableTourFinish){
         data.notifyMsg = util.format('Đối thủ của bạn là "%s", vui lòng đợi người chơi trong %s nữa', index === 0 ? this.table.fullname[1] : this.table.fullname[0], moment(this.table.timePlay + this.table.tourTimeWait).fromNow(true));
       }
-    }else {
+    }
+    else {
       data.notifyMsg = util.format('Bàn chơi hiện tại đc sắp xếp cho cặp đấu "%s" vs "%s, Trận đấu diễn ra vào : %s"', this.table.fullname[0], this.table.fullname[1], moment(this.table.timePlay).format('HH:mm:ss DD-MM-YYYY'));
     }
     if (this.table.tableTourFinish){
@@ -136,7 +137,7 @@ pro.addPlayer = function (opts) {
     }
   }
 
-  if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)  || self.length >= self.table.maxPlayer)
+  if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet && this.table.tourType !== consts.TOUR_TYPE.FRIENDLY)  || self.length >= self.table.maxPlayer)
     || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel && self.table.gameType !== consts.GAME_TYPE.TOURNAMENT)
   ) {
     if (slotIndex > -1) {
@@ -174,6 +175,7 @@ pro.addPlayer = function (opts) {
       data.guest = true;
     }
   }
+  console.log('playerSeat : ', self.playerSeat, self.table.guildId, opts);
   result = data;
   player.genMenu();
   return result;
@@ -299,6 +301,9 @@ pro.sitIn = function (uid, slotId) {
   if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
     if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
       index = this.table.guildId.indexOf(player.userInfo.guildId);
+      if (index > -1 && this.playerSeat[index]){
+        return { ec: Code.FAIL, msg : 'Vị trí của hội quán bạn đã có người ngồi vào rồi'}
+      }
     }else {
       index = this.table.username.indexOf(player.userInfo.username)
     }

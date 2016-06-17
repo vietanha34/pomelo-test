@@ -13,6 +13,9 @@ module.exports = function(sequelize, DataTypes) {
       autoIncrement : true
     },
     actionId : {
+      type : DataTypes.BIGINT
+    },
+    tourId : {
       type : DataTypes.INTEGER
     },
     guildId1: {
@@ -25,6 +28,14 @@ module.exports = function(sequelize, DataTypes) {
     },
     time : {
       type: DataTypes.DATE
+    },
+    guildScore1: {
+      type : DataTypes.FLOAT,
+      defaultValue: 0
+    },
+    guildScore2: {
+      type : DataTypes.FLOAT,
+      defaultValue : 0
     },
     allow : {
       type : DataTypes.INTEGER(4)

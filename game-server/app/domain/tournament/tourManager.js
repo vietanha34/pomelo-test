@@ -1481,6 +1481,7 @@ pro.createTable = function (opts) {
   var hallConfig = hallConfigs['' + params.gameId + consts.HALL_ID.CAO_THU];
   params.username = opts.username;
   params.fullname = opts.fullname;
+  params.guildName = opts.guildName;
   params.uid = opts.uid;
   params.guildId = opts.guildId;
   params.timePlay = opts.matchTime * 1000;

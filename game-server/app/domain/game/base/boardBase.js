@@ -104,7 +104,9 @@ var Board = function (opts, PlayerPool, Player) {
     this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
     this.tableTourFinish = false;
     this.tourScore = [0, 0];
+    this.tourGuildDefault = [];
     this.tourWin = [0,0];
+    this.guildName = opts.guildName || [];
     this.tourDraw = [0,0];
     this.tourLose = [0,0];
     this.tourId = opts.tourId;
@@ -295,6 +297,7 @@ pro.chargeMoney = function (uid, gold, msg, cb) {
 pro.pushMessage = function (route, msg) {
   var channel = pomelo.app.get('channelService').getChannel(this.channelName, true);
   logger.info('\n broadcast to channel %s : \n route : %s \n msg : %j', this.channelName, route, msg);
+  console.trace('push here : ');
   channel.pushMessage(route, msg);
 };
 
@@ -508,6 +511,7 @@ pro.clearIdlePlayer = function () {
         if (winPlayer) {
           this.tableTourFinish = true;
           this.tourWinUser = {
+            guildId : winPlayer.userInfo.guildId,
             username: winPlayer.userInfo.username,
             uid: winPlayer.uid,
             fullname : winPlayer.userInfo.fullname
@@ -576,6 +580,7 @@ pro.clearIdlePlayer = function () {
       }
     }
   }
+  this.clearGlobalChannel();
 };
 
 /**
@@ -653,6 +658,7 @@ pro.leaveBoard = function (uid, kick) {
   }
   self.emit('leaveBoard', userInfo, kick);
   uids.tourId = self.tourId;
+  uids.tourType = self.tourType;
   uids.gold = goldAfter;
   return uids
 };
@@ -749,9 +755,11 @@ pro.getBoardInfo = function (finish, uid) {
       districtId: this.districtId,
       matchId: this.game ? this.game.matchId : '',
       bet: this.bet,
+      guildId : this.guildId,
       owner: this.owner,
       tableType: this.tableType,
       gameType: this.gameType,
+      tourType: this.tourType,
       finishTour: this.tableTourFinish,
       tourWinner: this.tourWinUser ? this.tourWinUser.uid : undefined
     }
@@ -1428,13 +1436,13 @@ pro.getTourScoreIndex = function (uid) {
 };
 
 pro.transfer = function (bet, fromUid, toUid) {
-  var fromIndex = this.players.playerSeat.indexOf(fromUid);
-  var toIndex = this.players.playerSeat.indexOf(toUid);
   if (this.gameType === consts.GAME_TYPE.TOURNAMENT && this.tourType === consts.TOUR_TYPE.FRIENDLY) {
+    var fromPlayer = this.players.getPlayer(fromUid);
+    var toPlayer = this.players.getPlayer(toUid);
     this.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
       gold : bet,
-      fromUid : this.guildId[fromIndex],
-      toUid : this.guildId[toIndex],
+      fromGuildId : fromPlayer.userInfo.guildId,
+      toGuildId : toPlayer.userInfo.guildId,
       tax : 5,
       force : true,
       gameType : this.gameType,
@@ -1449,4 +1457,22 @@ pro.transfer = function (bet, fromUid, toUid) {
       force : true
     }, 1, function () {});
   }
+};
+
+pro.clearGlobalChannel = function () {
+  var self = this;
+  pomelo.app.get('globalChannelService').getMembersByChannelName('connector', this.channelName, function (err, members) {
+    if (err) {
+      return console.error('clearGlobalChannel : ', err);
+    }
+    else {
+      for (var i = 0, len = members.length; i < len; i++) {
+        var member = members[i];
+        if (self.players.players[member]){
+          // xoá bỏ khỏi game
+        }
+      }
+
+    }
+  })
 };

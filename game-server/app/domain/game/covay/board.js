@@ -2,7 +2,6 @@
  * Created by laanhdo on 11/25/14.
  */
 
-var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
 var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
@@ -10,7 +9,6 @@ var util = require('util');
 var utils = require('../../../util/utils');
 var Player = require('./entity/player');
 var lodash = require('lodash');
-var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
@@ -240,13 +238,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     player.userInfo.elo = eloMap[i];
   }
   if (bet > 0){
-    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
-      gold : bet,
-      fromUid : fromUid,
-      toUid : toUid,
-      tax : 5,
-      force : true
-    }, 1, function () {});
+    this.table.transfer(bet, fromUid,toUid);
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;

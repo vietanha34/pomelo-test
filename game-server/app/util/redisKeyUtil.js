@@ -60,12 +60,24 @@ var USER_ACTION = 'cothu:action:{uid}';
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
 
-RedisKeyUtil.getGuildDuelFail = function (guild1, guild2) {
-
+RedisKeyUtil.getGuildDuelFail = function (guildId1, guildId2) {
+  return GUILD_DUEL_FAIL.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      switch (u) {
+        case '{guildId1}':
+          return guildId1;
+        case '{guildId2}' :
+          return guildId2;
+        default :
+          return guildId1
+      }
+    }
+  );
 };
 
-RedisKeyUtil.getGuildDuelSuccess = function (guild1, guild2) {
-  return GUILD_DUEL_FAIL.replace(
+RedisKeyUtil.getGuildDuelSuccess = function (guildId1, guildId2) {
+  return GUILD_DUEL_SUCCESS.replace(
     /\{(\w+)\}/g,
     function (u) {
       switch (u) {

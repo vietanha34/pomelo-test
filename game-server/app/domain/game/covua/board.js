@@ -124,6 +124,7 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
     var player = self.table.players.getPlayer(uid);
+    if (!player || self.table.turnUid !== player.uid) return;
     var losingReason = player.totalTime < self.table.turnTime ? consts.LOSING_REASON_NAME.HET_TIME : consts.LOSING_REASON_NAME.HET_LUOT;
     self.finishGame(consts.WIN_TYPE.LOSE,uid, losingReason);
   }, turnUid, turnTime + 2000);
@@ -235,17 +236,11 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     player.userInfo.elo = eloMap[i];
   }
   if (bet > 0 && loseUser && winUser){
-    this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
-      gold : bet,
-      fromUid : fromUid,
-      toUid : toUid,
-      tax : 5,
-      force : true
-    }, 1, function () {});
+    this.table.transfer(bet, fromUid,toUid);
     subGold = loseUser.subGold(bet);
     addGold = winUser.addGold(subGold, true);
     players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
+    players[loseIndex].gold = -subGosld;
     finishData[winIndex].result.remain = winUser.gold;
     finishData[winIndex].result.money = addGold;
     finishData[loseIndex].result.remain = loseUser.gold;

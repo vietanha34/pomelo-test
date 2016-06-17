@@ -271,7 +271,7 @@ pro.transferGuild = function (opts, cb) {
               .Guild
               .findOne({
                 where: {
-                  uid: opts.fromGuildId
+                  id: opts.fromGuildId
                 },
                 raw: true,
                 attributes: ['gold', 'name', 'id']
@@ -280,7 +280,7 @@ pro.transferGuild = function (opts, cb) {
               .Guild
               .findOne({
                 where: {
-                  uid: opts.toGuildId
+                  id: opts.toGuildId
                 },
                 raw: true,
                 attributes: ['gold', 'name', 'id']
@@ -344,7 +344,7 @@ pro.transferGuild = function (opts, cb) {
                 gold: fromUser.gold
               }, {
                 where: {
-                  uid: opts.fromGuildId
+                  id: opts.fromGuildId
                 },
                 transaction: t
               })
@@ -355,7 +355,7 @@ pro.transferGuild = function (opts, cb) {
                       gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + addGold)
                     }, {
                       where: {
-                        uid: opts.toGuildId
+                        id: opts.toGuildId
                       },
                       transaction: t
                     })

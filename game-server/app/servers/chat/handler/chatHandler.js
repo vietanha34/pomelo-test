@@ -46,6 +46,7 @@ Handler.prototype.send = function (msg, session, next) {
       switch (targetType) {
         case consts.TARGET_TYPE.BOARD :
           if (tableId) {
+            msg.channel = tableId;
             done(null, true)
           } else {
             done({ec: Code.FAIL})
@@ -62,6 +63,7 @@ Handler.prototype.send = function (msg, session, next) {
           break;
         case consts.TARGET_TYPE.BOARD_GUEST:
           if (tableId) {
+            msg.channel = tableId;
             ItemDao.checkEffect(uid, [consts.ITEM_EFFECT.LUAN_CO, consts.ITEM_EFFECT.THE_VIP])
               .then(function (effect) {
                 if (!effect[consts.ITEM_EFFECT.LUAN_CO] && (!effect[consts.ITEM_EFFECT.THE_VIP] && !Formula.calVipLevel(vipPoint))){
@@ -107,10 +109,15 @@ Handler.prototype.send = function (msg, session, next) {
           self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), data, done);
           return;
         case consts.TARGET_TYPE.BOARD_GUEST:
-          //self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
-          var dataClone = utils.clone(data);
-          dataClone.targetType = consts.TARGET_TYPE.BOARD;
-          return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), dataClone, done);
+          var gameType = parseInt(msg.channel.split(':')[3]);
+          if (gameType === consts.GAME_TYPE.TOURNAMENT){
+            return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardGuestChannelName(tableId), data, done);
+          }else {
+            var dataClone = utils.clone(data);
+            dataClone.targetType = consts.TARGET_TYPE.BOARD;
+            return self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), dataClone, done);
+          }
+          break;
         case consts.TARGET_TYPE.PERSON:
           self.chatService.sendMessageToPlayer(uid, msg.target, data, done);
           messageService.pushMessageToPlayer(uids, route, data);

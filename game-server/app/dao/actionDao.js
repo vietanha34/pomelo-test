@@ -71,20 +71,58 @@ ActionDao.removeAction = function (opts, uid, cb) {
     .then(function (values) {
       console.log('values : ', values);
       var keys = Object.keys(opts);
+      var lengthRemove = 0;
       for (var i = 0, len = values.length; i < len ; i++){
         var json = utils.JSONParse(values[i], {});
         console.log('json : ', json, values[i]);
         if (json.action){
+          var allRight = true;
           for (var j = 0, lenj = keys.length; j < lenj; j++){
             console.log('compare keys : ', keys[j]);
-            if (json.action[keys[j]] === opts[keys[j]]){
-              pomelo.app.get('redisCache')
-                .zrem(key, JSON.stringify(json))
+            if (json.action[keys[j]] !== opts[keys[j]]){
+              allRight = false;
+              break;
             }
+          }
+          if (allRight){
+            lengthRemove += 1;
+            pomelo.app.get('redisCache')
+              .zrem(key, JSON.stringify(json))
           }
         }
       }
+      if (lengthRemove === values.length) {
+        pomelo.app.get('redisCache')
+          .del(key);
+      }
       return utils.invokeCallback(cb, null, {});
+    })
+};
+
+ActionDao.actionExist = function (opts, uid, cb) {
+  console.log('check Action exist');
+  var key = redisKeyUtil.getUserAction(uid);
+  return pomelo.app.get('redisCache')
+    .zrangeAsync(key, 0, -1)
+    .then(function (values) {
+      var keys = Object.keys(opts);
+      for (var i = 0, len = values.length; i < len ; i++){
+        var json = utils.JSONParse(values[i], {});
+        if (json.action){
+          var allRight = true;
+          for (var j = 0, lenj = keys.length; j < lenj; j++){
+            console.log('keys : ', key[j], json.action[keys[j]], opts[keys[j]]);
+            if (json.action[keys[j]] !== opts[keys[j]]){
+              allRight = false;
+              break;
+            }
+          }
+          if (allRight){
+            return utils.invokeCallback(cb, null, true)
+          }
+        }
+      }
+      return utils.invokeCallback(cb, null, false);
     })
 };
 

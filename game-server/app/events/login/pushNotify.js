@@ -84,7 +84,7 @@ module.exports.process = function (app, type, param) {
         //return console.log('values : ', values);
         for (var i = 0, len = values.length;  i< len; i += 1){
           var value = utils.JSONParse(values[i],{});
-          var now = Date.now() / 1000 | 0;
+          var now = Date.now();
           if (now < value.expire){
             pomelo.app.get('statusService')
               .pushByUids([param.uid], 'onNotify', value);
@@ -131,47 +131,47 @@ module.exports.process = function (app, type, param) {
     });
   }, 4000);
 
-  setTimeout(function() {
-    var pushObj = {
-      type: consts.NOTIFY_TYPE.POPUP,
-      title: 'Lưu ý',
-      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
-      buttonLabel: 'OK',
-      command: {target: 0},
-      scope: consts.NOTIFY.SCOPE.USER,
-      users: [param.uid],
-      image: consts.NOTIFY.IMAGE.ALERT
-    };
-    NotifyDao.push(pushObj, function (e, reply) {
-      if (e) console.error(e.stack || e);
-    });
-    var pushObj1 = {
-      type: consts.NOTIFY_TYPE.MARQUEE,
-      title: 'Lưu ý',
-      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
-      buttonLabel: 'OK',
-      command: {target: 0},
-      scope: consts.NOTIFY.SCOPE.USER,
-      users: [param.uid],
-      image: consts.NOTIFY.IMAGE.ALERT
-    };
-    NotifyDao.push(pushObj1, function (e, reply) {
-      if (e) console.error(e.stack || e);
-    });
-  }, 3000);
-  utils.interval(function() {
-    var pushObj = {
-      type: consts.NOTIFY_TYPE.POPUP,
-      title: 'Lưu ý',
-      msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
-      buttonLabel: 'OK',
-      command: {target: 0},
-      scope: consts.NOTIFY.SCOPE.USER,
-      users: [param.uid],
-      image: consts.NOTIFY.IMAGE.ALERT
-    };
-    NotifyDao.push(pushObj, function (e, reply) {
-      if (e) console.error(e.stack || e);
-    });
-  }, 180000);
+  // setTimeout(function() {
+  //   var pushObj = {
+  //     type: consts.NOTIFY_TYPE.POPUP,
+  //     title: 'Lưu ý',
+  //     msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+  //     buttonLabel: 'OK',
+  //     command: {target: 0},
+  //     scope: consts.NOTIFY.SCOPE.USER,
+  //     users: [param.uid],
+  //     image: consts.NOTIFY.IMAGE.ALERT
+  //   };
+  //   NotifyDao.push(pushObj, function (e, reply) {
+  //     if (e) console.error(e.stack || e);
+  //   });
+  //   var pushObj1 = {
+  //     type: consts.NOTIFY_TYPE.MARQUEE,
+  //     title: 'Lưu ý',
+  //     msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+  //     buttonLabel: 'OK',
+  //     command: {target: 0},
+  //     scope: consts.NOTIFY.SCOPE.USER,
+  //     users: [param.uid],
+  //     image: consts.NOTIFY.IMAGE.ALERT
+  //   };
+  //   NotifyDao.push(pushObj1, function (e, reply) {
+  //     if (e) console.error(e.stack || e);
+  //   });
+  // }, 3000);
+  // utils.interval(function() {
+  //   var pushObj = {
+  //     type: consts.NOTIFY_TYPE.POPUP,
+  //     title: 'Lưu ý',
+  //     msg: 'Chơi game quá 180 phút có hại cho sức khỏe',
+  //     buttonLabel: 'OK',
+  //     command: {target: 0},
+  //     scope: consts.NOTIFY.SCOPE.USER,
+  //     users: [param.uid],
+  //     image: consts.NOTIFY.IMAGE.ALERT
+  //   };
+  //   NotifyDao.push(pushObj, function (e, reply) {
+  //     if (e) console.error(e.stack || e);
+  //   });
+  // }, 180000);
 };

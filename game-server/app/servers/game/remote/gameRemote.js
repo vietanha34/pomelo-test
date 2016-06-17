@@ -48,7 +48,7 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
     return utils.invokeCallback(cb, null, { data : {ec : Code.FAIL, msg : "Ván đấu đã kết thúc"}})
   }
   if (board.tourType !== consts.TOUR_TYPE.FRIENDLY){
-    opts.role = consts.GUILD_MEMBER_STATUS.GUEST;
+    opts.userInfo.role = consts.GUILD_MEMBER_STATUS.GUEST;
   }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {

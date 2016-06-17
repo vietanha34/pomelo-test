@@ -26,12 +26,34 @@ TourDao.getListTour = function (opts, cb) {
   var offset = opts.offset || 0;
   var condition = {
     where: {
-      type: opts.type
+      $or : [
+        {
+          schedule : null
+        },
+        {
+          $and : [
+            {
+              schedule : {
+                $gte : (Date.now() / 1000 | 0) - 60 * 8 * 60
+              }
+            },
+            {
+              status : consts.TOUR_STATUS.FINISHED
+            }
+          ]
+        },
+        {
+          status : {
+            $ne : consts.TOUR_STATUS.FINISHED
+          }
+        }
+      ]
     },
     limit: length,
     offset: offset,
+    order : 'type ASC, status ASC, schedule DESC',
     raw: true,
-    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','guild1', 'guild2']
+    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','guild1', 'guild2', 'schedule']
   };
   if (opts.tourId){
     condition['where']['tourId'] = opts.tourId;
