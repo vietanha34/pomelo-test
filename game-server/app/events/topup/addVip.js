@@ -50,7 +50,7 @@ module.exports.process = function (app, type, param) {
       var userId = param.uid;
       // update user info
       user.hasPay = 1;
-      user.vipPoint += formula.calVipPointByMoney((param.topupType != consts.TOPUP_TYPE.IAP ? param.money : param.money*22000));
+      user.vipPoint += formula.calVipPointByMoney((param.currency == 'VND' ? param.money : param.money*22000));
       var vipPoint = user.vipPoint;
       UserDao.updateProperties(param.uid, user);
 

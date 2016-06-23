@@ -224,6 +224,7 @@ function ProcessTopup(app, msg, numberRetry) {
         uid: userId,
         topupType: data.methodType,
         money: data.money,
+        currency: data.currency,
         gold: data.promotionMoney,
         bonus: data.promotionMoney - data.gameMoney
       }, function () {});
