@@ -143,7 +143,6 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
     .findOne({where: {id: args.guildId}, attributes: ['name', 'numMember', 'gold', 'level', 'fame', 'detail', 'icon', 'exp', 'sIcon'], raw: true});
   if (role.role === consts.GUILD_MEMBER_STATUS.PRESIDENT || role.role === consts.GUILD_MEMBER_STATUS.VICE_PRESIDENT)
     promise['numRequest'] = pomelo.app.get('mysqlClient').GuildMember.count({where : { guildId : args.guildId, role : consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER}});
-
   return Promise.props(promise)
     .then(function (result) {
       var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
@@ -151,7 +150,8 @@ GuildDao.getGuildInformation = function (role, permission, args, cb) {
       maxMember = result.info.numMember > maxMember ? result.info.numMember : maxMember;
       result.info['numMember'] = [result.info['numMember'], maxMember];
       result.info['name'] = result.info['name'];
-      result.info['exp'] = [result.info['exp'], 100];
+      result.info.percent = (result.info['exp'] / guildLevel[result.info.level + 1].nextLevel);
+      result.info['exp'] = [result.info['exp'], guildLevel[result.info.level + 1].nextLevel];
       result.info['icon'] = utils.JSONParse(result.info['icon']);
       result.info['role'] = role ? role.role : 0;
       result.info['sIcon'] = utils.JSONParse(result.info.sIcon, []);
@@ -428,7 +428,7 @@ GuildDao.getGuildEvent = function (role, permission, args, cb) {
     .sort({time: -1})
     .skip(offset)
     .limit(length)
-    .select({content: 1, time: 1, type: 1, fullname : 1 , uid : 1})
+    .select({content: 1, time: 1, type: 1, fullname : 1 , uid : 1, _id : 0})
     .lean()
     .then(function (events) {
       events.reverse();
@@ -554,7 +554,6 @@ GuildDao.createGuild = function (uid, opts, cb) {
 };
 
 GuildDao.createMember = function (opts, deleted, cb) {
-  console.log('createMember');
   return Promise.delay(0)
     .then(function () {
       if (deleted){

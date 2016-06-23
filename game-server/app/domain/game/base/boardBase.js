@@ -19,6 +19,7 @@ var BoardConsts = require('./logic/consts');
 var NotifyDao = require('../../../dao/notifyDao');
 var UserDao = require('../../../dao/userDao');
 var Promise = require('bluebird');
+var dictionary = require('../../../../config/dictionary.json');
 
 /**
  * Bàn chơi cơ bản của game cờ, developer có thể kế thửa để phát triển cho từng loại game
@@ -297,8 +298,14 @@ pro.chargeMoney = function (uid, gold, msg, cb) {
 pro.pushMessage = function (route, msg) {
   var channel = pomelo.app.get('channelService').getChannel(this.channelName, true);
   logger.info('\n broadcast to channel %s : \n route : %s \n msg : %j', this.channelName, route, msg);
-  console.trace('push here : ');
   channel.pushMessage(route, msg);
+  if (this.status === consts.BOARD_STATUS.PLAY){
+    this.game.detailLog.push({
+      r : dictionary[route],
+      d : msg,
+      t : Date.now()
+    })
+  }
 };
 
 pro.pushMessageWithMenu = function (route, msg) {
@@ -306,6 +313,13 @@ pro.pushMessageWithMenu = function (route, msg) {
   for (key in this.players.players) {
     player = this.players.players[key];
     messageService.pushMessageToPlayer(player.getUids(), route, utils.merge_options(msg, {menu: player.menu || []}))
+  }
+  if (this.status === consts.BOARD_STATUS.PLAY){
+    this.game.detailLog.push({
+      r : dictionary[route],
+      d : msg,
+      t : Date.now()
+    })
   }
   logger.info("\n Push message without Menu \n route :  %s \n message %j", route, msg);
 };
@@ -403,7 +417,7 @@ pro.pushMessageWithOutUids = function (uids, route, msg) {
  * Gửi msg đến tất cả ngừoi chơi trong bàn ngoại trừ 1 người chơi
  *
  * @param {String} uid Định danh người chơi không gửi đến
- * @param {String} route
+ * @param {String} routed
  * @param {Object} msg
  * @method pushMessageWithOutUid
  */
@@ -414,6 +428,13 @@ pro.pushMessageWithOutUid = function (uid, route, msg) {
     if (player.uid != uid) {
       uids.push(player.getUids())
     }
+  }
+  if (this.status === consts.BOARD_STATUS.PLAY){
+    this.game.detailLog.push({
+      r : dictionary[route],
+      d : msg,
+      t : Date.now()
+    })
   }
   logger.info("\n Push message without Uid : %j \n route :  %s \n message %j", uids, route, msg);
   if (uids.length != 0) {
@@ -516,7 +537,22 @@ pro.clearIdlePlayer = function () {
             uid: winPlayer.uid,
             fullname : winPlayer.userInfo.fullname
           };
-          this.tourScore[this.getTourScoreIndex(winPlayer.uid)] += this.matchPlay - this.numMatchPlay;
+          var matchWin = this.matchPlay - this.numMatchPlay;
+          if (this.tourType === consts.TOUR_TYPE.FRIENDLY){
+            var guildId = winPlayer.userInfo.guildId;
+            var guildIndex = this.guildId.indexOf(guildId);
+            var updateData = {};
+            var field = 'guildScore' + (guildIndex + 1);
+            updateData[field] = pomelo.app.get('mysqlClient').sequelize.literal('' + field + ' + ' + matchWin);
+            pomelo.app.get('mysqlClient')
+              .GuildBattle
+              .update(updateData, {
+                where : {
+                  tourId : this.tourId
+                }
+              })
+          }
+          this.tourScore[this.getTourScoreIndex(winPlayer.uid)] += matchWin;
           this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
           this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc hoặc không bắt đầu ván tiếp theo sau thời gian quy định');
         } else {
@@ -970,7 +1006,7 @@ pro.getLocale = function (locale) {
 pro.ready = function (uid) {
   var player = this.players.getPlayer(uid);
   if (player) {
-    if (player.gold < this.bet) {
+    if (player.gold < this.bet && this.tourType !== consts.TOUR_TYPE.FRIENDLY) {
       return utils.getError(Code.ON_GAME.FA_BOARD_ALREADY_STARTED);
     }
     if (this.gameType === consts.GAME_TYPE.TOURNAMENT) {
@@ -1036,24 +1072,28 @@ pro.kick = function (uid, cb) {
   }
   var notifyMsg = Code.ON_GAME.FA_KICK;
   var ownerPlayer = this.players.getPlayer(this.owner);
-  if (ownerPlayer.userInfo.vipLevel < player.userInfo.vipLevel) {
-    return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
-  } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel) {
-    if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint) {
-      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_POINT_NOT_ENOUGH))
-    } else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint) {
+  if (this.tourType === consts.TOUR_TYPE.FRIENDLY){
+    notifyMsg = 'Bạn bị đuổi bởi hội chủ';
+  }else {
+    if (ownerPlayer.userInfo.vipLevel < player.userInfo.vipLevel) {
+      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_LEVEL_NOT_ENOUGH))
+    } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel && ownerPlayer.userInfo.vipLevel) {
+      if (ownerPlayer.userInfo.vipPoint < player.userInfo.vipPoint) {
+        return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_VIP_POINT_NOT_ENOUGH))
+      } else if (ownerPlayer.userInfo.vipPoint === player.userInfo.vipPoint) {
+        if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
+          return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
+        }
+      }
+      notifyMsg = 'Bạn bị đuổi bởi người có điểm vip lớn hơn';
+    } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel) {
       if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
         return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
       }
     }
-    notifyMsg = 'Bạn bị đuổi bởi người có điểm vip lớn hơn';
-  } else if (ownerPlayer.userInfo.vipLevel === player.userInfo.vipLevel) {
-    if (player.checkItems(consts.ITEM_EFFECT.CAM_KICK)) {
-      return utils.invokeCallback(cb, null, utils.getError(Code.ON_GAME.FA_USER_HAS_ITEM_CAM_KICK));
+    if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel) {
+      notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
     }
-  }
-  if (ownerPlayer.userInfo.vipLevel > player.userInfo.vipLevel) {
-    notifyMsg = 'Bạn bị đuổi bởi người có cấp vip lớn hơn';
   }
   this.emit('kick', player);
   var userInfo = player.userInfo;
@@ -1123,7 +1163,7 @@ pro.mixGiveUpUsers = function (data) {
 
 pro.pushFinishGame = function (msg, finish, extraData) {
   extraData = extraData || {};
-  var self = this, extra;
+  var extra;
   if (!finish) {
     this.pushMessage('onFinishGame', msg);
   }
@@ -1227,7 +1267,9 @@ pro.resetDefault = function () {
   this.lock = '';
   this.minPlayer = 2;
   this.maxPlayer = 2;
-  this.score = [0, 0];
+  if (this.tourType !== consts.TOUR_TYPE.FRIENDLY){
+    this.score = [0, 0];
+  }
   this.tableType = 1;
   this.turnTime = this.turnTimeDefault;
   this.totalTime = this.totalTimeDefault;
@@ -1425,13 +1467,12 @@ pro.setTourTimeout  = function () {
   }, this.timePlay - Date.now());
 };
 
-pro.getTourScoreIndex = function (uid) {
-  var player = this.players.getPlayer(uid);
-  if(!player)return;
+pro.getTourScoreIndex = function (userInfo) {
+  if(!userInfo) return;
   if (this.tourType === consts.TOUR_TYPE.FRIENDLY) {
-    return this.guildId.indexOf(player.userInfo.guildId);
+    return this.guildId.indexOf(userInfo.guildId);
   }else {
-    return this.username.indexOf(player.userInfo.username);
+    return this.username.indexOf(userInfo.username);
   }
 };
 

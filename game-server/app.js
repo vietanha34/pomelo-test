@@ -190,7 +190,7 @@ app.configure('production|development|local', 'game', function () {
 });
 
 // config board
-app.configure('production|development|local', 'game|district|service|manager|master|worker', function () {
+app.configure('production|development|local', 'game|district|service|manager|master|worker|connector|home', function () {
   var BoardService = require('pomelo-board-plugin');
   app.use(BoardService, {
     board: {
@@ -229,7 +229,7 @@ app.configure('production|development', 'home|game|chat|service', function () {
   app.set('gameService', gameService)
 });
 
-app.configure('production|development', 'chat|game|service', function () {
+app.configure('production|development', 'chat|game|service|event', function () {
   var ChatService = require('./app/services/chatService');
   app.set('chatService', new ChatService(app));
 });

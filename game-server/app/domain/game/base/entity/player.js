@@ -49,7 +49,6 @@ var Player = function (opts) {
     ? 5
     : parseInt(opts.userInfo.tax);
   this.userInfo.avatar = utils.JSONParse(this.userInfo.avatar, { id : 0, version : 0});
-  this.userInfo.sIcon = utils.JSONParse(this.userInfo.sIcon, { id : 0, version: 0});
   this.owner = opts.owner || false; // chủ bàn chơi
   this.guest = opts.guest || false; // ngồi xem
   this.timeAction = Date.now();

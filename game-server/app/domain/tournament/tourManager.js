@@ -219,7 +219,6 @@ pro.matchMaking = function (tourId) {
       ]
     })
     .spread(function (tc, groups, schedule) {
-      console.log('tc, groups, schedule : ', arguments);
       if (!tc) return Promise.reject({msg: "không có table config tương ứng"});
       if (!schedule) return Promise.reject({msg: "không có lượt đấu nào phù hợp"});
       if (schedule.matchMaking) return Promise.reject({msg: 'Đã tạo lượt đấu thành công'});

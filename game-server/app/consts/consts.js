@@ -670,7 +670,13 @@ module.exports = {
       GET_GOLD: 9,
       GO_CHAT: 10,
       GO_BOARD: 11,
-      GO_TOURNAMENT : 12
+      GO_TOURNAMENT : 12,
+      GO_FAN_PAGE : 13,
+      GO_URL : 14,
+      GO_EVENT : 15,
+      GO_PROFILE : 16,
+      GO_VIDEO : 17,
+      GO_GUILD : 18
     },
     SCOPE: {
       ALL: 99,

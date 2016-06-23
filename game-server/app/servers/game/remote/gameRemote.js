@@ -64,6 +64,7 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
       }
     })
     .catch(function (err) {
+      console.error('joinBoard err ; ', err);
       opts.effect = {};
       var state = board.joinBoard(opts);
       if (state && !state.ec) {

@@ -80,8 +80,8 @@ Game.prototype.init = function () {
       }
     }
   }
-  this.table.pushMessageWithMenu('game.gameHandler.startGame', {color : colorMap});
   this.table.emit('startGame', this.playerPlayingId);
+  this.table.pushMessageWithMenu('game.gameHandler.startGame', {color : colorMap});
   var gameStatus = this.game.getBoardStatus();
   this.setOnTurn(gameStatus);
 };
@@ -180,6 +180,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
       finishData.push({
         uid : player.uid,
+        guildId: player.userInfo.guildId,
         result : {
           type : winType,
           color : player.color,
@@ -215,6 +216,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
       finishData.push({
         uid : player.uid,
+        guildId: player.userInfo.guildId,
         result : {
           type : res ,
           color : player.color,
@@ -239,17 +241,32 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }
   if (bet > 0){
     this.table.transfer(bet, fromUid,toUid);
-    subGold = loseUser.subGold(bet);
-    addGold = winUser.addGold(subGold, true);
-    players[winIndex].gold = addGold;
-    players[loseIndex].gold = -subGold;
-    finishData[winIndex].result.remain = winUser.gold;
-    finishData[winIndex].result.money = addGold;
-    finishData[loseIndex].result.remain = loseUser.gold;
-    finishData[loseIndex].result.money = subGold;
+    if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
+      subGold = loseUser.subGold(bet);
+      addGold = winUser.addGold(subGold, true);
+      players[winIndex].gold = addGold;
+      players[loseIndex].gold = -subGold;
+      finishData[winIndex].result.remain = winUser.gold;
+      finishData[winIndex].result.money = addGold;
+      finishData[loseIndex].result.remain = loseUser.gold;
+      finishData[loseIndex].result.money = subGold;
+    }else {
+      players[winIndex].gold = 0;
+      players[loseIndex].gold = 0;
+      finishData[winIndex].result.remain = winUser.gold;
+      finishData[winIndex].result.money = 0;
+      finishData[loseIndex].result.remain = loseUser.gold;
+      finishData[loseIndex].result.money = 0;
+    }
   }
+  var data = { players : players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}
+  this.detailLog.push({
+    r : dictionary['onFinishGame'],
+    d : data,
+    t : Date.now()
+  });
   this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
-  this.table.pushFinishGame({ players : players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
+  this.table.pushFinishGame(data, true);
 };
 
 function Table(opts) {
@@ -300,10 +317,9 @@ Table.prototype.startGame = function (uid, cb) {
   var code = this.checkStartGame();
   var self = this;
   if (code.ec == Code.OK) {
-    this.game.playerPlayingId = this.players.playerSeat;
+    this.game.playerPlayingId = utils.clone(this.players.playerSeat);
     utils.invokeCallback(cb);
     self.game.init();
-    this.emit('startGame', this.game.playerPlayingId);
   } else {
     return utils.invokeCallback(cb, null, utils.merge_options(code, {menu: this.players.getPlayer(uid).menu}))
   }
@@ -402,8 +418,10 @@ Table.prototype.demand = function (opts) {
       }
       break;
     case consts.ACTION.SURRENDER:
-    default :
       this.game.finishGame(consts.WIN_TYPE.GIVE_UP, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
+      return {};
+      break;
+    default :
       return {};
   }
 };

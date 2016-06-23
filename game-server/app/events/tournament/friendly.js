@@ -112,8 +112,8 @@ module.exports.process = function (app, type, param) {
       ]
     })
     .spread(function (guild1, guild2) {
-      var guild1Fame = 0;
-      var guild2Fame = 0;
+      var guild1Exp = 0;
+      var guild2Exp = 0;
       if (totalPoint[0] > totalPoint[1]){
         GuildDao.addEvent({
           guildId: guild1.id,
@@ -122,7 +122,7 @@ module.exports.process = function (app, type, param) {
           content: util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 50),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild1Fame = 50;
+        guild1Exp= 50;
         GuildDao.addEvent({
           guildId: guild2.id,
           uid: 1,
@@ -130,12 +130,12 @@ module.exports.process = function (app, type, param) {
           content: util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 30),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild2Fame = 30;
+        guild2Exp = 30;
         pomelo.app.get('chatService')
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Đấu trường giao hữu",
-            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s"  với tỷ số', guild2.name, totalPoint[0],totalPoint[1]),
+            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -144,7 +144,7 @@ module.exports.process = function (app, type, param) {
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Hội quán",
-            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số', guild1.name, totalPoint[1],totalPoint[0]),
+            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -152,7 +152,7 @@ module.exports.process = function (app, type, param) {
         NotifyDao.push({
           type: consts.NOTIFY.TYPE.MARQUEE,
           title: "Đấu trường",
-          msg: util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s-%s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
+          msg: util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
           buttonLabel: "Ok",
           command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: param.tourId},
           scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
@@ -163,23 +163,23 @@ module.exports.process = function (app, type, param) {
           guildId: guild2.id,
           uid: 1,
           fullname: '1',
-          content: util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 50),
+          content: util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 50),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild1Fame = 30;
+        guild1Exp = 30;
         GuildDao.addEvent({
           guildId: guild1.id,
           uid: 1,
           fullname: '1',
-          content: util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 30),
+          content: util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 30),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild2Fame = 50;
+        guild2Exp = 50;
         pomelo.app.get('chatService')
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Đấu trường giao hữu",
-            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s"  với tỷ số', guild1.name, totalPoint[1],totalPoint[0]),
+            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -188,7 +188,7 @@ module.exports.process = function (app, type, param) {
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Đấu trường giao hữu",
-            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số', guild2.name, totalPoint[0],totalPoint[1]),
+            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -210,20 +210,20 @@ module.exports.process = function (app, type, param) {
           content: util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s-%s, giành được %s điểm', guild1.name, totalPoint[0],totalPoint[1], 40),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild1Fame = 40;
+        guild1Exp = 40;
         GuildDao.addEvent({
           guildId: guild1.id,
           uid: 1,
           fullname: '1',
-          content: util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s-%s, giành được %s điểm', guild2.name, totalPoint[0],totalPoint[1], 40),
+          content: util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm', guild2.name, totalPoint[0],totalPoint[1], 40),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
-        guild2Fame = 40;
+        guild2Exp = 40;
         pomelo.app.get('chatService')
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Đấu trường giao hữu",
-            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số', guild1.name, totalPoint[0],totalPoint[1]),
+            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -232,7 +232,7 @@ module.exports.process = function (app, type, param) {
           .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
             type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
             title: "Đấu trường giao hữu",
-            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số', guild2.name, totalPoint[0],totalPoint[1]),
+            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số : %s - %s', guild1.name, totalPoint[0],totalPoint[1]),
             buttonLabel: "Ok",
             command: {target: consts.NOTIFY.TARGET.NORMAL},
             image: consts.NOTIFY.IMAGE.NORMAL
@@ -240,33 +240,73 @@ module.exports.process = function (app, type, param) {
         NotifyDao.push({
           type: consts.NOTIFY.TYPE.MARQUEE,
           title: "Đấu trường",
-          msg: util.format('Sau màn rượt đuổi tỷ số 2 hội quán "%s" và "%s" đã chấp nhận hoà nhau với tỷ số %s-%s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
+          msg: util.format('Sau màn rượt đuổi tỷ số 2 hội quán "%s" và "%s" đã chấp nhận hoà nhau với tỷ số: %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
           buttonLabel: "Ok",
           command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: param.tourId},
           scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
           image: consts.NOTIFY.IMAGE.NORMAL
         })
       }
-      return [
-        pomelo.app.get('mysqlClient')
-          .Guild
-          .update({
-            exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild1Fame)
-          }, {
-            where: {
-              id : guild1.id
-            }
-          }),
-        pomelo.app.get('mysqlClient')
-          .Guild
-          .update({
-            exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild2Fame)
-          }, {
-            where: {
-              id : guild2.id
-            }
-          })
-      ]
+      guild1.exp += guild1Exp;
+      guild2.exp += guild2Exp;
+      var promises = [];
+      var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
+      var values = lodash.values(guildLevel);
+      for (var i = 0, len = values.length; i < len; i++) {
+        var valueNext = values[i].nextLevel;
+        if (i) {
+          var value = values[i-1].nextLevel;
+        }else {
+          value = 0;
+        }
+        if (guild1.exp >= value && guild1.exp < valueNext && guild1.level !== i) {
+          promises.push(
+            pomelo.app.get('mysqlClient')
+              .Guild
+              .update({
+                level : i
+              },{
+                where : {
+                  id: guild1.id
+                }
+              })
+          );
+          // lên level
+        }
+        if (guild2.exp >= value && guild2.exp < valueNext && guild1.level !== i) {
+          // lên level
+          promises.push(
+            pomelo.app.get('mysqlClient')
+              .Guild
+              .update({
+                level : i
+              },{
+                where : {
+                  id: guild2.id
+                }
+              })
+          );
+        }
+      }
+      promises.push(pomelo.app.get('mysqlClient')
+        .Guild
+        .update({
+          exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild1Exp)
+        }, {
+          where: {
+            id : guild1.id
+          }
+        }));
+      promises.push(pomelo.app.get('mysqlClient')
+        .Guild
+        .update({
+          exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild2Exp)
+        }, {
+          where: {
+            id : guild2.id
+          }
+        }));
+      return promises;
     })
     .catch(function (error) {
       console.error('events tournament friendly err : ', error);

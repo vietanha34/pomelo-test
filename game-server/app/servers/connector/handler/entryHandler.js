@@ -9,7 +9,6 @@ var utils = require('../../../util/utils');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
-var ItemDao = require('../../../dao/itemDao');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -24,21 +23,17 @@ Handler.prototype.validClient = function (msg, session, next) {
   var idSession = msg.idSession;
   var sessionId = session.id;
   if (idSession) {
-    this.app.get('redisCache').get(redisKeyUtil.getIdSessionKey(idSession), function (err, key) {
-      if (err) {
-        next(null, {ec: Code.FAIL});
-      }
-      else if (key) {
-        self.app.sessionService.get(sessionId).changeEncryptKey(key);
-        var language;
-        next(null, {
-          language: language
-        });
-      }
-      else {
-        next(null, {ec: Code.FAIL});
-      }
-    })
+    this.app.get('redisCache').getAsync(redisKeyUtil.getIdSessionKey(idSession))
+      .then(function (key) {
+        if (key) {
+          self.app.sessionService.get(sessionId).changeEncryptKey(key);
+          next(null, {});
+        }
+      })
+      .catch(function (err) {
+        console.error('validClient error : ', err );
+        return next(null, {ec : Code.FAIL});
+      });
   } else {
     next(null, {ec: Code.FAIL});
   }
@@ -55,7 +50,6 @@ Handler.prototype.login = function (msg, session, next) {
   var self = this;
   var player, boardId;
   var type = msg.type;
-  var sessionId = session.id;
   var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   msg.versionCode = msg.versionCode.length === 7 ? '0' + msg.versionCode : msg.versionCode;

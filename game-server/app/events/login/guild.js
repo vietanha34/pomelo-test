@@ -59,9 +59,9 @@ module.exports.process = function (app, type, param) {
       }
     })
     .then(function (guild) {
-      console.log('guild : ', guild);
       if (guild){
         guild.role = role;
+        guild.sIcon = utils.JSONParse(guild.sIcon,{});
         pomelo.app.get('backendSessionService').getByUid(param.frontendId, param.uid, function (err, backendService) {
           if (backendService && backendService.length > 0){
             var session = backendService[0];

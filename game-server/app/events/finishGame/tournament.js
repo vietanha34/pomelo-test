@@ -98,7 +98,7 @@ module.exports.process = function (app, type, param) {
         .Guild
         .findOne({
           where: {
-            id: param.guildId[0]
+            id: param.users[0].guildId
           },
           raw: true
         }),
@@ -106,7 +106,7 @@ module.exports.process = function (app, type, param) {
         .Guild
         .findOne({
           where: {
-            id: param.guildId[1]
+            id: param.users[1].guildId
           },
           raw: true
         }),
@@ -115,7 +115,7 @@ module.exports.process = function (app, type, param) {
         .findOne({
           where : {
             uid : param.users[0].uid,
-            guildId : param.guildId[0]
+            guildId : param.users[0].guildId
           },
           raw : true
         }),
@@ -124,7 +124,7 @@ module.exports.process = function (app, type, param) {
         .findOne({
           where : {
             uid : param.users[1].uid,
-            guildId : param.guildId[1]
+            guildId : param.users[1].guildId
           },
           raw : true
         }),
@@ -147,7 +147,7 @@ module.exports.process = function (app, type, param) {
         fame = fame < 5 ? 5 : fame;
         if (param.users[0].result.type === consts.WIN_TYPE.WIN){
           fame = guild2.fame < fame ? guild2.fame : fame;
-          var field = battle.guildId1 === param.guildId[0] ? 'guildScore1' : 'guildScore2';
+          var field = battle.guildId1 === param.users[0].guildId ? 'guildScore1' : 'guildScore2';
           var updateData = {};
           updateData[field] = pomelo.app.get('mysqlClient').sequelize.literal(field + ' + ' + 1);
           pomelo.app.get('mysqlClient')
@@ -182,7 +182,7 @@ module.exports.process = function (app, type, param) {
             }, {
               where: {
                 uid : param.users[0].uid,
-                guildId : param.guildId[0]
+                guildId : param.users[0].guildId
               }
             });
           pomelo.app.get('mysqlClient')
@@ -192,11 +192,12 @@ module.exports.process = function (app, type, param) {
             }, {
               where: {
                 uid : param.users[1].uid,
-                guildId : param.guildId[1]
+                guildId : param.users[1].guildId
               }
             });
-        }else if (param.users[0].result.type === consts.WIN_TYPE.LOSE){
-          field = battle.guildId2 === param.guildId[1] ? 'guildScore2' : 'guildScore1';
+        }
+        else if (param.users[0].result.type === consts.WIN_TYPE.LOSE || param.users[0].result.type === consts.WIN_TYPE.GIVE_UP){
+          field = battle.guildId2 === param.users[1].guildId ? 'guildScore2' : 'guildScore1';
           updateData = {};
           updateData[field] = pomelo.app.get('mysqlClient').sequelize.literal(field + ' + ' + 1);
           pomelo.app.get('mysqlClient')
@@ -232,7 +233,7 @@ module.exports.process = function (app, type, param) {
             }, {
               where: {
                 uid : param.users[1].uid,
-                guildId : param.guildId[1]
+                guildId : param.users[1].guildId
               }
             });
           pomelo.app.get('mysqlClient')
@@ -242,22 +243,67 @@ module.exports.process = function (app, type, param) {
             }, {
               where: {
                 uid : param.users[0].uid,
-                guildId : param.guildId[0]
+                guildId : param.users[0].guildId
               }
             });
-        } else if (param.users[0].result.type === consts.WIN_TYPE.LOSE){
+        }
+        else {
           pomelo.app.get('mysqlClient')
             .GuildBattle
             .update({
               guildScore1 : pomelo.app.get('mysqlClient').sequelize.literal('guildScore1 + ' + 0.5),
-              guildScore2 : pomelo.app.get('mysqlClient').sequelize.literal('guildScore1 + ' + 0.5)
+              guildScore2 : pomelo.app.get('mysqlClient').sequelize.literal('guildScore2 + ' + 0.5)
             }, {
               where : {
                 tourId : param.boardInfo.tourId
               }
             });
+          if (player1.fame === player2.fame){
+            return
+          }
+          fame = Math.round(fame / 2);
+          fame = fame < 5 ? 5 : fame;
+          var plusGuildIndex = player1.fame > player2.fame ? 0 : 1;
+          var minusGuildIndex = plusGuildIndex === 0 ? 1 : 0;
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
+            }, {
+              where: {
+                id: param.users[plusGuildIndex].guildId
+              }
+            });
+          pomelo.app.get('mysqlClient')
+            .Guild
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
+            }, {
+              where: {
+                id: param.users[minusGuildIndex].guildId
+              }
+            });
+          pomelo.app.get('mysqlClient')
+            .GuildMember
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
+            }, {
+              where: {
+                uid : param.users[plusGuildIndex].uid,
+                guildId : param.users[plusGuildIndex].guildId
+              }
+            });
+          pomelo.app.get('mysqlClient')
+            .GuildMember
+            .update({
+              fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
+            }, {
+              where: {
+                uid : param.users[minusGuildIndex].uid,
+                guildId : param.users[minusGuildIndex].guildId
+              }
+            });
         }
-
       })
   }
 };

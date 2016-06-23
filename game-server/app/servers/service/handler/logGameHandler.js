@@ -30,6 +30,7 @@ Handler.prototype.getGameLog = function (msg, session, next) {
     .findOne({
       matchId: matchId
     })
+    .select('-detailLog -stringLogs -createdAt -_id -__v')
     .lean()
     .then(function (match) {
       if (!match) return Promise.reject();
@@ -66,6 +67,51 @@ Handler.prototype.getGameLog = function (msg, session, next) {
     })
 };
 
-Handler.prototype.mark = function (msg, session, next) {
+Handler.prototype.getLogDetail = function (msg,session, next) {
+  var matchId = msg.matchId;
+  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(matchId)) {
+    return next(null, {ec: code.FAIL, msg: 'Định danh của ván chơi không chính xác'})
+  }
+  console.log("matchId : ", msg);
+  var logs, gameId;
+  var mongoClient = this.app.get('mongoClient');
+  mongoClient.model('GameLog')
+    .findOne({
+      matchId: matchId
+    })
+    .select('-logs -stringLogs -createdAt -_id -__v')
+    .lean()
+    .then(function (match) {
+      if (!match) return Promise.reject();
+      match.detailLog = utils.JSONParse(match.detailLog, []);
+      logs = match;
+      gameId = match.info['gameId'];
+      var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
+      return Promise.map(match.players, function (uid) {
+        return UserDao.getUserAchievementProperties(uid, ['uid', 'avatar', 'fullname', 'exp', 'gold'], [[eloKey, 'elo']])
+      })
+    })
+    .then(function (players) {
+      for (var i = 0, len = players.length; i< len; i++){
+        if (!players[i]) continue;
+        players[i]['avatar'] = utils.JSONParse(players[i]['avatar'], {});
+        players[i]['level'] = Formula.calLevel(players[i]['exp']);
+        players[i]['elo'] = players[i]['Achievement.elo'];
+        players[i]['title'] = Formula.calEloLevel(players[i]['Achievement.elo']);
+        players[i]['color'] = i ? consts.COLOR.BLACK : consts.COLOR.WHITE;
+        delete players[i]['exp'];
+        delete players[i]['Achievement.elo'];
+      }
+      logs.players = players;
+      return next(null, logs);
+    })
+    .catch(function (err) {
+      if (err){
+        console.error(err);
+      }
+      return next(null, { ec: code.FAIL, msg: 'Không thể lấy được ván chơi này'})
+    })
+    .finally(function () {
 
+    })
 };

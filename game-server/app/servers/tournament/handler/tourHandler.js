@@ -7,9 +7,7 @@ var async = require('async');
 var utils = require('../../../util/utils');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
-var TopupDao = require('../../../dao/topupDao');
 var Promise = require('bluebird');
-var NotifyDao = require('../../../dao/notifyDao');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var TourDao = require('../../../dao/tourDao');
@@ -277,7 +275,8 @@ Handler.prototype.getTour = function (msg, session, next) {
             }
           },
           raw: true,
-          attributes: ['boardId']
+          attributes: ['boardId'],
+          order: '`TourTable`.`index` ASC'
         })
           .then(function (table) {
             var boardId;
@@ -501,7 +500,8 @@ Handler.prototype.getTourTable = function (msg, session, next) {
               where: {
                 tourId: tour.tourId
               },
-              raw: true
+              raw: true,
+              order : "`TourTable`.`index` ASC"
             })
           })
       } else {
@@ -590,7 +590,6 @@ Handler.prototype.getTourTable = function (msg, session, next) {
         switch (tour.status) {
           case consts.TOUR_STATUS.STARTED:
           case consts.TOUR_STATUS.RUNNING:
-            console.log('schedule : ', schedule);
             if (schedule && schedule.show){
               if (moment(schedule.matchTime * 1000).isAfter(moment())){
                 data['text'] = 'Chờ thi đấu';
@@ -616,8 +615,13 @@ Handler.prototype.getTourTable = function (msg, session, next) {
             }else {
               data['text'] = 'Sắp diễn ra';
               data['remain'] = -1;
-              data['time'] = moment(tour.beginTime).format('HH:mm DD/MM');
+              data['time'] = moment(tour.schedule * 1000).format('HH:mm DD/MM');
             }
+            break;
+          case consts.TOUR_STATUS.FINISHED:
+          default :
+            data['text'] = 'Đã kết thúc';
+            data['time'] = moment(tour.schedule * 1000).format('HH:mm DD/MM');
         }
         return next(null, data)
       }else {

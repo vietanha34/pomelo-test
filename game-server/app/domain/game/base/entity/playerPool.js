@@ -116,7 +116,8 @@ pro.addPlayer = function (opts) {
         slotIndex = -1;
       }
     }
-  }else if(this.table.username) {
+  }
+  else if(this.table.username) {
     var index = this.table.username.indexOf(player.userInfo.username);
     if (index > -1){
       if (Date.now() < this.table.timePlay){
@@ -137,7 +138,7 @@ pro.addPlayer = function (opts) {
     }
   }
 
-  if ((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet && this.table.tourType !== consts.TOUR_TYPE.FRIENDLY)  || self.length >= self.table.maxPlayer)
+  if ((((player.gold < self.table.configBet[0] || (self.table.owner && player.gold < self.table.bet)) && this.table.tourType !== consts.TOUR_TYPE.FRIENDLY) || self.length >= self.table.maxPlayer)
     || (((player.userInfo.level < self.table.level && !player.checkItems(consts.ITEM_EFFECT.THE_DAI_GIA))) && !player.userInfo.vipLevel && self.table.gameType !== consts.GAME_TYPE.TOURNAMENT)
   ) {
     if (slotIndex > -1) {
@@ -285,7 +286,7 @@ pro.sitIn = function (uid, slotId) {
   if (self.length >= self.table.maxPlayer) {
     return {ec: Code.ON_GAME.BOARD_FULL}
   }
-  if ((player.gold < self.table.configBet[0] && !self.table.owner) || (self.table.owner && player.gold < self.table.bet)){
+  if (((player.gold < self.table.configBet[0] && !self.table.owner) || (self.table.owner && player.gold < self.table.bet)) && this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
     return utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY)
   }
   if (!player.userInfo.vipLevel){
@@ -496,7 +497,7 @@ pro.close = function (cb) {
     var player = self.players[uid];
     if (player) {
       self.table.pushMessageToPlayer(player.uid, 'district.districtHandler.leaveBoard',
-        {ec: 0, msg: code, target: target, tourId: tourId});
+        {ec: 0, msg: code, target: target, tourId: tourId, tourType : self.table.tourType});
       self.table.emit('leaveBoard', player.userInfo);
       self.table.emit('kick', player);
       self.players[uid] = undefined;
@@ -670,7 +671,7 @@ pro.checkStartGame = function () {
   for (var i = 0, len = this.playerSeat.length; i< len ; i ++){
     if (this.playerSeat[i] && this.playerSeat[i] !== this.table.owner){
       var player = this.getPlayer(this.playerSeat[i]);
-      if (player.gold >= this.table.bet && player.ready){
+      if ((player.gold >= this.table.bet || this.table.tourType === consts.TOUR_TYPE.FRIENDLY) && player.ready){
         return true
       }else {
         return false

@@ -23,7 +23,7 @@ module.exports = function (params, boardId, cb) {
       var board, Board;
       if (res) {
         var gameId = params.gameId;
-        var boardDir = getBoardPath(pomelo.app.getBase(), gameConfig[gameId] || 'tướng');
+        var boardDir = getBoardPath(pomelo.app.getBase(), gameConfig[gameId] || 'coup');
         if (boardDir) {
           params.boardId = boardId;
           Board = require(boardDir);

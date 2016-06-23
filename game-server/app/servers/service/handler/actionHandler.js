@@ -15,7 +15,6 @@ var Promise = require('bluebird');
 var util = require('util');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var moment = require('moment');
-var Notify = require('../../../dao/notifyDao');
 moment.locale('vi');
 
 module.exports = function (app) {
@@ -39,7 +38,7 @@ Handler.prototype.action = function (msg, session, next) {
       }
       switch (action.type) {
         case consts.ACTION_ID.INVITE_GUILD:
-          GuildDao.removeInvite({uid: uid, guildId: action.guildId});
+          GuildDao.removeInvite({ uid: uid, guildId: action.guildId});
           if (accept) {
             return pomelo.app.get('redisCache')
               .getAsync(redisKeyUtil.getLeaveGuild(uid))
@@ -166,7 +165,7 @@ Handler.prototype.action = function (msg, session, next) {
                 ]
               })
               .spread(function (currentGuild, targetGuild) {
-                console.log('currentguild : ', currentGuild, targetGuild);
+                console.log('currentGuild : ', currentGuild, targetGuild);
                 if (!currentGuild || !targetGuild) {
                   return Promise.reject({ec: Code.FAIL, msg : "một trong 2 hội quán không tồn tại"})
                 }
@@ -176,9 +175,9 @@ Handler.prototype.action = function (msg, session, next) {
                     msg: util.format("Hội quán của bạn cần %s gold để nhận lời khiêu chiến. Vui lòng góp thêm quỹ hội!", action.numBoard * action.numMatch * action.bet)
                   })
                 }
-                // if (targetGuild.numMember < action.numBoard){
-                //   return Promise.reject({ec: Code.FAIL, msg: util.format("Hội quán của bạn cần tối thiểu %s thành viên để thi đấu với %s bàn đấu. Vui lòng mời thêm thành viên để chấp nhận lời khiêu chiến này", action.numBoard, action.numBoard)});
-                // }
+                if (targetGuild.numMember < action.numBoard){
+                  return Promise.reject({ec: Code.FAIL, msg: util.format("Hội quán của bạn cần tối thiểu %s thành viên để thi đấu với %s bàn đấu. Vui lòng mời thêm thành viên để chấp nhận lời khiêu chiến này", action.numBoard, action.numBoard)});
+                }
                 currentGuild.sIcon = utils.JSONParse(currentGuild.sIcon, {});
                 targetGuild.sIcon = utils.JSONParse(targetGuild.sIcon, {});
                 currentGuildName = currentGuild.name;
@@ -217,7 +216,7 @@ Handler.prototype.action = function (msg, session, next) {
                             timeWait: 5 * 60 * 1000,
                             level: 0,
                             tourTimeWait: 10 * 60 * 1000,
-                            showKill: action.showKill || 0,
+                            showKill: action.showKill,
                             mustWin: 0,
                             lockMode: lodash.isArray(action.lockMode) ? action.lockMode.join(',') : '',
                             matchPlay: action.numMatch || 2
@@ -290,7 +289,6 @@ Handler.prototype.action = function (msg, session, next) {
                       })
                   })
                   .then(function () {
-                    console.log('tạo bàn thi đấu cho giải giao hữu');
                     var tourManager = pomelo.app.get('tourManager');
                     for (var i = 0; i < action.numBoard; i++) {
                       var dataCreateTable = {
@@ -303,6 +301,7 @@ Handler.prototype.action = function (msg, session, next) {
                         matchTime: action.time / 1000 | 0,
                         timePlay: action.matchTime / 1000 | 0,
                         mustWin: 0,
+                        matchPlay : action.numMatch,
                         scheduleId: schedule.id,
                         battleType: consts.TOUR_BATTLE_TYPE.THUY_SY,
                         tc: {
@@ -312,11 +311,11 @@ Handler.prototype.action = function (msg, session, next) {
                           turnTime: action.turnTime,
                           timeWait: action.timeWait || 2 * 60 * 1000,
                           tourTimeWait: action.tourTimeWait || 2 * 60 * 1000,
-                          showKill: 0,
+                          showKill: action.showKill,
                           level: action.level || 0,
                           lockMode: action.lockMode || [],
                           mustWin: action.mustWin || 0,
-                          caroOpen: action.caroOpen || 1
+                          caroOpen: action.caroOpen
                         },
                         lockMode: action.lockMode,
                         username: [],
@@ -325,11 +324,13 @@ Handler.prototype.action = function (msg, session, next) {
                         player: JSON.stringify([
                           {
                             avatar: utils.JSONParse(targetGuild.icon),
-                            fullname: ''
+                            fullname: '',
+                            guildId: targetGuild.id
                           },
                           {
                             avatar: utils.JSONParse(currentGuild.icon),
-                            fullname: ''
+                            fullname: '',
+                            guildId : currentGuild.id
                           }
                         ])
                       };
@@ -354,11 +355,31 @@ Handler.prototype.action = function (msg, session, next) {
                 })
               })
               .then(function () {
+                // settimeout push thong báo về cho người dugnf
+                setTimeout(function () {
+                  var chatService = pomelo.app.get('chatService');
+                  chatService.sendMessageToGroup(redisKeyUtil.getChatGuildName(action.currentGuildId), {
+                      type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                      title: "Đấu trường giao hữu",
+                      msg: util.format('Đã đến giờ thi đấu giao hữu với hội quán "%s". Hãy vào đấu trường để góp sức cho hội quán của bạn', targetGuildName),
+                      buttonLabel: "Ok",
+                      command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tour.tourId},
+                      image: consts.NOTIFY.IMAGE.NORMAL
+                    }, 'onNotify');
+                  chatService.sendMessageToGroup(redisKeyUtil.getChatGuildName(action.targetGuildId), {
+                    type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                    title: "Đấu trường giao hữu",
+                    msg: util.format('Đã đến giờ thi đấu giao hữu với hội quán "%s". Hãy vào đấu trường để góp sức cho hội quán của bạn', currentGuildName),
+                    buttonLabel: "Ok",
+                    command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tour.tourId},
+                    image: consts.NOTIFY.IMAGE.NORMAL
+                  }, 'onNotify');
+                }, action.time - Date.now());
                 var timePlay = moment(action.time).format('HH:mm DD/MM');
                 pomelo.app.get('redisCache')
                   .set(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 1);
                 pomelo.app.get('redisCache')
-                  .expire(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 24 * 60 * 60 + ((action.time - Date.now()) / 1000 | 0));
+                  .expire(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 5 * 60 + ((action.time - Date.now()) / 1000 | 0));
                 // gửi thông báo đến các thành viên trong hội quán
                 pomelo.app.get('chatService')
                   .sendMessageToGroup(redisKeyUtil.getChatGuildName(action.currentGuildId), {
@@ -540,7 +561,7 @@ Handler.prototype.action = function (msg, session, next) {
                 pomelo.app.get('redisCache')
                   .set(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 1);
                 pomelo.app.get('redisCache')
-                  .expire(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 24 * 60 * 60);
+                  .expire(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 5 * 60);
                 return pomelo.app.get('mysqlClient')
                   .GuildBattle
                   .update({
@@ -553,6 +574,9 @@ Handler.prototype.action = function (msg, session, next) {
                   });
               });
           }
+          break;
+        default:
+          return Promise.resolve();
         // action invite;
       }
     })

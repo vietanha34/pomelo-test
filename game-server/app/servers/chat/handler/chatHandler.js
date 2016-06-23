@@ -105,7 +105,7 @@ Handler.prototype.send = function (msg, session, next) {
         status: 0
       };
       switch (targetType) {
-        case consts.TARGET_TYPE.BOARD :
+        case consts.TARGET_TYPE.BOARD:
           self.chatService.sendMessageToBoard(uid, channelUtil.getBoardChannelName(tableId), data, done);
           return;
         case consts.TARGET_TYPE.BOARD_GUEST:

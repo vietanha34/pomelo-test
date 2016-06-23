@@ -180,7 +180,9 @@ pro.sendMessageToGroup = function (roomId, data, type, cb) {
     function (mems, done) {
       console.log('chat members : ', mems );
       members = mems;
-      pomelo.app.get('statusService').pushByUids(members, type, data, done)
+      if (members.length > 0){
+        pomelo.app.get('statusService').pushByUids(members, type, data, done)
+      }
     },
     function (f, done) {
       console.log(f);
