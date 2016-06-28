@@ -6,7 +6,7 @@ var qs = require('querystring');
 
 var SDKService = module.exports;
 
-SDKService.baseUrl = 'http://172.16.20.10';
+SDKService.baseUrl = 'https://172.16.20.10:443';
 
 /**
  *
