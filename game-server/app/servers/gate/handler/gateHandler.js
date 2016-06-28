@@ -59,6 +59,9 @@ Handler.prototype.getServer = function (msg, session, next) {
       if (msg.versionCode === 13062016 && msg.platform === 'ios'){
         config['IS_REVIEW'] = 1
       }
+      if (msg.packageName === 'com.chessonline.kychien' || msg.packageName === 'com.thudomod.cothu'){
+        config['IS_REVIEW'] = 1
+      }
       var responseData = {
         ec : Code.OK,
         host : res.clientHost,

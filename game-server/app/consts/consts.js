@@ -467,6 +467,7 @@ module.exports = {
     LEVEL_UP: 44,
     PLAY_GAME: 47,
     VIDEO_ADS: 48,
+    BONUS_PLAY_GAME: 49,
     UNKNOWN: 99
   },
 

@@ -119,7 +119,7 @@ Handler.prototype.action = function (msg, session, next) {
         case consts.ACTION_ID.TOURNAMENT_DUEL:
           if (accept) {
             // create giải đấu
-            if (action.time < Date.now()) { // thời gian nhận tối thiểu là 1h
+            if (action.time < Date.now() - 60 * 60 * 1000) { // thời gian nhận tối thiểu là 1h
               ActionDao.removeAction({id: action.id}, uid);
               return Promise.reject({ec: Code.FAIL, msg: "Đã hết thời gian chấp nhận lời mời giao hữu này"})
             }
@@ -167,7 +167,7 @@ Handler.prototype.action = function (msg, session, next) {
               .spread(function (currentGuild, targetGuild) {
                 console.log('currentGuild : ', currentGuild, targetGuild);
                 if (!currentGuild || !targetGuild) {
-                  return Promise.reject({ec: Code.FAIL, msg : "một trong 2 hội quán không tồn tại"})
+                  return Promise.reject({ec: Code.FAIL, msg : "Một trong 2 hội quán không tồn tại"})
                 }
                 if (targetGuild.gold < action.numBoard * action.numMatch * action.bet) {
                   return Promise.reject({
@@ -379,7 +379,7 @@ Handler.prototype.action = function (msg, session, next) {
                 pomelo.app.get('redisCache')
                   .set(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 1);
                 pomelo.app.get('redisCache')
-                  .expire(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 5 * 60 + ((action.time - Date.now()) / 1000 | 0));
+                  .expire(redisKeyUtil.getGuildDuelSuccess(action.currentGuildId, action.targetGuildId), 24 * 60 * 60 + ((action.time - Date.now()) / 1000 | 0));
                 // gửi thông báo đến các thành viên trong hội quán
                 pomelo.app.get('chatService')
                   .sendMessageToGroup(redisKeyUtil.getChatGuildName(action.currentGuildId), {
@@ -561,7 +561,7 @@ Handler.prototype.action = function (msg, session, next) {
                 pomelo.app.get('redisCache')
                   .set(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 1);
                 pomelo.app.get('redisCache')
-                  .expire(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 5 * 60);
+                  .expire(redisKeyUtil.getGuildDuelFail(action.currentGuildId, action.targetGuildId), 24 * 60 * 60);
                 return pomelo.app.get('mysqlClient')
                   .GuildBattle
                   .update({

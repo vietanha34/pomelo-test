@@ -753,8 +753,8 @@ Handler.prototype.duel = function (msg, session, next) {
       if (guildId === msg.guildId){
         return Promise.reject({ec :Code.FAIL, msg : "Bạn không thể khiêu chiến với chính hội quán của mình"})
       }
-      if (msg.time - Date.now() < 5 * 60 * 1000 ){
-        return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại ít nhất 5 phút"});
+      if (msg.time - Date.now() < 4 * 60 * 60 * 1000 ){
+        return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại ít nhất 4 tiếng"});
       }
       if (msg.time - Date.now() > 7 * 24 * 60 * 60 * 1000){
         return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại không quá 7 ngày"});
