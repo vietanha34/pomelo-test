@@ -296,9 +296,12 @@ pro.chargeMoney = function (uid, gold, msg, cb) {
  * @method pushMessage
  */
 pro.pushMessage = function (route, msg) {
-  var channel = pomelo.app.get('channelService').getChannel(this.channelName, true);
+  var player, key;
   logger.info('\n broadcast to channel %s : \n route : %s \n msg : %j', this.channelName, route, msg);
-  channel.pushMessage(route, msg);
+  for (key in this.players.players) {
+    player = this.players.players[key];
+    messageService.pushMessageToPlayer(player.getUids(), route, msg)
+  }
   if (this.status === consts.BOARD_STATUS.PLAY){
     this.game.detailLog.push({
       r : dictionary[route],
@@ -314,7 +317,7 @@ pro.pushMessageWithMenu = function (route, msg) {
     player = this.players.players[key];
     messageService.pushMessageToPlayer(player.getUids(), route, utils.merge_options(msg, {menu: player.menu || []}))
   }
-  if (this.status === consts.BOARD_STATUS.PLAY){
+  if (this.status === consts.BOARD_STATUS.PLAY) {
     this.game.detailLog.push({
       r : dictionary[route],
       d : msg,

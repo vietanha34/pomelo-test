@@ -499,7 +499,8 @@ pro.demand = function (msg, session, next) {
     return next(null, {ec: Code.FA_HOME, msg: utils.getMessage(Code.ON_QUICK_PLAY.FA_BOARD_NOT_EXIST)});
   }
   msg.uid = uid;
-  return next(null, board.demand(msg));
+  var result = board.demand(msg);
+  return next(null, result);
 };
 
 pro.hint = function (msg, session, next) {

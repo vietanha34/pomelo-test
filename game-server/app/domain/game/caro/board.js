@@ -226,7 +226,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     finishData[i].result.eloAfter = eloMap[i];
     player.userInfo.elo = eloMap[i];
   }
-  if (bet > 0){
+  if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
     this.table.transfer(bet, fromUid,toUid);
     if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
       subGold = loseUser.subGold(bet);

@@ -266,7 +266,6 @@ FriendDao.search = function search(params, cb) {
       list = search || [];
       if (!list.length)
         throw new Error('Cannot search friend');
-
       return FriendDao.getFriendList(params.uid, consts.MAX_FRIEND);
     })
     .then(function(friends) {

@@ -61,11 +61,15 @@ Handler.prototype.getServer = function (msg, session, next) {
         config['IS_REVIEW'] = 1;
         pomelo.app.get('redisCache')
           .set(redisKeyUtil.getIsReviewVersion(version), 1);
+        pomelo.app.get('redisCache')
+          .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
       }
       if (msg.packageName === 'com.chessonline.kychien' || msg.packageName === 'com.thudomod.cothu'){
         config['IS_REVIEW'] = 1;
         pomelo.app.get('redisCache')
           .set(redisKeyUtil.getIsReviewVersion(version), 1);
+        pomelo.app.get('redisCache')
+          .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
       }
       var responseData = {
         ec : Code.OK,

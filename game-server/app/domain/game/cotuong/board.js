@@ -221,14 +221,15 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           platform : player.userInfo.platform
         }
       });
-    }else {
+    }
+    else {
       res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
         winIndex = i;
-      }else if (res === consts.WIN_TYPE.LOSE){
+      }else if (res === consts.WIN_TYPE.LOSE && result === consts.WIN_TYPE.GIVE_UP){
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -274,7 +275,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }
   this.table.finishGame();
   try {
-    if (bet > 0){
+    if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
       this.table.transfer(bet, fromUid,toUid);
       if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
         subGold = loseUser.subGold(bet);
@@ -298,11 +299,13 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     console.error('error : ', err);
   }
   var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}
-  this.detailLog.push({
-    r : dictionary['onFinishGame'],
-    d : data,
-    t : Date.now()
-  });
+  if (this.detailLog){
+    this.detailLog.push({
+      r : dictionary['onFinishGame'],
+      d : data,
+      t : Date.now()
+    });
+  }
   this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
   this.table.pushFinishGame(data, true);
 };
