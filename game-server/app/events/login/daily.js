@@ -10,6 +10,8 @@ var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var ItemDao = require('../../dao/itemDao');
 var NotifyDao = require('../../dao/notifyDao');
+var HomeDao = require('../../dao/homeDao');
+var DailyDao = require('../../dao/dailyDao');
 var moment = require('moment');
 
 module.exports.type = Config.TYPE.LOGIN;
@@ -77,6 +79,17 @@ module.exports.process = function (app, type, param) {
         if (e) {
           console.error(e.stack || e);
           utils.log(e.stack || e);
+        }
+        else {
+          var globalConfig = pomelo.app.get('configService').getConfig();
+          if (globalConfig.IS_REVIEW) {
+            setTimeout(function() {
+              DailyDao.getGold(param.uid)
+                .then(function(result) {
+                  HomeDao.pushInfo(param.uid, {gold: result.gold, dailyReceived: 1});
+                });
+            }, 4000);
+          }
         }
       });
 
