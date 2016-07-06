@@ -56,9 +56,19 @@ var LEAVE_GUILD = 'cothu:guild:leave:{uid}';
 var GUILD_DUEL_FAIL = 'cothu:guild:duel:fail:{guildId1}:{guildId2}';
 var GUILD_DUEL_SUCCESS = 'cothu:guild:duel:success:{guildId1}:{guildId2}';
 var USER_ACTION = 'cothu:action:{uid}';
+var IS_REVIEW_VERSION = 'cothu:isReview:{version}';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
+
+RedisKeyUtil.getIsReviewVersion = function (version) {
+  return IS_REVIEW_VERSION.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return version;
+    }
+  );
+};
 
 RedisKeyUtil.getGuildDuelFail = function (guildId1, guildId2) {
   return GUILD_DUEL_FAIL.replace(

@@ -6,6 +6,7 @@ var consts = require('../../../consts/consts');
 var shortId = require('shortid');
 var uuid = require('uuid');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
+var pomelo = require('pomelo');
 
 /**
  * Gate handler that dispatch user to connectors.
@@ -55,12 +56,16 @@ Handler.prototype.getServer = function (msg, session, next) {
       next(null, {ec : Code.FAIL})
     }
     else {
-      var config = configService.getConfig();
+      var config = utils.clone(configService.getConfig());
       if (msg.versionCode === 13062016 && msg.platform === 'ios'){
-        config['IS_REVIEW'] = 1
+        config['IS_REVIEW'] = 1;
+        pomelo.app.get('redisCache')
+          .set(redisKeyUtil.getIsReviewVersion(version), 1);
       }
       if (msg.packageName === 'com.chessonline.kychien' || msg.packageName === 'com.thudomod.cothu'){
-        config['IS_REVIEW'] = 1
+        config['IS_REVIEW'] = 1;
+        pomelo.app.get('redisCache')
+          .set(redisKeyUtil.getIsReviewVersion(version), 1);
       }
       var responseData = {
         ec : Code.OK,
