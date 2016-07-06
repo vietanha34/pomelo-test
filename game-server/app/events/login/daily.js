@@ -9,6 +9,9 @@ var utils = require('../../util/utils');
 var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
+var HomeDao = require('../../dao/homeDao');
+var DailyDao = require('../../dao/dailyDao');
 var moment = require('moment');
 
 module.exports.type = Config.TYPE.LOGIN;
@@ -75,6 +78,19 @@ module.exports.process = function (app, type, param) {
         if (e) {
           console.error(e.stack || e);
           utils.log(e.stack || e);
+        }
+        else {
+          pomelo.app.get('redisCache').getAsync(redisKeyUtil.getIsReviewVersion(param.versionCode))
+            .then(function(isReview) {
+              if (isReview) {
+                setTimeout(function() {
+                  DailyDao.getGold(param.uid)
+                    .then(function(result) {
+                      HomeDao.pushInfo(param.uid, {gold: result.gold, dailyReceived: 1});
+                    });
+                }, 4000);
+              }
+            });
         }
       });
 

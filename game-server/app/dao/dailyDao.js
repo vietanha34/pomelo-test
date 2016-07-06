@@ -25,11 +25,6 @@ var DailyDao = module.exports;
 DailyDao.getData = function getData(uid, cb) {
   var loginCount;
 
-  var globalConfig = pomelo.app.get('configService').getConfig();
-  if (globalConfig.IS_REVIEW) {
-    return utils.invokeCallback(cb, null, {received: 1});
-  }
-
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
