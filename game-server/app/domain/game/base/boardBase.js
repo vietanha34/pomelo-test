@@ -555,7 +555,7 @@ pro.clearIdlePlayer = function () {
                 }
               })
           }
-          this.tourScore[this.getTourScoreIndex(winPlayer.uid)] += matchWin;
+          this.tourScore[this.getTourScoreIndex(winPlayer.userInfo)] += matchWin;
           this.emit('setBoard', {score : this.tourScore ? this.tourScore.join(' - ') : null}, true);
           this.emit('tourFinish', this.tourWinUser, 'Đối thủ không vào bàn khi thời gian chờ kết thúc hoặc không bắt đầu ván tiếp theo sau thời gian quy định');
         } else {

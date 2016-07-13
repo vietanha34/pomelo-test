@@ -153,8 +153,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
   var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
-  for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
-    var player = this.table.players.getPlayer(this.playerPlayingId[i]);
+  var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
+  for (var i = 0, len = playerPlaying.length; i < len ;i++){
+    var player = this.table.players.getPlayer(playerPlaying[i]);
     if (player.uid === turnUid){
       turnPlayer = player;
       index = i;
@@ -433,7 +434,7 @@ Table.prototype.demand = function (opts) {
       break;
     case consts.ACTION.SURRENDER:
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
-      return {}
+      return {};
       break;
     default :
       return {};

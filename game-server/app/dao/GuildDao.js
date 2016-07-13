@@ -877,7 +877,6 @@ GuildDao.getGuildSearchFriend = function (role, permission, args, cb) {
       })
     })
     .then(function (list) {
-      console.log('list : ', list);
       list.list = lodash.compact(list.list);
       return utils.invokeCallback(cb, null,  list);
     })
