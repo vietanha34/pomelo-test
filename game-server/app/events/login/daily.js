@@ -80,17 +80,17 @@ module.exports.process = function (app, type, param) {
           utils.log(e.stack || e);
         }
         else {
-          pomelo.app.get('redisCache').getAsync(redisKeyUtil.getIsReviewVersion(param.versionCode))
-            .then(function(isReview) {
-              if (isReview) {
-                setTimeout(function() {
+          setTimeout(function() {
+            pomelo.app.get('redisCache').getAsync(redisKeyUtil.getIsReviewVersion(param.version))
+              .then(function(isReview) {
+                if (isReview) {
                   DailyDao.getGold(param.uid)
                     .then(function(result) {
                       HomeDao.pushInfo(param.uid, {gold: result.gold, dailyReceived: 1});
                     });
-                }, 4000);
-              }
-            });
+                }
+              });
+          }, 3000);
         }
       });
 
