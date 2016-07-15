@@ -1041,7 +1041,7 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
     })
     .catch(function (err) {
       // cộng lại tiền cho người dùng
-      console.error('err : ', err);
+      console.error('pickUser err : ', err);
     })
 };
 

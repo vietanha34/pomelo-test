@@ -2,7 +2,6 @@
  * Created by laanhdo on 11/25/14.
  */
 
-var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
 var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
@@ -10,7 +9,6 @@ var util = require('util');
 var utils = require('../../../util/utils');
 var Player = require('./entity/player');
 var lodash = require('lodash');
-var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
@@ -184,8 +182,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var players = [], finishData = [];
   var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
-  for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
-    var player = this.table.players.getPlayer(this.playerPlayingId[i]);
+  var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
+  for (var i = 0, len = playerPlaying.length; i < len ;i++){
+    var player = this.table.players.getPlayer(playerPlaying[i]);
     if (player.uid === turnUid){
       turnPlayer = player;
       index = i;
@@ -271,7 +270,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     }
   } catch(err){
     console.error('error : ', err);
-    console.error('players : ', players, this.playerPlayingId);
+    console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
   }
   this.table.finishGame();
   try {

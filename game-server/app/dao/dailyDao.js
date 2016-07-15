@@ -66,7 +66,7 @@ DailyDao.getData = function getData(uid, cb) {
     })
     .catch(function(e) {
       if (lodash.isError(e)){
-        console.error(e.stack || e);
+        console.error('DailyDao.getData : ', e.stack || e);
         utils.log(e.stack || e);
       }
       return utils.invokeCallback(cb, null, {received: 1});
@@ -104,6 +104,7 @@ DailyDao.getGold = function getGold(uid, cb) {
       });
     })
     .catch(function(e) {
+      console.error('DailyDao.getGold : ', e);
       return utils.invokeCallback(cb, e);
     });
 };
@@ -124,7 +125,7 @@ DailyDao.loadConfig = function loadConfig() {
       redis.hmset(redisKeyUtil.getDailyConfigKey(), config);
     })
     .catch(function(e) {
-      console.error(e.stack || e);
+      console.error('DailyDao.loadConfig : ', e.stack || e);
       utils.log(e.stack || e);
     });
 };

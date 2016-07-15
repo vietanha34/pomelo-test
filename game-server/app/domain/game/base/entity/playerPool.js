@@ -133,7 +133,7 @@ pro.addPlayer = function (opts) {
       if (this.table.tourWinUser){
         data.notifyMsg = util.format('Người thắng cuộc trong cặp đấu : "%s" vs "%s" là "%s"', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
       }else {
-        data.notifyMsg = util.format('Bàn đấu đã kết thúc mà không có người thắng cuộc', this.table.fullname[0], this.table.fullname[1], this.table.tourWinUser['fullname'])
+        data.notifyMsg = util.format('Bàn đấu đã kết thúc mà không có người thắng cuộc', this.table.fullname[0], this.table.fullname[1])
       }
     }
   }

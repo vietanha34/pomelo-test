@@ -298,6 +298,7 @@ pro.chargeMoney = function (uid, gold, msg, cb) {
 pro.pushMessage = function (route, msg) {
   var player, key;
   logger.info('\n broadcast to channel %s : \n route : %s \n msg : %j', this.channelName, route, msg);
+  if (!this.players) return
   for (key in this.players.players) {
     player = this.players.players[key];
     messageService.pushMessageToPlayer(player.getUids(), route, msg)
@@ -576,7 +577,7 @@ pro.clearIdlePlayer = function () {
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
       }
-      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST && player.version >= '20160516') {
+      if (!player.timeLogout && player.timeAction < Date.now() - consts.TIME.GUEST) {
         this.pushMessageToPlayer(player.uid, 'game.gameHandler.hint', {
           msg: "Vui lòng xác nhận bạn vẫn còn theo dõi trận đấu này!",
           time: 30,

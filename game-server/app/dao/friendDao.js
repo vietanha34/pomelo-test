@@ -66,7 +66,7 @@ FriendDao.request = function request(fromId, toId, cb) {
       }
     })
     .catch(function(e) {
-      console.error(e.stack || e);
+      console.error('FriendDao.request : ', e.stack || e);
       utils.log(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
     });

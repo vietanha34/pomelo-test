@@ -181,6 +181,7 @@ exp.createBoard = function (params, cb) {
       return utils.invokeCallback(cb, null, {boardId: res, serverId: self.serverId, roomId: params.roomId})
     })
     .catch(function (err) {
+      console.error('BoardPool error : ', err);
       return utils.invokeCallback(cb, err)
     });
 };
@@ -231,6 +232,7 @@ exp.create = function (params, cb) {
       }
     })
     .catch(function (err) {
+      console.error('BoardPool create error : ', err);
       return utils.invokeCallback(cb, err);
     })
 };

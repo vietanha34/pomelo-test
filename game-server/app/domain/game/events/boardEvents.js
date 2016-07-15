@@ -263,7 +263,7 @@ exp.addEventFromBoard = function (board) {
     }
     pomelo.app.get('globalChannelService').leave(board.channelName, userInfo.uid, userInfo.frontendId);
     pomelo.app.get('globalChannelService').leave(board.guestChannelName, userInfo.uid, userInfo.frontendId);
-    pomelo.app.get('statusService').leaveBoard(userInfo.uid, null);
+    pomelo.app.get('statusService').leaveBoard(userInfo.uid, null); 
     if (userInfo.guest) {
       board.pushMessage('onUpdateGuest', {numGuest: board.players.guestIds.length});
     } else if (board.tourType !== consts.TOUR_TYPE.FRIENDLY){
