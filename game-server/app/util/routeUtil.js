@@ -38,7 +38,7 @@ exp.game = function (session, msg, app, cb) {
               else if (serverId){
                 cb(null, serverId);
               }else {
-                console.error('routeUtil error : ', msg, session ? session.uid : '');
+                console.error('routeUtil error : ', msg,  serverId, session ? session.uid : '');
                 cb(new Error('Không tìm thấy máy chủ phù hợp'));
               }
             })

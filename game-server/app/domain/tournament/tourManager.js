@@ -31,7 +31,7 @@ var TourManager = function (opts) {
 
 module.exports = TourManager;
 
-pro = TourManager.prototype;
+var pro = TourManager.prototype;
 
 pro.init = function () {
   var self = this;
@@ -39,39 +39,6 @@ pro.init = function () {
   var curServer = pomelo.app.curServer;
   // quét hệ thống xem có giải đấu nào sắp diễn ra k
   if (curServer.serverType === this.serverType) {
-    setInterval(function () {
-      return pomelo.app.get('mysqlClient')
-        .Tournament
-        .findAll({
-          where: {
-            status: {
-              $ne: consts.TOUR_STATUS.FINISHED
-            },
-            type : consts.TOUR_TYPE.NORMAL
-          },
-          raw: true
-        })
-        .each(function (tour) {
-          if (!tour) return;
-          return TourDao.getTourRound({
-            where: {
-              id: tour.roundId
-            },
-            include : [
-              {
-                model : pomelo.app.get('mysqlClient').TourSchedule
-              }
-            ],
-            raw: true
-          })
-          .then(function (round) {
-              if (!round) return;
-              if (round['TourSchedule.matchTime'] && moment(round['TourSchedule.matchTime'] * 1000).isAfter(moment())){
-
-              }
-            })
-        })
-    }, this.interval);
     return pomelo.app.get('mysqlClient')
       .Tournament
       .findAll({
@@ -85,6 +52,7 @@ pro.init = function () {
       .each(function (tour) {
         var tableConfig, round;
         if (!tour) return;
+        console.log('init tour : ', tour);
         return TourDao.getTourRound({
           where: {
             id: tour.roundId
@@ -92,6 +60,7 @@ pro.init = function () {
           raw: true
         })
           .then(function (r) {
+            console.log('init round : ', r);
             round = r;
             if (!round || round.length < 1) return Promise.reject();
             round = round[0];
@@ -105,6 +74,7 @@ pro.init = function () {
               })
           })
           .then(function (tc) {
+            console.log('init tableconfig : ', tc);
             tableConfig = tc;
             return TourDao.getTourTable({
               where: {
@@ -142,10 +112,11 @@ pro.init = function () {
                   serverId: table.serverId,
                   groupId: table.groupId,
                   scheduleId: table.scheduleId,
-                  matchTime: table.matchTime,
+                  matchTime: moment(table.matchTime).unix(),
                   index: table.index,
                   battleType: round ? round.battleType : consts.TOUR_BATTLE_TYPE.THUY_SY,
-                  tourType: table.tourType
+                  tourType: tour.type,
+                  tc : tableConfig
                 };
                 if (player1 && player2 && type === consts.TOUR_TYPE.NORMAL) {
                   dataCreateTable['uid'] = [table.player1, table.player2];
@@ -155,7 +126,7 @@ pro.init = function () {
                   for (var i = 0, len = player.length; i < len; i++) {
                     player[i].inBoard = 0;
                   }
-                }else {
+                } else {
                   player = [{}, {}];
                   dataCreateTable['guildId'] = [table.player1, table.player2];
                 }
@@ -1485,6 +1456,7 @@ pro.createTable = function (opts) {
   params.guildId = opts.guildId;
   params.timePlay = opts.matchTime * 1000;
   params.index = opts.index;
+  params.boardId = opts.boardId;
   params.tourId = opts.tourId;
   params.matchPlay = opts.matchPlay || 2;
   params.battleType = opts.battleType;

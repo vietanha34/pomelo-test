@@ -20,5 +20,5 @@ module.exports.beforeShutdown = function (app, cb) {
 };
 
 module.exports.afterStartAll = function (app) {
-
+  app.get('tourManager').init();
 };
