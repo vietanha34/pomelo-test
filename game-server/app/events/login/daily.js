@@ -86,7 +86,7 @@ module.exports.process = function (app, type, param) {
                 if (isReview) {
                   DailyDao.getGold(param.uid)
                     .then(function(result) {
-                      HomeDao.pushInfo(param.uid, {gold: result.gold, dailyReceived: 1});
+                      HomeDao.pushInfo(param.uid, {userInfo: {gold: result.gold, dailyReceived: 1}});
                     });
                 }
               });

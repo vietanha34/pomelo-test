@@ -177,10 +177,10 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
           if (e) console.error(e);
         });
     }
-    redis.hmset(userKey, change, function(e, res) {
-      utils.invokeCallback(cb, e, res);
-      if (e) console.error(e);
-    });
+    // redis.hmset(userKey, change, function(e, res) {
+    //   utils.invokeCallback(cb, e, res);
+    //   if (e) console.error(e);
+    // });
   }
   else {
     pomelo.app.get('channelService')
@@ -192,10 +192,10 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
     for (var attr in change) {
       HomeDao.homeInfo[attr] = change[attr];
     }
-    redis.hmset(homeKey, change, function(e, res) {
-      utils.invokeCallback(cb, e, res);
-      if (e) console.error(e);
-    });
+    // redis.hmset(homeKey, change, function(e, res) {
+    //   utils.invokeCallback(cb, e, res);
+    //   if (e) console.error(e);
+    // });
   }
 });
 
