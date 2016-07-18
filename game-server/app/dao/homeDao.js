@@ -187,11 +187,11 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
       .broadcast('connector', 'home.homeHandler.updateHome', change, {}, function (e, res) {
         if (e) console.error(e);
       });
-    var homeKey = HomeDao.redis.getHomeKey();
-    HomeDao.homeInfo = HomeDao.homeInfo || {};
-    for (var attr in change) {
-      HomeDao.homeInfo[attr] = change[attr];
-    }
+    // var homeKey = HomeDao.redis.getHomeKey();
+    // HomeDao.homeInfo = HomeDao.homeInfo || {};
+    // for (var attr in change) {
+    //   HomeDao.homeInfo[attr] = change[attr];
+    // }
     // redis.hmset(homeKey, change, function(e, res) {
     //   utils.invokeCallback(cb, e, res);
     //   if (e) console.error(e);
