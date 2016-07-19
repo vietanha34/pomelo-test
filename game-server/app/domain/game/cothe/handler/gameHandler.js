@@ -31,7 +31,7 @@ var pro = Handler.prototype;
 
 pro.getListFormation = function (msg, session, next) {
   var offset = msg.offset || 0;
-  var length = msg.length || 10;
+  var length = 1000;
   var self = this;
   Promise.delay(0)
     .then(function () {

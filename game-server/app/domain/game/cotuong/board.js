@@ -274,7 +274,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }
   this.table.finishGame();
   try {
-    if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
+    if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser){
       this.table.transfer(bet, fromUid,toUid);
       if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
         subGold = loseUser.subGold(bet);

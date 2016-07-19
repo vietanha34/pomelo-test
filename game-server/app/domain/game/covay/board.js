@@ -154,8 +154,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var players = [];
   var finishData = [];
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
-  for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
-    var player = this.table.players.getPlayer(this.playerPlayingId[i]);
+  var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
+  for (var i = 0, len = playerPlaying.length; i < len ;i++){
+    var player = this.table.players.getPlayer(playerPlaying[i]);
     if (player.uid === turnUid){
       var colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;

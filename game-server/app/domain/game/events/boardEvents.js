@@ -520,7 +520,6 @@ exp.addEventFromBoard = function (board) {
     }else {
       stringLog = stringLog + util.format(' ,Ván đấu kết thúc hoà');
     }
-    board.game.stringLog.push(stringLog);
     var otherPlayerUid = board.players.getOtherPlayer();
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid) && !board.tableTourFinish) {
       board.addJobReady(otherPlayerUid);
@@ -530,6 +529,7 @@ exp.addEventFromBoard = function (board) {
       board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
     }
     if (board.game.stringLog && board.game.stringLog.length > 0){
+      board.game.stringLog.push(stringLog);
       board.game.logs['stringLogs'] = JSON.stringify(board.game.stringLog);
     }
     if (board.game.detailLog && board.game.detailLog.length > 0){
