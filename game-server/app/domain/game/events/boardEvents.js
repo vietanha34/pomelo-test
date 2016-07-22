@@ -538,7 +538,9 @@ exp.addEventFromBoard = function (board) {
     if (board.firstUid !== data[0].uid) {
       data.reverse();
     }
-    board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
+    if (board.game.logs){
+      board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
+    }
     if (winUid) board.game.logs.result['winner'] = winUid;
     if (loseUid) board.game.logs.result['looser'] = loseUid;
     var logsData = {

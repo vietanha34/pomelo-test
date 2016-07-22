@@ -401,10 +401,11 @@ Handler.prototype.getBoardList = function (msg, session, next) {
     })
     .then(function (boards) {
       var data = [];
+      var waitingBoard = [];
       for (var i = 0, len = boards.length; i < len; i++) {
         var board = boards[i];
         hallId = board.hallId;
-        data.push({
+        var boardInfo = {
           index: board.index,
           tableId: board.boardId,
           gameId: board.gameId,
@@ -415,9 +416,14 @@ Handler.prototype.getBoardList = function (msg, session, next) {
           turnTime: board.turnTime,
           lock: board.lock ? 1 : 0,
           optional: utils.JSONParse(board.optional, {})
-        });
+        };
+        if (waitingBoard.length < 9 && board.numPlayer == 1){
+          waitingBoard.push(boardInfo)
+        }else {
+          data.push(boardInfo);
+        }
       }
-      return next(null, {board: data, roomId: roomId, gameId: gameId, hallId: hallId})
+      return next(null, {board: waitingBoard.concat(data), roomId: roomId, gameId: gameId, hallId: hallId})
     })
     .catch(function (err) {
       logger.error('err : ', err);
