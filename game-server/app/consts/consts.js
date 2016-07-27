@@ -468,6 +468,7 @@ module.exports = {
     PLAY_GAME: 47,
     VIDEO_ADS: 48,
     BONUS_PLAY_GAME: 49,
+    NRU: 50,
     UNKNOWN: 99
   },
 
@@ -913,5 +914,39 @@ module.exports = {
   },
   NOTIFY_NC_POPUP_TYPE:{
     TOURNAMENT_DUEL : 1
+  },
+  NRU: {
+    1: {
+      xp: 10,
+      gold: 500,
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold và ${xp} xp khi chơi ván cờ đầu tiên'
+    },
+    2: {
+      friend: 10,
+      msg: 'Chúc mừng bạn đã có thêm ${friend} bạn mới khi chơi ván cờ thứ ${count}'
+    },
+    3: {
+      xp: 10,
+      gold: 1000,
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold và ${xp} xp khi chơi ván cờ thứ ${count}'
+    },
+    10: {
+      xp: 10,
+      gold: 2000,
+      item: {id: 1, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và vật phẩm luận cờ trong 3 ngày khi chơi ván cờ thứ ${count}'
+    },
+    20: {
+      xp: 20,
+      gold: 3000,
+      item: {id: 3, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và vật phẩm sửa thời gian trong 3 ngày khi chơi ván cờ thứ ${count}'
+    },
+    30: {
+      xp: 50,
+      gold: 5000,
+      item: {id: 13, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và thẻ VIP bạc trong 3 ngày khi chơi ván cờ thứ ${count}'
+    }
   }
 };
