@@ -524,25 +524,25 @@ exp.addEventFromBoard = function (board) {
     if (otherPlayerUid && board.players.getPlayer(otherPlayerUid) && !board.tableTourFinish) {
       board.addJobReady(otherPlayerUid);
     }
-    if (board.game.actionLog && board.game.actionLog.length > 0) {
-      board.game.actionLog[board.game.actionLog.length -1]['notifyMsg'] = losingReason;
-      board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
-    }
-    if (board.game.stringLog && board.game.stringLog.length > 0){
-      board.game.stringLog.push(stringLog);
-      board.game.logs['stringLogs'] = JSON.stringify(board.game.stringLog);
-    }
-    if (board.game.detailLog && board.game.detailLog.length > 0){
-      board.game.logs['detailLog'] = JSON.stringify(board.game.detailLog);
-    }
-    if (board.firstUid !== data[0].uid) {
-      data.reverse();
-    }
     if (board.game.logs){
+      if (board.game.actionLog && board.game.actionLog.length > 0) {
+        board.game.actionLog[board.game.actionLog.length -1]['notifyMsg'] = losingReason;
+        board.game.logs['logs'] = JSON.stringify(board.game.actionLog);
+      }
+      if (board.game.stringLog && board.game.stringLog.length > 0){
+        board.game.stringLog.push(stringLog);
+        board.game.logs['stringLogs'] = JSON.stringify(board.game.stringLog);
+      }
+      if (board.game.detailLog && board.game.detailLog.length > 0){
+        board.game.logs['detailLog'] = JSON.stringify(board.game.detailLog);
+      }
+      if (board.firstUid !== data[0].uid) {
+        data.reverse();
+      }
       board.game.logs.result['type'] = user.result.type === consts.WIN_TYPE.DRAW ? consts.WIN_TYPE.DRAW : consts.WIN_TYPE.WIN;
+      if (winUid) board.game.logs.result['winner'] = winUid;
+      if (loseUid) board.game.logs.result['looser'] = loseUid;
     }
-    if (winUid) board.game.logs.result['winner'] = winUid;
-    if (loseUid) board.game.logs.result['looser'] = loseUid;
     var logsData = {
       boardInfo: board.getBoardInfo(true),
       users: data,
