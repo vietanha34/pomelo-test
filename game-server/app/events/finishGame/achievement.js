@@ -109,6 +109,15 @@ module.exports.process = function (app, type, param) {
           gameCount += achievements[i][gameName+'Draw'] || 0;
         });
         gameCount += 1;
+
+        if (gameCount > 2) {
+          gameCount = 0;
+          games.forEach(function (game) {
+            var gameName = consts.UMAP_GAME_NAME[game];
+            gameCount += achievements[i][gameName+'Win'] || 0;
+          });
+          if (param.users[userIndex].result.type == consts.WIN_TYPE.WIN) gameCount += 1;
+        }
         
         if (!consts.NRU[gameCount]) return;
         
