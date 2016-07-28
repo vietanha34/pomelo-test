@@ -124,11 +124,13 @@ module.exports.process = function (app, type, param) {
         if (!consts.NRU[gameCount]) return;
         
         if (consts.NRU[gameCount].xp) {
-          TopDao.add({
-            uid: achievements[i].uid,
-            attr: 'exp',
-            point: consts.NRU[gameCount].xp
-          });
+          setTimeout(function() {
+            TopDao.add({
+              uid: achievements[i].uid,
+              attr: 'exp',
+              point: consts.NRU[gameCount].xp
+            });
+          }, 600);
         }
 
         if (consts.NRU[gameCount].gold) {
