@@ -17,6 +17,10 @@ var lodash = require('lodash');
 var utils = require('../../util/utils');
 var Promise = require('bluebird');
 var TopDao = require('../../dao/topDao');
+var TopupDao = require('../../dao/topupDao');
+var FriendDao = require('../../dao/friendDao');
+var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
 var util = require('util');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
@@ -70,17 +74,96 @@ module.exports.process = function (app, type, param) {
   var attr = gameName + 'Elo';
   var Achievement = pomelo.app.get('mysqlClient').Achievement;
 
+  var attrs = ['uid', attr];
+  var games = Object.keys(consts.UMAP_GAME_NAME);
+  games.forEach(function (game) {
+    var gameName = consts.UMAP_GAME_NAME[game];
+    attrs = attrs.concat([gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']);
+  });
+
   var user1Elo, user2Elo;
   var user1Index, user2Index;
   Achievement
     .findAll({
       where: {uid: {$in: [param.users[0].uid, param.users[1].uid]}},
-      attributes: ['uid', attr, gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']
+      attributes: attrs
     })
     .then(function(achievements) {
+
       achievements = achievements || [{uid: param.users[0].uid}, {uid: param.users[1].uid}];
       user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
+      
+      // check số ván chơi để tặng quà tân thủ
+      [0,1].forEach(function (i) {
+        var userIndex = achievements[i].uid == param.users[i].uid ? i : (i==0?1:0);
+
+        // nếu bỏ cuộc thì bỏ qua
+        if (param.users[userIndex].result.type == consts.WIN_TYPE.GIVE_UP) return;
+
+        var gameCount = 0;
+        games.forEach(function (game) {
+          var gameName = consts.UMAP_GAME_NAME[game];
+          gameCount += achievements[i][gameName+'Win'] || 0;
+          gameCount += achievements[i][gameName+'Lose'] || 0;
+          gameCount += achievements[i][gameName+'Draw'] || 0;
+        });
+        gameCount += 1;
+        
+        if (!consts.NRU[gameCount]) return;
+        
+        if (consts.NRU[gameCount].xp) {
+          TopDao.add({
+            uid: achievements[i].uid,
+            attr: 'exp',
+            point: consts.NRU[gameCount].xp
+          });
+        }
+
+        if (consts.NRU[gameCount].gold) {
+          TopupDao.topup({
+            uid: achievements[i].uid,
+            type: consts.CHANGE_GOLD_TYPE.NRU,
+            gold: consts.NRU[gameCount].gold,
+            msg: 'Cộng gold NRU sau khi choi '+gameCount+' ván game, cộng '+consts.NRU[gameCount].xp+' xp'
+          });
+        }
+
+        if (consts.NRU[gameCount].item) {
+          ItemDao.donateItem(achievements[i].uid, consts.NRU[gameCount].item.id, consts.NRU[gameCount].item.duration);
+        }
+
+        if (consts.NRU[gameCount].friend) {
+          pomelo.app.get('redisCache').getAsync(redisKeyUtil.getCcuList())
+            .then(function (ccu) {
+              var ccuList = utils.JSONParse(ccu, []);
+              if (!ccu || !ccuList.length) return;
+              
+              for (var j=0; j<ccuList.length && j<consts.NRU[gameCount].friend; j++) {
+                FriendDao.request(achievements[i].uid, ccuList[j].uid);
+              }
+            });
+        }
+
+        if (consts.NRU[gameCount].msg) {
+          var msg = consts.NRU[gameCount].msg;
+          msg = msg.replace('${xp}', consts.NRU[gameCount].xp);
+          msg = msg.replace('${gold}', consts.NRU[gameCount].gold);
+          msg = msg.replace('${friend}', consts.NRU[gameCount].friend);
+          msg = msg.replace('${count}', gameCount);
+          NotifyDao.push({
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: 'Chúc mừng tân thủ',
+            msg: msg,
+            buttonLabel: 'OK',
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+            users: [achievements[i].uid],
+            image:  consts.NOTIFY.IMAGE.AWARD
+          });
+        }
+        
+      });
 
       user1Elo = param.users[0].result['eloAfter'];
       user2Elo = param.users[1].result['eloAfter'];
