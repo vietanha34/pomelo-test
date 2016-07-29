@@ -117,6 +117,7 @@ module.exports.process = function (app, type, param) {
             gameCount += achievements[i][gameName+'Win'] || 0;
           });
           if (param.users[userIndex].result.type == consts.WIN_TYPE.WIN) gameCount += 1;
+          else return;
 
           if (gameCount < 3) return;
         }
