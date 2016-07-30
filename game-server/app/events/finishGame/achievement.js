@@ -109,15 +109,29 @@ module.exports.process = function (app, type, param) {
           gameCount += achievements[i][gameName+'Draw'] || 0;
         });
         gameCount += 1;
+
+        if (gameCount > 2) {
+          gameCount = 0;
+          games.forEach(function (game) {
+            var gameName = consts.UMAP_GAME_NAME[game];
+            gameCount += achievements[i][gameName+'Win'] || 0;
+          });
+          if (param.users[userIndex].result.type == consts.WIN_TYPE.WIN) gameCount += 1;
+          else return;
+
+          if (gameCount < 3) return;
+        }
         
         if (!consts.NRU[gameCount]) return;
         
         if (consts.NRU[gameCount].xp) {
-          TopDao.add({
-            uid: achievements[i].uid,
-            attr: 'exp',
-            point: consts.NRU[gameCount].xp
-          });
+          setTimeout(function() {
+            TopDao.add({
+              uid: achievements[i].uid,
+              attr: 'exp',
+              point: consts.NRU[gameCount].xp
+            });
+          }, 600);
         }
 
         if (consts.NRU[gameCount].gold) {
