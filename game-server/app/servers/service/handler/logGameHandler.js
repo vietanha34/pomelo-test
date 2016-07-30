@@ -26,7 +26,7 @@ Handler.prototype.getGameLog = function (msg, session, next) {
   }
   var logs, gameId;
   var mongoClient = this.app.get('mongoClient');
-  mongoClient.model('GameLog')
+  mongoClient.model('GameLog1')
     .findOne({
       matchId: matchId
     })
@@ -75,7 +75,7 @@ Handler.prototype.getLogDetail = function (msg,session, next) {
   console.log("matchId : ", msg);
   var logs, gameId;
   var mongoClient = this.app.get('mongoClient');
-  mongoClient.model('GameLog')
+  mongoClient.model('GameLog1')
     .findOne({
       matchId: matchId
     })
