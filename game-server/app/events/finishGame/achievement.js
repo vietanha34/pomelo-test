@@ -74,7 +74,7 @@ module.exports.process = function (app, type, param) {
   var attr = gameName + 'Elo';
   var Achievement = pomelo.app.get('mysqlClient').Achievement;
 
-  var attrs = ['uid', attr];
+  var attrs = ['uid', 'userCount', attr];
   var games = Object.keys(consts.UMAP_GAME_NAME);
   games.forEach(function (game) {
     var gameName = consts.UMAP_GAME_NAME[game];
@@ -175,6 +175,28 @@ module.exports.process = function (app, type, param) {
             users: [achievements[i].uid],
             image:  consts.NOTIFY.IMAGE.AWARD
           });
+        }
+
+
+        // KM khi chơi game ở phòng miễn phí lần đầu tiên trong ngày
+        var freePromotion = pomelo.app.get('configService').freePromotion;
+        if (achievements[i].userCount == 1 && freePromotion && params.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
+          pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion')
+            .then(function(todayPromotion) {
+              if (todayPromotion) return;
+
+              pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion', '1');
+              NotifyDao.push({
+                type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                title: 'Khuyến mại '+freePromotion+'%!!!',
+                msg: 'Duy nhất hôm nay, tặng bạn KM '+freePromotion+'%. Nạp ngay!!!',
+                buttonLabel: 'Nạp tiền',
+                command: {target: consts.NOTIFY.TARGET.GO_TOPUP},
+                scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+                users: [achievements[i].uid],
+                image:  consts.NOTIFY.IMAGE.GOLD
+              });
+            });
         }
         
       });

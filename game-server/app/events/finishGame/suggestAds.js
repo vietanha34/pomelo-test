@@ -13,7 +13,7 @@ var lodash = require('lodash');
 var utils = require('../../util/utils');
 var Promise = require('bluebird');
 var moment = require('moment');
-var TopDao = require('../../dao/topDao');
+var NotifyDao = require('../../dao/notifyDao');
 var UserDao = require('../../dao/userDao');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
@@ -58,7 +58,8 @@ module.exports.process = function (app, type, param) {
   }
   var users = param.users;
   Promise.map(users, function (user) {
-    if(user.remain < 500){
+    // gợi ý xem QC khi hết tiền
+    if (user.remain < 500) {
       return pomelo.app.get('videoAdsService')
         .getAds({ platform : user.info.platform})
         .then(function (data) {
