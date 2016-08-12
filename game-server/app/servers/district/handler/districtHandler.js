@@ -50,22 +50,25 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       $eq : null
     }
   };
-  if(msg.roomId){
-    whereClause['roomId'] = msg.roomId
+  if(lodash.isNumber(msg.roomId)){
+    whereClause['hallId'] = Math.round(msg.roomId / 100)
   }
+  if (msg.hallId) whereClause['hallId'] = msg.hallId;
   var excludeBoardId = session.get('excludeBoardId');
   excludeBoardId = lodash.isArray(excludeBoardId) ? excludeBoardId : [];
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
-  if (msg.hallId) whereClause['hallId'] = msg.hallId;
+  var gameName = consts.UMAP_GAME_NAME[gameId];
   var tableId;
   async.waterfall([
     // get userInfo,
     function (done) {
-      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
+      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
       if (userInfo) {
         user = userInfo;
+        var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
+        totalMatch = totalMatch || 0;
         user.elo = user['Achievement.elo'];
         user.sIcon = session.get('guild').sIcon;
         user.guildId = session.get('guild').id;
@@ -76,15 +79,16 @@ Handler.prototype.quickPlay = function (msg, session, next) {
           whereClause['level'] = {
           $lte : user.level
         };
+        var divide = totalMatch > 50 ? 5 : 10;
         whereClause['bet'] = {
           $and : {
-            $lte : user.gold,
+            $lte : Math.round(user.gold / divide) > 1000 ? Math.round(user.gold / divide) : 1000,
             $gte : 0
           }
         };
         self.app.get('boardService').getBoard({
           where: whereClause,
-          limit: 6,
+          limit: 5,
           raw : true,
           order: 'numPlayer DESC, bet DESC'
         }, done)
@@ -217,7 +221,7 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
   if (excludeBoardId.indexOf(tableId) > -1){
   }else {
     if (excludeBoardId.length >= 5){
-      excludeBoardId[0] = tableId;
+      excludeBoardId = [tableId].concat(excludeBoardId);
     }else {
       excludeBoardId.push(tableId);
     }

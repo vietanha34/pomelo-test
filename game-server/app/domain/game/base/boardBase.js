@@ -102,7 +102,7 @@ var Board = function (opts, PlayerPool, Player) {
     this.tourType = opts.tourType || consts.TOUR_TYPE.NORMAL;
     this.timePlay = opts.timePlay || Date.now();
     this.matchPlay = opts.matchPlay || 3;
-    this.tourTimeWait = opts.tourTimeWait || 10 * 60 * 1000;
+    this.tourTimeWait = opts.tourTimeWait > 10 * 60 * 1000 ? opts.tourTimeWait : 10 * 60 * 1000;
     this.tableTourFinish = false;
     this.tourScore = [0, 0];
     this.tourGuildDefault = [];
@@ -143,7 +143,6 @@ var Board = function (opts, PlayerPool, Player) {
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done(utils.getError(Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD))
         } else {
-          self.bet = bet;
           changed.push(util.format(' mức cược : %s', bet));
           dataChanged.bet = bet;
           dataUpdate.bet = bet;
@@ -338,24 +337,6 @@ pro.pushMessageWithMenuWithOutUid = function (uid, route, msg) {
   logger.info("\n Push message without Menu \n route :  %s \n message %j", route, msg);
 };
 
-//pro.pushMenuGame = function (route, msg) {
-//  for (var i = 0, len = this.players.playerSeat.length; i < len; i++) {
-//    var playerUid = this.players.playerSeat[i];
-//    if (!this.players.getPlayer(playerUid)) {
-//      continue
-//    }
-//    if (playerUid === this.owner) {
-//      this.pushMessageToPlayer(playerUid, route,
-//        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.START_GAME)]})
-//      );
-//    } else {
-//      this.pushMessageToPlayer(playerUid, route,
-//        utils.merge_options(msg, {menu: [this.genMenu(consts.ACTION.READY)]})
-//      );
-//    }
-//  }
-//  this.pushMessageToUids(this.players.guestIds, route, msg);
-//};
 
 /**
  * Gửi gói tin đến một người chơi
@@ -530,7 +511,8 @@ pro.clearIdlePlayer = function () {
         this.startGame(this.owner, function (err, res) {
           console.error('autoStartGame : ', arguments);
         });
-      } else {
+      }
+      else {
         // finishTourSession
         var winPlayer = this.players.getPlayer(this.owner);
         if (winPlayer) {
@@ -792,7 +774,7 @@ pro.getBoardInfo = function (finish, uid) {
       boardId: this.tableId,
       gameId: this.gameId,
       tourId: this.tourId,
-      districtId: this.districtId,
+      hallId: this.hallId,
       matchId: this.game ? this.game.matchId : '',
       bet: this.bet,
       guildId : this.guildId,
@@ -899,7 +881,8 @@ pro.changeBoardProperties = function (uid, properties, addFunction, cb) {
       return utils.invokeCallback(cb, err);
     } else {
       propertiesFunction.splice(0, propertiesFunction.length);
-      if (changed.length > 0) {
+      if (changed.length > 0 && self.status === consts.BOARD_STATUS.NOT_STARTED) {
+        if (dataChanged.bet) self.bet = dataChanged.bet;
         self.players.unReadyAll();
         var otherPlayer = self.players.getPlayer(self.players.getOtherPlayer());
         if (otherPlayer) {

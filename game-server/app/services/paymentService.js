@@ -147,7 +147,7 @@ pro.transfer = function (opts, cb) {
   var gold = opts.gold;
   if (isNaN(gold) || gold < 0)
     return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
-  console.log('handler transfer : ', opts);
+  console.error('handler transfer : ', opts);
   return Promises.delay(0)
     .then(function () {
       return [

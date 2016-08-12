@@ -193,7 +193,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
+      }else {
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -228,7 +228,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         toUid = player.uid;
         winUser = player;
         winIndex = i;
-      }else if (res === consts.WIN_TYPE.LOSE && result === consts.WIN_TYPE.GIVE_UP){
+      }else {
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -272,9 +272,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     console.error('error : ', err);
     console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
   }
-  this.table.finishGame();
   try {
-    if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser){
+    if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser && this.table.status !== consts.BOARD_STATUS.NOT_STARTED){
       this.table.transfer(bet, fromUid,toUid);
       if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
         subGold = loseUser.subGold(bet);
@@ -297,7 +296,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }catch(err){
     console.error('error : ', err);
   }
-  var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}
+  this.table.finishGame();
+  var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined};
   if (this.detailLog){
     this.detailLog.push({
       r : dictionary['onFinishGame'],

@@ -30,6 +30,7 @@ module.exports = {
 
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp', 'vipPoint'],
 
+
   WAITING_LIST : {
     TOTAL : 1,
     FRIEND: 2
@@ -702,6 +703,8 @@ module.exports = {
     5 : 'caroElo',
     6 : 'vayElo'
   },
+  
+  
 
   PROFILE: {
     PER_PAGE: 5
@@ -826,6 +829,7 @@ module.exports = {
     5: 'Người chơi %s phạm luật đuổi dai.',
     6: 'Ván đấu kết thúc do 40 nước không tiến triển',
     7: 'Sau 300 nước ván cờ không kết thúc',
+    8: 'Không đủ quân để chiến thắng.',
     10: 'Người chơi %s xin thua',
     11: 'Người chơi %s rời bàn',
     12: 'Người chơi %s hết thời gian một lượt đi quân',

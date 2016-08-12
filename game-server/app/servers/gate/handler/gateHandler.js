@@ -57,13 +57,6 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = utils.clone(configService.getConfig());
-      if (msg.versionCode === 13062016 && msg.platform === 'ios'){
-        config['IS_REVIEW'] = 1;
-        pomelo.app.get('redisCache')
-          .set(redisKeyUtil.getIsReviewVersion(version), 1);
-        pomelo.app.get('redisCache')
-          .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
-      }
       if (msg.packageName === 'com.thudojsc.CoThu'){
         config['IS_REVIEW'] = 1;
         pomelo.app.get('redisCache')

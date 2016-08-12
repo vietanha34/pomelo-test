@@ -2,7 +2,6 @@
  * Created by laanhdo on 11/25/14.
  */
 
-var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
 var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
@@ -10,7 +9,6 @@ var util = require('util');
 var utils = require('../../../util/utils');
 var Player = require('./entity/player');
 var lodash = require('lodash');
-var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
@@ -232,7 +230,6 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   }
   try {
     var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo, players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-    this.table.finishGame();
     for (i = 0, len = eloMap.length; i < len; i++) {
       player = this.table.players.getPlayer(players[i].uid);
       players[i].elo = (eloMap[i] || player.userInfo.elo) - player.userInfo.elo;
@@ -241,11 +238,12 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       finishData[i].result.eloAfter = eloMap[i];
       player.userInfo.elo = eloMap[i];
     }
-  } catch(err){
+  } 
+  catch(err){
     console.error('error : ', err);
     console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
   }
-  if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
+  if (bet > 0 && result !== consts.WIN_TYPE.DRAW && this.table.status !== consts.BOARD_STATUS.NOT_STARTED){
     this.table.transfer(bet, fromUid,toUid);
     if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
       subGold = loseUser.subGold(bet);
@@ -265,6 +263,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       finishData[loseIndex].result.money = 0;
     }
   }
+  this.table.finishGame();
   var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}
   this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
   this.table.pushFinishGame(data, true);
