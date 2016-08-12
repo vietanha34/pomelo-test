@@ -180,7 +180,10 @@ module.exports.process = function (app, type, param) {
 
         // KM khi chơi game ở phòng miễn phí lần đầu tiên trong ngày
         var freePromotion = pomelo.app.get('configService').freePromotion;
-        if (achievements[i].userCount == 1 && freePromotion && params.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
+        if (param.users[userIndex].result.remain <= 500
+          && achievements[i].userCount == 1
+          && freePromotion
+          && params.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
           pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion')
             .then(function(todayPromotion) {
               if (todayPromotion) return;
@@ -188,8 +191,8 @@ module.exports.process = function (app, type, param) {
               pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion', '1');
               NotifyDao.push({
                 type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
-                title: 'Khuyến mại '+freePromotion+'%!!!',
-                msg: 'Duy nhất hôm nay, tặng bạn KM '+freePromotion+'%. Nạp ngay!!!',
+                title: 'Khuyến mại thêm '+freePromotion+'%!!!',
+                msg: 'Duy nhất hôm nay, tặng bạn KM thêm '+freePromotion+'%. Nạp ngay!!!',
                 buttonLabel: 'Nạp tiền',
                 command: {target: consts.NOTIFY.TARGET.GO_TOPUP},
                 scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
