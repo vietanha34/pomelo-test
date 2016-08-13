@@ -152,7 +152,7 @@ Handler.prototype.markAds = function (msg, session, next) {
       }
     })
     .catch(function (err) {
-      console.error(err);
+      console.error('video_ads_error: ', err);
       next(null, {ec: Code.EC.NORMAL, msg: 'bạn vui lòng chờ'});
     });
 };
