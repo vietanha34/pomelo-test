@@ -267,11 +267,13 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}
   this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
   this.table.pushFinishGame(data, true);
-  this.detailLog.push({
-    r : dictionary['onFinishGame'],
-    d : data,
-    t : Date.now()
-  });
+  if (lodash.isArray(this.detailLog)){
+    this.detailLog.push({
+      r : dictionary['onFinishGame'],
+      d : data,
+      t : Date.now()
+    });
+  }
 };
 
 function Table(opts) {

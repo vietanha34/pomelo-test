@@ -25,7 +25,9 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING
     },
     stt : {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue : 0
     },
     bet : {
       type: DataTypes.INTEGER

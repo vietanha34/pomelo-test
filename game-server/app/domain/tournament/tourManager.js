@@ -53,7 +53,7 @@ pro.init = function () {
       .each(function (tour) {
         var tableConfig, round;
         if (!tour) return;
-        console.log('init tour : ', tour);
+        console.error('init tour : ', tour);
         return TourDao.getTourRound({
           where: {
             id: tour.roundId
@@ -61,7 +61,7 @@ pro.init = function () {
           raw: true
         })
           .then(function (r) {
-            console.log('init round : ', r);
+            console.error('init round : ', r);
             round = r;
             if (!round || round.length < 1) return Promise.reject();
             round = round[0];
@@ -75,7 +75,7 @@ pro.init = function () {
               })
           })
           .then(function (tc) {
-            console.log('init tableconfig : ', tc);
+            console.error('init tableconfig : ', tc);
             tableConfig = tc;
             return TourDao.getTourTable({
               where: {
@@ -103,6 +103,7 @@ pro.init = function () {
               })
             })
               .then(function (data) {
+                console.error("create bàn chơi");
                 var player1 = data.player1;
                 var player2 = data.player2;
                 var dataCreateTable = {
@@ -1446,7 +1447,7 @@ pro.splitGroup = function (tourId, numGroup) {
 };
 
 pro.createTable = function (opts) {
-  console.log('tourManager createTable : ', opts);
+  console.error('tourManager createTable : ', opts);
   var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   var params = utils.clone(opts.tc);
   var hallConfig = hallConfigs['' + params.gameId + consts.HALL_ID.CAO_THU];
