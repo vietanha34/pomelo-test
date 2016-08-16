@@ -152,9 +152,11 @@ module.exports.process = function (app, type, param) {
             .then(function (ccu) {
               var ccuList = utils.JSONParse(ccu, []);
               if (!ccu || !ccuList.length) return;
+
+              var friends = lodash.sampleSize(ccuList, consts.NRU[gameCount].friend);
               
-              for (var j=0; j<ccuList.length && j<consts.NRU[gameCount].friend; j++) {
-                FriendDao.request(achievements[i].uid, ccuList[j].uid);
+              for (var j=0; j<friends.length; j++) {
+                FriendDao.request(achievements[i].uid, friends[j].uid);
               }
             });
         }
