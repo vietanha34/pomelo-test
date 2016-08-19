@@ -14,7 +14,7 @@
       {"id": "game-server-30" , "host" : "127.0.0.1", "port" : 3830, "gameId" : 3},
       {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
       {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1, "args": " --perf_basic_prof_only_functions "},
-      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2},
+      {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
       {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
     ],
@@ -32,7 +32,7 @@
       {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
     ],
     "service" : [
-      {"id" : "service-server-1", "host" : "127.0.0.1", "port" : 3950}
+      {"id" : "service-server-1", "host" : "127.0.0.1", "port" : 3950, "auto-restart": true}
     ],
     "manager" : [
       {"id": "manager-server-1", "host" : "127.0.0.1", "port" : 3750}
@@ -47,7 +47,7 @@
   "production":{
     "connector": [
       {"id": "connector-server-1", "host": "172.16.20.40", "port": 3251, "clientPort": 3511, "clientHost" :  "123.30.235.48", "frontend": true, "args": " --perf_basic_prof_only_functions "},
-      {"id": "connector-server-2", "host": "172.16.20.40", "port": 3252, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true},
+      {"id": "connector-server-2", "host": "172.16.20.40", "port": 3252, "clientPort": 3512, "clientHost" :  "123.30.235.48", "frontend": true, "args": " --perf_basic_prof_only_functions "},
       {"id": "connector-server-3", "host": "172.16.20.40", "port": 3253, "clientPort": 3513, "clientHost" :  "123.30.235.48", "frontend": true},
       {"id": "connector-server-4", "host": "172.16.20.40", "port": 3254, "clientPort": 3514, "clientHost" :  "123.30.235.48", "frontend": true},
       {"id": "connector-server-5", "host": "172.16.20.40", "port": 3255, "clientPort": 3515, "clientHost" :  "123.30.235.48", "frontend": true},
@@ -66,8 +66,8 @@
     "game" : [
       {"id": "game-server-30" , "host" : "172.16.20.40", "port" : 3830, "gameId" : 3, "base": true},
       {"id": "game-server-50" , "host" : "172.16.20.40", "port" : 3850, "gameId" : 5, "base": true},
-      {"id": "game-server-10" , "host" : "172.16.20.40", "port" : 3810, "gameId" : 1, "base": true, "args": " --perf_basic_prof_only_functions "},
-      {"id": "game-server-20" , "host" : "172.16.20.40", "port" : 3820, "gameId" : 2, "base": true},
+      {"id": "game-server-10" , "host" : "172.16.20.40", "port" : 3810, "gameId" : 1, "base": true},
+      {"id": "game-server-20" , "host" : "172.16.20.40", "port" : 3820, "gameId" : 2, "base": true, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-40" , "host" : "172.16.20.40", "port" : 3840, "gameId" : 4, "base": true},
       {"id": "game-server-60" , "host" : "172.16.20.40", "port" : 3860, "gameId" : 6, "base": true}
     ],
@@ -79,7 +79,7 @@
       {"id": "district-server-2", "host" : "172.16.20.40", "port" : 3651}
     ],
     "manager" : [
-      {"id": "manager-server-1", "host" : "172.16.20.40", "port" : 3750},
+      {"id": "manager-server-1", "host" : "172.16.20.40", "port" : 3750},s
       {"id": "manager-server-2", "host" : "172.16.20.40", "port" : 3751}
     ],
     "event" : [

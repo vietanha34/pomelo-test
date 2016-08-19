@@ -65,6 +65,7 @@ var Board = function (opts, PlayerPool, Player) {
   this.configTurnTime = opts.configTurnTime || [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
   this.configTotalTime = opts.configTotalTime || [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
   this.timeWait = opts.timeWait || 30000; // Thời gian đợi người chơi sẵn sàng hoặc start ván
+  this.timeWaitStart = 15000;
   this.isMaintenance = false;
   this.turnTime = opts.turnTime * 1000 || 180 * 1000;
   this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
@@ -1200,7 +1201,7 @@ pro.addJobReady = function (uid, time) {
 
 pro.addJobStart = function (uid, time) {
   var self = this;
-  time = time || this.timeWait;
+  time = time || this.timeWaitStart;
   if (this.jobId) {
     this.timer.cancelJob(this.jobId);
   }
