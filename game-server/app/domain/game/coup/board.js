@@ -29,6 +29,9 @@ function Game(table) {
   this.playerPlayingId = [];
   this.numMove = 0;
   this.gameStatus = this.game.getBoardStatus();
+  this.detailLog = [];
+  this.actionLog = [];
+  this.stringLog = [];
 }
 
 Game.prototype.close = function () {

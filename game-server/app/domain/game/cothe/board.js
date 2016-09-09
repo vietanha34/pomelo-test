@@ -41,6 +41,10 @@ function Game(table, opts) {
   this.win = opts.win;
   this.previousMove = null;
   this.gameStatus = this.game.getBoardStatus();
+  this.detailLog = [];
+  this.actionLog = [];
+  this.stringLog = [];
+
 }
 
 Game.prototype.close = function () {

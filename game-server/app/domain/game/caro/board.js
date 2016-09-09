@@ -32,6 +32,9 @@ function Game(table) {
   this.isCheck = {};
   this.numMove = 0;
   this.previousMove = null;
+  this.detailLog = [];
+  this.actionLog = [];
+  this.stringLog = [];
 }
 
 Game.prototype.close = function () {

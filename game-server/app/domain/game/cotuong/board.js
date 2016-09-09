@@ -31,6 +31,10 @@ function Game(table) {
   this.numMove = 0;
   this.gameStatus = this.game.getBoardStatus();
   this.previousMove = null;
+  this.detailLog = [];
+  this.actionLog = [];
+  this.stringLog = [];
+
 }
 
 Game.prototype.close = function () {
