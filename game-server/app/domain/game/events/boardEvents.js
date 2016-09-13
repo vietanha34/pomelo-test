@@ -882,9 +882,9 @@ exp.addEventFromBoard = function (board) {
       console.error(util.format(moment().format() + ' --- tournament - cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc hoà ' +
         'với lý do : %s , tỷ số : "%s", chi tiết ván chơi : %s', board.fullname[0], board.fullname[1], board.roomId, board.index, reason, board.score, board.tournamentLog.join(' , ')));
     }
-    setTimeout(function () {
-      board.close();
-    }, 60000);
+    // setTimeout(function () {
+    //   board.close();
+    // }, 60000);
 
     var emitterConfig = pomelo.app.get('emitterConfig');
     setTimeout(function () {

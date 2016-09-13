@@ -45,8 +45,7 @@ pro.init = function () {
         where: {
           status: {
             $ne: consts.TOUR_STATUS.FINISHED
-          },
-          type: consts.TOUR_TYPE.FRIENDLY
+          }
         },
         raw: true
       })
@@ -120,7 +119,7 @@ pro.init = function () {
                   tourType: tour.type,
                   tc : tableConfig
                 };
-                if (player1 && player2 && type === consts.TOUR_TYPE.NORMAL) {
+                if (player1 && player2 && tour.type === consts.TOUR_TYPE.NORMAL) {
                   dataCreateTable['uid'] = [table.player1, table.player2];
                   dataCreateTable['username'] = [player1.username, player2.username];
                   dataCreateTable['fullname'] = [player1.fullname, player2.fullname];

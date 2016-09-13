@@ -175,7 +175,6 @@ pro.invitePlayer = function (msg, session, next) {
   if (msg.uid) {
     statusPlugin.pushByUids([msg.uid], "game.gameHandler.invitePlayer", {
       bet: bet,
-      id: id,
       player1: {current: 1},
       tableId: boardId,
       player2: {
@@ -186,8 +185,7 @@ pro.invitePlayer = function (msg, session, next) {
         level: level
       },
       gameId: gameId,
-      districtId: districtId,
-      slotId: slotId
+      sId: slotId
     });
     return next(null, {
       ec : Code.FAIL,
