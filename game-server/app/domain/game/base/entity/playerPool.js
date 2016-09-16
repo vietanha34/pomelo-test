@@ -668,6 +668,9 @@ pro.readyAll = function () {
 };
 
 pro.checkStartGame = function () {
+  if (lodash.compact(this.playerSeat).length < 2) {
+    return false;
+  }
   for (var i = 0, len = this.playerSeat.length; i< len ; i ++){
     if (this.playerSeat[i] && this.playerSeat[i] !== this.table.owner){
       var player = this.getPlayer(this.playerSeat[i]);

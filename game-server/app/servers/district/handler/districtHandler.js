@@ -7,13 +7,10 @@ var friendDao = require('../../../dao/friendDao');
 var async = require('async');
 var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
-var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
-
-var LAYER_NUM_BOARD = 20;
 
 module.exports = function (app) {
   return new Handler(app);

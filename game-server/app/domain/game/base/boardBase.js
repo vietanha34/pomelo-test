@@ -662,7 +662,11 @@ pro.leaveBoard = function (uid, kick) {
     return utils.getError(Code.ON_GAME.FA_LEAVE_BOARD_GAME_JUST_STARTED, [Math.ceil((BoardConsts.LEAVEBOARD_TIMEOUT - (Date.now() - this.timeStart)) / 1000)]);
   }
   if (typeof self.clearPlayer == 'function') {
-    self.clearPlayer(uid);
+    try {
+      self.clearPlayer(uid);
+    }catch (err){
+      console.error("clearPlayer err : ", err);
+    }
   }
   var userInfo = player.userInfo;
   var uids = player.getUids();

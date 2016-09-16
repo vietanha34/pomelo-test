@@ -382,7 +382,7 @@ Table.prototype.clearPlayer = function (uid) {
 Table.prototype.startGame = function (uid, cb) {
   var code = this.checkStartGame();
   var self = this;
-  if (code.ec == Code.OK) {
+  if (code.ec === Code.OK) {
     this.game.playerPlayingId = utils.clone(this.players.playerSeat);
     utils.invokeCallback(cb);
     self.game.init();

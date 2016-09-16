@@ -53,7 +53,6 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
       opts.effect = effect;
-      console.log('state :', opts);
       var state = board.joinBoard(opts);
       if (state && !state.ec) {
         return utils.invokeCallback(cb, null,

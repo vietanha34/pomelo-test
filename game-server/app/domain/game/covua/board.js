@@ -33,7 +33,7 @@ function Game(table) {
   this.previousMove = null;
   this.detailLog = [];
   this.actionLog = [];
-  this.stringLog = [];s
+  this.stringLog = [];
 }
 
 Game.prototype.close = function () {
@@ -156,6 +156,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
   for (var i = 0, len = playerPlaying.length; i < len ;i++){
     var player = this.table.players.getPlayer(playerPlaying[i]);
+    if (!player) continue;
     if (player.uid === turnUid){
       turnPlayer = player;
       index = i;
@@ -192,7 +193,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           platform : player.userInfo.platform
         }
       });
-    }else {
+    }
+    else {
       res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
       if (res === consts.WIN_TYPE.WIN){
@@ -229,8 +231,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   this.table.finishGame();
+  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
   for (i = 0, len = eloMap.length; i < len; i++) {
     player = this.table.players.getPlayer(players[i].uid);
     players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
@@ -268,7 +270,6 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     });
   }
   this.table.emit('finishGame', finishData, true, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
-
   this.table.pushFinishGame(data, true);
 };
 
