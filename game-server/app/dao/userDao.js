@@ -87,7 +87,6 @@ UserDao.getUserAchievementProperties = function (uid, properties, achiProperties
       raw: true
     })
     .then(function (user) {
-      console.log('properties : ', user);
       return utils.invokeCallback(cb, null, user);
     })
     .catch(function (err) {

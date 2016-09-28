@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Created by vietanha34 on 11/20/14.
  */
@@ -37,7 +38,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   if (!gameId) {
     return next(null, utils.getError(Code.FAIL))
   }
-  var user;
+  let user;
   var whereClause = {
     numPlayer: {
       $lt: 2
@@ -62,36 +63,41 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
-      if (userInfo) {
-        user = userInfo;
-        var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
-        totalMatch = totalMatch || 0;
-        user.elo = user['Achievement.elo'];
-        user.sIcon = session.get('guild').sIcon;
-        user.guildId = session.get('guild').id;
-        user.role = session.get('guild').role;
-        user.level = Formula.calLevel(user.exp) || 0;
-        user.frontendId = session.frontendId;
-        user.version = session.get('version');
-          whereClause['level'] = {
-          $lte : user.level
-        };
-        var divide = totalMatch > 50 ? 5 : 10;
-        whereClause['bet'] = {
-          $and : {
-            $lte : Math.round(user.gold / divide) > 1000 ? Math.round(user.gold / divide) : 1000,
-            $gte : 0
-          }
-        };
-        self.app.get('boardService').getBoard({
-          where: whereClause,
-          limit: 5,
-          raw : true,
-          order: 'numPlayer DESC, bet DESC'
-        }, done)
-      } else {
-        next(null, {ec: Code.FAIL});
-      }
+      if (!userInfo) return next(null, {ec: Code.FAIL});
+      user = {
+        gold: userInfo.gold,
+        username: userInfo.username,
+        uid: userInfo.uid,
+        vipPoint : userInfo.vipPoint,
+        fullname: userInfo.fullname,
+        sex: userInfo.sex,
+        avatar: userInfo.avatar,
+      };
+      var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
+      totalMatch = totalMatch || 0;
+      user.elo = user['Achievement.elo'];
+      user.sIcon = session.get('guild').sIcon;
+      user.guildId = session.get('guild').id;
+      user.role = session.get('guild').role;
+      user.level = Formula.calLevel(user.exp) || 0;
+      user.frontendId = session.frontendId;
+      user.version = session.get('version');
+      whereClause['level'] = {
+        $lte : user.level
+      };
+      var divide = totalMatch > 50 ? 5 : 10;
+      whereClause['bet'] = {
+        $and : {
+          $lte : Math.round(user.gold / divide) > 1000 ? Math.round(user.gold / divide) : 1000,
+          $gte : 0
+        }
+      };
+      self.app.get('boardService').getBoard({
+        where: whereClause,
+        limit: 5,
+        raw : true,
+        order: 'numPlayer DESC, bet DESC'
+      }, done);
     }, function (boardIds, done) {
       for (var i = 0, len = boardIds.length; i < len; i++){
         var board = boardIds[i];
@@ -165,28 +171,24 @@ Handler.prototype.joinBoard = function (msg, session, next) {
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
     },
     function (userInfo, done) {
-      if (userInfo) {
-        var user = {
-          level: Formula.calLevel(userInfo.exp),
-          gold: userInfo.gold,
-          username: userInfo.username,
-          uid: userInfo.uid,
-          sIcon: session.get('guild').sIcon,
-          guildId: session.get('guild').id,
-          role: session.get('guild').role,
-          vipPoint : userInfo.vipPoint,
-          fullname: userInfo.fullname,
-          sex: userInfo.sex,
-          avatar: userInfo.avatar,
-          elo : userInfo['Achievement.elo'] || 0,
-          version : session.get('version'),
-          frontendId: session.frontendId
-        };
-        console.log('userInfo : ', user, session);
-        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
-      } else {
-        next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
-      }
+      if (!userInfo) return next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
+      let user = {
+        level: Formula.calLevel(userInfo.exp),
+        gold: userInfo.gold,
+        username: userInfo.username,
+        uid: userInfo.uid,
+        sIcon: session.get('guild').sIcon,
+        guildId: session.get('guild').id,
+        role: session.get('guild').role,
+        vipPoint : userInfo.vipPoint,
+        fullname: userInfo.fullname,
+        sex: userInfo.sex,
+        avatar: userInfo.avatar,
+        elo : userInfo['Achievement.elo'] || 0,
+        version : session.get('version'),
+        frontendId: session.frontendId
+      };
+      self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
     }, function (result, done) {
       if (!result.data.ec) {
         session.set('tableId', result.tableId);
@@ -321,10 +323,9 @@ Handler.prototype.getHall = function (msg, session, next) {
       raw : true
     })
     .then(function (user) {
-      if (user){
-        waitingData['elo'] = user.elo;
-        pomelo.app.get('waitingService').add(waitingData);
-      }
+      if (!user) return;
+      waitingData['elo'] = user.elo;
+      pomelo.app.get('waitingService').add(waitingData);
     });
   var boardService = this.app.get('boardService');
   boardService
@@ -401,12 +402,12 @@ Handler.prototype.getBoardList = function (msg, session, next) {
       order: '`index` ASC'
     })
     .then(function (boards) {
-      var data = [];
-      var waitingBoard = [];
+      let data = [];
+      let waitingBoard = [];
       for (var i = 0, len = boards.length; i < len; i++) {
-        var board = boards[i];
+        let board = boards[i];
         hallId = board.hallId;
-        var boardInfo = {
+        let boardInfo = {
           index: board.index,
           tableId: board.boardId,
           gameId: board.gameId,
