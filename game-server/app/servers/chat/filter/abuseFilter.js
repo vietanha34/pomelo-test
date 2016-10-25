@@ -2,8 +2,6 @@ var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var wordFilter = require('../../../util/wordFilter');
 var lodash = require('lodash');
-var channelUtil = require('../../../util/channelUtil');
-var consts = require('../../../consts/consts');
 var util = require('util');
 
 module.exports = function () {

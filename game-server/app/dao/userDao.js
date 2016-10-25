@@ -239,17 +239,16 @@ UserDao.login = function (msg, cb) {
   // kiểm tra accessToken của người dùng, mỗi accessToken sẽ được lưu trên máy trong vào 30 phút
   var accountService = pomelo.app.get('accountService');
   var user, created, userData, username;
-  var promise = accountService
+  return accountService
     .getUserProfile(msg.accessToken)
     .then(function (res) {
       res = utils.JSONParse(res, {});
       if (res && !res.ec) {
-
         res.uid = res.id;
         userData = res;
         delete res['id'];
         username = res.username;
-        if (msg.platform === 'ios' || msg.platform === 'windowphone') return Promise.resolve(null);
+        if (msg.platform === 'ios' || msg.platform === 'windowphone' || msg.platform === 'android') return Promise.resolve(null);
         return pomelo
           .app
           .get('redisInfo')
@@ -336,7 +335,6 @@ UserDao.login = function (msg, cb) {
       console.error('err : ', err);
       return utils.invokeCallback(cb, err);
     });
-  return promise
 };
 
 UserDao.loginWithUsername = function (msg, cb) {

@@ -5,7 +5,6 @@
 var ProfileDao = module.exports;
 var pomelo = require('pomelo');
 var Promise = require('bluebird');
-var request = require('request-promise');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
 var formula = require('../consts/formula');
