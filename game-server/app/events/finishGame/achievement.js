@@ -185,7 +185,7 @@ module.exports.process = function (app, type, param) {
         if (param.users[userIndex].result.remain <= 500
           && achievements[i].userCount == 1
           && freePromotion
-          && params.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
+          && param.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
           pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion')
             .then(function(todayPromotion) {
               if (todayPromotion) return;
