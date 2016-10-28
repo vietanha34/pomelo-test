@@ -130,6 +130,29 @@ app.configure('production', function () {
   app.set('beta', true);
 });
 
+app.configure('production|development', 'master', function () {
+  var AutoRestart = require('pomelo-autoRestart-plugin');
+  app.use(AutoRestart,  {
+    auto: {
+      username: 'admin',
+      password: 'admin',
+      condition:{
+        service: {
+          memory: 500,
+          restart: true
+        },
+        district: {
+          memory : 500,
+          restart: true
+        },
+        auth: {
+          memory : 500,
+          restart: true
+        }
+      }
+    }
+  });
+});
 // app configuration connector
 app.configure('production|development', 'connector|gate', function () {
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');

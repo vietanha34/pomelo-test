@@ -23,7 +23,8 @@
       {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
     ],
     "chat" : [
-      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
+      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550},
+      {"id": "chat-server-2", "host": "127.0.0.1", "port": 3551}
     ],
     "event" : [
       {"id" : "event-server-1", "host" : "127.0.0.1", "port" : 3960}
@@ -54,7 +55,8 @@
       {"id": "connector-server-6", "host": "172.16.20.40", "port": 3256, "clientPort": 3516, "clientHost" :  "123.30.235.48", "frontend": true}
     ],
     "auth" : [
-      {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3250}
+      {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3250},
+      {"id" : "auth-server-2", "host": "172.16.20.40" , "port" : 3251}
     ],
     "gate": [
       {"id": "gate-server-1", "host": "172.16.20.40", "clientPort": 6010, "frontend": true}
@@ -72,7 +74,8 @@
       {"id": "game-server-60" , "host" : "172.16.20.40", "port" : 3860, "gameId" : 6, "base": true}
     ],
     "chat" : [
-      {"id": "chat-server-1", "host": "172.16.20.40", "port": 3550}
+      {"id": "chat-server-1", "host": "172.16.20.40", "port": 3550},
+      {"id": "chat-server-2", "host": "172.16.20.40", "port": 3551}
     ],
     "district" : [
       {"id": "district-server-1", "host" : "172.16.20.40", "port" : 3650},
@@ -123,7 +126,8 @@
       {"id": "home-server-2", "host": "127.0.0.1", "port": 3451 }
     ],
     "chat" : [
-      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550}
+      {"id": "chat-server-1", "host": "127.0.0.1", "port": 3550},
+      {"id": "chat-server-2", "host": "127.0.0.1", "port": 3550}
     ],
     "district" : [
       {"id": "district-server-1", "host" : "127.0.0.1", "port" : 3650}
