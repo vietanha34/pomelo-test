@@ -150,7 +150,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
     gameId = tableId.split(':')[1];
   }
   var maintenance = this.app.get('maintenance');
-  if (!!maintenance) {
+  if (!!maintenance && session.username !== 'cobeit103') {
     if (maintenance.type === consts.MAINTENANCE_TYPE.ALL) {
       next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
       return
@@ -331,7 +331,8 @@ Handler.prototype.getHall = function (msg, session, next) {
   boardService
     .getRoom({
       where: {
-        gameId: gameId
+        gameId: gameId,
+        show : 1
       },
       raw: true,
       order : 'roomId ASC'

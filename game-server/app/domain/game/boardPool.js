@@ -130,13 +130,14 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
   }
 };
 
-exp.createRoom = function (hallConfig, roomId) {
+exp.createRoom = function (hallConfig, roomId, show) {
   var hallId = parseInt(hallConfig.hallId);
   var self = this;
   var roomOpts = {
     serverId: this.serverId,
     gameId: this.gameId,
     roomId: roomId,
+    show : show,
     hallId: parseInt(hallConfig.hallId)
   };
   return pomelo.app.get('boardService')

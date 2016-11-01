@@ -126,6 +126,11 @@ app.configure('production|development|local', function () {
   }
 });
 
+// app.configure('production|development', 'district', function () {
+//   var DistrictManager = require('./app/domain/district/districtManager');
+//   var districtManager = new DistrictManager(app);
+// });
+
 app.configure('production', function () {
   app.set('beta', true);
 });

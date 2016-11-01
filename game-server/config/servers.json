@@ -15,6 +15,7 @@
       {"id": "game-server-50" , "host" : "127.0.0.1", "port" : 3850, "gameId" : 5},
       {"id": "game-server-10" , "host" : "127.0.0.1", "port" : 3810, "gameId" : 1, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-20" , "host" : "127.0.0.1", "port" : 3820, "gameId" : 2, "args": " --perf_basic_prof_only_functions "},
+      {"id": "game-server-21" , "host" : "127.0.0.1", "port" : 3821, "gameId" : 2, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-40" , "host" : "127.0.0.1", "port" : 3840, "gameId" : 4},
       {"id": "game-server-60" , "host" : "127.0.0.1", "port" : 3860, "gameId" : 6}
     ],
@@ -56,7 +57,7 @@
     ],
     "auth" : [
       {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3350},
-      {"id" : "auth-server-2", "host": "172.16.20.40" , "port" : 351}
+      {"id" : "auth-server-2", "host": "172.16.20.40" , "port" : 3351}
     ],
     "gate": [
       {"id": "gate-server-1", "host": "172.16.20.40", "clientPort": 6010, "frontend": true}
@@ -68,8 +69,9 @@
     "game" : [
       {"id": "game-server-30" , "host" : "172.16.20.40", "port" : 3830, "gameId" : 3, "base": true},
       {"id": "game-server-50" , "host" : "172.16.20.40", "port" : 3850, "gameId" : 5, "base": true},
-      {"id": "game-server-10" , "host" : "172.16.20.40", "port" : 3810, "gameId" : 1, "base": true},
+      {"id": "game-server-10" , "host" : "172.16.10.28", "port" : 3810, "gameId" : 1, "base": true},
       {"id": "game-server-20" , "host" : "172.16.20.40", "port" : 3820, "gameId" : 2, "base": true, "args": " --perf_basic_prof_only_functions "},
+      {"id": "game-server-21" , "host" : "172.16.20.40", "port" : 3821, "gameId" : 2, "base": true, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-40" , "host" : "172.16.20.40", "port" : 3840, "gameId" : 4, "base": true},
       {"id": "game-server-60" , "host" : "172.16.20.40", "port" : 3860, "gameId" : 6, "base": true}
     ],

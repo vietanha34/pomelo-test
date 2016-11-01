@@ -8,11 +8,11 @@ var util = require('util');
 
 module.exports.afterStartup = function (app, cb) {
   // do some operations after application start up
-  var game = app.game;
-  setTimeout(function (game) {
-    game.start();
-  }, 2000, game);
-  cb();
+  // var game = app.game;
+  // setTimeout(function (game) {
+  //   game.start();
+  // }, 2000, game);
+  // cb();
 };
 
 module.exports.beforeShutdown = function (app, cb) {

@@ -162,3 +162,10 @@ GameRemote.prototype.createRoomTournament = function (hallConfig, roomId, params
   var game = this.app.game;
   return game.boardManager.createRoomTournament(hallConfig, roomId, params, cb);
 };
+
+GameRemote.prototype.createRoom = function (hallConfig, roomId, show, cb) {
+  console.log('handler gameRemote createRoom : ', arguments);
+  var game = this.app.game;
+  game.boardManager.createRoom(hallConfig, roomId, show);
+  return utils.invokeCallback(cb, null);
+};
