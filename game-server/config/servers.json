@@ -55,8 +55,8 @@
       {"id": "connector-server-6", "host": "172.16.20.40", "port": 3256, "clientPort": 3516, "clientHost" :  "123.30.235.48", "frontend": true}
     ],
     "auth" : [
-      {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3250},
-      {"id" : "auth-server-2", "host": "172.16.20.40" , "port" : 3251}
+      {"id" : "auth-server-1", "host": "172.16.20.40" , "port" : 3350},
+      {"id" : "auth-server-2", "host": "172.16.20.40" , "port" : 351}
     ],
     "gate": [
       {"id": "gate-server-1", "host": "172.16.20.40", "clientPort": 6010, "frontend": true}
