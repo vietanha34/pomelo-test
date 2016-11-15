@@ -63,6 +63,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
+      console.log('userInfo : ', userInfo);
       if (!userInfo) return next(null, {ec: Code.FAIL});
       user = {
         gold: userInfo.gold,
@@ -75,7 +76,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       };
       var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
       totalMatch = totalMatch || 0;
-      user.elo = user['Achievement.elo'];
+      user.elo = userInfo['Achievement.elo'];
       user.sIcon = session.get('guild').sIcon;
       user.guildId = session.get('guild').id;
       user.role = session.get('guild').role;

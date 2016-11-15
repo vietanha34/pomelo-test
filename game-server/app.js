@@ -306,12 +306,12 @@ app.configure('production|development', 'service|home|event', function () {
   app.set('videoAdsService', new VideoAdsService(app))
 });
 
-app.configure('development|production', function () {
-  app.set('maintenance', {
-    enable: 1,
-    type: consts.MAINTENANCE_TYPE.ALL
-  });
-});
+//app.configure('development|production', function () {
+//  app.set('maintenance', {
+//    enable: 1,
+//    type: consts.MAINTENANCE_TYPE.ALL
+//  });
+//});
 
 // start app
 app.start();

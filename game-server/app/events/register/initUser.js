@@ -40,7 +40,14 @@ module.exports.process = function (app, type, param) {
     console.error('wrong param register: ', param);
     return;
   }
+  var fs = require('fs');
+  fs.appendFile("/home/anhlv/cothu/source/game-server/logs/logRegister.log", JSON.stringify(param) + '\n', function(err) {
+    if(err) {
+      return console.log(err);
+    }
 
+    console.log("The file was saved!");
+  });
   param.ip = param.ip || 'ip';
   param.deviceId = param.deviceId || 'deviceId';
 

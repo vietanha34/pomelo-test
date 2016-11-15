@@ -45,7 +45,8 @@ pro.init = function () {
         where: {
           status: {
             $ne: consts.TOUR_STATUS.FINISHED
-          }
+          },
+          tourId : 336
         },
         raw: true
       })
