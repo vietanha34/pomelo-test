@@ -181,8 +181,8 @@ module.exports.process = function (app, type, param) {
 
 
         // KM khi chơi game ở phòng miễn phí lần đầu tiên trong ngày
-        var freePromotion = pomelo.app.get('configService').freePromotion;
-        if (param.users[userIndex].result.remain <= 500
+        var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
+        if (param.users[userIndex].result.remain <= 1000
           && achievements[i].userCount == 1
           && freePromotion
           && param.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {

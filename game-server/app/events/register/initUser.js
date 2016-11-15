@@ -46,20 +46,24 @@ module.exports.process = function (app, type, param) {
 
   var mysql = pomelo.app.get('mysqlClient');
 
-  var query = 'SELECT COUNT(uid) AS `count` FROM ' +
-                '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
-                  'UNION ' +
-                'SELECT uid FROM UserDevice WHERE ip = :ip) T';
+  // var query = 'SELECT COUNT(uid) AS `count` FROM ' +
+  //               '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
+  //                 'UNION ' +
+  //               'SELECT uid FROM UserDevice WHERE ip = :ip) T';
+  var query = 'SELECT count(*) FROM UserDevice WHERE deviceId = :deviceId';
 
   mysql.sequelize
     .query(query, {
-      replacements: {ip: param.ip, deviceId: param.deviceId},
+      replacements: {
+        // ip: param.ip,
+        deviceId: param.deviceId
+      },
       type: mysql.sequelize.QueryTypes.SELECT,
       raw: true
     })
     .then(function(user) {
       var userCount = (user && user[0]) ? (user[0].count) : 0;
-      userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (userCount + 1);
+      userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229' || param.ip == '113.190.233.178') ? 1 : (userCount + 1);
 
       var Achievement = mysql.Achievement;
       Achievement
