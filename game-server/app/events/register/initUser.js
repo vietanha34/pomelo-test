@@ -57,7 +57,7 @@ module.exports.process = function (app, type, param) {
   //               '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
   //                 'UNION ' +
   //               'SELECT uid FROM UserDevice WHERE ip = :ip) T';
-  var query = 'SELECT count(*) FROM UserDevice WHERE deviceId = :deviceId';
+  var query = 'SELECT count(uid) AS `count` FROM UserDevice WHERE deviceId = :deviceId';
 
   mysql.sequelize
     .query(query, {
