@@ -178,6 +178,8 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
 
       pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'todayPromotion', '2');
 
+      rate = Math.min(rate, (Number(config.maxPromotion)||300));
+
       return utils.invokeCallback(cb, null, rate);
     })
     .catch(function(e) {
