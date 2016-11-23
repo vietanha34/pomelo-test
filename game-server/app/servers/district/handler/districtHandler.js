@@ -75,7 +75,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       };
       var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
       totalMatch = totalMatch || 0;
-      user.elo = user['Achievement.elo'];
+      user.elo = userInfo['Achievement.elo'];
       user.sIcon = session.get('guild').sIcon;
       user.guildId = session.get('guild').id;
       user.role = session.get('guild').role;
