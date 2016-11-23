@@ -63,6 +63,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
+      console.log('userInfo : ', userInfo);
       if (!userInfo) return next(null, {ec: Code.FAIL});
       user = {
         gold: userInfo.gold,

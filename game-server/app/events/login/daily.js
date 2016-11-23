@@ -35,6 +35,14 @@ module.exports.type = Config.TYPE.LOGIN;
 module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
+  var fs = require('fs');
+  fs.appendFile("/home/anhlv/cothu/source/game-server/logs/logLogin.log", JSON.stringify(param) + '\n', function(err) {
+    if(err) {
+      return console.log(err);
+    }
+
+    console.log("The file was saved!");
+  });
   var theMoment = moment();
   var startOfDay = moment().startOf('day').unix();
   var startOfWeek = moment().startOf('isoweek').unix();

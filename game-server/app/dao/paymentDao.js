@@ -101,7 +101,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
         promotion.bank['0'] += vipBonus;
       }
 
-      var freePromotion = pomelo.app.get('configService').freePromotion;
+      var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
 
       if (freePromotion && todayPromotion == 1) {
         promotion.sms['0'] += freePromotion;
@@ -161,7 +161,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
 
       if (vipLevel) rate += (Number(config['vip'+vipLevel] || 0) || 0);
 
-      var freePromotion = pomelo.app.get('configService').freePromotion;
+      var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
 
       if (freePromotion && todayPromotion == 1) {
         rate += freePromotion;
@@ -177,6 +177,8 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
       }
 
       pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'todayPromotion', '2');
+
+      rate = Math.min(rate, (Number(config.maxPromotion)||300));
 
       return utils.invokeCallback(cb, null, rate);
     })
