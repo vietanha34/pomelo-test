@@ -150,6 +150,14 @@ app.configure('production|development', 'master', function () {
           memory : 500,
           restart: true
         },
+        event: {
+          memory: 500,
+          restart: true
+        },
+        manager: {
+          memory: 500,
+          restart: true
+        },
         auth: {
           memory : 500,
           restart: true

@@ -71,7 +71,7 @@
     "game" : [
       {"id": "game-server-30" , "host" : "172.16.20.40", "port" : 3830, "gameId" : 3, "base": true},
       {"id": "game-server-50" , "host" : "172.16.20.40", "port" : 3850, "gameId" : 5, "base": true},
-      {"id": "game-server-10" , "host" : "172.16.10.40", "port" : 3810, "gameId" : 1, "base": true},
+      {"id": "game-server-10" , "host" : "172.16.20.40", "port" : 3810, "gameId" : 1, "base": true},
       {"id": "game-server-20" , "host" : "172.16.10.28", "port" : 3820, "gameId" : 2, "base": true},
       {"id": "game-server-21" , "host" : "172.16.10.28", "port" : 3821, "gameId" : 2, "base": true, "args": " --perf_basic_prof_only_functions "},
       {"id": "game-server-40" , "host" : "172.16.20.40", "port" : 3840, "gameId" : 4, "base": true},
