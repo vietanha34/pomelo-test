@@ -116,6 +116,11 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
       if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
       else if (todayCard >= 2) promotion.card['0'] += (Number(config.card2) || 0);
 
+      var maxPromotion = (Number(config.maxPromotion)||300);
+      promotion.sms['0'] = Math.min(promotion.sms['0'], maxPromotion);
+      promotion.card['0'] = Math.min(promotion.card['0'], maxPromotion);
+      promotion.iap['0'] = Math.min(promotion.iap['0'], maxPromotion);
+
       return utils.invokeCallback(cb, null, promotion);
     })
     .catch(function(e) {
@@ -164,6 +169,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
       var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
 
       if (freePromotion && todayPromotion == 1) {
+        pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'todayPromotion', '2');
         rate += freePromotion;
       }
 
@@ -175,8 +181,6 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
         if (todayCard >= 3) rate += (Number(config.card3) || 0);
         else if (todayCard >= 2) rate += (Number(config.card2) || 0);
       }
-
-      pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(uid), 'todayPromotion', '2');
 
       rate = Math.min(rate, (Number(config.maxPromotion)||300));
 
