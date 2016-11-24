@@ -62,7 +62,11 @@ module.exports.process = function (app, type, param) {
       param.tax = param.boardInfo.bet - user.result.money
     }
   }
-  pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyIngameKey(), JSON.stringify(param));
+
+  setTimeout(function() {
+    delete param.logs;
+    pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyIngameKey(), JSON.stringify(param));
+  }, 1000);
 
   var mongoClient = pomelo.app.get('mongoClient');
   var GameHistory = mongoClient.model('GameHistory');
