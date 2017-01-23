@@ -10,6 +10,12 @@ module.exports = {
     JAVA : 4
   },
 
+  FACE_OFF_MODE:{
+    NORMAL : 1,
+    CANNON : 2,
+    DEATH_MATCH : 3
+  },
+
   GAME_ACTION_ID :{
     AFK_CHECK : 1
   },

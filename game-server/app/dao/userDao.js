@@ -340,22 +340,10 @@ UserDao.login = function (msg, cb) {
 UserDao.loginWithUsername = function (msg, cb) {
   return Promise.delay(0)
     .then(function () {
-      return pomelo.app.get('redisInfo')
-        .hgetAsync('cothu:' + msg.username, 'passwd');
-    })
-    .then(function (passwd) {
-      if (passwd) {
-        if (passwd === msg.password) {
-          return utils.invokeCallback(cb, null, {code: 0})
-        } else {
-          return utils.invokeCallback(cb, null, {code: 11, message: "Sai mật khẩu", data: {}})
-        }
-      } else {
-        return pomelo
-          .app
-          .get('accountService')
-          .loginWithUsername(msg)
-      }
+      return pomelo
+        .app
+        .get('accountService')
+        .loginWithUsername(msg)
     })
     .then(function (result) {
       if (result) {
@@ -483,6 +471,7 @@ UserDao.createUser = function (msg, cb) {
       platform: msg.platform,
       deviceId: msg.deviceId,
       email: msg.email,
+      versionId: 1,
       secretKey: 't-$u15zfgi_3&_6ot9+s_-qlcdfon@f7',
       client_id: 'cothuV2@thudojsc',
       client_secret: '7r3hEvclrCXYAMzzXI79uyYuahcJhCgNnxmCtPnfalrlYMwDiODGloZoNcOa2IZJre1X9PayYJWqUdQjD5u6qEePDk9TeNw8'

@@ -46,7 +46,6 @@ pro.init = function () {
           status: {
             $ne: consts.TOUR_STATUS.FINISHED
           },
-          tourId : 336
         },
         raw: true
       })
@@ -138,7 +137,7 @@ pro.init = function () {
             // tạo lại các bàn chơi chưa đc đấu
           });
       })
-  }
+  }``
 };
 
 pro.matchMaking = function (tourId) {

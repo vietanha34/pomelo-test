@@ -47,6 +47,11 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue : 1,
       comment: 'cờ úp hiện quân ăn'
     },
+    faceOffMode : {
+      type: DataTypes.INTEGER,
+      defaultValue: 1,
+      comment: 'các luật cờ úp 1: bình thường, 2 : lật pháo, 3: sinh tử'
+    },
     level : {
       type : DataTypes.INTEGER,
       comment : 'level đc phép vào đấu trường'

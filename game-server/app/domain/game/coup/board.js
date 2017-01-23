@@ -12,7 +12,9 @@ var lodash = require('lodash');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
-var Rule = require('luat-co-thu').Xiangqi;
+var DeathMatch = require('luat-co-thu').Xqra;
+var XiangQi = require('luat-co-thu').Xiangqi;
+var XiangQiCanon = require('luat-co-thu').XiangqiCanon;
 var dictionary = require('../../../../config/dictionary.json');
 var BoardBase = require('../base/boardBase');
 var moment = require('moment');
@@ -20,7 +22,16 @@ var moment = require('moment');
 
 
 function Game(table) {
-  this.game = new Rule(true, 'random', [], [], table.showKill);
+  switch (table.faceOffMode){
+    case consts.FACE_OFF_MODE.CANNON:
+      this.game = new XiangQiCanon();
+      break;
+    case consts.FACE_OFF_MODE.DEATH_MATCH:
+      this.game = new DeathMatch();
+      break;
+    default:
+      this.game = new XiangQi(true, 'random', [], [], table.showKill);
+  }
   this.turn = '';
   this.table = table;
   this.matchId = uuid.v4();
@@ -282,6 +293,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 function Table(opts) {
   Table.super_.call(this, opts, null, Player);
   this.showKill = opts.showKill || false;
+  this.faceOffMode = opts.faceOffMode || consts.FACE_OFF_MODE.NORMAL;
   this.game = new Game(this);
   this.looseUser = null;
   var self = this;
