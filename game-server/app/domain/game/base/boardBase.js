@@ -126,6 +126,8 @@ var Board = function (opts, PlayerPool, Player) {
       var bet = Math.abs(properties.bet);
       if (bet && bet !== self.bet) {
         var ownerPlayer = self.players.getPlayer(self.owner);
+        var otherPlayerUid = self.players.getOtherPlayer(self.owner);
+        var otherPlayer = self.players.getPlayer(otherPlayerUid);
         var multi = 1;
         if (ownerPlayer && ownerPlayer.checkItems(consts.ITEM_EFFECT.CUOCX5)) {
           multi = 5;
@@ -143,7 +145,9 @@ var Board = function (opts, PlayerPool, Player) {
         }
         if (ownerPlayer && ownerPlayer.gold < bet) {
           return done(utils.getError(Code.ON_GAME.FA_OWNER_NOT_ENOUGH_MONEY_CHANGE_BOARD))
-        } else {
+        } else if (otherPlayer && otherPlayer.gold < bet){
+          return done(utils.getError(Code.ON_GAME.FA_OTHER_NOT_ENOUGH_MONEY_CHANGE_BOARD))
+        }else {
           changed.push(util.format(' mức cược : %s', bet));
           dataChanged.bet = bet;
           dataUpdate.bet = bet;

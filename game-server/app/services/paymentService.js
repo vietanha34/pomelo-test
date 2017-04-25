@@ -183,17 +183,13 @@ pro.transfer = function (opts, cb) {
       updateGoldInCache(fromUser.username, fromUser.gold);
       updateGoldInCache(toUser.username, toUser.gold + addGold);
       var logFromUser = {
-        before: fromUser.gold + gold
-        ,
-        after: fromUser.gold
-        ,
-        temp: 0
-        ,
-        time: new Date().getTime()
-        ,
+        before: fromUser.gold + gold,
+        after: fromUser.gold,
+        temp: 0,
+        time: new Date().getTime(),
         opts: {
           uid: fromUser.uid,
-          gold: gold,
+          gold: subGold,
           type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
           gameId: opts.gameId,
           msg: opts.msg
@@ -203,22 +199,17 @@ pro.transfer = function (opts, cb) {
       };
       pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
       var logToUser = {
-        before: toUser.gold
-        ,
-        after: toUser.gold + gold
-        ,
-        temp: 0
-        ,
-        time: new Date().getTime()
-        ,
+        before: toUser.gold,
+        after: toUser.gold + gold,
+        temp: 0,
+        time: new Date().getTime(),
         opts: {
           uid: toUser.uid,
-          gold: gold,
+          gold: addGold,
           type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
           gameId: opts.gameId,
           msg: opts.msg
-        }
-        ,
+        },
         cmd: 'addGold'
       };
       pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
