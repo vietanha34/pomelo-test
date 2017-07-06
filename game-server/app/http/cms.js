@@ -89,7 +89,7 @@ module.exports = function(app) {
     if (!msg.username || !msg.gold || !msg.signature) {
       return res.status(500).json({ec: 500, msg: 'invalid params'});
     }
-
+    msg.type = Number(msg.type) || consts.CHANGE_GOLD_TYPE.VIDEO_ADS;
     var checkContent = [msg.username, msg.gold, consts.CMS_SECRET_KEY].join('|');
     var checkMd5 = MD5(checkContent);
     if (checkMd5 != msg.signature) {

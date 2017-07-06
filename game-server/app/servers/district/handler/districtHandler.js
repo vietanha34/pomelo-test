@@ -44,6 +44,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       $lt: 2
     },
     gameId: gameId,
+    gameType: 0,
     password : {
       $eq : null
     }
@@ -52,6 +53,11 @@ Handler.prototype.quickPlay = function (msg, session, next) {
     whereClause['hallId'] = Math.round(msg.roomId / 100)
   }
   if (msg.hallId) whereClause['hallId'] = msg.hallId;
+  else {
+    msg.hallId = {
+      $ne: 1
+    }
+  }
   var excludeBoardId = session.get('excludeBoardId');
   excludeBoardId = lodash.isArray(excludeBoardId) ? excludeBoardId : [];
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
@@ -74,7 +80,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         sex: userInfo.sex,
         avatar: userInfo.avatar,
       };
-      var totalMatch = user['Achievement.win'] + user['Achievement.lose'] + user['Achievement.draw'];
+      var totalMatch = userInfo['Achievement.win'] + userInfo['Achievement.lose'] + userInfo['Achievement.draw'];
       totalMatch = totalMatch || 0;
       user.elo = userInfo['Achievement.elo'];
       user.sIcon = session.get('guild').sIcon;
@@ -87,9 +93,13 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         $lte : user.level
       };
       var divide = totalMatch > 50 ? 5 : 10;
+      var minBet = Math.round(user.gold / divide);
+      if (user.gold < 1000) {
+        whereClause.hallId = consts.HALL_ID.MIEN_PHI
+      }
       whereClause['bet'] = {
         $and : {
-          $lte : Math.round(user.gold / divide) > 1000 ? Math.round(user.gold / divide) : 1000,
+          $lte : minBet > 1000 ? minBet : 1000,
           $gte : 0
         }
       };

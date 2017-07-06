@@ -180,19 +180,9 @@ var onUserLeave = function onUserLeave(app, session, reason) {
     // user chưa đăng nhập, bỏ qua không xử lý
   } else {
     // TODO, kiểm tra các kênh người dùng không sử dụng để unsubscribe, ví dụ như bang hội, chat nhóm
-    //app.rpc.chat.chatRemote.leaveGlobal(session, session.uid, session.frontendId,
-    //	channelUtil.getGlobalChannelName(), function () {
-    //	});
     app.get('waitingService').leave(session.uid);
     var emitterConfig = pomelo.app.get('emitterConfig');
     pomelo.app.rpc.game.gameRemote.logout(session, session.get('tableId'), session.uid,function () {});
-    //pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGOUT, emitData, function () {});
-    //app.get('authService').playGame({
-    //	accessToken: session.get('accessToken'),
-    //	ip: session.get('ip'),
-    //	lastPlayedTime: Date.now() - session.get('lastLogin'),
-    //	balance : session.get('gold')
-    //})
   }
 };
 
