@@ -16,7 +16,6 @@ module.exports.afterStartup = function (app, cb) {
 };
 
 module.exports.beforeShutdown = function (app, cb) {
-  app.get('tourManager').init();
   utils.invokeCallback(cb);
 };
 

@@ -67,8 +67,8 @@ var Board = function (opts, PlayerPool, Player) {
   this.timeWait = opts.timeWait || 30000; // Thời gian đợi người chơi sẵn sàng hoặc start ván
   this.timeWaitStart = 15000;
   this.isMaintenance = false;
-  this.turnTime = opts.turnTime * 1000 || 180 * 1000;
-  this.totalTime = opts.totalTime * 1000 || 15 * 60 * 1000;
+  this.turnTime = opts.turnTime * 1000 || 30 * 1000;
+  this.totalTime = opts.totalTime * 1000 || 10 * 60 * 1000;
   this.tax = opts.tax || 5;
   this.tableType = 1; // loại bàn đá;
   this.score = [0, 0];
@@ -634,6 +634,7 @@ pro.joinBoard = function (opts) {
     }
     var state = self.getBoardState(uid);
     state.notifyMsg = result.notifyMsg;
+    state.ping = 3; // ping 3 giây 1 lần
     if (result.guest && self.players.length === self.maxPlayer) {
       state.msg = Code.ON_GAME.BOARD_FULL;
     } else {
@@ -1480,6 +1481,7 @@ pro.transfer = function (bet, fromUid, toUid) {
       gold : bet,
       fromGuildId : fromPlayer.userInfo.guildId,
       toGuildId : toPlayer.userInfo.guildId,
+      gameId: this.gameId,
       tax : 5,
       force : true,
       gameType : this.gameType,
@@ -1488,7 +1490,9 @@ pro.transfer = function (bet, fromUid, toUid) {
   }else {
     this.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
       gold : bet,
+      gameId: this.gameId,
       fromUid : fromUid,
+      gameType : this.gameType,
       toUid : toUid,
       tax : 5,
       force : true
