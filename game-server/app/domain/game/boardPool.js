@@ -109,11 +109,11 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
     opts.matchPlay = tableOpts.matchPlay || 2;
     opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
     opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
-    opts.turnTime = tableOpts.turnTime || 180;
+    opts.turnTime = tableOpts.turnTime || 30;
     opts.tourType = tableOpts.tourType;
     opts.guildId = tableOpts.guildId;
     opts.faceOffMode = tableOpts.faceOffMode;
-    opts.totalTime = tableOpts.totalTime || 15 * 60;
+    opts.totalTime = tableOpts.totalTime || 10 * 60;
     opts.showKill = tableOpts.showKill || false;
     opts.caroOpen = tableOpts.caroOpen || 0;
     opts.mustWin = tableOpts.mustWin || false;
@@ -153,13 +153,13 @@ exp.createRoom = function (hallConfig, roomId, show) {
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
-        opts.turnTime = 3 * 60;
+        opts.turnTime = 30;
         if (hallId === consts.HALL_ID.MIEN_PHI) {
           opts.totalTime = 30 * 60;
           opts.configTurnTime = [3 * 60 * 1000];
           opts.configTotalTime = [30 * 60 * 1000];
         } else {
-          opts.totalTime = 15 * 60;
+          opts.totalTime = 10 * 60;
           opts.configTurnTime = [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
           opts.configTotalTime = [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
         }
