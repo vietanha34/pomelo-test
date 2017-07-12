@@ -59,7 +59,7 @@ Handler.prototype.login = function (msg, session, next) {
   }
   msg.ip = loginIp;
   var maintenance = this.app.get('maintenance');
-  if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL && loginIp !== '123.16.162.105'){
+  if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL && loginIp !== '113.190.233.178'){
     return next(null, {
       ec: Code.GATE.FA_MAINTENANCE,
       msg: Code.GATE.FA_MAINTENANCE

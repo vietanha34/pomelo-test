@@ -184,6 +184,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [], finishData = [];
+  var numMove = this.game.movesHistory.length;
   var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
   var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
@@ -193,6 +194,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       turnPlayer = player;
       index = i;
       xp = result === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       if (result === consts.WIN_TYPE.WIN){
         winUser = player;
         toUid = player.uid;
@@ -218,7 +220,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           type : result,
           color : player.color,
           xp : xp,
-          elo : player.userInfo.elo
+          elo : player.userInfo.elo,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
@@ -228,6 +231,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     else {
       res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
@@ -254,7 +258,8 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
           type : res,
           color : player.color,
           xp : xp,
-          elo : player.userInfo.elo
+          elo : player.userInfo.elo,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
@@ -262,19 +267,21 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  try {
-    var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-    for (i = 0, len = eloMap.length; i < len; i++) {
-      player = this.table.players.getPlayer(players[i].uid);
-      players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-      players[i].title  = Formula.calEloLevel(eloMap[i]);
-      finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-      finishData[i].result.eloAfter = eloMap[i];
-      player.userInfo.elo = eloMap[i];
+  if (numMove > 20) {
+    try {
+      var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+      for (i = 0, len = eloMap.length; i < len; i++) {
+        player = this.table.players.getPlayer(players[i].uid);
+        players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+        players[i].title  = Formula.calEloLevel(eloMap[i]);
+        finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+        finishData[i].result.eloAfter = eloMap[i];
+        player.userInfo.elo = eloMap[i];
+      }
+    } catch(err){
+      console.error('error : ', err);
+      console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
     }
-  } catch(err){
-    console.error('error : ', err);
-    console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
   }
   try {
     if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser && this.table.status !== consts.BOARD_STATUS.NOT_STARTED){

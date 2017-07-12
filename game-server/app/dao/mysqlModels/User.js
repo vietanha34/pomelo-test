@@ -43,7 +43,6 @@ module.exports = function(sequelize, DataTypes) {
     },
     spId: {
       type: DataTypes.STRING,
-      allowNull: false,
       defaultValue: ''
     },
     deviceId: {

@@ -332,7 +332,7 @@ UserDao.login = function (msg, cb) {
       }
     })
     .catch(function (err) {
-      console.error('err : ', err);
+      console.error('login err : ', err);
       return utils.invokeCallback(cb, err);
     });
 };

@@ -154,6 +154,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   } else if(uid){
     winType = result || consts.WIN_TYPE.LOSE
   }
+  var numMove = this.game.movesHistory.length;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [];
   var finishData = [];
@@ -164,6 +165,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
     if (player.uid === turnUid){
       var colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       xp = winType === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       console.log('xp : ', xp, winType, Formula.calGameExp(this.gameId, this.hallId));
       if (winType === consts.WIN_TYPE.WIN){
         winUser = player;
@@ -189,8 +191,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         result : {
           type : winType,
           color : player.color,
-          elo : 0,
-          xp : xp
+          elo : player.userInfo.elo,
+          xp : xp,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
@@ -201,6 +204,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       colorString = player.color === consts.COLOR.WHITE ? 'black' : 'white';
       var res = winType === consts.WIN_TYPE.DRAW ? winType : consts.WIN_TYPE.WIN === winType ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
@@ -225,8 +229,9 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         result : {
           type : res ,
           color : player.color,
-          elo : 0,
-          xp : xp
+          elo : player.userInfo.elo,
+          xp : xp,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
@@ -234,16 +239,18 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-  this.table.finishGame();
-  for (i = 0, len = eloMap.length; i < len; i++) {
-    player = this.table.players.getPlayer(players[i].uid);
-    players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    players[i].title  = Formula.calEloLevel(eloMap[i]);
-    finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-    finishData[i].result.eloAfter = eloMap[i];
-    player.userInfo.elo = eloMap[i];
+  if (numMove >= 20) {
+    var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+    for (i = 0, len = eloMap.length; i < len; i++) {
+      player = this.table.players.getPlayer(players[i].uid);
+      players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+      players[i].title  = Formula.calEloLevel(eloMap[i]);
+      finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+      finishData[i].result.eloAfter = eloMap[i];
+      player.userInfo.elo = eloMap[i];
+    }
   }
+  this.table.finishGame();
   if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
     this.table.transfer(bet, fromUid,toUid);
     if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
