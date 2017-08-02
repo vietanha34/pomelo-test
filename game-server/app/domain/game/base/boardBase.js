@@ -924,10 +924,10 @@ pro.checkEffectSetting = function (properties) {
       return 'Bạn không có vật phẩm khoá bàn chơi';
     }
   }
-  if ((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)) {
-    this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.SUA_THOI_GIAN);
-    return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
-  }
+  // if ((lodash.isNumber(properties.turnTime) || lodash.isNumber(properties.totalTime)) && (properties.turnTime !== self.turnTime || properties.totalTime !== self.totalTime) && !ownerPlayer.checkItems(consts.ITEM_EFFECT.SUA_THOI_GIAN)) {
+  //   this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.SUA_THOI_GIAN);
+  //   return 'Bạn cần có item Sửa thời gian mới thực hiện được chức năng này';
+  // }
   if (properties.tableType === consts.TABLE_TYPE.DARK && !ownerPlayer.checkItems(consts.TABLE_TYPE_MAP_EFFECT[properties.tableType])) {
     this.emit('suggestBuyItem', this.owner, consts.ITEM_EFFECT.BAN_CO_TOI);
     return 'Bạn cần có item tương ứng để kích hoạt loại bàn cờ này'
