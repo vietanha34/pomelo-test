@@ -182,7 +182,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         result : winType,
         text : result[colorString],
         totalGold : player.gold,
-        elo : 0,
+        elo : player.userInfo.elo,
         xp : xp
       });
       finishData.push({
@@ -219,7 +219,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         gold : 0,
         result : res,
         totalGold : player.gold,
-        elo : 0,
+        elo : player.userInfo.elo,
         text : result[colorString],
         xp : xp
       });

@@ -212,7 +212,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         result : result,
         totalGold : player.gold,
         sex : player.userInfo.sex,
-        elo : 0,
+        elo : player.userInfo.elo,
         xp : xp
       });
 
@@ -249,7 +249,7 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
         result : res,
         totalGold : player.gold,
         sex : player.userInfo.sex,
-        elo : 0,
+        elo : player.userInfo.elo,
         xp : xp
       });
 
