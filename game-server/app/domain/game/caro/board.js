@@ -236,6 +236,10 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       finishData[i].result.eloAfter = eloMap[i];
       player.userInfo.elo = eloMap[i];
     }
+  }else {
+    for (i = 0, len = players.length; i < len; i++) {
+      players[i].elo = 0;
+    }
   }
   if (bet > 0 && result !== consts.WIN_TYPE.DRAW){
     this.table.transfer(bet, fromUid,toUid);

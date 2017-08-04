@@ -282,6 +282,10 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       console.error('error : ', err);
       console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
     }
+  }else {
+    for (i = 0, len = players.length; i < len; i++) {
+      players[i].elo = 0;
+    }
   }
   try {
     if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser && this.table.status !== consts.BOARD_STATUS.NOT_STARTED){
