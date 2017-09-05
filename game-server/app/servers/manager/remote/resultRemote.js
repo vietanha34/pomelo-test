@@ -80,6 +80,9 @@ pro.management = function (logs, cb) {
   });
   if ([consts.GAME_ID.CO_TUONG, consts.GAME_ID.CO_UP, consts.GAME_ID.CO_VUA, consts.GAME_ID.CO_THE].indexOf(logs.boardInfo.gameId) > -1){
     var GameLog = this.app.get('mongoClient').model('GameLog1');
+    if (logs.logs && logs.logs.status && logs.logs.status.boards) {
+      
+    }
     console.log(logs.logs);
     var log = new GameLog(logs.logs);
     log.save(function (err) {

@@ -444,16 +444,22 @@ Table.prototype.action = function (uid, opts, cb) {
     if (result) {
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {
+        boardId: this.tableId,
         move: [opts.move],
         menu: player.menu,
         addLog: gameStatus.movesHistory3
       });
       this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', {
+        boardId: this.tableId,
         move: [opts.move],
         addLog: gameStatus.movesHistory3
       });
     } else {
-      this.pushMessage('game.gameHandler.action', {move: [opts.move], addLog: gameStatus.movesHistory3});
+      this.pushMessage('game.gameHandler.action', {
+        move: [opts.move],
+        addLog: gameStatus.movesHistory3,
+        boardId: this.tableId
+      });
     }
     this.game.actionLog.push({
       move: [opts.move],

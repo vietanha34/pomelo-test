@@ -408,11 +408,11 @@ Table.prototype.action = function (uid, opts, cb) {
     var result = player.move(this.game.numMove);
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }else {
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], menu: player.menu, id: boardStatus.hohohaha, addLog : boardStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], id : boardStatus.hohohaha2, addLog : boardStatus.movesHistory3});
     }
     this.game.actionLog.push({ move : [opts.move], id : boardStatus.hohohaha, t: Date.now() - this.timeStart});
     this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format('LTS'), player.userInfo.username, boardStatus.movesHistory3));

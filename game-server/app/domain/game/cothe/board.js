@@ -421,10 +421,10 @@ Table.prototype.action = function (uid, opts, cb) {
     var gameStatus = this.game.gameStatus;
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {move : [opts.move], menu: player.menu, uid : uid, addLog : gameStatus.movesHistory3});
-      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', { move : [opts.move], uid : uid, addLog : gameStatus.movesHistory3});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], menu: player.menu, uid : uid, addLog : gameStatus.movesHistory3});
+      this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [opts.move], uid : uid, addLog : gameStatus.movesHistory3});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [opts.move], uid : uid, addLog : gameStatus.movesHistory3});
+      this.pushMessage('game.gameHandler.action', {boardId: this.tableId, move : [opts.move], uid : uid, addLog : gameStatus.movesHistory3});
     }
     this.game.actionLog.push({
       move: [opts.move],

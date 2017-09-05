@@ -359,23 +359,23 @@ Table.prototype.action = function (uid, opts, auto, cb) {
   if (opts.move){
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : player.menu, uid : uid});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', { boardId: this.tableId, move : [[opts.move, id]], remove : remove.removedSquares, menu : player.menu, uid : uid});
       otherPlayer = this.players.getPlayer(this.players.getOtherPlayer(player.uid));
-      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
-      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu, uid : uid});
+      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', {boardId: this.tableId, move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
+      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', {boardId: this.tableId, move : [[opts.move, id]], remove : remove.removedSquares, menu : otherPlayer.menu, uid : uid});
     }else {
-      this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
+      this.pushMessage('game.gameHandler.action', {boardId: this.tableId, move : [[opts.move, id]], remove : remove.removedSquares, uid : uid});
     }
   }else {
     var notifyMsg = util.format('Người chơi %s nhường lượt đi', player.userInfo.fullname);
     if (result){
       // change Menu
-      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : player.menu, notifyMsg : notifyMsg, uid : uid});
+      this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {boardId: this.tableId, remove : remove.removedSquares, menu : player.menu, notifyMsg : notifyMsg, uid : uid});
       otherPlayer = this.players.getPlayer(this.players.getOtherPlayer(player.uid));
-      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', {remove : remove.removedSquares, menu : otherPlayer.menu, notifyMsg : notifyMsg, uid : uid});
-      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
+      this.pushMessageToPlayer(otherPlayer.uid, 'game.gameHandler.action', {boardId: this.tableId, remove : remove.removedSquares, menu : otherPlayer.menu, notifyMsg : notifyMsg, uid : uid});
+      this.pushMessageWithOutUids([player.uid, otherPlayer.uid], 'game.gameHandler.action', {boardId: this.tableId, remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }else {
-      this.pushMessage('game.gameHandler.action', {remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
+      this.pushMessage('game.gameHandler.action', {boardId: this.tableId, remove : remove.removedSquares, notifyMsg: notifyMsg, uid : uid});
     }
   }
   this.game.stringLog.push(util.format('%s --- Người chơi %s di chuyển nước đi %s', moment().format('LTS'), player.userInfo.username, opts.move));

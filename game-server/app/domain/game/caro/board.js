@@ -330,7 +330,10 @@ Table.prototype.action = function (uid, opts, cb) {
   this.game.numMove += 1;
   var player = this.players.getPlayer(uid);
   var id = player.color === consts.COLOR.WHITE ? 1 : -1;
-  this.pushMessage('game.gameHandler.action', { move : [[opts.move, id]]});
+  this.pushMessage('game.gameHandler.action', {
+    boardId: this.tableId,
+    move : [[opts.move, id]]
+  });
   if (this.turnId){
     this.timer.cancelJob(this.turnId);
   }
