@@ -354,9 +354,8 @@ Table.prototype.action = function (uid, opts, cb) {
     };
     var gameStatus = this.game.game.getBoardStatus();
     this.game.gameStatus = gameStatus;
-    var actionResponse = { move : [opts.move], addLog : gameStatus.movesHistory3};
+    var actionResponse = { move : [opts.move], addLog : gameStatus.movesHistory3, boardId: this.tableId};
     var actionLog = {
-      boardId: this.tableId,
       move: [opts.move],
       t: Date.now() - this.timeStart
     };
