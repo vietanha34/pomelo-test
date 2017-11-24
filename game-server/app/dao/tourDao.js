@@ -2,16 +2,12 @@
  * Created by vietanha34 on 3/25/16.
  */
 
-var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
-var Code = require('../consts/code');
 var Promise = require('bluebird');
-var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var TourDao = module.exports;
-var UserDao = require('./userDao');
 var moment = require('moment');
 var util = require('util');
 
@@ -181,6 +177,12 @@ TourDao.getTour = function (opts, cb) {
       return utils.invokeCallback(cb, null, tour)
     })
 };
+
+TourDao.getTours = function (opts, cb) {
+  return pomelo.app.get('mysqlClient')
+    .Tournament
+    .findAll(opts)
+}
 
 TourDao.getTourProfile = function (opts, cb) {
   return pomelo.app.get('mysqlClient')

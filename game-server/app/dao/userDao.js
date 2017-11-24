@@ -261,27 +261,12 @@ UserDao.login = function (msg, cb) {
       }
     })
     .then(function (rank) {
-      if (lodash.isNumber(rank)) {
-        if (username) {
-          pomelo
-            .app
-            .get('redisInfo')
-            .RPUSH('list:requireLogin:newVersion', username, function (e, r) {
-              if (e) console.error(e);
-            })
-        }
-        return Promise.reject({
-          ec: Code.FAIL,
-          msg: 'Bạn đã đăng nhập trên phiên bản cũ, xin vui lòng chắm dứt kết nối ở phiên bản cũ'
-        })
-      } else {
-        if (pomelo.app.get('env') === 'development') {
-          userData.gold = 100000;
-        }
-        return pomelo.app.get('mysqlClient')
-          .User
-          .findOrCreate({where: {uid: userData.uid}, raw: true, defaults: userData});
+      if (pomelo.app.get('env') === 'development') {
+        userData.gold = 100000;
       }
+      return pomelo.app.get('mysqlClient')
+        .User
+        .findOrCreate({where: {uid: userData.uid}, raw: true, defaults: userData});
     })
     .spread(function (u, c) {
       user = u;

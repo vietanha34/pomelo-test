@@ -7,7 +7,8 @@ module.exports = {
     IOS : 1,
     ANDROID : 2,
     WINDOWPHONE : 3,
-    JAVA : 4
+    JAVA : 4,
+    WEB: 6
   },
 
   FACE_OFF_MODE:{
@@ -295,7 +296,8 @@ module.exports = {
     GROUP : 1,
     PERSON : 2,
     BOARD : 3,
-    BOARD_GUEST : 4
+    BOARD_GUEST : 4,
+    GLOBAL: 5
   },
 
   MESSAGE_STATUS : {

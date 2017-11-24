@@ -18,7 +18,7 @@ var Handler = function (app) {
 };
 
 Handler.prototype.getData = function (msg, session, next) {
-  DailyDao.getData(session.uid)
+  DailyDao.getData(session)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })
@@ -30,7 +30,7 @@ Handler.prototype.getData = function (msg, session, next) {
 };
 
 Handler.prototype.getGold = function (msg, session, next) {
-  DailyDao.getGold(session.uid)
+  DailyDao.getGold(session)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })

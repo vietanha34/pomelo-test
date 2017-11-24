@@ -1,3 +1,4 @@
+"use strict"
 var Code = require('../../../consts/code');
 var dispatcher = require('../../../util/dispatcher');
 var crc = require('crc');
@@ -45,6 +46,20 @@ Handler.prototype.getServer = function (msg, session, next) {
   if (version < '20151210' && this.app.get('beta') && version !== '20150118'){
     next(null, { ec: Code.FAIL, msg : "Chương trình beta cờ thủ đã kết thúc. Bạn có thể cập nhật phần mềm để có những tính năng mới nhất"})
   }
+  if (msg.platform === consts.PLATFORM_ENUM.WEB) {
+    var connector = connectors.map(function (con) {
+      return {
+        host: con.privateHost || con.host,
+        port: con.clientPort
+      }
+    });
+    return next(null, {
+      connector: connector,
+      config: configService.getConfig(),
+      key: this.app.get('encryptConfig').key
+    })
+  }
+
   var link, type, message;
   var idSession = uuid.v4();
   var key = shortId.generate();

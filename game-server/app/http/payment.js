@@ -58,9 +58,11 @@ module.exports = function(app) {
           }
         }
 
-        if (totalMatch > 20) {
+        if (totalMatch > 10) {
           inReview = 0;
         }
+
+        inReview = data.platform === consts.PLATFORM_ENUM.WEB ? 0 : inReview
 
         return UserDao.getUserPropertiesByUsername(data.username, ['uid','distributorId'])
           .then(function(user) {

@@ -577,9 +577,10 @@ exp.addEventFromBoard = function (board) {
       console.log('tournament : ', board.matchPlay, board.numMatchPlay, board.score, (Math.abs(board.score[0] - board.score[1]) > board.matchPlay / 2 && board.tourType !== consts.TOUR_TYPE.FRIENDLY) || (board.numMatchPlay >= board.matchPlay && (board.score[0] > board.score[1] || board.score[0] < board.score[1])));
       if ((Math.abs(board.score[0] - board.score[1]) > board.matchPlay / 2 && board.tourType !== consts.TOUR_TYPE.FRIENDLY) || (board.numMatchPlay >= board.matchPlay && (board.score[0] > board.score[1] || board.score[0] < board.score[1]))){
         // finish;
+        var winPlayer;
         if (board.score[0] > board.score[1]){
             // đỏ win
-          var winPlayer = board.players.findPlayerByColor(consts.COLOR.WHITE);
+          winPlayer = board.players.findPlayerByColor(consts.COLOR.WHITE);
         }else {
           winPlayer = board.players.findPlayerByColor(consts.COLOR.BLACK);
         }
@@ -595,6 +596,7 @@ exp.addEventFromBoard = function (board) {
         }
         return
       }
+
       if (board.mustWin){
         if (board.numMatchPlay >= board.matchPlay + 3){
           // random 1 người vào vòng trong

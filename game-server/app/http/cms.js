@@ -10,6 +10,7 @@ var NotifyDao = require('../dao/notifyDao');
 var UserDao = require('../dao/userDao');
 var ItemDao = require('../dao/itemDao');
 var MD5 = require('MD5');
+var pomelo = require('pomelo')
 
 module.exports = function(app) {
   app.post('/cms/topup', function(req, res) {
@@ -89,6 +90,7 @@ module.exports = function(app) {
     if (!msg.username || !msg.gold || !msg.signature) {
       return res.status(500).json({ec: 500, msg: 'invalid params'});
     }
+    var userId = null
     msg.type = Number(msg.type) || consts.CHANGE_GOLD_TYPE.VIDEO_ADS;
     var checkContent = [msg.username, msg.gold, consts.CMS_SECRET_KEY].join('|');
     var checkMd5 = MD5(checkContent);
@@ -103,7 +105,7 @@ module.exports = function(app) {
           throw new Error('User not exists');
           return;
         }
-
+        userId = user.uid
         return TopupDao.topup({
           uid: user.uid,
           gold: Number(msg.gold),
@@ -123,8 +125,19 @@ module.exports = function(app) {
           users: [msg.userId],
           image:  consts.NOTIFY.IMAGE.GOLD
         })
+        var mysqlClient = pomelo.app.get('mysqlClient')
+        mysqlClient
+          .User
+          .update({
+            vipPoint: mysqlClient.sequelize.literal('vipPoint + ' + 30)
+          }, {
+            where: {
+              uid: userId
+            }
+          })
       })
       .catch(function(e) {
+        console.error('payment topUp : ', e);
         res.status(500).json({ec: 500, msg: e.stack || e});
       });
   });

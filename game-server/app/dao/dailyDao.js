@@ -18,17 +18,25 @@ var DailyDao = module.exports;
 
 /**
  * Lẫy dữ liệu điểm danh
- * @param uid
+ * @param session
  * @param cb
  * @returns {*}
  */
-DailyDao.getData = function getData(uid, cb) {
+DailyDao.getData = function getData(session, cb) {
+  var uid = session.uid
+  var platform = session.get('platform')
   var loginCount;
 
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (result[0] || (result[2] && result[2] != 'VN')) return Promise.reject({});
+      if (platform !== consts.PLATFORM_ENUM.WEB) {
+        if ((result[2] && result[2] !== 'VN')) return Promise.reject({});
+      }
+
+      if (result[0]) {
+        return Promise.reject()
+      }
 
       loginCount = result[1] || 1;
 
@@ -75,11 +83,12 @@ DailyDao.getData = function getData(uid, cb) {
 
 /**
  * Nhân tiền điểm danh
- * @param uid
+ * @param session
  * @param cb
  */
-DailyDao.getGold = function getGold(uid, cb) {
-  return DailyDao.getData(uid)
+DailyDao.getGold = function getGold(session, cb) {
+  var uid = session.uid
+  return DailyDao.getData(session)
     .then(function(data) {
       if (data.received) throw new Error('received');
 

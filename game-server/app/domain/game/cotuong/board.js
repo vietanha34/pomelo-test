@@ -106,8 +106,8 @@ Game.prototype.init = function () {
   this.table.emit('startGame', this.playerPlayingId);
   if (lock) {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
-    this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
-    this.table.pushMessage('game.gameHandler.action', {move: moveAfter});
+    this.table.pushMessage('game.gameHandler.action', {boardId: this.tableId, move: moveInit, sleep: 500});
+    this.table.pushMessage('game.gameHandler.action', {boardId: this.tableId, move: moveAfter});
     this.actionLog = [];
     this.actionLog.push({move: moveInit, sleep: 500, t: Date.now() - this.table.timeStart});
     this.actionLog.push({move: moveAfter, t : Date.now() - this.table.timeStart});
@@ -504,6 +504,7 @@ Table.prototype.demand = function (opts) {
             this.timer.cancelJob(this.turnId);
           }
           this.pushMessage('game.gameHandler.action', {
+            boardId: this.tableId,
             move: [this.game.previousMove.move],
             add: this.game.previousMove.killed,
             rollBack: 1,

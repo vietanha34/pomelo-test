@@ -33,9 +33,7 @@ module.exports.type = Config.TYPE.TOURNAMENT;
 module.exports.process = function (app, type, param) {
   if (param.type !== consts.TOUR_TYPE.FRIENDLY) return;
   var totalPoint;
-  return pomelo.app.get('mysqlClient')
-    .Tournament
-    .findOne({
+  return pomelo.app.get('mysqlClient').Tournament.findOne({
       where :{
         tourId : param.tourId
       },
@@ -46,9 +44,7 @@ module.exports.process = function (app, type, param) {
       if (tour.status === consts.TOUR_STATUS.FINISHED){
         return Promise.reject()
       }
-      return pomelo.app.get('mysqlClient')
-        .TourTable
-        .count({
+      return pomelo.app.get('mysqlClient').TourTable.count({
           where: {
             stt: {
               $ne: consts.BOARD_STATUS.FINISH
@@ -59,17 +55,13 @@ module.exports.process = function (app, type, param) {
     })
     .then(function (count) {
       if (count) return Promise.reject();
-      return [pomelo.app.get('mysqlClient')
-        .TourTable
-        .findAll({
+      return [pomelo.app.get('mysqlClient').TourTable.findAll({
           where : {
             tourId : param.tourId
           },
           raw : true
         }),
-        pomelo.app.get('mysqlClient')
-          .Tournament
-          .update({
+        pomelo.app.get('mysqlClient').Tournament.update({
             status : consts.TOUR_STATUS.FINISHED
           },{
             where : {
