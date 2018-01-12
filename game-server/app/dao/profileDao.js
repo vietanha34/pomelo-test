@@ -10,8 +10,6 @@ var code = require('../consts/code');
 var formula = require('../consts/formula');
 var utils = require('../util/utils');
 var regexValid = require('../util/regexValid');
-var redisKeyUtil = require('../util/redisKeyUtil');
-var lodash = require('lodash');
 var moment = require('moment');
 var UserDao = require('./userDao');
 var ItemDao = require('./itemDao');
@@ -138,7 +136,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
     })
       .then(function(response) {
         utils.log(response.statusCode, response.body);
-        if (response && response.statusCode == 200) {
+        if (response && response.statusCode === 200) {
           if (params.oldPassword && params.password) {
             var json = utils.JSONParse(response.body);
             if (!json || !json.changePassword) {

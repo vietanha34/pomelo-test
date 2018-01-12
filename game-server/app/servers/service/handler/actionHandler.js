@@ -39,87 +39,84 @@ Handler.prototype.action = function (msg, session, next) {
       switch (action.type) {
         case consts.ACTION_ID.INVITE_GUILD:
           GuildDao.removeInvite({ uid: uid, guildId: action.guildId});
-          if (accept) {
-            return pomelo.app.get('redisCache')
-              .getAsync(redisKeyUtil.getLeaveGuild(uid))
-              .then(function (result) {
-                if (result > 0) {
-                  return pomelo.app.get('redisCache')
-                    .ttlAsync(redisKeyUtil.getLeaveGuild(uid))
-                    .then(function (expire) {
-                      return Promise.reject({
-                        ec: Code.FAIL,
-                        msg: util.format("Bạn vừa rời hội quán, vui lòng đợi %s nữa để gia nhập hội quán khác", moment().add(expire, 'seconds').from(moment(), true))
-                      })
-                    });
-                } else {
-                  return GuildDao.getMembers(uid)
-                    .then(function (member) {
-                      if (member && member.role < consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER) {
-                        return Promise.reject({});
-                      } else {
-                        return GuildDao.getMembers(action.inviteUid, action.guildId)
-                      }
+          if (!accept) {
+            return Promise.resolve({});
+          }
+          return pomelo.app.get('redisCache')
+            .getAsync(redisKeyUtil.getLeaveGuild(uid))
+            .then(function (result) {
+              if (result > 0) {
+                return pomelo.app.get('redisCache')
+                  .ttlAsync(redisKeyUtil.getLeaveGuild(uid))
+                  .then(function (expire) {
+                    return Promise.reject({
+                      ec: Code.FAIL,
+                      msg: util.format("Bạn vừa rời hội quán, vui lòng đợi %s nữa để gia nhập hội quán khác", moment().add(expire, 'seconds').from(moment(), true))
                     })
-                    .then(function (member) {
-                      if (member && member.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
-                        return GuildDao.createMember({
-                          uid: uid,
+                  });
+              }
+              return GuildDao.getMembers(uid)
+                .then(function (member) {
+                  if (member && member.role < consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER) {
+                    return Promise.reject({});
+                  } else {
+                    return GuildDao.getMembers(action.inviteUid, action.guildId)
+                  }
+                })
+                .then(function (member) {
+                  if (member && member.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
+                    return GuildDao.createMember({
+                      uid: uid,
+                      guildId: action.guildId,
+                      role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+                    }, true)
+                      .then(function (res) {
+                        if (res && !res.ec) {
+                          return UserDao.getUserProperties(uid, ['username', 'fullname'])
+                        } else {
+                          return Promise.reject();
+                        }
+                      })
+                      .then(function (user) {
+                        user = user || {};
+                        return GuildDao.addEvent({
                           guildId: action.guildId,
-                          role: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
-                        }, true)
-                          .then(function (res) {
-                            if (res && !res.ec) {
-                              return UserDao.getUserProperties(uid, ['username', 'fullname'])
-                            } else {
-                              return Promise.reject();
-                            }
-                          })
-                          .then(function (user) {
-                            user = user || {};
-                            return GuildDao.addEvent({
-                              guildId: action.guildId,
-                              uid: session.uid,
-                              fullname: fullname,
-                              content: util.format('[%s] gia nhập hội quán', user.fullname),
-                              type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
-                            });
-                          })
-                          .then(function () {
-                            pomelo.app.get('statusService')
-                              .pushByUids([uid], 'undefined', {
-                                ec: Code.FAIL,
-                                msg: "Chúc mừng bạn đã trở thành thành viên của hội quán"
-                              });
-                          })
-                          .catch(function (err) {
-                            pomelo.app.get('statusService')
-                              .pushByUids([uid], 'undefined', {ec: Code.FAIL, msg: err.ec || Code.FAILs});
-                          })
-                      } else {
+                          uid: session.uid,
+                          fullname: fullname,
+                          content: util.format('[%s] gia nhập hội quán', user.fullname),
+                          type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
+                        });
+                      })
+                      .then(function () {
                         pomelo.app.get('statusService')
                           .pushByUids([uid], 'undefined', {
                             ec: Code.FAIL,
-                            msg: "Vui lòng chờ hội chủ đồng ý để xác nhận việc gia nhập của bạn"
+                            msg: "Chúc mừng bạn đã trở thành thành viên của hội quán"
                           });
-                        return GuildDao.createMember({
-                          uid: uid,
-                          guildId: action.guildId,
-                          role: consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
-                        }, true);
-                      }
-                    })
-                }
-              })
-          }
-          else {
-            return Promise.resolve({});
-          }
+                      })
+                      .catch(function (err) {
+                        pomelo.app.get('statusService')
+                          .pushByUids([uid], 'undefined', {ec: Code.FAIL, msg: err.ec || Code.FAILs});
+                      })
+                  } else {
+                    pomelo.app.get('statusService')
+                      .pushByUids([uid], 'undefined', {
+                        ec: Code.FAIL,
+                        msg: "Vui lòng chờ hội chủ đồng ý để xác nhận việc gia nhập của bạn"
+                      });
+                    return GuildDao.createMember({
+                      uid: uid,
+                      guildId: action.guildId,
+                      role: consts.GUILD_MEMBER_STATUS.REQUEST_MEMBER
+                    }, true);
+                  }
+                })
+            })
           break;
         case consts.ACTION_ID.TOURNAMENT_DUEL:
           if (accept) {
             // create giải đấu
-            if (action.time < Date.now() - 60 * 60 * 1000) { // thời gian nhận tối thiểu là 1h
+            if (action.time < Date.now() - 2 * 60 * 60 * 1000) { // thời gian nhận tối thiểu là 1h
               ActionDao.removeAction({id: action.id}, uid);
               return Promise.reject({ec: Code.FAIL, msg: "Đã hết thời gian chấp nhận lời mời giao hữu này"})
             }
@@ -141,12 +138,12 @@ Handler.prototype.action = function (msg, session, next) {
               }
             })
               .then(function (tours) {
-                if (tours && tours.length > 0) {
-                  return Promise.reject({
-                    ec: Code.FAIL,
-                    msg: "Hội quán của bạn đang trong thời gian thi đấu, không thể chấp nhận lời mời đấu trường khác"
-                  })
-                }
+                // if (tours && tours.length > 0) {
+                //   return Promise.reject({
+                //     ec: Code.FAIL,
+                //     msg: "Hội quán của bạn đang trong thời gian thi đấu, không thể chấp nhận lời mời đấu trường khác"
+                //   })
+                // }
                 return [
                   pomelo.app.get('mysqlClient')
                     .Guild
@@ -399,7 +396,8 @@ Handler.prototype.action = function (msg, session, next) {
                     command: {target: consts.NOTIFY.TARGET.NORMAL},
                     image: consts.NOTIFY.IMAGE.NORMAL
                   }, 'onNotify');
-                ActionDao.removeAction({type: consts.ACTION_ID.TOURNAMENT_DUEL}, uid);
+                ActionDao.removeAction({id: action.id}, uid);
+                //ActionDao.removeAction({type: consts.ACTION_ID.TOURNAMENT_DUEL}, uid);
                 pomelo.app.get('mysqlClient')
                   .GuildBattle
                   .findAll({

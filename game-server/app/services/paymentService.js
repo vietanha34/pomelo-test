@@ -195,12 +195,12 @@ pro.transfer = function (opts, cb) {
           msg: opts.msg
         }
         ,
-        cmd: 'addGold'
+        cmd: 'subGold'
       };
       pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
       var logToUser = {
         before: toUser.gold,
-        after: toUser.gold + gold,
+        after: toUser.gold + addGold,
         temp: 0,
         time: new Date().getTime(),
         opts: {

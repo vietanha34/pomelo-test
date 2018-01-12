@@ -869,7 +869,8 @@ exp.addEventFromBoard = function (board) {
       },5000);
       console.error(util.format(moment().format() + ' --- tournament -  cặp đấu : "%s" vs "%s", số phòng : %s-%s, kết thúc thắng nghiêng về : "%s" ' +
         'với lý do : %s , tỷ số : "%s", chi tiết ván chơi : %s', board.fullname[0], board.fullname[1], board.roomId, board.index, winner.fullname, reason, board.score, board.tournamentLog.join(' , ')));
-    }else if (!board.mustWin){
+    }
+    else if (!board.mustWin){
       setTimeout(function () {
         board.pushMessage('onNotify', {
           type: consts.NOTIFY.TYPE.POPUP,
@@ -894,8 +895,10 @@ exp.addEventFromBoard = function (board) {
         gameId : board.gameId,
         tourId : board.tourId,
         boardId : board.tableId,
+        winner: winner,
+        missingMatch: board.matchPlay - board.numMatchPlay > 0 ? board.matchPlay - board.numMatchPlay : 0,
         type : board.tourType,
-        player : board.players.playerSeat
+        player : board.players.playerSeat,
       }, function () {
       });
     }, 4000);

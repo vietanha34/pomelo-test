@@ -325,13 +325,13 @@ pro.sitIn = function (uid, slotId) {
       self.table.owner = uid;
       result.owner = true;
       player.owner = true;
-      if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
+      if (self.table.status === consts.BOARD_STATUS.NOT_STARTED) {
         player.menu = [self.table.genMenu(consts.ACTION.START_GAME)]
       } else {
         player.menu = [];
       }
     } else {
-      if (self.table.status == consts.BOARD_STATUS.NOT_STARTED) {
+      if (self.table.status === consts.BOARD_STATUS.NOT_STARTED) {
         player.menu = [self.table.genMenu(consts.ACTION.READY)]
       } else {
         player.menu = [];

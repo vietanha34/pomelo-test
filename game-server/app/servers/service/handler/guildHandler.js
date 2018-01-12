@@ -747,8 +747,8 @@ Handler.prototype.duel = function (msg, session, next) {
       return getPermission(role, 1);
     })
     .then(function (permission) {
-      if (msg.bet <= 500 ){
-        return Promise.reject({ec :Code.FAIL, msg : "Tiền cược bàn phải lớn hơn 500"})
+      if (msg.bet < 10000){
+        return Promise.reject({ec :Code.FAIL, msg : "Tiền cược bàn phải lớn hơn hoặc bằng 10000"})
       }
       if (guildId === msg.guildId){
         return Promise.reject({ec :Code.FAIL, msg : "Bạn không thể khiêu chiến với chính hội quán của mình"})

@@ -2,13 +2,9 @@
  * Created by vietanha34 on 1/9/15.
  */
 
-var channelUtil = require('../../util/channelUtil');
 var pomelo = require('pomelo');
-var logger = require('pomelo-logger').getLogger('pomelo', __filename);
 var utils = require('../../util/utils');
-var async = require('async');
 var lodash = require('lodash');
-var Tour = require('./tour');
 var TourDao = require('../../dao/tourDao');
 var Promise = require('bluebird');
 var consts = require('../../consts/consts');

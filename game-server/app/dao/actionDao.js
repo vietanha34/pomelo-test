@@ -3,18 +3,11 @@
  */
 
 
-var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
-var Code = require('../consts/code');
-var Promise = require('bluebird');
 var redisKeyUtil = require('../util/redisKeyUtil');
-var lodash = require('lodash');
 var ActionDao = module.exports;
-var UserDao = require('./userDao');
-var FriendDao = require('./friendDao');
-var moment = require('moment');
 
 
 ActionDao.addAction = function (opts, uid) {

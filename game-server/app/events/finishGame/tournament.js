@@ -10,12 +10,7 @@
 var Config = require('../config');
 var consts = require('../../consts/consts');
 var pomelo = require('pomelo');
-var redisKeyUtil = require('../../util/redisKeyUtil');
-var lodash = require('lodash');
-var utils = require('../../util/utils');
 var Promise = require('bluebird');
-var moment = require('moment');
-var TourDao = require('../../dao/tourDao');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -62,6 +57,7 @@ module.exports.process = function (app, type, param) {
     return;
   }
   var boardInfo = param.boardInfo;
+  var boardId = boardInfo.boardId
   if (boardInfo.gameType !== consts.GAME_TYPE.TOURNAMENT) {
     return;
   }
@@ -83,7 +79,7 @@ module.exports.process = function (app, type, param) {
           match: match.join(',')
         }, {
           where: {
-            boardId: boardInfo.boardId
+            boardId: boardId
           }
         })
     });
@@ -132,10 +128,10 @@ module.exports.process = function (app, type, param) {
       var player1 = data.player1;
       var player2 = data.player2;
       var battle = data.battle;
-      var fame = Math.round(Math.abs((player1.fame - player2.fame)  / 5));
-      fame = fame < 5 ? 5 : fame;
-      fame = fame > 1000 ? 1000 : fame
+      var fame = 0
       if (param.users[0].result.type === consts.WIN_TYPE.WIN) {
+        fame = Math.round(player2.fame / 100)
+        fame = fame > 1000 ? 1000 : fame
         fame = guild2.fame < fame ? guild2.fame : fame;
         var field = battle.guildId1 === param.users[0].guildId ? 'guildScore1' : 'guildScore2';
         var updateData = {};
@@ -145,22 +141,14 @@ module.exports.process = function (app, type, param) {
               tourId : param.boardInfo.tourId
             }
           });
-        pomelo.app.get('mysqlClient').Guild.update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
-          }, {
-            where: {
-              id: guild1.id
-            }
-          });
-        pomelo.app.get('mysqlClient')
-          .Guild
-          .update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
-          }, {
-            where: {
-              id: guild2.id
-            }
-          });
+        pomelo.app.get('mysqlClient').TourTable.update({
+          fameDelta1: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta1 + ' + fame),
+          fameDelta2: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta2 - ' + fame)
+        }, {
+          where: {
+            boardId: boardId
+          }
+        })
         pomelo.app.get('mysqlClient').GuildMember.update({
             fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
           }, {
@@ -187,21 +175,16 @@ module.exports.process = function (app, type, param) {
               tourId : param.boardInfo.tourId
             }
           });
+        fame = Math.round(player1.fame / 100)
         fame = guild1.fame < fame ? guild1.fame : fame;
-        pomelo.app.get('mysqlClient').Guild.update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
-          }, {
-            where: {
-              id: guild2.id
-            }
-          });
-        pomelo.app.get('mysqlClient').Guild.update({
-            fame: pomelo.app.get('mysqlClient').sequelize.literal('fame - ' + fame)
-          }, {
-            where: {
-              id: guild1.id
-            }
-          });
+        pomelo.app.get('mysqlClient').TourTable.update({
+          fameDelta1: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta1 - ' + fame),
+          fameDelta2: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta2 + ' + fame)
+        }, {
+          where: {
+            boardId: boardId
+          }
+        })
         pomelo.app.get('mysqlClient').GuildMember.update({
             fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
           }, {

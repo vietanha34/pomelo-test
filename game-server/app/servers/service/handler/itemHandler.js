@@ -3,7 +3,6 @@
  */
 
 
-var async = require('async');
 var utils = require('../../../util/utils');
 var code = require('../../../consts/code');
 var ItemDao = require('../../../dao/itemDao');

@@ -79,6 +79,22 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.INTEGER(4),
       defaultValue : 0
     },
+    fameDelta1: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    fameDelta2: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    famePunish1: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    famePunish2: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
     calPoint: {
       type: DataTypes.INTEGER(4),
       defaultValue : 0

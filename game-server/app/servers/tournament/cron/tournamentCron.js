@@ -32,7 +32,7 @@ cron.finishTourFriendLy = function (cronInfo) {
     attributes: ['tourId'],
     raw: true
   })
-    .each(function (tourId) {
-      return tourManager.finishTourFriendLy(tourId)
+    .each(function (tour) {
+      return tourManager.finishTourFriendLy(tour.tourId)
     })
 };

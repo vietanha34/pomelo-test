@@ -468,6 +468,7 @@ module.exports = {
     TOPUP_SMS: 2,
     TOPUP_IAP: 3,
     TOPUP_BANKING: 4,
+    TOPUP_SUB: 5,
     BUY_ITEM: 34,
     MISSION_AWARD: 37,
     CMS: 41,
