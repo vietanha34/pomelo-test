@@ -5,16 +5,8 @@
  */
 
 var Config = require('../config');
-var consts = require('../../consts/consts');
-var formula = require('../../consts/formula');
 var pomelo = require('pomelo');
-var redisKeyUtil = require('../../util/redisKeyUtil');
-var lodash = require('lodash');
-var utils = require('../../util/utils');
 var Promise = require('bluebird');
-var moment = require('moment');
-var NotifyDao = require('../../dao/notifyDao');
-var UserDao = require('../../dao/userDao');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -52,7 +44,7 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  */
 
 module.exports.process = function (app, type, param) {
-  if (!param.users || param.users.length!=2 || !param.boardInfo || !param.boardInfo.gameId || !param.boardInfo.matchId) {
+  if (!param.users || param.users.length !== 2 || !param.boardInfo || !param.boardInfo.gameId || !param.boardInfo.matchId) {
     console.error('wrong param finish game: ', param);
     return;
   }

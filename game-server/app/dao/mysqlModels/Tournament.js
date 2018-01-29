@@ -90,7 +90,11 @@ module.exports = function(sequelize, DataTypes) {
       type : DataTypes.TEXT
     },
     schedule : {
-      type : DataTypes.INTEGER
+      type: DataTypes.INTEGER
+    },
+    numTableFinish: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
     }
   }, {
     classMethods: {

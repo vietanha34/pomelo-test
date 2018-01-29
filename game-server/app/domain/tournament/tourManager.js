@@ -34,6 +34,7 @@ var pro = TourManager.prototype;
 pro.init = function () {
   var self = this;
   if (this.status) return;
+  this.status = true
   var curServer = pomelo.app.curServer;
   // quét hệ thống xem có giải đấu nào sắp diễn ra k
   if (curServer.serverType !== this.serverType) {
@@ -114,6 +115,7 @@ pro.init = function () {
                 groupId: table.groupId,
                 scheduleId: table.scheduleId,
                 matchTime: moment(table.matchTime).unix(),
+                matchPlay: tour.numMatch,
                 index: table.index,
                 battleType: round ? round.battleType : consts.TOUR_BATTLE_TYPE.THUY_SY,
                 tourType: tour.type,
@@ -1458,7 +1460,7 @@ pro.createTable = function (opts) {
   params.index = opts.index;
   params.boardId = opts.boardId;
   params.tourId = opts.tourId;
-  params.matchPlay = opts.matchPlay || 2;
+  params.matchPlay = opts.matchPlay || 3;
   params.battleType = opts.battleType;
   params.tourType = opts.tourType;
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;

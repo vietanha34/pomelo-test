@@ -11,6 +11,7 @@ var Config = require('../config');
 var consts = require('../../consts/consts');
 var pomelo = require('pomelo');
 var Promise = require('bluebird');
+var util = require('util')
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -88,6 +89,8 @@ module.exports.process = function (app, type, param) {
     return
   }
 
+  console.error('tournament result: ', util.inspect(param, {depth: 10}))
+
   return Promise.props({
     guild1: pomelo.app.get('mysqlClient').Guild.findOne({
         where: {
@@ -132,7 +135,8 @@ module.exports.process = function (app, type, param) {
       if (param.users[0].result.type === consts.WIN_TYPE.WIN) {
         fame = Math.round(player2.fame / 100)
         fame = fame > 1000 ? 1000 : fame
-        fame = guild2.fame < fame ? guild2.fame : fame;
+        fame = player2.fame < fame ? player2.fame : fame;
+        console.error('fame delta : ', fame, player2.fame, param.users[0].guildId);
         var field = battle.guildId1 === param.users[0].guildId ? 'guildScore1' : 'guildScore2';
         var updateData = {};
         updateData[field] = pomelo.app.get('mysqlClient').sequelize.literal(field + ' + ' + 1);
@@ -176,7 +180,8 @@ module.exports.process = function (app, type, param) {
             }
           });
         fame = Math.round(player1.fame / 100)
-        fame = guild1.fame < fame ? guild1.fame : fame;
+        fame = player1.fame < fame ? player1.fame : fame;
+        console.error('fame delta : ', fame, player1.fame, param.users[0].guildId);
         pomelo.app.get('mysqlClient').TourTable.update({
           fameDelta1: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta1 - ' + fame),
           fameDelta2: pomelo.app.get('mysqlClient').sequelize.literal('fameDelta2 + ' + fame)

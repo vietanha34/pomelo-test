@@ -6,15 +6,10 @@
 
 var Config = require('../config');
 var consts = require('../../consts/consts');
-var formula = require('../../consts/formula');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
-var lodash = require('lodash');
 var utils = require('../../util/utils');
-var Promise = require('bluebird');
 var moment = require('moment');
-var TopDao = require('../../dao/topDao');
-var util = require('util');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -52,7 +47,7 @@ module.exports.type = Config.TYPE.FINISH_GAME;
  */
 
 module.exports.process = function (app, type, param) {
-  if (!param.users || param.users.length!=2 || !param.boardInfo || !param.boardInfo.gameId || !param.boardInfo.matchId) {
+  if (!param.users || param.users.length !== 2 || !param.boardInfo || !param.boardInfo.gameId || !param.boardInfo.matchId) {
    console.error('wrong param finish game: ', param);
    return;
   }
@@ -74,7 +69,7 @@ module.exports.process = function (app, type, param) {
     matchId: param.boardInfo.matchId,
     gameId: param.boardInfo.gameId,
     uids: [param.users[0].uid, param.users[1].uid],
-    status: (param.users[0].result.type == consts.WIN_TYPE.GIVE_UP ? consts.WIN_TYPE.LOSE : param.users[0].result.type),
+    status: (param.users[0].result.type === consts.WIN_TYPE.GIVE_UP ? consts.WIN_TYPE.LOSE : param.users[0].result.type),
     date: Number(moment().format('YYYYMMDD')),
     bet: param.boardInfo.bet || 0
   }, function(e, r) {

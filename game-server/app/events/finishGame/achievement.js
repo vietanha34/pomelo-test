@@ -10,18 +10,15 @@
 
 var Config = require('../config');
 var consts = require('../../consts/consts');
-var formula = require('../../consts/formula');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
 var lodash = require('lodash');
 var utils = require('../../util/utils');
-var Promise = require('bluebird');
 var TopDao = require('../../dao/topDao');
 var TopupDao = require('../../dao/topupDao');
 var FriendDao = require('../../dao/friendDao');
 var ItemDao = require('../../dao/itemDao');
 var NotifyDao = require('../../dao/notifyDao');
-var util = require('util');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -65,7 +62,7 @@ typeMap[consts.WIN_TYPE.DRAW] = 'Draw';
 typeMap[consts.WIN_TYPE.GIVE_UP] = 'GiveUp';
 
 module.exports.process = function (app, type, param) {
-  if (!param.users || param.users.length!=2 || !param.boardInfo || !param.boardInfo.gameId) {
+  if (!param.users || param.users.length !== 2 || !param.boardInfo || !param.boardInfo.gameId) {
    console.error('wrong param finish game: ', param);
    return;
   }
@@ -91,15 +88,15 @@ module.exports.process = function (app, type, param) {
     .then(function(achievements) {
 
       achievements = achievements || [{uid: param.users[0].uid}, {uid: param.users[1].uid}];
-      user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
+      user1Index = achievements[0].uid === param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
       
       // check số ván chơi để tặng quà tân thủ
       [0,1].forEach(function (i) {
-        var userIndex = achievements[i].uid == param.users[i].uid ? i : (i==0?1:0);
+        var userIndex = achievements[i].uid === param.users[i].uid ? i : (i === 0 ? 1:0);
 
         // nếu bỏ cuộc thì bỏ qua
-        if (param.users[userIndex].result.type == consts.WIN_TYPE.GIVE_UP) return;
+        if (param.users[userIndex].result.type === consts.WIN_TYPE.GIVE_UP) return;
 
         var gameCount = 0;
         games.forEach(function (game) {
@@ -116,7 +113,7 @@ module.exports.process = function (app, type, param) {
             var gameName = consts.UMAP_GAME_NAME[game];
             gameCount += achievements[i][gameName+'Win'] || 0;
           });
-          if (param.users[userIndex].result.type == consts.WIN_TYPE.WIN) gameCount += 1;
+          if (param.users[userIndex].result.type === consts.WIN_TYPE.WIN) gameCount += 1;
           else return;
 
           if (gameCount < 3) return;
@@ -183,9 +180,9 @@ module.exports.process = function (app, type, param) {
         // KM khi chơi game ở phòng miễn phí lần đầu tiên trong ngày
         var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
         if (param.users[userIndex].result.remain <= 1000
-          && achievements[i].userCount == 1
+          && achievements[i].userCount === 1
           && freePromotion
-          && param.boardInfo.hallId == consts.HALL_ID.MIEN_PHI) {
+          && param.boardInfo.hallId === consts.HALL_ID.MIEN_PHI) {
           pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion')
             .then(function(todayPromotion) {
               if (todayPromotion) return;
@@ -252,10 +249,10 @@ module.exports.process = function (app, type, param) {
 
   // cộng exp
   var winIndex = false;
-  if (param.users[0].result.type == consts.WIN_TYPE.WIN) {
+  if (param.users[0].result.type === consts.WIN_TYPE.WIN) {
     winIndex = 0;
   }
-  else if (param.users[1].result.type == consts.WIN_TYPE.WIN) {
+  else if (param.users[1].result.type === consts.WIN_TYPE.WIN) {
     winIndex = 1;
   }
   if (winIndex !== false) {
