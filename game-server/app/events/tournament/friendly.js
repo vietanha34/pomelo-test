@@ -12,6 +12,7 @@ var Promise = require('bluebird');
 var GuildDao = require('../../dao/GuildDao');
 var lodash = require('lodash');
 var util = require('util');
+var utils = require('../../util/utils')
 
 module.exports.type = Config.TYPE.TOURNAMENT;
 
@@ -47,13 +48,15 @@ module.exports.process = function (app, type, param) {
         tourId : param.tourId
       },
       raw : true,
-      attributes : ['status', 'guildId1', 'guildId2']
+      attributes : ['status', 'guildId1', 'guildId2', 'guild1', 'guild2', 'name']
     })
     .then(function (t) {
       tour = t
-      if (tour.status === consts.TOUR_STATUS.FINISHED){
+      if (!tour || tour.status === consts.TOUR_STATUS.FINISHED){
         return Promise.reject()
       }
+      tour.guild1 = utils.JSONParse(tour.guild1, {})
+      tour.guild2 = utils.JSONParse(tour.guild2, {})
       if (param.missingMatch > 0) {
         updateFamePunish(tour, param)
       }
@@ -160,8 +163,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[0] += 5
         guild1Exp = 50;
         guild2Exp = 30;
-        textEvent[0] = util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm', guild2.name, totalPoint[0],totalPoint[1], guild1Exp)
-        textEvent[1] = util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm', guild1.name, totalPoint[1],totalPoint[0], guild2Exp)
+        textEvent[0] = util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], guild1Exp, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
+        textEvent[1] = util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], guild2Exp, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
         textChat[0] = util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0])
         marqueeText = util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1])
@@ -170,8 +173,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[1] += 5
         guild1Exp = 30;
         guild2Exp = 50;
-        textEvent[0] = util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm ', guild2.name, totalPoint[0],totalPoint[1], 30)
-        textEvent[1] = util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm', guild1.name, totalPoint[1],totalPoint[0], 50)
+        textEvent[0] = util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 30, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
+        textEvent[1] = util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 50, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
         textChat[0] = util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0])
         marqueeText = util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s-%s', guild2.name, guild1.name, totalPoint[1], totalPoint[0])
@@ -181,8 +184,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[1] += 3
         guild1Exp = 40;
         guild2Exp = 40;
-        textEvent[0] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm', guild2.name, totalPoint[0],totalPoint[1], 40)
-        textEvent[1] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s - %s, giành được %s điểm kinh nghiệm', guild1.name, totalPoint[0],totalPoint[1], 40)
+        textEvent[0] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng thực nhận', guild2.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
+        textEvent[1] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng thực nhận', guild1.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
         textChat[0] = util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số : %s - %s', guild1.name, totalPoint[0],totalPoint[1])
         marqueeText = util.format('Sau màn rượt đuổi tỷ số 2 hội quán "%s" và "%s" đã chấp nhận hoà nhau với tỷ số: %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1])
@@ -190,12 +193,12 @@ module.exports.process = function (app, type, param) {
       guild1.exp += guild1Exp;
       guild2.exp += guild2Exp;
       var promises = [];
-      console.error(util.format('Guild %s giành được %s danh vọng với fame trước là %s với tourId: %s', guild1.name, (Math.round(fameDelta[0] / totalTable) ), guild1.fame, param.tourId));
-      console.error(util.format('Guild %s giành được %s danh vọng với fame trước là %s với tourId: %s', guild2.name, (Math.round(fameDelta[1] / totalTable) ), guild2.fame, param.tourId));
+      console.error(util.format('Guild %s giành được %s danh vọng với fame trước là %s với tourId: %s', guild1.name, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]), guild1.fame, param.tourId));
+      console.error(util.format('Guild %s giành được %s danh vọng với fame trước là %s với tourId: %s', guild2.name, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]), guild2.fame, param.tourId));
       if (guild1.fame + (Math.round(fameDelta[0] / totalTable) + bonusFame[0]) > 0) {
         promises.push(pomelo.app.get('mysqlClient').Guild.update({
           exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild1Exp),
-          fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + (Math.round(fameDelta[0] / totalTable)))
+          fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
         }, {
           where: {
             id : guild1.id
@@ -206,7 +209,7 @@ module.exports.process = function (app, type, param) {
       if (guild2.fame + (Math.round(fameDelta[1] / totalTable) + bonusFame[1])) {
         promises.push(pomelo.app.get('mysqlClient').Guild.update({
           exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild2Exp),
-          fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + (Math.round(fameDelta[1] / totalTable)))
+          fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
         }, {
           where: {
             id : guild2.id
@@ -303,14 +306,15 @@ var updateFamePunish = function (tour, param) {
   if (param.winner) {
     var guildWin = param.winner.guildId
     if (guildWin === tour.guildId1) {
-      famePunish[1] += 5 * param.missingMatch
+      famePunish[1] += 1 * param.missingMatch
     }else if(guildWin === tour.guildId2){
-      famePunish[0] += 5 * param.missingMatch
+      famePunish[0] += 1 * param.missingMatch
     }
   }else {
-    famePunish[0] += 5 * param.missingMatch
-    famePunish[1] += 5 * param.missingMatch
+    famePunish[0] += 1 * param.missingMatch
+    famePunish[1] += 1 * param.missingMatch
   }
+
   pomelo.app.get('mysqlClient').TourTable.update({
     famePunish1: pomelo.app.get('mysqlClient').sequelize.literal('famePunish1 + ' + famePunish[0]),
     famePunish2: pomelo.app.get('mysqlClient').sequelize.literal('famePunish2 + ' + famePunish[1])
@@ -319,4 +323,26 @@ var updateFamePunish = function (tour, param) {
       boardId: param.boardId
     }
   })
+
+  if (famePunish[1]) {
+    GuildDao.addEvent({
+      guildId: tour.guildId2,
+      uid: 1,
+      fullname: '1',
+      content: util.format('Hội quán bạn bỏ cuộc %s ván đấu trong đấu trường "%s" với hội quán "%s" bị trừ %s điểm danh vọng', param.missingMatch, tour.name, tour.guild1.name, famePunish[1]),
+      type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+    });
+  }
+
+  if (famePunish[0]) {
+    GuildDao.addEvent({
+      guildId: tour.guildId1,
+      uid: 1,
+      fullname: '1',
+      content: util.format('Hội quán bạn bỏ cuộc %s ván đấu trong đấu trường "%s" với hội quán "%s" bị trừ %s điểm danh vọng', param.missingMatch, tour.name, tour.guild2.name, famePunish[0]),
+      type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+    });
+  }
+
+
 }
