@@ -60,7 +60,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.eloLevel = formula.calEloLevel(user.elo);
       var vipPoint = user.vipPoint || 0;
       user.vipLevel = formula.calVipLevel(vipPoint);
-      user.vipPoint = [vipPoint, formula.calVipPoint(formula.calVipLevel(vipPoint) + 1)];
+      user.vipPoint = [vipPoint, formula.calVipPoint(user.vipLevel + 1)];
 
       user.vipLevel = Math.max(user.vipLevel, (effects[consts.ITEM_EFFECT.THE_VIP]||0));
 

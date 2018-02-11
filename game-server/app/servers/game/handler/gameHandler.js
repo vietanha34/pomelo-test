@@ -2,9 +2,7 @@
  * Created by vietanha34 on 11/20/14.
  */
 var Code = require('../../../consts/code');
-var userDao = require('../../../dao/userDao');
 var friendDao = require('../../../dao/friendDao');
-var async = require('async');
 var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
 var messageService = require('../../../services/messageService');

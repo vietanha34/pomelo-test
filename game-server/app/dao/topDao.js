@@ -9,7 +9,6 @@ var code = require('../consts/code');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var formula = require('../consts/formula');
-var redisKeyUtil = require('../util/redisKeyUtil');
 var UserDao = require('../dao/userDao');
 
 /**
@@ -22,9 +21,9 @@ TopDao.getTop = function getTop(uid, type, cb) {
   type = type || code.TOP_TYPE.VIP;
 
   var attr;
-  if (type == code.TOP_TYPE.VIP)
+  if (type === code.TOP_TYPE.VIP)
     attr = 'vipPoint';
-  else if (type == code.TOP_TYPE.GOLD)
+  else if (type === code.TOP_TYPE.GOLD)
     attr = 'gold';
   else
     attr = consts.UMAP_GAME_NAME[type];
@@ -45,18 +44,14 @@ TopDao.getTop = function getTop(uid, type, cb) {
   var list;
   var statuses;
 
-  var promise = Top
-    .find()
-    .limit(consts.TOP.PER_PAGE)
-    .sort(sort)
-    .select(select)
+  var promise = Top.find().limit(consts.TOP.PER_PAGE).sort(sort).select(select)
     .then(function(users) {
       users = users || [];
       users.forEach(function(user) {
         uids.push(user.uid);
         top[user.uid] = user[attr] || 0;
       });
-      if (uids.indexOf(uid) == -1) {
+      if (uids.indexOf(uid) === -1) {
         uids.push(uid);
         inTop = false;
       }
@@ -83,7 +78,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
     });
 
   var processUsers = function() {
-    if (type != code.TOP_TYPE.VIP && type != code.TOP_TYPE.GOLD) {
+    if (type !== code.TOP_TYPE.VIP && type !== code.TOP_TYPE.GOLD) {
       list.forEach(function(user) {
         user.point = top[user.uid] || 0;
       });
@@ -103,7 +98,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
         list[i].status = consts.ONLINE_STATUS.OFFLINE;
       else if (!statuses[list[i].uid].board)
         list[i].status = consts.ONLINE_STATUS.ONLINE;
-      else if (typeof statuses[list[i].uid].board == 'string') {
+      else if (typeof statuses[list[i].uid].board === 'string') {
         var tmp = statuses[list[i].uid].board.split(':');
         list[i].status = tmp.length > 1
           ? (Number(tmp[1]))
@@ -115,7 +110,7 @@ TopDao.getTop = function getTop(uid, type, cb) {
       list[i].avatar = utils.JSONParse(list[i].avatar, {id: 0});
       list[i].vipLevel = formula.calVipLevel(Number(list[i].vipPoint) || 0);
 
-      if (list[i].uid == uid) {
+      if (list[i].uid === uid) {
         me = utils.clone(list[i]);
         if (inTop) {
           list[i].isMe = 1;
@@ -140,15 +135,8 @@ TopDao.getTop = function getTop(uid, type, cb) {
         .select(select)
         .lean()
         .then(function(user) {
-          if (user && user[rankAttr]) {
-            me.rank = Number(user[rankAttr]) || 0;
-            me.point = Number(user[attr]) || 0;
-          }
-          else {
-            me.rank = 0;
-            me.point = 0;
-          }
-
+          me.rank = Number(user[rankAttr]) || 0;
+          me.point = Number(user[attr]) || 0;
           return utils.invokeCallback(cb, null, {list: list, me: me});
         });
     }

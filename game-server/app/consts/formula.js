@@ -21,6 +21,9 @@ formula.calVipLevel = function calVipLevel(vipPoint) {
 };
 
 formula.calVipPoint = function calVipPoint(level) {
+  if (level > formula.vipArray.length) {
+    level = formula.vipArray.length
+  }
   return formula.vipArray[level-1];
 };
 
