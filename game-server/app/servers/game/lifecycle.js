@@ -10,7 +10,7 @@ module.exports.afterStartup = function (app, cb) {
   // do some operations after application start up
   // var game = app.game;
   setTimeout(function (game) {
-    game.start();
+    // game.start();
   }, 2000, app.game);
   cb();
 };
