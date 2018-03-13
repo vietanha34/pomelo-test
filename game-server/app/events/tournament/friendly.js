@@ -163,8 +163,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[0] += 5
         guild1Exp = 50;
         guild2Exp = 30;
-        textEvent[0] = util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], guild1Exp, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
-        textEvent[1] = util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], guild2Exp, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
+        textEvent[0] = util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild2.name, totalPoint[0],totalPoint[1], guild1Exp, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]), param.tourId)
+        textEvent[1] = util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild1.name, totalPoint[1],totalPoint[0], guild2Exp, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]), param.tourId)
         textChat[0] = util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0])
         marqueeText = util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1])
@@ -173,8 +173,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[1] += 5
         guild1Exp = 30;
         guild2Exp = 50;
-        textEvent[0] = util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 30, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
-        textEvent[1] = util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 50, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
+        textEvent[0] = util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild2.name, totalPoint[0],totalPoint[1], 30, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]), param.tourId)
+        textEvent[1] = util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild1.name, totalPoint[1],totalPoint[0], 50, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]), param.tourId)
         textChat[0] = util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0])
         marqueeText = util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s-%s', guild2.name, guild1.name, totalPoint[1], totalPoint[0])
@@ -184,8 +184,8 @@ module.exports.process = function (app, type, param) {
         bonusFame[1] += 3
         guild1Exp = 40;
         guild2Exp = 40;
-        textEvent[0] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng thực nhận', guild2.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]))
-        textEvent[1] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng thực nhận', guild1.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]))
+        textEvent[0] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild2.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[0] / totalTable) + bonusFame[0]), param.tourId)
+        textEvent[1] = util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s - %s, giành được %s điểm kinh nghiệm và %s điểm danh vọng, mọi chi tiết xem tại: http//www.cothu.vn/tra-cuu?tourId=%s', guild1.name, totalPoint[0],totalPoint[1], 40, (Math.round(fameDelta[1] / totalTable) + bonusFame[1]), param.tourId)
         textChat[0] = util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1])
         textChat[1] = util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số : %s - %s', guild1.name, totalPoint[0],totalPoint[1])
         marqueeText = util.format('Sau màn rượt đuổi tỷ số 2 hội quán "%s" và "%s" đã chấp nhận hoà nhau với tỷ số: %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1])
@@ -306,13 +306,13 @@ var updateFamePunish = function (tour, param) {
   if (param.winner) {
     var guildWin = param.winner.guildId
     if (guildWin === tour.guildId1) {
-      famePunish[1] += 5 * param.missingMatch
+      famePunish[1] += 2 * param.missingMatch
     }else if(guildWin === tour.guildId2){
-      famePunish[0] += 5 * param.missingMatch
+      famePunish[0] += 2 * param.missingMatch
     }
   }else {
-    famePunish[0] += 5 * param.missingMatch
-    famePunish[1] += 5 * param.missingMatch
+    famePunish[0] += 2 * param.missingMatch
+    famePunish[1] += 2 * param.missingMatch
   }
 
   pomelo.app.get('mysqlClient').TourTable.update({
