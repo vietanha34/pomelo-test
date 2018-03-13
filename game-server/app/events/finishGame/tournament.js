@@ -120,7 +120,8 @@ module.exports.process = function (app, type, param) {
       }),
     battle : pomelo.app.get('mysqlClient').GuildBattle.findOne({
         where : {
-          tourId : param.boardInfo.tourId
+          tourId : param.boardInfo.tourId,
+          allow: 1
         },
         raw : true
       })
@@ -143,11 +144,6 @@ module.exports.process = function (app, type, param) {
         fameDeltaPlusField = battle.guildId1 === param.users[0].guildId ? 'fameDelta1' : 'fameDelta2';
         fameDeltaMinusField = battle.guildId1 === param.users[0].guildId ? 'fameDelta2' : 'fameDelta1'
         updateScoreData[fieldScore] = pomelo.app.get('mysqlClient').sequelize.literal(fieldScore + ' + ' + 1);
-        pomelo.app.get('mysqlClient').GuildBattle.update(updateData, {
-            where : {
-              tourId : param.boardInfo.tourId
-            }
-          });
         pomelo.app.get('mysqlClient').GuildMember.update({
             fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
           }, {
@@ -171,8 +167,9 @@ module.exports.process = function (app, type, param) {
         fameDeltaMinusField = battle.guildId1 === param.users[0].guildId ? 'fameDelta1' : 'fameDelta2'
         updateScoreData[fieldScore] = pomelo.app.get('mysqlClient').sequelize.literal(fieldScore + ' + ' + 1);
         fame = Math.round(player1.fame / 100)
+        fame = fame > 1000 ? 1000 : fame
         fame = player1.fame < fame ? player1.fame : fame;
-        console.error('fame delta : ', fame, player1.fame, param.users[1].guildId, param.boardInfo.tourId, boardId);
+        console.error('fame delta lose: ', fame, player1.fame, param.users[1].guildId, param.boardInfo.tourId, boardId);
         pomelo.app.get('mysqlClient').GuildMember.update({
             fame: pomelo.app.get('mysqlClient').sequelize.literal('fame + ' + fame)
           }, {
@@ -214,10 +211,7 @@ module.exports.process = function (app, type, param) {
       var dataUpdate = {}
       dataUpdate[fameDeltaPlusField] = pomelo.app.get('mysqlClient').sequelize.literal(fameDeltaPlusField + ' + ' + fame)
       dataUpdate[fameDeltaMinusField] = pomelo.app.get('mysqlClient').sequelize.literal(fameDeltaMinusField + ' - ' + fame)
-      pomelo.app.get('mysqlClient').TourTable.update({
-        fameDelta1: pomelo.app.get('mysqlClient').sequelize.literal(fameDeltaPlusField + ' + ' + fame),
-        fameDelta2: pomelo.app.get('mysqlClient').sequelize.literal(fameDeltaMinusField + ' - ' + fame)
-      }, {
+      pomelo.app.get('mysqlClient').TourTable.update(dataUpdate, {
         where: {
           boardId: boardId
         }

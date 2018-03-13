@@ -306,13 +306,13 @@ var updateFamePunish = function (tour, param) {
   if (param.winner) {
     var guildWin = param.winner.guildId
     if (guildWin === tour.guildId1) {
-      famePunish[1] += 1 * param.missingMatch
+      famePunish[1] += 5 * param.missingMatch
     }else if(guildWin === tour.guildId2){
-      famePunish[0] += 1 * param.missingMatch
+      famePunish[0] += 5 * param.missingMatch
     }
   }else {
-    famePunish[0] += 1 * param.missingMatch
-    famePunish[1] += 1 * param.missingMatch
+    famePunish[0] += 5 * param.missingMatch
+    famePunish[1] += 5 * param.missingMatch
   }
 
   pomelo.app.get('mysqlClient').TourTable.update({
