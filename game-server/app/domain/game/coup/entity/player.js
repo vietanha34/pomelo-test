@@ -1,8 +1,3 @@
-var Code = require('../../../../consts/code');
-var lodash = require('lodash');
-var utils = require('../../../../util/utils');
-var logger = require('pomelo-logger').getLogger('game', __filename, process.pid);
-var pomelo = require('pomelo');
 var consts = require('../../../../consts/consts');
 var PlayerBase = require('../../base/entity/player');
 var util = require('util');
@@ -17,7 +12,7 @@ var util = require('util');
  */
 
 /**
- * @property {Object} userInfo Lưu trữ dữ liệu người chơi
+ * @property {Object} userInfo Lưu strữ dữ liệu người chơi
  * @property {Number} gold Tiền của người chơi
  * @property {String} uid định danh của người chơi
  * @property {Boolean} ready tình trạng người choi,

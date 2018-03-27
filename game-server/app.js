@@ -177,6 +177,11 @@ app.configure('production|development', 'connector|gate', function () {
       useProtobuf: false,
       msgpack: false
     });
+
+  app.set('maintenance', {
+    enable: 1,
+    type: consts.MAINTENANCE_TYPE.ALL
+  });
 });
 
 // config eventplugin

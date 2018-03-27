@@ -174,7 +174,7 @@ exp.addEventFromBoard = function (board) {
       }, 100, player)
     }
     if (player.uid === board.owner){
-      if (board.bet > player.gold) {
+      if (board.bet > player.gold && board.gameType !== consts.GAME_TYPE.TOURNAMENT) {
         board.bet = player.gold;
         board.emit('setBoard', {bet: player.gold});
         board.pushMessage("game.gameHandler.changeBoardProperties", {
