@@ -836,11 +836,14 @@ Handler.prototype.duel = function (msg, session, next) {
       if (guildCount >= 1){
         return Promise.reject({ec : Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
       }
-
-      if (guildTargetBattle && moment(guildTargetBattle.time).unix() + 60 * 4 * 60 > ((msg.time / 1000 | 0))){
+      var time = (msg.time / 1000 | 0)
+      var targetTime = moment(guildTargetBattle.time).unix()
+      var currentTime = moment(guildCurrentBattle.time).unix()
+      var timeDelay = 60 * 4 * 60
+      if (guildTargetBattle && targetTime + timeDelay > time && targetTime - timeDelay < time){
         return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối phương đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildTargetBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
       }
-      if (guildCurrentBattle && moment(guildCurrentBattle.time).unix() + 60 * 4 * 60 > ((msg.time / 1000 | 0))){
+      if (guildCurrentBattle && currentTime + timeDelay > time && currentTime - timeDelay < time){
         return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán của bạn đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildCurrentBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
       }
       if (timeoutFail > 0){
