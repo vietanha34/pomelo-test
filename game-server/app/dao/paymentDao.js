@@ -116,7 +116,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
       if (todayCard >= 3) promotion.card['0'] += (Number(config.card3) || 0);
       else if (todayCard >= 2) promotion.card['0'] += (Number(config.card2) || 0);
 
-      var maxPromotion = (Number(config.maxPromotion)||300);
+      var maxPromotion = (Number(config.maxPromotion)||800);
       promotion.sms['0'] = Math.min(promotion.sms['0'], maxPromotion);
       promotion.card['0'] = Math.min(promotion.card['0'], maxPromotion);
       promotion.iap['0'] = Math.min(promotion.iap['0'], maxPromotion);
@@ -182,7 +182,7 @@ PaymentDao.getPromotionByType = function getPromotion(uid, type, cb) {
         else if (todayCard >= 2) rate += (Number(config.card2) || 0);
       }
 
-      rate = Math.min(rate, (Number(config.maxPromotion)||300));
+      rate = Math.min(rate, (Number(config.maxPromotion)||800));
 
       return utils.invokeCallback(cb, null, rate);
     })
