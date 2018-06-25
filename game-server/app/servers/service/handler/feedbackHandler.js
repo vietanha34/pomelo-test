@@ -5,6 +5,8 @@
 var pomelo = require('pomelo');
 var code = require('../../../consts/code');
 var utils = require('../../../util/utils');
+var TopupDao = require('../../../dao/topupDao');
+var consts = require('../../../consts/consts')
 
 module.exports = function(app) {
   return new Handler(app);
@@ -15,6 +17,24 @@ var Handler = function(app) {
 };
 
 Handler.prototype.send = function (msg, session, next) {
+  if (msg.ads) {
+    var adsGold = 300
+    return TopupDao.topup({
+      uid : session.uid,
+      gold : adsGold,
+      msg : "Xem video ads cộng tiền, id: "+msg.id+"; platform: "+ 'instant',
+      type : consts.CHANGE_GOLD_TYPE.VIDEO_ADS,
+    })
+      .then(res => {
+        next(null, {
+          msg: 'Bạn được tặng '+adsGold+' vàng',
+          gold: res ? res.gold : 0,
+          videoAds: {
+            enable: 0
+          }
+        });
+      })
+  }
   pomelo.app.get('mysqlClient').Feedback
     .create({
       uid: session.uid,

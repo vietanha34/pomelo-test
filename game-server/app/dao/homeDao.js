@@ -124,9 +124,15 @@ HomeDao.getHome = function getHome(params, cb) {
       }
 
       data.userInfo.eloLevel = formula.calEloLevel(max);
-
       if (!params.update && params.langVersion !== pomelo.app.get('gameService').langVersion){
-        data.language = pomelo.app.get('gameService').language
+        var langCode = params.langCode || 'vi'
+        if (langCode === 'all') {
+          data.language = pomelo.app.get('gameService').language
+        }else {
+          var language = {}
+          language[langCode] = pomelo.app.get('gameService').language[langCode] || {}
+          data.language = language
+        }
       }
 
       props = null;
