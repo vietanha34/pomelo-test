@@ -169,6 +169,10 @@ app.configure('production|development', 'master', function () {
 // app configuration connector
 app.configure('production|development', 'connector|gate', function () {
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');
+  app.set('maintenance', {
+    enable: 1,
+    type: consts.MAINTENANCE_TYPE.ALL
+  });
   app.set('connectorConfig',
     {
       connector: pomelo.connectors.hybridconnector,
@@ -177,11 +181,6 @@ app.configure('production|development', 'connector|gate', function () {
       useProtobuf: false,
       msgpack: false
     });
-
-  app.set('maintenance', {
-    enable: 1,
-    type: consts.MAINTENANCE_TYPE.ALL
-  });
 });
 
 // config eventplugin
