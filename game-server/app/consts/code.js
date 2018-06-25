@@ -166,7 +166,8 @@ module.exports = {
 
   HINT_ON_GAME: {
     FACE_OFF_SHOW: 560,
-    FACE_OFF_UN_SHOW: 561
+    FACE_OFF_UN_SHOW: 561,
+    DETAIL: 562
   },
 
   WIN_TYPE : {
