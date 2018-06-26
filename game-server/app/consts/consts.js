@@ -961,5 +961,7 @@ module.exports = {
       item: {id: 13, duration: 4320},
       msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và thẻ VIP bạc trong 3 ngày khi thắng ván cờ thứ ${count}'
     }
-  }
+  },
+
+  INSTANT_SECRET: '2f5057ee03a358614ca13b2e9d7d6ed2'
 };
