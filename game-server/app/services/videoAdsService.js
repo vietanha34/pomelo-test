@@ -17,7 +17,7 @@ var VideoAdsService = function (app, opts) {
 VideoAdsService.prototype.getAds = function (opts, cb) {
   return rp({
     uri: 'http://10.2.10.88:8090/ads/get',
-    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.PR_ID},
+    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.PR_ID, version: opts.version || 'default'},
     json: true,
     timeout: 5000
   })
