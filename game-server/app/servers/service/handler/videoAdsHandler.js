@@ -27,13 +27,15 @@ var Handler = function (app) {
 
 Handler.prototype.getAds = function (msg, session, next) {
   var platform = session.get('platform');
+  var version = session.get('version');
   platform = consts.VIDEO_ADS_PLATFORM_UMAP[platform] || '';
   return Promise.all([
     pomelo
       .app
       .get('videoAdsService')
       .getAds({
-        platform : platform
+        platform : platform,
+        version: version
       }),
     UserDao.getUserPropertiesRedis(session.uid, ['adsType']),
     pomelo.app.get('redisCache').getAsync(redisKeyUtil.userVideoAdsKey(session.uid))
