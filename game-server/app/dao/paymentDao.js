@@ -26,11 +26,13 @@ PaymentDao.getExtra = function getExtra(params, cb) {
       config.card = config.card || '';
       config.iap = config.iap || '';
       config.sub = config.sub || '';
+      config.bank = config.bank || '';
 
       config.sms = config.sms.split("\r\n");
       config.card = config.card.split("\r\n");
       config.iap = config.iap.split("\r\n");
       config.sub = config.sub.split("\r\n");
+      config.bank = config.bank.split("\r\n");
 
       sdkPromotions.forEach(function(promotion) {
         if (promotion.type && config[promotion.type]) {
@@ -42,6 +44,7 @@ PaymentDao.getExtra = function getExtra(params, cb) {
           config.card.unshift(txt);
           config.iap.unshift(txt);
           config.sub.unshift(txt);
+          config.bank.unshift(txt);
         }
       });
 
