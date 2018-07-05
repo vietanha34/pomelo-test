@@ -23,7 +23,7 @@ var Handler = function (app) {
 };
 
 Handler.prototype.request = function request(msg, session, next) {
-  if (msg.ads) {
+  if (msg.instant) {
     var instantIds = msg.instantIds
     if (instantIds.length > 1000) {
       instantIds.splice(1000, 10000)
