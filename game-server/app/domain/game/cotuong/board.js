@@ -102,7 +102,8 @@ Game.prototype.init = function () {
       }
     }
   }
-  var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+  //var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+  var detail = ''
   this.table.emit('startGame', this.playerPlayingId);
   if (lock) {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
@@ -384,7 +385,8 @@ Table.prototype.getStatus = function () {
   status.remove = this.game.game.handicapSquares;
   status.log = boardStatus.movesHistory2;
   if (this.game.firstTurn){
-    status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+    //status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+    status.detail = ''
   }else {
     status.detail = '';
   }  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);

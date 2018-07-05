@@ -8,6 +8,7 @@ var lodash = require('lodash');
 var utils = require('../../../util/utils');
 var async = require('async');
 var FriendDao = require('../../../dao/friendDao');
+var UserDao = require('../../../dao/userDao')
 var MessageDao = require('../../../dao/messageDao');
 var util = require('util');
 var Promise = require('bluebird');
@@ -22,6 +23,25 @@ var Handler = function (app) {
 };
 
 Handler.prototype.request = function request(msg, session, next) {
+  if (msg.ads) {
+    var instantIds = msg.instantIds
+    if (instantIds.length > 1000) {
+      instantIds.splice(1000, 10000)
+    }
+    var usernames = []
+    for (var i = 0, leni = instantIds.length; i < leni; i++) {
+      var instantId = instantIds[i];
+      usernames.push('in_' + instantId)
+    }
+    return next(null, {})
+    if (!usernames.length) {
+      return
+    }
+    return UserDao.getUserIdByUsernames(usernames)
+      .each((uid) => {
+        return FriendDao.request(session.uid, uid)
+      })
+  }
   FriendDao.request(session.uid, msg.uid)
     .then(function (res) {
       return utils.invokeCallback(next, null, res);
