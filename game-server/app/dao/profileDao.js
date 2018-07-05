@@ -104,6 +104,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       });
   }
   else { // update password or profile
+    if (params.fullname) {
+      return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'Chức năng đổi tên tạm thời bảo trì!' });
+    }
     if (!uid
       || (params.password && params.password.length < 5)
       || (params.fullname && params.fullname.length < 2)

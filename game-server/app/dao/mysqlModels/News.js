@@ -35,6 +35,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER(4).UNSIGNED,
       allowNull: true,
       defaultValue: 0
+    },
+    langCode: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      defaultValue: 'vi'
     }
   }, {
     classMethods: {

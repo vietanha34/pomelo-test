@@ -9,9 +9,7 @@ var util = require('util');
 var utils = require('../../../util/utils');
 var Player = require('./entity/player');
 var lodash = require('lodash');
-var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
-var events = require('events');
 var DeathMatch = require('luat-co-thu').Xqra;
 var XiangQi = require('luat-co-thu').Xiangqi;
 var XiangQiCanon = require('luat-co-thu').XiangqiCanon;
@@ -93,7 +91,8 @@ Game.prototype.init = function () {
       }
     }
   }
-  var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.table.showKill ? 'hiện quân' : 'không hiện quân');
+  //var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.table.showKill ? 'hiện quân' : 'không hiện quân');
+  var detail = ''
   this.table.emit('startGame', this.playerPlayingId);
   this.table.pushMessageWithMenu('game.gameHandler.startGame', {detail : detail});
   this.gameStatus = this.game.getBoardStatus();
@@ -348,7 +347,8 @@ Table.prototype.getStatus = function () {
     : undefined;
   status.score  = this.score;
   if (this.game.firstTurn){
-    status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.showKill ? 'hiện quân' : 'không hiện quân');
+    status.detail = ''
+    //status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên - ' + (this.showKill ? 'hiện quân' : 'không hiện quân');
   }else {
     status.detail = '';
   }
@@ -480,9 +480,9 @@ Table.prototype.joinBoard = function (opts) {
   var state = Table.super_.prototype.joinBoard.call(this, opts);
   if (!state.ec && this.gameType !== consts.GAME_TYPE.TOURNAMENT){
     if (this.showKill){
-      state.notifyMsg = 'Cờ úp luật hiện quân ăn'
+      state.notifyMsg = Code.HINT_ON_GAME.FACE_OFF_SHOW
     }else {
-      state.notifyMsg = 'Cờ úp luật không hiện quân ăn'
+      state.notifyMsg = Code.HINT_ON_GAME.FACE_OFF_UN_SHOW
     }
   }
   return state

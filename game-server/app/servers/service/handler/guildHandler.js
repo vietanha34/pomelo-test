@@ -819,7 +819,26 @@ Handler.prototype.duel = function (msg, session, next) {
           pomelo.app.get('redisCache')
             .ttlAsync(redisKeyUtil.getGuildDuelFail(guildId, msg.guildId)),
           pomelo.app.get('redisCache')
-            .ttlAsync(redisKeyUtil.getGuildDuelSuccess(guildId, msg.guildId))
+            .ttlAsync(redisKeyUtil.getGuildDuelSuccess(guildId, msg.guildId)),
+          pomelo.app.get('mysqlClient')
+            .GuildBattle
+            .findOne({
+              where: {
+                $or : [
+                  {
+                    guildId1: guildId,
+                    guildId2: msg.guildId
+                  },
+                  {
+                    guildId2: guildId,
+                    guildId1: msg.guildId
+                  }
+                ],
+                allow : 1
+              },
+              attributes : ['time'],
+              order : 'createdAt DESC'
+            })
         ]
       } else {
         return Promise.reject({
@@ -828,7 +847,7 @@ Handler.prototype.duel = function (msg, session, next) {
         })
       }
     })
-    .spread(function (count, guildCount, guildTargetBattle, guildCurrentBattle, timeoutFail, timeoutSuccess) {
+    .spread(function (count, guildCount, guildTargetBattle, guildCurrentBattle, timeoutFail, timeoutSuccess, recentBattle) {
       if (count >= 3){
         return Promise.reject({ec: Code.FAIL, msg: "Hội quán của bạn không được gửi quá 3 lời mời khiêu chiến hội quán khác"})
       }
@@ -837,8 +856,8 @@ Handler.prototype.duel = function (msg, session, next) {
         return Promise.reject({ec : Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
       }
       var time = (msg.time / 1000 | 0)
-      var targetTime = moment(guildTargetBattle.time).unix()
-      var currentTime = moment(guildCurrentBattle.time).unix()
+      var targetTime = guildTargetBattle ? moment(guildTargetBattle.time).unix() : 0 
+      var currentTime = guildCurrentBattle ? moment(guildCurrentBattle.time).unix() : 0 
       var timeDelay = 60 * 4 * 60
       if (guildTargetBattle && targetTime + timeDelay > time && targetTime - timeDelay < time){
         return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối phương đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildTargetBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
@@ -852,6 +871,11 @@ Handler.prototype.duel = function (msg, session, next) {
       if (timeoutSuccess > 0){
         return Promise.reject({ec :Code.FAIL, msg : util.format("Hai hội quán vừa giao hữu thành công, vui lòng đợi %s nữa để gửi lời mời khác", moment().add(timeoutSuccess, 'seconds').from(moment(), true))})
       }
+
+      if (recentBattle && time - moment(recentBattle.time).unix() < 7 * 24 * 60 * 60) {
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Thời gian giãn cách để mời lại đối thủ là 7 ngày. Hội quán bạn vừa thách đấu hội quán này vào lúc '%s' ", moment(recentBattle.time).format('mm:HH DD/MM/YYYY'))})
+      }
+      
       return [
         pomelo.app.get('mysqlClient')
           .Guild

@@ -60,16 +60,18 @@ NewsDao.getList = function getList(uid, cate, cb) {
  * @param cb
  * @returns {*}
  */
-NewsDao.getNews = function getNews(uid, id, type, cb) {
+NewsDao.getNews = function getNews(uid, id, type, langCode, cb) {
   if (!uid || !id) {
     return utils.invokeCallback(cb, 'invalid param get news detail');
   }
-
+  langCode = langCode || 'vi'
   var where = {};
   if (!type)
     where.id = id;
-  else
+  else {
     where.cate = id;
+    where.langCode = langCode
+  }
 
   return cacher('News')
     .ttl(NewsDao.CONFIG.CACHE_TIME)

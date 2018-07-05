@@ -50,7 +50,7 @@ HomeDao.getHome = function getHome(params, cb) {
   data.userInfo.uid = params.uid;
 
   params.platform = params.platform || 1;
-
+  var gameId = params.gameId || consts.GAME_ID.CO_UP
   var cacher = initCache(pomelo.app.get('mysqlClient').sequelize, pomelo.app.get('redisCache'));
 
   var effects = [
@@ -124,9 +124,16 @@ HomeDao.getHome = function getHome(params, cb) {
       }
 
       data.userInfo.eloLevel = formula.calEloLevel(max);
-
+      data.userInfo.elo = props.achievement[consts.UMAP_GAME_NAME[gameId] + 'Elo'] || 0
       if (!params.update && params.langVersion !== pomelo.app.get('gameService').langVersion){
-        data.language = pomelo.app.get('gameService').language
+        var langCode = params.langCode || 'vi'
+        if (langCode === 'all') {
+          data.language = pomelo.app.get('gameService').language
+        }else {
+          var language = {}
+          language[langCode] = pomelo.app.get('gameService').language[langCode] || {}
+          data.language = language
+        }
       }
 
       props = null;

@@ -164,6 +164,12 @@ module.exports = {
     FA_OTHER_NOT_ENOUGH_MONEY_CHANGE_BOARD: 1318
   },
 
+  HINT_ON_GAME: {
+    FACE_OFF_SHOW: 560,
+    FACE_OFF_UN_SHOW: 561,
+    DETAIL: 562
+  },
+
   WIN_TYPE : {
     WIN : 550,
     DRAW : 551,

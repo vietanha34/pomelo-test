@@ -163,6 +163,9 @@ exp.createRoom = function (hallConfig, roomId, show) {
           opts.configTurnTime = [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
           opts.configTotalTime = [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
         }
+        if (self.gameId === consts.GAME_ID.CO_UP && hallId === consts.HALL_ID.CAO_THU && roomId === 403) {
+          opts.faceOffMode = consts.FACE_OFF_MODE.CANNON
+        }
         var betConfig = hallConfig.betConfig;
         opts.configBet = [hallConfig.goldMin, hallConfig.goldMax];
         opts.bet = (betConfig[Math.floor((i - 1) / 6)] ? betConfig[Math.floor((i - 1) / 6)] : betConfig.length > 0 ? betConfig[betConfig.length - 1] : 0) || 0;
