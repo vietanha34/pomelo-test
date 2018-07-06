@@ -15,9 +15,10 @@ var UserDao = require('../dao/userDao');
  *
  * @param uid
  * @param type loại BXH (99: vip, 100: đại gia, 1->6: BXH các game)
+ * @param instant
  * @param cb
  */
-TopDao.getTop = function getTop(uid, type, cb) {
+TopDao.getTop = function getTop(uid, type, instant, cb) {
   type = type || code.TOP_TYPE.VIP;
 
   var attr;
@@ -43,8 +44,12 @@ TopDao.getTop = function getTop(uid, type, cb) {
   var me = {rank: 0};
   var list;
   var statuses;
+  var whereClause = {}
+  if (instant) {
+    whereClause['platform'] = consts.PLATFORM_ENUM.INSTANT
+  }
 
-  var promise = Top.find().limit(consts.TOP.PER_PAGE).sort(sort).select(select)
+  var promise = Top.find(whereClause).limit(consts.TOP.PER_PAGE).sort(sort).select(select)
     .then(function(users) {
       users = users || [];
       users.forEach(function(user) {

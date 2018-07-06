@@ -68,7 +68,7 @@ Handler.prototype.send = function (msg, session, next) {
             countryCode = 'VN'
           }
           return next(null, {
-            gold: GOLD_AWARD[countryCode] || DEFAULT_GOLD_AWARD
+            goldAds: GOLD_AWARD[countryCode] || DEFAULT_GOLD_AWARD
           })
         })
     }
@@ -97,7 +97,7 @@ Handler.prototype.send = function (msg, session, next) {
       })
       .then(res => {
         next(null, {
-          msg: 'Bạn được tặng '+adsGold+' vàng',
+          msg: [code.ON_GAME.FA_REWARD_ADS, adsGold],
           gold: res ? res.gold : 0,
           videoAds: {
             enable: 0
