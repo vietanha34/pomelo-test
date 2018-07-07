@@ -560,9 +560,9 @@ pro.clearIdlePlayer = function () {
     if (playerSeat.indexOf(player.uid) > -1) {
       playerSeat.splice(playerSeat.indexOf(player.uid));
     }
-    if (this.status !== consts.BOARD_STATUS.NOT_STARTED) {
-      continue
-    }
+    // if (this.status !== consts.BOARD_STATUS.NOT_STARTED) {
+    //   continue
+    // }
     if (player.guest) {
       if (player.timeLogout && player.timeLogout < Date.now() - consts.TIME.LOGOUT) {
         this.playerTimeout(player);
@@ -1051,7 +1051,7 @@ pro.maintenance = function (opts) {
 
 pro.finishGame = function () {
   this.status = consts.BOARD_STATUS.NOT_STARTED;
-  this.clearIdlePlayer()
+  //this.clearIdlePlayer()
   this.players.reset();
   this.timer.stop();
   this.turnUid = null;
