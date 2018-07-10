@@ -200,6 +200,14 @@ module.exports.process = function (app, type, param) {
               });
             });
         }
+
+        if (param.users[userIndex].result.remain <= 1000) {
+          // push to instant
+          pomelo.app.get('statusService').pushByUids([param.users[userIndex].uid], 'onNotifyOnline', {
+            instant: 1
+          });
+
+        }
         
       });
 

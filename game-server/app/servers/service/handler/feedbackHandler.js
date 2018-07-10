@@ -88,6 +88,7 @@ Handler.prototype.send = function (msg, session, next) {
         }
 
         adsGold = GOLD_AWARD[countryCode] || DEFAULT_GOLD_AWARD
+        adsGold = msg['x2'] ? adsGold * 2 : adsGold
         return TopupDao.topup({
           uid : session.uid,
           gold : adsGold,

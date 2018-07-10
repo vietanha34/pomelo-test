@@ -371,7 +371,7 @@ Handler.prototype.getHall = function (msg, session, next) {
           icon: utils.JSONParse(hallConfig.icon, {id: 0, version: 0}),
           hint: hallConfig.hint,
           room: lodash.map(rooms[hallId], function (n) {
-            return {full: n.progress, roomId: n.roomId}
+            return {full: n.progress, roomId: n.roomId, name: n.roomId === 403 ? 'Lật pháo - 403' : undefined}
           }),
           level: parseInt(hallConfig.level),
           exp: parseInt(hallConfig.exp)
