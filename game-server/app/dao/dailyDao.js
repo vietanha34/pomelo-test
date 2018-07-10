@@ -30,7 +30,8 @@ DailyDao.getData = function getData(session, msg, cb) {
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (platform !== consts.PLATFORM_ENUM.WEB) {
+      //console.error('DailyDao.getData: ', msg, platform, result);
+      if (platform !== consts.PLATFORM_ENUM.WEB && !msg.instant) {
         if ((result[2] && result[2] !== 'VN')) return Promise.reject({});
       }
 
