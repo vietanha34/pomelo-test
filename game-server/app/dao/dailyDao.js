@@ -86,7 +86,7 @@ DailyDao.getData = function getData(session, cb) {
  * @param session
  * @param cb
  */
-DailyDao.getGold = function getGold(session, cb) {
+DailyDao.getGold = function getGold(session, msg, cb) {
   var uid = session.uid
   return DailyDao.getData(session)
     .then(function(data) {
