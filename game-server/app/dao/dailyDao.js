@@ -49,7 +49,7 @@ DailyDao.getData = function getData(session, cb) {
     })
     .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
-      if (achie.userCount > 3 && level < 1) {
+      if (achie.userCount > 3 && level < 1 && !msg.instant) {
         return utils.invokeCallback(cb, null, {received: 1});
       }
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
@@ -91,10 +91,11 @@ DailyDao.getGold = function getGold(session, cb) {
   return DailyDao.getData(session)
     .then(function(data) {
       if (data.received) throw new Error('received');
-
+      var goldAdd = Number(data.total) || 0
+      goldAdd = msg['x2'] ? goldAdd * 2 : goldAdd
       return TopupDao.topup({
         uid: uid,
-        gold: Number(data.total) || 0,
+        gold: goldAdd,
         type: consts.CHANGE_GOLD_TYPE.DAILY,
         msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, data.total.toString()]
       })
