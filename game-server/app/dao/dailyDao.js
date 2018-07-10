@@ -22,7 +22,7 @@ var DailyDao = module.exports;
  * @param cb
  * @returns {*}
  */
-DailyDao.getData = function getData(session, cb) {
+DailyDao.getData = function getData(session, msg, cb) {
   var uid = session.uid
   var platform = session.get('platform')
   var loginCount;
