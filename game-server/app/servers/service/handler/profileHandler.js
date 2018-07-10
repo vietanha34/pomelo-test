@@ -29,6 +29,9 @@ Handler.prototype.getProfile = function getProfile(msg, session, next) {
 Handler.prototype.updateProfile = function getProfile(msg, session, next) {
   msg.accessToken = session.get('accessToken');
   msg.username = session.get('username');
+  if (msg.fullname === session.get('fullname')) {
+      delete msg.fullname
+  }
   return ProfileDao.updateProfile(session.uid, msg)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);

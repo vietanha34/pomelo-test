@@ -98,7 +98,7 @@ Handler.prototype.send = function (msg, session, next) {
       })
       .then(res => {
         next(null, {
-          msg: [code.ON_GAME.FA_REWARD_ADS, adsGold],
+          msg: [code.ON_GAME.FA_REWARD_ADS, adsGold.toString()],
           gold: res ? res.gold : 0,
           videoAds: {
             enable: 0

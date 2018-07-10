@@ -89,7 +89,7 @@ DailyDao.getData = function getData(session, msg, cb) {
  */
 DailyDao.getGold = function getGold(session, msg, cb) {
   var uid = session.uid
-  return DailyDao.getData(session)
+  return DailyDao.getData(session, msg)
     .then(function(data) {
       if (data.received) throw new Error('received');
       var goldAdd = Number(data.total) || 0
