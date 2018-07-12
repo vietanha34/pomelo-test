@@ -72,7 +72,7 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = utils.clone(configService.getConfig());
-      if (msg.packageName === 'com.thudojsc.CoThu'){
+      if (version === 11072018){
         config['IS_REVIEW'] = 1;
         pomelo.app.get('redisCache')
           .set(redisKeyUtil.getIsReviewVersion(version), 1);

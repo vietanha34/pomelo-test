@@ -12,6 +12,9 @@ var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
+var redisKeyUtil = require('../../../util/redisKeyUtil')
+
+var TIME_LOCK = 300
 
 module.exports = function (app) {
   return new Handler(app);
@@ -63,10 +66,32 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
   var gameName = consts.UMAP_GAME_NAME[gameId];
   var tableId;
+  var redis = pomelo.app.get('redisCache');
+  var boardLockIds = []
   async.waterfall([
-    // get userInfo,
     function (done) {
-      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
+      var params = [redisKeyUtil.getLockBoardKey(), 0, -1, 'WITHSCORES']
+      return redis.zrange(params, done)
+    },
+    // get userInfo,
+    function (boardLocks, done) {
+      var unLockBoard = []
+      if (!boardLocks || !boardLocks.length) {
+      }else {
+        for (var i=0; i<boardLocks.length; i+=2) {
+          var boardId = boardLocks[i]
+          var boardLockTime = boardLocks[i+1]
+          if (Date.now() - Number(boardLockTime) < TIME_LOCK) {
+            boardLockIds.push(boardId)
+          } else {
+            unLockBoard.push(boardId)
+          }
+        }
+      }
+      if (unLockBoard.length) {
+        redis.zrem(redisKeyUtil.getLockBoardKey(), unLockBoard)
+      }
+      return userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
       console.log('userInfo : ', userInfo);
@@ -101,7 +126,11 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         $and : {
           $lte : minBet > 1000 ? minBet : 1000,
           $gte : 0
-        }
+        },
+        boardId: {
+          $notIn: boardLockIds
+        },
+        stt: consts.BOARD_STATUS.NOT_STARTED
       };
       self.app.get('boardService').getBoard({
         where: whereClause,
@@ -118,6 +147,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         }
       }
       if (boardId) {
+        redis.zadd(redisKeyUtil.getLockBoardKey(), Date.now(), boardId.boardId)
         tableId = boardId.boardId;
         self.app.rpc.game.gameRemote.joinBoard(session, boardId.boardId, {userInfo: user}, done)
       } else {

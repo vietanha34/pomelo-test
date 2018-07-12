@@ -9,6 +9,7 @@ var RedisKeyUtil = module.exports;
 
 
 var BOARD_LIST = 'cothu:boardlist';
+var LOCK_BOARD_KEY = 'cothu:lockBoard'
 var PLAYER_INFO_KEY = 'cothu:userInfo:{uid}';
 var PLAYER_FRIEND_KEY = 'cothu:friend:{uid}';
 var PLAYER_LEVEL_KEY = 'cothu:player:{username}:level';
@@ -69,6 +70,10 @@ RedisKeyUtil.getIsReviewVersion = function (version) {
     }
   );
 };
+
+RedisKeyUtil.getLockBoardKey = function () {
+  return LOCK_BOARD_KEY
+}
 
 RedisKeyUtil.getGuildDuelFail = function (guildId1, guildId2) {
   return GUILD_DUEL_FAIL.replace(
