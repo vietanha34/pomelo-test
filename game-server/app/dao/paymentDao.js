@@ -27,12 +27,14 @@ PaymentDao.getExtra = function getExtra(params, cb) {
       config.iap = config.iap || '';
       config.sub = config.sub || '';
       config.bank = config.bank || '';
+      config.gameCard = config.gameCard || '';
 
       config.sms = config.sms.split("\r\n");
       config.card = config.card.split("\r\n");
       config.iap = config.iap.split("\r\n");
       config.sub = config.sub.split("\r\n");
       config.bank = config.bank.split("\r\n");
+      config.gameCard = config.gameCard.split("\r\n");
 
       sdkPromotions.forEach(function(promotion) {
         if (promotion.type && config[promotion.type]) {
@@ -45,6 +47,7 @@ PaymentDao.getExtra = function getExtra(params, cb) {
           config.iap.unshift(txt);
           config.sub.unshift(txt);
           config.bank.unshift(txt);
+          config.gameCard.unshift(txt);
         }
       });
 
@@ -68,7 +71,8 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
     card: {'0': 0},
     iap: {'0': 0},
     bank: {'0': 0},
-    sub: {'0': 0}
+    sub: {'0': 0},
+    gameCard: {'0': 0}
   };
 
   return Promise.all([
@@ -94,6 +98,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
         promotion.card['0'] += firstBonus;
         promotion.iap['0'] += firstBonus;
         promotion.bank['0'] += firstBonus;
+        promotion.gameCard['0'] += firstBonus;
       }
 
       if (vipLevel) {
@@ -102,6 +107,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
         promotion.card['0'] += vipBonus;
         promotion.iap['0'] += vipBonus;
         promotion.bank['0'] += vipBonus;
+        promotion.gameCard['0'] += vipBonus;
       }
 
       var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
@@ -111,6 +117,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
         promotion.card['0'] += freePromotion;
         promotion.iap['0'] += freePromotion;
         promotion.bank['0'] += freePromotion;
+        promotion.gameCard['0'] += freePromotion;
       }
 
       if (todaySms >= 3) promotion.sms['0'] += (Number(config.sms3) || 0);
@@ -122,6 +129,7 @@ PaymentDao.getPromotion = function getPromotion(uid, cb) {
       var maxPromotion = (Number(config.maxPromotion)||800);
       promotion.sms['0'] = Math.min(promotion.sms['0'], maxPromotion);
       promotion.card['0'] = Math.min(promotion.card['0'], maxPromotion);
+      promotion.gameCard['0'] = Math.min(promotion.gameCard['0'], maxPromotion);
       promotion.iap['0'] = Math.min(promotion.iap['0'], maxPromotion);
 
       return utils.invokeCallback(cb, null, promotion);
