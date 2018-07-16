@@ -72,7 +72,7 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = utils.clone(configService.getConfig());
-      if (version === 11072018){
+      if (version === 11072018 && msg.platform === 'android'){
         config['IS_REVIEW'] = 1;
         pomelo.app.get('redisCache')
           .set(redisKeyUtil.getIsReviewVersion(version), 1);

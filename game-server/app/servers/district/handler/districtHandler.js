@@ -41,7 +41,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
   if (!gameId) {
     return next(null, utils.getError(Code.FAIL))
   }
-  let user;
+  var user;
   var whereClause = {
     numPlayer: {
       $lt: 2

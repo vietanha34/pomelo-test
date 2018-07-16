@@ -270,6 +270,7 @@ UserDao.login = function (msg, cb) {
       if (res && !res.ec) {
         res.uid = res.id;
         userData = res;
+        userData.platform = userData.platform ? userData.platform : consts.PLATFORM_ENUM.IOS
         delete res['id'];
         username = res.username;
         if (msg.platform === 'ios' || msg.platform === 'windowphone' || msg.platform === 'android') return Promise.resolve(null);
