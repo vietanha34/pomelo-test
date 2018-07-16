@@ -128,10 +128,17 @@ pro.addBalance = function (opts, cb) {
           };
           pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           updateGoldInCache(user.username, user.gold + gold);
-          return user.updateAttributes({
-            gold: user.gold + gold,
-            goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
-          }, {transaction: t})
+          return pomelo.app.get('mysqlClient')
+            .User
+            .update({
+              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + gold),
+              goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
+            }, {
+              where: {
+                uid: uid
+              },
+              transaction: t
+            })
         }
       })
   })

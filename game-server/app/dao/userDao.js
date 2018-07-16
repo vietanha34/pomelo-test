@@ -145,6 +145,30 @@ UserDao.getUserIdByUsername = function (username, cb) {
     });
 };
 
+UserDao.getUserIdByUsernames = function (usernames, cb) {
+  return Promise.map(usernames, (username) => {
+    return pomelo.app.get('mysqlClient')
+      .User
+      .findOne({
+        where: {
+          username: username
+        },
+        attributes: ['uid'],
+        raw: true
+      })
+      .then(function (user) {
+        if (user) {
+          return utils.invokeCallback(cb, null, user.uid);
+        } else {
+          return utils.invokeCallback(cb, null, null)
+        }
+      });
+  })
+    .filter((uid) => {
+      return uid
+    })
+};
+
 /**
  * Get user information by userId
  *

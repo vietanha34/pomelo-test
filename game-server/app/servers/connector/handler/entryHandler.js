@@ -92,6 +92,7 @@ Handler.prototype.login = function (msg, session, next) {
       session.set('avatar', player.avatar);
       session.set('platform', msg.platform);
       session.set('guild', {});
+      session.set('realIp', msg.realIp)
       session.set('version', version);
       session.on('closed', onUserLeave.bind(null, self.app));
       session.pushAll(done)

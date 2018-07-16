@@ -77,6 +77,23 @@ module.exports.process = function (app, type, param) {
     var gameName = consts.UMAP_GAME_NAME[game];
     attrs = attrs.concat([gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']);
   });
+  try {
+    if (param.boardInfo.hallId !== consts.HALL_ID.MIEN_PHI) {
+      if (param.users[0].result.remain <= 1000) {
+        pomelo.app.get('statusService').pushByUids([param.users[0].uid], 'onNotifyOnline', {
+          instant: 1
+        });
+      }
+
+      if (param.users[1].result.remain <= 1000) {
+        pomelo.app.get('statusService').pushByUids([param.users[1].uid], 'onNotifyOnline', {
+          instant: 1
+        });
+      }
+    }
+  }catch (error){
+
+  }
 
   var user1Elo, user2Elo;
   var user1Index, user2Index;
@@ -200,7 +217,7 @@ module.exports.process = function (app, type, param) {
               });
             });
         }
-        
+
       });
 
       user1Elo = param.users[0].result['eloAfter'];

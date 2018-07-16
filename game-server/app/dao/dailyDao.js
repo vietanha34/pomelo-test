@@ -22,7 +22,7 @@ var DailyDao = module.exports;
  * @param cb
  * @returns {*}
  */
-DailyDao.getData = function getData(session, cb) {
+DailyDao.getData = function getData(session, msg, cb) {
   var uid = session.uid
   var platform = session.get('platform')
   var loginCount;
@@ -30,7 +30,8 @@ DailyDao.getData = function getData(session, cb) {
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (platform !== consts.PLATFORM_ENUM.WEB) {
+      //console.error('DailyDao.getData: ', msg, platform, result);
+      if (platform !== consts.PLATFORM_ENUM.WEB && !msg.instant) {
         if ((result[2] && result[2] !== 'VN')) return Promise.reject({});
       }
 
@@ -49,7 +50,7 @@ DailyDao.getData = function getData(session, cb) {
     })
     .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
-      if (achie.userCount > 3 && level < 1) {
+      if (achie.userCount > 3 && level < 1 && !msg.instant) {
         return utils.invokeCallback(cb, null, {received: 1});
       }
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
@@ -86,15 +87,16 @@ DailyDao.getData = function getData(session, cb) {
  * @param session
  * @param cb
  */
-DailyDao.getGold = function getGold(session, cb) {
+DailyDao.getGold = function getGold(session, msg, cb) {
   var uid = session.uid
-  return DailyDao.getData(session)
+  return DailyDao.getData(session, msg)
     .then(function(data) {
       if (data.received) throw new Error('received');
-
+      var goldAdd = Number(data.total) || 0
+      goldAdd = msg['x2'] ? goldAdd * 2 : goldAdd
       return TopupDao.topup({
         uid: uid,
-        gold: Number(data.total) || 0,
+        gold: goldAdd,
         type: consts.CHANGE_GOLD_TYPE.DAILY,
         msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, data.total.toString()]
       })

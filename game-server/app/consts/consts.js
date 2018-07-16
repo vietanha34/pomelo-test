@@ -8,7 +8,8 @@ module.exports = {
     ANDROID : 2,
     WINDOWPHONE : 3,
     JAVA : 4,
-    WEB: 6
+    WEB: 6,
+    INSTANT: 7
   },
 
   FACE_OFF_MODE:{

@@ -567,3 +567,13 @@ utils.getServerIndexFromServerId = function (serverId) {
     return null
   }
 };
+
+utils.autoParse = function(body, response) {
+  // FIXME: The content type string could contain additional values like the charset.
+  if (response.headers['content-type'] === 'application/json') {
+    response.body = utils.JSONParse(body, {});
+    return response
+  } else {
+    return response;
+  }
+};
