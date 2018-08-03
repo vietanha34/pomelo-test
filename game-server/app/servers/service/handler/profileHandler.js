@@ -32,7 +32,7 @@ Handler.prototype.updateProfile = function getProfile(msg, session, next) {
   if (msg.fullname === session.get('fullname')) {
       delete msg.fullname
   }
-  return ProfileDao.updateProfile(session.uid, msg)
+  return ProfileDao.updateProfile(session, msg)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })

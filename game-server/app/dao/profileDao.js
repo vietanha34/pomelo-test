@@ -16,6 +16,7 @@ var ItemDao = require('./itemDao');
 var FriendDao = require('./friendDao');
 var wordFilter = require('../util/wordFilter');
 var request = require('request-promise').defaults({transform: true});
+var util = require('util')
 
 /**
  *
@@ -89,7 +90,9 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
  *  accessToken
  * @param cb
  */
-ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
+ProfileDao.updateProfile = function updateProfile(session, params, cb) {
+  var uid = session.uid
+  var vipPoint = session.get('vipPoint')
   if (params.avatar) { // update avatar
     if (!uid || !params.avatar || !params.avatar.id || isNaN(params.avatar.id)) {
       return utils.invokeCallback(cb, 'invalid params update avatar');
@@ -104,9 +107,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       });
   }
   else { // update password or profile
-    if (params.fullname) {
-      return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'Chức năng đổi tên tạm thời bảo trì!' });
-    }
+
     if (!uid
       || (params.password && params.password.length < 5)
       || (params.fullname && params.fullname.length < 2)
@@ -127,31 +128,57 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       params.statusMsg = word.msg;
     }
 
-    if (params.phone) params.phoneNumber = params.phone;
-
-    var serviceConfig = pomelo.app.get('serviceConfig');
-    return request({
-      uri: serviceConfig.account.authUrl + serviceConfig.account.updateProfile,
-      method: 'POST',
-      headers: {Authorization: 'Bearer '+params.accessToken },
-      form: params,
-      resolveWithFullResponse: true
+    var userKey = redisKeyUtil.getPlayerInfoKey(uid);
+    var redis = pomelo.app.get('redisInfo');
+    return Promise.props({
+      profile: this.getProfile(uid),
+      redisInfo: redis.hmgetAsync([userKey, 'lastUpdateFullname'])
     })
+      .then((data) => {
+        var user = data.profile;
+        var redisInfo = data.redisInfo
+        var lastUpdateFullname = Number(redisInfo.lastUpdateFullname)
+        lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
+        if (params.fullname && !session.get('fullname')) {
+          if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
+            return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname).format('DD/MM/YYYY')) });
+          }
+          if (vipPoint < 1000) {
+            return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'chức năng này đang bảo trì! ' });
+          }
+        }
+        if (!user) {
+          return Promise.reject({ec: 500, msg: 'Không tìm thấy người chơi tương ứng'})
+        }
+        if (user.phone && params.phone !== user.phone) {
+          return Promise.reject({ec: 500, msg: 'Bạn chỉ được đổi số điện thoại một lần duy nhất. Vui lòng liên hệ Admin để đối tiếp'})
+        }
+        if (params.phone) params.phoneNumber = params.phone;
+        var serviceConfig = pomelo.app.get('serviceConfig');
+        return request({
+          uri: serviceConfig.account.authUrl + serviceConfig.account.updateProfile,
+          method: 'POST',
+          headers: {Authorization: 'Bearer '+params.accessToken },
+          form: params,
+          resolveWithFullResponse: true
+        })
+      })
       .then(function(response) {
         utils.log(response.statusCode, response.body);
         if (response && response.statusCode === 200) {
           if (params.oldPassword && params.password) {
             var json = utils.JSONParse(response.body);
+            if (params.fullname) {
+              redis.hmset(userKey, {lastUpdateFullname: Date.now()/1000 | 0})
+            }
             if (!json || !json.changePassword) {
               // doi mat khau khong thanh cong
               return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
             }
             return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.PASSWORD_SUCCESS});
-          }
-          else {
+          } else {
             return UserDao.updateProperties(uid, params)
               .then(function(){
-
                 var mongoClient = pomelo.app.get('mongoClient');
                 var Top = mongoClient.model('Top');
                 Top.update({uid: uid}, {fullname: params.fullname}, {upsert: false}, function(e) {
