@@ -143,10 +143,10 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
         lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
         if (params.fullname) {
           if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
-            return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname * 1000).format('DD/MM/YYYY')) });
+            return Promise.reject({ ec : 500, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname * 1000).format('DD/MM/YYYY')) });
           }
           if (vipPoint < 1000 && session.get('fullname')) {
-            return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : 'chức năng này đang bảo trì! ' });
+            return Promise.reject( { ec : 500, msg : 'chức năng này đang bảo trì! ' });
           }
         }
         if (!user) {
@@ -199,6 +199,9 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
         if (e.statusCode) {
           var json = utils.JSONParse(e.error, {});
           return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : json.msg ? json.msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
+        }
+        if (e.ec) {
+          return utils.invokeCallback(cb, null, e)
         }
         console.error(e.stack || e);
         utils.log(e.stack || e);
