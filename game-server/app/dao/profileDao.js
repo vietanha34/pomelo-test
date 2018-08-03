@@ -8,6 +8,7 @@ var Promise = require('bluebird');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
 var formula = require('../consts/formula');
+var redisKeyUtil = require('../util/redisKeyUtil')
 var utils = require('../util/utils');
 var regexValid = require('../util/regexValid');
 var moment = require('moment');
@@ -139,11 +140,11 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
         var redisInfo = data.redisInfo
         var lastUpdateFullname = Number(redisInfo.lastUpdateFullname)
         lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
-        if (params.fullname && !session.get('fullname')) {
+        if (params.fullname) {
           if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
             return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname).format('DD/MM/YYYY')) });
           }
-          if (vipPoint < 1000) {
+          if (vipPoint < 1000 && session.get('fullname')) {
             return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'chức năng này đang bảo trì! ' });
           }
         }
@@ -166,11 +167,11 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
       .then(function(response) {
         utils.log(response.statusCode, response.body);
         if (response && response.statusCode === 200) {
+          if (params.fullname) {
+            redis.hmset(userKey, {lastUpdateFullname: Date.now()/1000 | 0})
+          }
           if (params.oldPassword && params.password) {
             var json = utils.JSONParse(response.body);
-            if (params.fullname) {
-              redis.hmset(userKey, {lastUpdateFullname: Date.now()/1000 | 0})
-            }
             if (!json || !json.changePassword) {
               // doi mat khau khong thanh cong
               return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
