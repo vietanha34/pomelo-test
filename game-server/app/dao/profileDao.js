@@ -18,6 +18,7 @@ var FriendDao = require('./friendDao');
 var wordFilter = require('../util/wordFilter');
 var request = require('request-promise').defaults({transform: true});
 var util = require('util')
+var Code = require('../consts/code')
 
 /**
  *
@@ -142,10 +143,10 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
         lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
         if (params.fullname) {
           if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
-            return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname).format('DD/MM/YYYY')) });
+            return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname * 1000).format('DD/MM/YYYY')) });
           }
           if (vipPoint < 1000 && session.get('fullname')) {
-            return utils.invokeCallback(cb, null, { ec : code.FAIL, msg : 'chức năng này đang bảo trì! ' });
+            return utils.invokeCallback(cb, null, { ec : Code.FAIL, msg : 'chức năng này đang bảo trì! ' });
           }
         }
         if (!user) {
