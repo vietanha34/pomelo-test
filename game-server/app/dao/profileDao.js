@@ -138,7 +138,7 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
       .then((data) => {
         var user = data.profile;
         var redisInfo = data.redisInfo
-        var lastUpdateFullname = Number(redisInfo.lastUpdateFullname)
+        var lastUpdateFullname = Number(redisInfo[0])
         lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
         if (params.fullname) {
           if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
