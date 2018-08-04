@@ -149,9 +149,9 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
         if (!user) {
           return Promise.reject({ec: 500, msg: 'Không tìm thấy người chơi tương ứng'})
         }
-        if (user.phone && params.phone !== user.phone) {
-          return Promise.reject({ec: 500, msg: 'Bạn chỉ được đổi số điện thoại một lần duy nhất. Vui lòng liên hệ Admin để đối tiếp'})
-        }
+        // if (user.phone && params.phone !== user.phone) {
+        //   return Promise.reject({ec: 500, msg: 'Bạn chỉ được đổi số điện thoại một lần duy nhất. Vui lòng liên hệ Admin để đối tiếp'})
+        // }
         if (params.phone) params.phoneNumber = params.phone;
         var serviceConfig = pomelo.app.get('serviceConfig');
         return request({
