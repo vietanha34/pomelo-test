@@ -145,9 +145,6 @@ ProfileDao.updateProfile = function updateProfile(session, params, cb) {
           if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
             return Promise.reject({ ec : 500, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname * 1000).format('DD/MM/YYYY')) });
           }
-          if (vipPoint < 1000 && session.get('fullname')) {
-            return Promise.reject( { ec : 500, msg : 'chức năng này đang bảo trì! ' });
-          }
         }
         if (!user) {
           return Promise.reject({ec: 500, msg: 'Không tìm thấy người chơi tương ứng'})
