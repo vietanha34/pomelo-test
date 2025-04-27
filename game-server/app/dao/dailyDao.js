@@ -18,22 +18,26 @@ var DailyDao = module.exports;
 
 /**
  * Lẫy dữ liệu điểm danh
- * @param uid
+ * @param session
  * @param cb
  * @returns {*}
  */
-DailyDao.getData = function getData(uid, cb) {
+DailyDao.getData = function getData(session, msg, cb) {
+  var uid = session.uid
+  var platform = session.get('platform')
   var loginCount;
-
-  var globalConfig = pomelo.app.get('configService').getConfig();
-  if (globalConfig.IS_REVIEW) {
-    return utils.invokeCallback(cb, null, {received: 1});
-  }
 
   var redis = pomelo.app.get('redisInfo');
   return redis.hmgetAsync([redisKeyUtil.getPlayerInfoKey(uid), 'dailyReceived', 'loginCount', 'location'])
     .then(function(result) {
-      if (result[0] || (result[2] && result[2] != 'VN')) return Promise.reject({});
+      //console.error('DailyDao.getData: ', msg, platform, result);
+      if (platform !== consts.PLATFORM_ENUM.WEB && !msg.instant) {
+        if ((result[2] && result[2] !== 'VN')) return Promise.reject({});
+      }
+
+      if (result[0]) {
+        return Promise.reject()
+      }
 
       loginCount = result[1] || 1;
 
@@ -46,7 +50,7 @@ DailyDao.getData = function getData(uid, cb) {
     })
     .spread(function(config, user, effect, achie) {
       var level = formula.calLevel(user.exp||0);
-      if (achie.userCount > 3 && level < 1) {
+      if (achie.userCount > 3 && level < 1 && !msg.instant) {
         return utils.invokeCallback(cb, null, {received: 1});
       }
       var loginGold = (Number(config.firstLogin)||0) + (loginCount-1)*(Number(config.loginStep)||0);
@@ -71,7 +75,7 @@ DailyDao.getData = function getData(uid, cb) {
     })
     .catch(function(e) {
       if (lodash.isError(e)){
-        console.error(e.stack || e);
+        console.error('DailyDao.getData : ', e.stack || e);
         utils.log(e.stack || e);
       }
       return utils.invokeCallback(cb, null, {received: 1});
@@ -80,17 +84,19 @@ DailyDao.getData = function getData(uid, cb) {
 
 /**
  * Nhân tiền điểm danh
- * @param uid
+ * @param session
  * @param cb
  */
-DailyDao.getGold = function getGold(uid, cb) {
-  return DailyDao.getData(uid)
+DailyDao.getGold = function getGold(session, msg, cb) {
+  var uid = session.uid
+  return DailyDao.getData(session, msg)
     .then(function(data) {
       if (data.received) throw new Error('received');
-
+      var goldAdd = Number(data.total) || 0
+      goldAdd = msg['x2'] ? goldAdd * 2 : goldAdd
       return TopupDao.topup({
         uid: uid,
-        gold: Number(data.total) || 0,
+        gold: goldAdd,
         type: consts.CHANGE_GOLD_TYPE.DAILY,
         msg: [code.DAILY_LANGUAGE.RECEICE_MONEY, data.total.toString()]
       })
@@ -109,6 +115,7 @@ DailyDao.getGold = function getGold(uid, cb) {
       });
     })
     .catch(function(e) {
+      console.error('DailyDao.getGold : ', e);
       return utils.invokeCallback(cb, e);
     });
 };
@@ -129,7 +136,7 @@ DailyDao.loadConfig = function loadConfig() {
       redis.hmset(redisKeyUtil.getDailyConfigKey(), config);
     })
     .catch(function(e) {
-      console.error(e.stack || e);
+      console.error('DailyDao.loadConfig : ', e.stack || e);
       utils.log(e.stack || e);
     });
 };

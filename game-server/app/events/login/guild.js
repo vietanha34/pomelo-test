@@ -30,6 +30,7 @@ module.exports.type = Config.TYPE.LOGIN;
  */
 
 module.exports.process = function (app, type, param) {
+  var role = consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER;
   pomelo.app.get('mysqlClient')
     .GuildMember
     .findOne({
@@ -43,13 +44,14 @@ module.exports.process = function (app, type, param) {
     })
     .then(function (member) {
       if (member){
+        role = member.role;
         return pomelo.app.get('mysqlClient')
           .Guild
           .findOne({
             where :{
               id : member.guildId
             },
-            attributes: ['sIcon'],
+            attributes: ['sIcon', 'id'],
             raw : true
           })
       }else {
@@ -57,13 +59,14 @@ module.exports.process = function (app, type, param) {
       }
     })
     .then(function (guild) {
-      console.log('guild : ', guild);
-      if (guild.sIcon){
+      if (guild){
+        guild.role = role;
+        guild.sIcon = utils.JSONParse(guild.sIcon,{});
         pomelo.app.get('backendSessionService').getByUid(param.frontendId, param.uid, function (err, backendService) {
           if (backendService && backendService.length > 0){
             var session = backendService[0];
-            session.set('sIcon', utils.JSONParse(guild.sIcon, {}));
-            session.push('sIcon');
+            session.set('guild', guild);
+            session.pushAll();
           }
         })
       }

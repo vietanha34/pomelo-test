@@ -10,9 +10,7 @@ var code = require('../consts/code');
 var formula = require('../consts/formula');
 var utils = require('../util/utils');
 var redisKeyUtil = require('../util/redisKeyUtil');
-var lodash = require('lodash');
 var UserDao = require('./userDao');
-var HomeDao = require('./homeDao');
 var NotifyDao = require('./notifyDao');
 var MessageDao = require('./messageDao');
 var request = require('request-promise').defaults({transform: true});
@@ -66,7 +64,7 @@ FriendDao.request = function request(fromId, toId, cb) {
       }
     })
     .catch(function(e) {
-      console.error(e.stack || e);
+      console.error('FriendDao.request : ', e.stack || e);
       utils.log(e.stack || e);
       return utils.invokeCallback(cb, e.stack || e);
     });
@@ -266,7 +264,6 @@ FriendDao.search = function search(params, cb) {
       list = search || [];
       if (!list.length)
         throw new Error('Cannot search friend');
-
       return FriendDao.getFriendList(params.uid, consts.MAX_FRIEND);
     })
     .then(function(friends) {

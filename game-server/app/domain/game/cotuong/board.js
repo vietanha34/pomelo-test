@@ -2,7 +2,6 @@
  * Created by laanhdo on 11/25/14.
  */
 
-var boardUtil = require('../base/logic/utils');
 var consts = require('../../../consts/consts');
 var Formula = require('../../../consts/formula');
 var Code = require('../../../consts/code');
@@ -10,7 +9,6 @@ var util = require('util');
 var utils = require('../../../util/utils');
 var Player = require('./entity/player');
 var lodash = require('lodash');
-var messageService = require('../../../services/messageService');
 var channelUtil = require('../../../util/channelUtil');
 var uuid = require('node-uuid');
 var events = require('events');
@@ -33,6 +31,10 @@ function Game(table) {
   this.numMove = 0;
   this.gameStatus = this.game.getBoardStatus();
   this.previousMove = null;
+  this.detailLog = [];
+  this.actionLog = [];
+  this.stringLog = [];
+
 }
 
 Game.prototype.close = function () {
@@ -45,8 +47,13 @@ Game.prototype.init = function () {
   this.table.status = consts.BOARD_STATUS.PLAY;
   var turnPlayer;
   if (this.table.gameType === consts.GAME_TYPE.TOURNAMENT){
-    var username = this.table.username[this.table.numMatchPlay % 2];
-    turnPlayer = this.table.players.getPlayerByUsername(username);
+    if (this.table.tourType === consts.TOUR_TYPE.FRIENDLY){
+      var guildId = this.table.guildId[this.table.numMatchPlay %2];
+      turnPlayer = this.table.players.getPlayerByGuildId(guildId);
+    }else {
+      var username = this.table.username[this.table.numMatchPlay % 2];
+      turnPlayer = this.table.players.getPlayerByUsername(username);
+    }
     this.table.firstUid = turnPlayer.uid;
     this.turn = turnPlayer.uid;
   }else {
@@ -95,18 +102,19 @@ Game.prototype.init = function () {
       }
     }
   }
-  var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+  //var detail = '' + (this.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+  var detail = ''
+  this.table.emit('startGame', this.playerPlayingId);
   if (lock) {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {sleep: 500, detail: detail});
-    this.table.pushMessage('game.gameHandler.action', {move: moveInit, sleep: 500});
-    this.table.pushMessage('game.gameHandler.action', {move: moveAfter});
+    this.table.pushMessage('game.gameHandler.action', {boardId: this.tableId, move: moveInit, sleep: 500});
+    this.table.pushMessage('game.gameHandler.action', {boardId: this.tableId, move: moveAfter});
     this.actionLog = [];
     this.actionLog.push({move: moveInit, sleep: 500, t: Date.now() - this.table.timeStart});
     this.actionLog.push({move: moveAfter, t : Date.now() - this.table.timeStart});
   } else {
     this.table.pushMessageWithMenu('game.gameHandler.startGame', {detail: detail});
   }
-  this.table.emit('startGame', this.playerPlayingId);
   this.gameStatus = this.game.getBoardStatus();
   this.setOnTurn(this.gameStatus);
 };
@@ -153,11 +161,11 @@ Game.prototype.setOnTurn = function (gameStatus) {
   this.table.turnUid = player.uid;
   this.table.turnId = this.table.timer.addJob(function (uid) {
     var player = self.table.players.getPlayer(uid);
+    if (!player || self.table.turnUid !== player.uid) return;
     var losingReason = player.totalTime < self.table.turnTime ? consts.LOSING_REASON_NAME.HET_TIME : consts.LOSING_REASON_NAME.HET_LUOT;
     self.finishGame(consts.WIN_TYPE.LOSE,uid, losingReason);
   }, turnUid, turnTime + 2000);
 };
-
 
 Game.prototype.progress = function () {
   var gameStatus = this.gameStatus;
@@ -177,19 +185,22 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
   var turnColor = this.game.isWhiteTurn ? consts.COLOR.WHITE : consts.COLOR.BLACK;
   var turnUid = uid ? uid : turnColor === consts.COLOR.WHITE ? this.whiteUid : this.blackUid;
   var players = [], finishData = [];
+  var numMove = this.game.movesHistory.length;
   var xp, res, index, turnPlayer, fromUid, toUid, winUser, loseUser, addGold, subGold, winIndex, loseIndex;
   var bet = result === consts.WIN_TYPE.DRAW ? 0 : this.table.bet;
-  for (var i = 0, len = this.playerPlayingId.length; i < len ;i++){
-    var player = this.table.players.getPlayer(this.playerPlayingId[i]);
+  var playerPlaying = this.playerPlayingId.length > 0 ? this.playerPlayingId : this.table.players.playerSeat;
+  for (var i = 0, len = playerPlaying.length; i < len ;i++){
+    var player = this.table.players.getPlayer(playerPlaying[i]);
     if (player.uid === turnUid){
       turnPlayer = player;
       index = i;
       xp = result === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       if (result === consts.WIN_TYPE.WIN){
         winUser = player;
         toUid = player.uid;
         winIndex = i;
-      }else if (result === consts.WIN_TYPE.LOSE || result === consts.WIN_TYPE.GIVE_UP){
+      }else {
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -205,24 +216,28 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
       finishData.push({
         uid : player.uid,
+        guildId : player.userInfo.guildId,
         result : {
           type : result,
           color : player.color,
           xp : xp,
-          elo : player.userInfo.elo
+          elo : 0,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
         }
       });
-    }else {
+    }
+    else {
       res = result === consts.WIN_TYPE.DRAW ? result : consts.WIN_TYPE.WIN === result ? consts.WIN_TYPE.LOSE : consts.WIN_TYPE.WIN;
       xp = res === consts.WIN_TYPE.WIN ? Formula.calGameExp(this.table.gameId, this.table.hallId) : 0;
+      xp = numMove >= 20 ? xp : 0;
       if (res === consts.WIN_TYPE.WIN){
         toUid = player.uid;
         winUser = player;
         winIndex = i;
-      }else if (res === consts.WIN_TYPE.LOSE){
+      }else {
         fromUid = player.uid;
         loseUser = player;
         loseIndex = i;
@@ -239,11 +254,13 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
 
       finishData.push({
         uid : player.uid,
+        guildId: player.userInfo.guildId,
         result : {
           type : res,
           color : player.color,
           xp : xp,
-          elo : player.userInfo.elo
+          elo : 0,
+          eloAfter: player.userInfo.elo
         },
         info: {
           platform : player.userInfo.platform
@@ -251,44 +268,61 @@ Game.prototype.finishGame = function (result, uid, losingReason) {
       });
     }
   }
-  try {
-    var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
-    for (i = 0, len = eloMap.length; i < len; i++) {
-      player = this.table.players.getPlayer(players[i].uid);
-      players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-      players[i].title  = Formula.calEloLevel(eloMap[i]);
-      finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
-      finishData[i].result.eloAfter = eloMap[i];
-      player.userInfo.elo = eloMap[i];
+  if (numMove > 20) {
+    try {
+      var eloMap = this.table.hallId === consts.HALL_ID.MIEN_PHI ? [players[0].elo,players[1].elo] : Formula.calElo(players[0].result, players[0].elo, players[1].elo, this.table.gameId, this.table.bet);
+      for (i = 0, len = eloMap.length; i < len; i++) {
+        player = this.table.players.getPlayer(players[i].uid);
+        players[i].elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+        players[i].title  = Formula.calEloLevel(eloMap[i]);
+        finishData[i].result.elo = (eloMap[i] || player.userInfo.elo)- player.userInfo.elo;
+        finishData[i].result.eloAfter = eloMap[i];
+        player.userInfo.elo = eloMap[i];
+      }
+    } catch(err){
+      console.error('error : ', err);
+      console.error('players : ', players, this.playerPlayingId, this.table.players.playerSeat);
     }
-  } catch(err){
-    console.error('error : ', err);
-    console.error('players : ', players, this.playerPlayingId);
+  }else {
+    for (i = 0, len = players.length; i < len; i++) {
+      players[i].elo = 0;
+    }
   }
-  this.table.finishGame();
   try {
-    if (bet > 0){
-      this.table.players.paymentRemote(consts.PAYMENT_METHOD.TRANSFER, {
-        gold : bet,
-        fromUid : fromUid,
-        toUid : toUid,
-        tax : 5,
-        force : true
-      }, 1, function () {});
-      subGold = loseUser.subGold(bet);
-      addGold = winUser.addGold(subGold, true);
-      players[winIndex].gold = addGold;
-      players[loseIndex].gold = -subGold;
-      finishData[winIndex].result.remain = winUser.gold;
-      finishData[winIndex].result.money = addGold;
-      finishData[loseIndex].result.remain = loseUser.gold;
-      finishData[loseIndex].result.money = subGold;
+    if (bet > 0 && result !== consts.WIN_TYPE.DRAW && loseUser && winUser && this.table.status !== consts.BOARD_STATUS.NOT_STARTED){
+      this.table.transfer(bet, fromUid,toUid);
+      if (this.table.tourType !== consts.TOUR_TYPE.FRIENDLY){
+        subGold = loseUser.subGold(bet);
+        addGold = winUser.addGold(subGold, true);
+        players[winIndex].gold = addGold;
+        players[loseIndex].gold = -subGold;
+        finishData[winIndex].result.remain = winUser.gold;
+        finishData[winIndex].result.money = addGold;
+        finishData[loseIndex].result.remain = loseUser.gold;
+        finishData[loseIndex].result.money = subGold;
+      }else {
+        players[winIndex].gold = 0;
+        players[loseIndex].gold = 0;
+        finishData[winIndex].result.remain = winUser.gold;
+        finishData[winIndex].result.money = 0;
+        finishData[loseIndex].result.remain = loseUser.gold;
+        finishData[loseIndex].result.money = 0;
+      }
     }
   }catch(err){
     console.error('error : ', err);
   }
+  this.table.finishGame();
+  var data = {players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined};
+  if (this.detailLog){
+    this.detailLog.push({
+      r : dictionary['onFinishGame'],
+      d : data,
+      t : Date.now()
+    });
+  }
   this.table.emit('finishGame', finishData, null, consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined);
-  this.table.pushFinishGame({players: players, notifyMsg: consts.LOSING_REASON[losingReason] ? util.format(consts.LOSING_REASON[losingReason], loseUser ? loseUser.userInfo.fullname : null) : undefined}, true);
+  this.table.pushFinishGame(data, true);
 };
 
 function Table(opts) {
@@ -351,7 +385,8 @@ Table.prototype.getStatus = function () {
   status.remove = this.game.game.handicapSquares;
   status.log = boardStatus.movesHistory2;
   if (this.game.firstTurn){
-    status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+    //status.detail = '' + (this.game.firstTurn === consts.COLOR.WHITE ? 'Đỏ' : 'Đen') + ' đi tiên';
+    status.detail = ''
   }else {
     status.detail = '';
   }  status.killed = utils.merge_options(boardStatus.killedPiecesForWhite, boardStatus.killedPiecesForBlack);
@@ -383,10 +418,9 @@ Table.prototype.startGame = function (uid, cb) {
   var code = this.checkStartGame();
   var self = this;
   if (code.ec == Code.OK) {
-    this.game.playerPlayingId = this.players.playerSeat;
+    this.game.playerPlayingId = utils.clone(this.players.playerSeat);
     utils.invokeCallback(cb);
     self.game.init();
-    this.emit('startGame', this.game.playerPlayingId);
   } else {
     return utils.invokeCallback(cb, null, utils.merge_options(code, {menu: this.players.getPlayer(uid).menu}))
   }
@@ -412,16 +446,22 @@ Table.prototype.action = function (uid, opts, cb) {
     if (result) {
       // change Menu
       this.pushMessageToPlayer(player.uid, 'game.gameHandler.action', {
+        boardId: this.tableId,
         move: [opts.move],
         menu: player.menu,
         addLog: gameStatus.movesHistory3
       });
       this.pushMessageWithOutUid(player.uid, 'game.gameHandler.action', {
+        boardId: this.tableId,
         move: [opts.move],
         addLog: gameStatus.movesHistory3
       });
     } else {
-      this.pushMessage('game.gameHandler.action', {move: [opts.move], addLog: gameStatus.movesHistory3});
+      this.pushMessage('game.gameHandler.action', {
+        move: [opts.move],
+        addLog: gameStatus.movesHistory3,
+        boardId: this.tableId
+      });
     }
     this.game.actionLog.push({
       move: [opts.move],
@@ -435,14 +475,6 @@ Table.prototype.action = function (uid, opts, cb) {
   }
 };
 
-//Table.prototype.finishGame = function () {
-//  this.status = consts.BOARD_STATUS.NOT_STARTED;
-//  this.turnUid = null;
-//  this.jobId = null;
-//  this.players.reset();
-//  this.timer.stop();
-//};
-
 Table.prototype.reset = function () {
   this.game.close();
   this.game = null;
@@ -452,7 +484,6 @@ Table.prototype.reset = function () {
     if (ownerPlayer && ownerPlayer.color !== consts.COLOR.WHITE){
       this.game.game.changeTurn(null, false);
       this.game.gameStatus = this.game.game.getBoardStatus();
-      console.log('gameStatus : ', this.game.gameStatus);
     }
   }
 };
@@ -475,6 +506,7 @@ Table.prototype.demand = function (opts) {
             this.timer.cancelJob(this.turnId);
           }
           this.pushMessage('game.gameHandler.action', {
+            boardId: this.tableId,
             move: [this.game.previousMove.move],
             add: this.game.previousMove.killed,
             rollBack: 1,
@@ -548,8 +580,10 @@ Table.prototype.demand = function (opts) {
       }
       break;
     case consts.ACTION.SURRENDER:
-    default :
       this.game.finishGame(consts.WIN_TYPE.LOSE, opts.uid, consts.LOSING_REASON_NAME.XIN_THUA);
+      return {};
+      break;
+    default :
       return {};
   }
 };
@@ -577,7 +611,6 @@ Table.prototype.changeBoardProperties = function (uid, properties, addFunction, 
       }else {
         self.game.game.changeTurn(true, ownerPlayer.color === consts.COLOR.WHITE);
       }
-      //self.game.game.turnToMode();
       self.game.gameStatus = self.game.game.getBoardStatus();
       var boardState = self.getBoardState(uid);
       self.pushMessageWithMenu('game.gameHandler.reloadBoard', boardState);

@@ -10,6 +10,7 @@ var utils = require('../../util/utils');
 var async = require('async');
 var lodash = require('lodash');
 var consts = require('../../consts/consts');
+var Promise = require('bluebird');
 
 
 var MAX_PLAYER_IN_ROOM = 100;
@@ -36,7 +37,7 @@ module.exports = BoardPool;
 
 var exp = BoardPool.prototype;
 
-exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
+exp.createRoomTournament = function (hallConfig, roomId, tableOpts, cb) {
   tableOpts = tableOpts || {};
   var self = this;
   if (roomId) {
@@ -50,7 +51,7 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
       .addRoom(roomOpts)
       .then(function () {
         if (lodash.isArray(tableOpts.players)) {
-          listPlayer = tableOpts.players;
+          listPlayers = tableOpts.players;
         } else {
           var data = pomelo.app.get('dataService').get('' + roomId).data;
           var listPlayers = lodash.values(data);
@@ -63,20 +64,27 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
             opts.removeMode = [];
             opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
           }
-          opts.username = [listPlayer['player1'], listPlayer['player2']];
-          opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
-          opts.matchPlay = tableOpts.matchPlay || 2;
+          opts.username = [listPlayer[0], listPlayer[1]];
+          opts.fullname = [listPlayer[0], listPlayer[1]];
+          opts.timeWait = tableOpts.timeWait * 1000 || 120000; // thời gian chờ là 1 phút
+          opts.matchPlay = tableOpts.matchPlay || 3;
+          opts.guildName = tableOpts.guildName;
           opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
           opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
-          opts.turnTime = tableOpts.turnTime || 180;
-          opts.totalTime = tableOpts.totalTime || 15 * 60;
-          opts.showKill = false;
-          opts.mustWin = false;
+          opts.turnTime = tableOpts.turnTime || 30;
+          opts.boardId = tableOpts.boardId;
+          opts.totalTime = tableOpts.totalTime || 10 * 60;
+          opts.showKill = tableOpts.showKill;
+          opts.tourType = tableOpts.tourType;
+          opts.faceOffMode = tableOpts.faceOffMode;
+          opts.guildId = tableOpts.guildId;
+          opts.mustWin = tableOpts.mustWin ;
+          opts.caroOpen = tableOpts.caroOpen || 0;
           opts.bet = tableOpts.bet || 5000;
           opts.configTurnTime = [opts.turnTime * 1000];
           opts.configTotalTime = [opts.totalTime * 1000];
           opts.base = true;
-          opts.tourTimeWait = 60 * 1000;
+          opts.tourTimeWait = tableOpts.tourTimeWait * 1000 || 10 * 60 * 1000;
           opts.level = tableOpts.level || 0;
           opts.roomId = roomOpts.roomId;
           opts.gameType = consts.GAME_TYPE.TOURNAMENT;
@@ -94,13 +102,18 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
       opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
     }
     opts.username = tableOpts.username;
+    opts.boardId = tableOpts.boardId;
     opts.fullname = tableOpts.fullname;
+    opts.guildName = tableOpts.guildName;
     opts.timeWait = tableOpts.timeWait || 120000; // thời gian chờ là 1 phút
-    opts.matchPlay = tableOpts.matchPlay || 2;
+    opts.matchPlay = tableOpts.matchPlay || 3;
     opts.timePlay = tableOpts.timePlay || Date.now() + 30 * 1000;
     opts.configBet = [tableOpts.bet || 5000, tableOpts.bet || 5000];
-    opts.turnTime = tableOpts.turnTime || 180;
-    opts.totalTime = tableOpts.totalTime || 15 * 60;
+    opts.turnTime = tableOpts.turnTime || 30;
+    opts.tourType = tableOpts.tourType;
+    opts.guildId = tableOpts.guildId;
+    opts.faceOffMode = tableOpts.faceOffMode;
+    opts.totalTime = tableOpts.totalTime || 10 * 60;
     opts.showKill = tableOpts.showKill || false;
     opts.caroOpen = tableOpts.caroOpen || 0;
     opts.mustWin = tableOpts.mustWin || false;
@@ -115,17 +128,18 @@ exp.createRoomTournament = function (hallConfig, roomId, tableOpts) {
     opts.index = tableOpts.index;
     opts.tourId = tableOpts.tourId;
     console.log('createBoard : ', opts);
-    return self.createBoard(opts);
+    return self.createBoard(opts, cb);
   }
 };
 
-exp.createRoom = function (hallConfig, roomId) {
+exp.createRoom = function (hallConfig, roomId, show) {
   var hallId = parseInt(hallConfig.hallId);
   var self = this;
   var roomOpts = {
     serverId: this.serverId,
     gameId: this.gameId,
     roomId: roomId,
+    show : show,
     hallId: parseInt(hallConfig.hallId)
   };
   return pomelo.app.get('boardService')
@@ -139,15 +153,18 @@ exp.createRoom = function (hallConfig, roomId) {
           opts.removeMode = [];
           opts.optional = JSON.stringify({lock: opts.lockMode, remove: opts.removeMode});
         }
-        opts.turnTime = 3 * 60;
+        opts.turnTime = 30;
         if (hallId === consts.HALL_ID.MIEN_PHI) {
           opts.totalTime = 30 * 60;
           opts.configTurnTime = [3 * 60 * 1000];
           opts.configTotalTime = [30 * 60 * 1000];
         } else {
-          opts.totalTime = 15 * 60;
+          opts.totalTime = 10 * 60;
           opts.configTurnTime = [30 * 1000, 60 * 1000, 130 * 1000, 180 * 1000];
           opts.configTotalTime = [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 30 * 60 * 1000];
+        }
+        if (self.gameId === consts.GAME_ID.CO_UP && hallId === consts.HALL_ID.CAO_THU && roomId === 403) {
+          opts.faceOffMode = consts.FACE_OFF_MODE.CANNON
         }
         var betConfig = hallConfig.betConfig;
         opts.configBet = [hallConfig.goldMin, hallConfig.goldMax];
@@ -170,6 +187,7 @@ exp.createBoard = function (params, cb) {
       return utils.invokeCallback(cb, null, {boardId: res, serverId: self.serverId, roomId: params.roomId})
     })
     .catch(function (err) {
+      console.error('BoardPool error : ', err);
       return utils.invokeCallback(cb, err)
     });
 };
@@ -185,12 +203,21 @@ exp.createBoard = function (params, cb) {
 exp.create = function (params, cb) {
   var boardService = pomelo.app.get('boardService');
   var self = this;
-  return boardService.genBoardId({
-    serverId: this.serverId,
-    gameId: this.gameId,
-    gameType: params.gameType || consts.GAME_TYPE.NORMAL,
-    roomId: params.roomId
-  })
+  return Promise.delay(0)
+    .then(function () {
+      if(params.boardId){
+        boardService.saveBoardId(params.boardId, utils.getServerIndexFromServerId(self.serverId));
+        return Promise.resolve(params.boardId);
+      }else {
+        return boardService.genBoardId({
+          serverId: self.serverId,
+          gameId: self.gameId,
+          gameType: params.gameType || consts.GAME_TYPE.NORMAL,
+          roomId: params.roomId,
+          hallId: params.hallId
+        })
+      }
+    })
     .then(function (boardId) {
       if (self.boards[boardId]) {
         utils.invokeCallback(cb, null, boardId);
@@ -211,6 +238,7 @@ exp.create = function (params, cb) {
       }
     })
     .catch(function (err) {
+      console.error('BoardPool create error : ', err);
       return utils.invokeCallback(cb, err);
     })
 };

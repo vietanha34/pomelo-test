@@ -21,6 +21,9 @@ formula.calVipLevel = function calVipLevel(vipPoint) {
 };
 
 formula.calVipPoint = function calVipPoint(level) {
+  if (level > formula.vipArray.length) {
+    level = formula.vipArray.length
+  }
   return formula.vipArray[level-1];
 };
 
@@ -81,7 +84,7 @@ formula.calGameExp = function calGameExp(gameId, hallId) {
 };
 
 formula.calVipPointByMoney = function calVipPointByMoney(money) {
-  return Math.round(money*(1+Math.sqrt(money/500000))/1000);
+  return Math.ceil(money/500);
 };
 
 formula.calBuchholz = function (point, win, lose) {

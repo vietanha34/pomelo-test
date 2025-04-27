@@ -50,7 +50,7 @@ HomeDao.getHome = function getHome(params, cb) {
   data.userInfo.uid = params.uid;
 
   params.platform = params.platform || 1;
-
+  var gameId = params.gameId || consts.GAME_ID.CO_UP
   var cacher = initCache(pomelo.app.get('mysqlClient').sequelize, pomelo.app.get('redisCache'));
 
   var effects = [
@@ -59,7 +59,7 @@ HomeDao.getHome = function getHome(params, cb) {
   ];
 
   return Promise.props({
-    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
+    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint', 'hasPay']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
     cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'adsCount'),
@@ -79,7 +79,7 @@ HomeDao.getHome = function getHome(params, cb) {
     .then(function(props) {
       var globalConfig = pomelo.app.get('configService').getConfig();
 
-      data.received = ((globalConfig.IS_REVIEW || (props.cacheInfo[1] && props.cacheInfo[1] != 'VN')) ? 1 : (Number(props.cacheInfo[0]) || 0));
+      data.received = ((globalConfig.IS_REVIEW ) ? 1 : (Number(props.cacheInfo[0]) || 0));
       data.userInfo = props.userInfo;
 
       data.userInfo.gold = data.userInfo.gold || 0;
@@ -103,6 +103,9 @@ HomeDao.getHome = function getHome(params, cb) {
         disable: enable?0:1
       };
 
+      data.offer = props.userInfo.hasPay === 2 ? 1 : 0
+
+
       data.videoAds = {
         enable: enable,
         gold: adsGold,
@@ -124,9 +127,16 @@ HomeDao.getHome = function getHome(params, cb) {
       }
 
       data.userInfo.eloLevel = formula.calEloLevel(max);
-
+      data.userInfo.elo = props.achievement[consts.UMAP_GAME_NAME[gameId] + 'Elo'] || 0
       if (!params.update && params.langVersion !== pomelo.app.get('gameService').langVersion){
-        data.language = pomelo.app.get('gameService').language
+        var langCode = params.langCode || 'vi'
+        if (langCode === 'all') {
+          data.language = pomelo.app.get('gameService').language
+        }else {
+          var language = {}
+          language[langCode] = pomelo.app.get('gameService').language[langCode] || {}
+          data.language = language
+        }
       }
 
       props = null;
@@ -177,25 +187,25 @@ HomeDao.pushInfo = Promise.promisify(function pushInfo(uid, change, cb) {
           if (e) console.error(e);
         });
     }
-    redis.hmset(userKey, change, function(e, res) {
-      utils.invokeCallback(cb, e, res);
-      if (e) console.error(e);
-    });
+    // redis.hmset(userKey, change, function(e, res) {
+    //   utils.invokeCallback(cb, e, res);
+    //   if (e) console.error(e);
+    // });
   }
   else {
     pomelo.app.get('channelService')
       .broadcast('connector', 'home.homeHandler.updateHome', change, {}, function (e, res) {
         if (e) console.error(e);
       });
-    var homeKey = HomeDao.redis.getHomeKey();
-    HomeDao.homeInfo = HomeDao.homeInfo || {};
-    for (var attr in change) {
-      HomeDao.homeInfo[attr] = change[attr];
-    }
-    redis.hmset(homeKey, change, function(e, res) {
-      utils.invokeCallback(cb, e, res);
-      if (e) console.error(e);
-    });
+    // var homeKey = HomeDao.redis.getHomeKey();
+    // HomeDao.homeInfo = HomeDao.homeInfo || {};
+    // for (var attr in change) {
+    //   HomeDao.homeInfo[attr] = change[attr];
+    // }
+    // redis.hmset(homeKey, change, function(e, res) {
+    //   utils.invokeCallback(cb, e, res);
+    //   if (e) console.error(e);
+    // });
   }
 });
 

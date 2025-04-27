@@ -29,7 +29,7 @@ module.exports = function(sequelize, DataTypes) {
     fame: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 1000
     },
     dateJoin: {
       type: DataTypes.DATE

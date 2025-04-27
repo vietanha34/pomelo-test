@@ -2,17 +2,14 @@
  * Created by vietanha34 on 3/25/16.
  */
 
-var logger = require('pomelo-logger').getLogger(__filename);
 var pomelo = require('pomelo');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
-var Code = require('../consts/code');
 var Promise = require('bluebird');
-var redisKeyUtil = require('../util/redisKeyUtil');
 var lodash = require('lodash');
 var TourDao = module.exports;
-var UserDao = require('./userDao');
 var moment = require('moment');
+var util = require('util');
 
 /**
  * Lấy danh sách giải đấu
@@ -25,12 +22,35 @@ TourDao.getListTour = function (opts, cb) {
   var offset = opts.offset || 0;
   var condition = {
     where: {
-      type: opts.type
+      type : opts.type,
+      $or : [
+        {
+          schedule : null
+        },
+        {
+          $and : [
+            {
+              schedule : {
+                $gte : (Date.now() / 1000 | 0) - 60 * 8 * 60
+              }
+            },
+            {
+              status : consts.TOUR_STATUS.FINISHED
+            }
+          ]
+        },
+        {
+          status : {
+            $ne : consts.TOUR_STATUS.FINISHED
+          }
+        }
+      ]
     },
     limit: length,
     offset: offset,
+    order : 'type ASC, status ASC, schedule ASC',
     raw: true,
-    attributes: ['tourType', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId']
+    attributes: ['tourType', 'type', 'status', 'tourId', 'fee', 'rule','icon', 'name', 'beginTime', 'endTime', ['numPlayer', 'count'], 'champion', 'registerTime', 'roundId', 'numMatch', 'numBoard','guild1', 'guild2', 'schedule']
   };
   if (opts.tourId){
     condition['where']['tourId'] = opts.tourId;
@@ -39,6 +59,10 @@ TourDao.getListTour = function (opts, cb) {
     .Tournament
     .findAll(condition)
     .map(function (tour) {
+      if (tour.type === consts.TOUR_TYPE.FRIENDLY){
+        tour['scale'] = util.format('%s bàn x %s trận', tour.numBoard, tour.numMatch);
+        tour['guild'] = [utils.JSONParse(tour.guild1), utils.JSONParse(tour.guild2)];
+      }
       console.log('tour : ', tour);
       return pomelo.app.get('mysqlClient')
         .TourSchedule
@@ -91,7 +115,6 @@ TourDao.getListTour = function (opts, cb) {
                       switch (tour.status) {
                         case consts.TOUR_STATUS.STARTED:
                         case consts.TOUR_STATUS.RUNNING:
-                          console.log('schedule : ', schedule);
                           if (schedule && schedule.show){
                             if (moment(schedule.matchTime * 1000).isAfter(moment())){
                               tour['text'] = 'Chờ thi đấu';
@@ -118,7 +141,7 @@ TourDao.getListTour = function (opts, cb) {
                           }else {
                             tour['text'] = 'Sắp diễn ra';
                             tour['remain'] = -1;
-                            tour['time'] = moment(tour.beginTime).format('HH:mm DD/MM');
+                            tour['time'] = moment(tour.schedule * 1000 || tour.beginTime).format('HH:mm DD/MM');
                           }
                       }
                       tour.prize = prize;
@@ -154,6 +177,12 @@ TourDao.getTour = function (opts, cb) {
       return utils.invokeCallback(cb, null, tour)
     })
 };
+
+TourDao.getTours = function (opts, cb) {
+  return pomelo.app.get('mysqlClient')
+    .Tournament
+    .findAll(opts)
+}
 
 TourDao.getTourProfile = function (opts, cb) {
   return pomelo.app.get('mysqlClient')

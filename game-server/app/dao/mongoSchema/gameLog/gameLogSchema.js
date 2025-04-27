@@ -30,7 +30,9 @@ var gameLogSchema = new Schema({
   },
   timeStart: {type: Date, default: Date.now},
   logs: {type: String, default: ''},
-  stringLogs : {type : String, default : ''}
+  stringLogs : {type : String, default : ''},
+  detailLog : {type : String, default : ''},
+  createdAt: { type: Date, default: Date.now, expires: '30d' }
 });
 
-module.exports = mongoose.model('GameLog', gameLogSchema);
+module.exports = mongoose.model('GameLog1', gameLogSchema);

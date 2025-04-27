@@ -10,14 +10,15 @@
 
 var Config = require('../config');
 var consts = require('../../consts/consts');
-var formula = require('../../consts/formula');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../util/redisKeyUtil');
 var lodash = require('lodash');
 var utils = require('../../util/utils');
-var Promise = require('bluebird');
 var TopDao = require('../../dao/topDao');
-var util = require('util');
+var TopupDao = require('../../dao/topupDao');
+var FriendDao = require('../../dao/friendDao');
+var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
 
 module.exports.type = Config.TYPE.FINISH_GAME;
 
@@ -61,7 +62,7 @@ typeMap[consts.WIN_TYPE.DRAW] = 'Draw';
 typeMap[consts.WIN_TYPE.GIVE_UP] = 'GiveUp';
 
 module.exports.process = function (app, type, param) {
-  if (!param.users || param.users.length!=2 || !param.boardInfo || !param.boardInfo.gameId) {
+  if (!param.users || param.users.length !== 2 || !param.boardInfo || !param.boardInfo.gameId) {
    console.error('wrong param finish game: ', param);
    return;
   }
@@ -70,17 +71,154 @@ module.exports.process = function (app, type, param) {
   var attr = gameName + 'Elo';
   var Achievement = pomelo.app.get('mysqlClient').Achievement;
 
+  var attrs = ['uid', 'userCount', attr];
+  var games = Object.keys(consts.UMAP_GAME_NAME);
+  games.forEach(function (game) {
+    var gameName = consts.UMAP_GAME_NAME[game];
+    attrs = attrs.concat([gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']);
+  });
+  try {
+    if (param.boardInfo.hallId !== consts.HALL_ID.MIEN_PHI) {
+      if (param.users[0].result.remain <= 1000) {
+        pomelo.app.get('statusService').pushByUids([param.users[0].uid], 'onNotifyOnline', {
+          instant: 1
+        });
+      }
+
+      if (param.users[1].result.remain <= 1000) {
+        pomelo.app.get('statusService').pushByUids([param.users[1].uid], 'onNotifyOnline', {
+          instant: 1
+        });
+      }
+    }
+  }catch (error){
+
+  }
+
   var user1Elo, user2Elo;
   var user1Index, user2Index;
   Achievement
     .findAll({
       where: {uid: {$in: [param.users[0].uid, param.users[1].uid]}},
-      attributes: ['uid', attr, gameName+'Win', gameName+'Lose', gameName+'Draw', gameName+'GiveUp']
+      attributes: attrs
     })
     .then(function(achievements) {
+
       achievements = achievements || [{uid: param.users[0].uid}, {uid: param.users[1].uid}];
-      user1Index = achievements[0].uid == param.users[0].uid ? 0 : 1;
+      user1Index = achievements[0].uid === param.users[0].uid ? 0 : 1;
       user2Index = user1Index ? 0 : 1;
+      
+      // check số ván chơi để tặng quà tân thủ
+      [0,1].forEach(function (i) {
+        var userIndex = achievements[i].uid === param.users[i].uid ? i : (i === 0 ? 1:0);
+
+        // nếu bỏ cuộc thì bỏ qua
+        if (param.users[userIndex].result.type === consts.WIN_TYPE.GIVE_UP) return;
+
+        var gameCount = 0;
+        games.forEach(function (game) {
+          var gameName = consts.UMAP_GAME_NAME[game];
+          gameCount += achievements[i][gameName+'Win'] || 0;
+          gameCount += achievements[i][gameName+'Lose'] || 0;
+          gameCount += achievements[i][gameName+'Draw'] || 0;
+        });
+        gameCount += 1;
+
+        if (gameCount > 2) {
+          gameCount = 0;
+          games.forEach(function (game) {
+            var gameName = consts.UMAP_GAME_NAME[game];
+            gameCount += achievements[i][gameName+'Win'] || 0;
+          });
+          if (param.users[userIndex].result.type === consts.WIN_TYPE.WIN) gameCount += 1;
+          else return;
+
+          if (gameCount < 3) return;
+        }
+        
+        if (!consts.NRU[gameCount]) return;
+        
+        if (consts.NRU[gameCount].xp) {
+          setTimeout(function() {
+            TopDao.add({
+              uid: achievements[i].uid,
+              attr: 'exp',
+              point: consts.NRU[gameCount].xp
+            });
+          }, 600);
+        }
+
+        if (consts.NRU[gameCount].gold) {
+          TopupDao.topup({
+            uid: achievements[i].uid,
+            type: consts.CHANGE_GOLD_TYPE.NRU,
+            gold: consts.NRU[gameCount].gold,
+            msg: 'Cộng gold NRU sau khi choi '+gameCount+' ván game, cộng '+consts.NRU[gameCount].xp+' xp'
+          });
+        }
+
+        if (consts.NRU[gameCount].item) {
+          ItemDao.donateItem(achievements[i].uid, consts.NRU[gameCount].item.id, consts.NRU[gameCount].item.duration);
+        }
+
+        if (consts.NRU[gameCount].friend) {
+          pomelo.app.get('redisCache').getAsync(redisKeyUtil.getCcuList())
+            .then(function (ccu) {
+              var ccuList = utils.JSONParse(ccu, []);
+              if (!ccu || !ccuList.length) return;
+
+              var friends = lodash.sampleSize(ccuList, consts.NRU[gameCount].friend);
+              
+              for (var j=0; j<friends.length; j++) {
+                FriendDao.request(achievements[i].uid, friends[j].uid);
+              }
+            });
+        }
+
+        if (consts.NRU[gameCount].msg) {
+          var msg = consts.NRU[gameCount].msg;
+          msg = msg.replace('${xp}', consts.NRU[gameCount].xp);
+          msg = msg.replace('${gold}', consts.NRU[gameCount].gold);
+          msg = msg.replace('${friend}', consts.NRU[gameCount].friend);
+          msg = msg.replace('${count}', gameCount);
+          NotifyDao.push({
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: 'Chúc mừng tân thủ',
+            msg: msg,
+            buttonLabel: 'OK',
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+            users: [achievements[i].uid],
+            image:  consts.NOTIFY.IMAGE.AWARD
+          });
+        }
+
+
+        // KM khi chơi game ở phòng miễn phí lần đầu tiên trong ngày
+        var freePromotion = pomelo.app.get('configService').getConfig().freePromotion;
+        if (param.users[userIndex].result.remain <= 1000
+          && achievements[i].userCount === 1
+          && freePromotion
+          && param.boardInfo.hallId === consts.HALL_ID.MIEN_PHI) {
+          pomelo.app.get('redisInfo').hgetAsync(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion')
+            .then(function(todayPromotion) {
+              if (todayPromotion) return;
+
+              pomelo.app.get('redisInfo').hset(redisKeyUtil.getPlayerInfoKey(achievements[i].uid), 'todayPromotion', '1');
+              NotifyDao.push({
+                type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+                title: 'Khuyến mại thêm '+freePromotion+'%!!!',
+                msg: 'Duy nhất hôm nay, tặng bạn KM thêm '+freePromotion+'%. Nạp ngay!!!',
+                buttonLabel: 'Nạp tiền',
+                command: {target: consts.NOTIFY.TARGET.GO_TOPUP},
+                scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
+                users: [achievements[i].uid],
+                image:  consts.NOTIFY.IMAGE.GOLD
+              });
+            });
+        }
+
+      });
 
       user1Elo = param.users[0].result['eloAfter'];
       user2Elo = param.users[1].result['eloAfter'];
@@ -128,10 +266,10 @@ module.exports.process = function (app, type, param) {
 
   // cộng exp
   var winIndex = false;
-  if (param.users[0].result.type == consts.WIN_TYPE.WIN) {
+  if (param.users[0].result.type === consts.WIN_TYPE.WIN) {
     winIndex = 0;
   }
-  else if (param.users[1].result.type == consts.WIN_TYPE.WIN) {
+  else if (param.users[1].result.type === consts.WIN_TYPE.WIN) {
     winIndex = 1;
   }
   if (winIndex !== false) {

@@ -9,6 +9,7 @@ var RedisKeyUtil = module.exports;
 
 
 var BOARD_LIST = 'cothu:boardlist';
+var LOCK_BOARD_KEY = 'cothu:lockBoard'
 var PLAYER_INFO_KEY = 'cothu:userInfo:{uid}';
 var PLAYER_FRIEND_KEY = 'cothu:friend:{uid}';
 var PLAYER_LEVEL_KEY = 'cothu:player:{username}:level';
@@ -53,10 +54,60 @@ var MISSION_STATUS = 'cothu:mission_status:%d';
 var INVITE_SOCIAL = 'cothu:invite_social:%d';
 var CHAT_GUILD_NAME = 'GUILD_{uid}';
 var LEAVE_GUILD = 'cothu:guild:leave:{uid}';
+var GUILD_DUEL_FAIL = 'cothu:guild:duel:fail:{guildId1}:{guildId2}';
+var GUILD_DUEL_SUCCESS = 'cothu:guild:duel:success:{guildId1}:{guildId2}';
 var USER_ACTION = 'cothu:action:{uid}';
+var IS_REVIEW_VERSION = 'cothu:isReview:{version}';
 
 var CCU_KEY = 'POMELO:CCU:count';
 var CCU_LIST = 'POMELO:CCU:list';
+
+RedisKeyUtil.getIsReviewVersion = function (version) {
+  return IS_REVIEW_VERSION.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      return version;
+    }
+  );
+};
+
+RedisKeyUtil.getLockBoardKey = function () {
+  return LOCK_BOARD_KEY
+}
+
+RedisKeyUtil.getGuildDuelFail = function (guildId1, guildId2) {
+  return GUILD_DUEL_FAIL.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      switch (u) {
+        case '{guildId1}':
+          return guildId1;
+        case '{guildId2}' :
+          return guildId2;
+        default :
+          return guildId1
+      }
+    }
+  );
+};
+
+RedisKeyUtil.getGuildDuelSuccess = function (guildId1, guildId2) {
+  return GUILD_DUEL_SUCCESS.replace(
+    /\{(\w+)\}/g,
+    function (u) {
+      switch (u) {
+        case '{guildId1}':
+          return guildId1;
+        case '{guildId2}' :
+          return guildId2;
+        default :
+          return guildId1
+      }
+    }
+  );
+};
+
+
 
 RedisKeyUtil.getLeaveGuild = function (uid) {
   return LEAVE_GUILD.replace(

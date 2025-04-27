@@ -8,7 +8,8 @@ module.exports = function(sequelize, DataTypes) {
     boardId : {
       type: DataTypes.STRING,
       allowNull: false,
-      primaryKey : true
+      primaryKey : true,
+      comment: 'Id của bàn chơi'
     },
     tourId : {
       type: DataTypes.INTEGER,
@@ -19,13 +20,17 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     index: {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      comment: 'index của bàn'
     },
     serverId : {
       type: DataTypes.STRING
     },
     stt : {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue : 0,
+      comment: 'trạng thái của bàn'
     },
     bet : {
       type: DataTypes.INTEGER
@@ -44,7 +49,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     score: {
       type: DataTypes.STRING,
-      defaultValue : '0 - 0'
+      defaultValue : '0 - 0',
+      comment: 'score'
     },
     win : {
       type: DataTypes.STRING,
@@ -76,6 +82,22 @@ module.exports = function(sequelize, DataTypes) {
     result : {
       type : DataTypes.INTEGER(4),
       defaultValue : 0
+    },
+    fameDelta1: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    fameDelta2: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    famePunish1: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
+    },
+    famePunish2: {
+      type: DataTypes.INTEGER(4),
+      defaultValue: 0
     },
     calPoint: {
       type: DataTypes.INTEGER(4),

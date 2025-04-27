@@ -19,5 +19,5 @@ var ConnectorRemote = function (app) {
  * @param cb
  */
 ConnectorRemote.prototype.kick = function (uid, cb) {
-  this.app.get('sessionService').kick(uid, Code.CONFLICT, cb);
+  return this.app.get('sessionService').kick(uid, Code.CONFLICT, cb);
 };

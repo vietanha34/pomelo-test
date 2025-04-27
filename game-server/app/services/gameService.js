@@ -88,10 +88,12 @@ GameService.prototype.setLanguage = function (cb) {
     .then(function (values) {
       var object = {};
       object['vi'] = {};
+      object['en'] = {}
       for (var i = 0, len = values.length; i < len; i++) {
         var value = values[i];
         var id = value.id;
-        object['vi'][id] = value['vi'];
+        object['vi'][id] = value['vi']
+        object['en'][id] = value['en']
       }
       self.language = null;
       self.language = object;

@@ -47,29 +47,12 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
   if (board.status === consts.BOARD_STATUS.FINISH || !board.players){
     return utils.invokeCallback(cb, null, { data : {ec : Code.FAIL, msg : "Ván đấu đã kết thúc"}})
   }
+  if (board.tourType !== consts.TOUR_TYPE.FRIENDLY){
+    opts.userInfo.role = consts.GUILD_MEMBER_STATUS.GUEST;
+  }
   ItemDao.checkEffect(opts.userInfo.uid,null)
     .then(function (effect) {
-      if (board.gameType === consts.GAME_TYPE.TOURNAMENT && board.tourType === consts.TOUR_TYPE.FRIENDLY){
-        // lấy thêm thông tin về tour của người chơi
-        return [
-          Promise.resolve(effect),
-          pomelo.app.get('mysqlClient')
-            .Guild
-            .findOne({
-              where : {
-
-              }
-            })
-        ]
-      }else {
-        return [Promise.resolve(effect)]
-      }
-    })
-    .spread(function (effect, guild) {
-      guild = guild || {};
       opts.effect = effect;
-      opts.guildId = guild.guildId;
-      console.log('state :', opts);
       var state = board.joinBoard(opts);
       if (state && !state.ec) {
         return utils.invokeCallback(cb, null,
@@ -80,6 +63,7 @@ GameRemote.prototype.joinBoard = function (tableId , opts, cb) {
       }
     })
     .catch(function (err) {
+      console.error('joinBoard err ; ', err);
       opts.effect = {};
       var state = board.joinBoard(opts);
       if (state && !state.ec) {
@@ -174,6 +158,14 @@ GameRemote.prototype.setBoard = function (boardId, msg, cb) {
   return utils.invokeCallback(cb)
 };
 
-GameRemote.prototype.createRoomTournament = function (opts, cb) {
-  
-}
+GameRemote.prototype.createRoomTournament = function (hallConfig, roomId, params, cb) {
+  var game = this.app.game;
+  return game.boardManager.createRoomTournament(hallConfig, roomId, params, cb);
+};
+
+GameRemote.prototype.createRoom = function (hallConfig, roomId, show, cb) {
+  console.log('handler gameRemote createRoom : ', arguments);
+  var game = this.app.game;
+  game.boardManager.createRoom(hallConfig, roomId, show);
+  return utils.invokeCallback(cb, null);
+};

@@ -2,13 +2,8 @@
  * Created by bi on 12/21/15.
  */
 
-var utils = require('../util/utils');
 var code = require('../consts/code');
-var Consts = require('../consts/consts');
-var UserDao = require('../dao/userDao');
-var Promise = require('bluebird');
 var pomelo = require('pomelo');
-var moment = require('moment');
 
 module.exports = function(app) {
 

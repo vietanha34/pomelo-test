@@ -2,13 +2,9 @@
  * Created by vietanha34 on 1/9/15.
  */
 
-var channelUtil = require('../../util/channelUtil');
 var pomelo = require('pomelo');
-var logger = require('pomelo-logger').getLogger('pomelo', __filename);
 var utils = require('../../util/utils');
-var async = require('async');
 var lodash = require('lodash');
-var Tour = require('./tour');
 var TourDao = require('../../dao/tourDao');
 var Promise = require('bluebird');
 var consts = require('../../consts/consts');
@@ -17,6 +13,9 @@ var Code = require('../../consts/code');
 var Notify = require('../../dao/notifyDao');
 var util = require('util');
 var moment = require('moment');
+var GuildDao = require('../../dao/GuildDao');
+var NotifyDao = require('../../dao/notifyDao')
+var redisKeyUtil = require('../../util/redisKeyUtil')
 
 
 var TourManager = function (opts) {
@@ -30,16 +29,16 @@ var TourManager = function (opts) {
 
 module.exports = TourManager;
 
-pro = TourManager.prototype;
+var pro = TourManager.prototype;
 
 pro.init = function () {
+  var self = this;
   if (this.status) return;
+  this.status = true
   var curServer = pomelo.app.curServer;
   // quét hệ thống xem có giải đấu nào sắp diễn ra k
-  if (curServer.serverType === this.serverType) {
-    setInterval(function () {
-
-    }, this.interval);
+  if (curServer.serverType !== this.serverType) {
+    return
   }
   return pomelo.app.get('mysqlClient')
     .Tournament
@@ -47,20 +46,23 @@ pro.init = function () {
       where: {
         status: {
           $ne: consts.TOUR_STATUS.FINISHED
-        }
+        },
       },
       raw: true
     })
     .each(function (tour) {
-      var tableConfig,  round;
-      if (!tour) return ;
+      var tableConfig, round;
+      if (!tour) return;
+      console.error('init tour : ', tour);
       return TourDao.getTourRound({
         where: {
           id: tour.roundId
         },
-        raw : true
+        raw: true
       })
-        .then(function (round) {
+        .then(function (r) {
+          console.error('init round : ', r);
+          round = r;
           if (!round || round.length < 1) return Promise.reject();
           round = round[0];
           return pomelo.app.get('mysqlClient')
@@ -73,6 +75,7 @@ pro.init = function () {
             })
         })
         .then(function (tc) {
+          console.error('init tableconfig : ', tc);
           tableConfig = tc;
           return TourDao.getTourTable({
             where: {
@@ -85,10 +88,57 @@ pro.init = function () {
           })
         })
         .each(function (table) {
+          return Promise.props({
+            player1: pomelo.app.get('mysqlClient').User.findOne({
+              where: {
+                uid: table.player1
+              },
+              raw: true
+            }),
+            player2: pomelo.app.get('mysqlClient').User.findOne({
+              where: {
+                uid: table.player2
+              },
+              raw: true
+            })
+          })
+            .then(function (data) {
+              console.error("create bàn chơi");
+              var player1 = data.player1;
+              var player2 = data.player2;
+              var dataCreateTable = {
+                gameId: table.gameId,
+                tourId: table.tourId,
+                roundId: tour.roundId,
+                boardId: table.boardId,
+                serverId: table.serverId,
+                groupId: table.groupId,
+                scheduleId: table.scheduleId,
+                matchTime: moment(table.matchTime).unix(),
+                matchPlay: tour.numMatch,
+                index: table.index,
+                battleType: round ? round.battleType : consts.TOUR_BATTLE_TYPE.THUY_SY,
+                tourType: tour.type,
+                tc : tableConfig
+              };
+              if (player1 && player2 && tour.type === consts.TOUR_TYPE.NORMAL) {
+                dataCreateTable['uid'] = [table.player1, table.player2];
+                dataCreateTable['username'] = [player1.username, player2.username];
+                dataCreateTable['fullname'] = [player1.fullname, player2.fullname];
+                var player = utils.JSONParse(table.player);
+                for (var i = 0, len = player.length; i < len; i++) {
+                  player[i].inBoard = 0;
+                }
+              } else {
+                player = [{}, {}];
+                dataCreateTable['guildId'] = [table.player1, table.player2];
+              }
+              dataCreateTable['player'] = player;
+              self.createTable(dataCreateTable);
+            });
           // tạo lại các bàn chơi chưa đc đấu
-
-        })
-    });
+        });
+    })
 };
 
 pro.matchMaking = function (tourId) {
@@ -142,7 +192,6 @@ pro.matchMaking = function (tourId) {
       ]
     })
     .spread(function (tc, groups, schedule) {
-      console.log('tc, groups, schedule : ', arguments);
       if (!tc) return Promise.reject({msg: "không có table config tương ứng"});
       if (!schedule) return Promise.reject({msg: "không có lượt đấu nào phù hợp"});
       if (schedule.matchMaking) return Promise.reject({msg: 'Đã tạo lượt đấu thành công'});
@@ -965,7 +1014,7 @@ pro.pickUser = function (tourId, prevRoundId, nextRoundId, numPlayer) {
     })
     .catch(function (err) {
       // cộng lại tiền cho người dùng
-      console.error('err : ', err);
+      console.error('pickUser err : ', err);
     })
 };
 
@@ -1035,7 +1084,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhất tại giải đấu "%s". Vui lòng truy cập đấu trường để xem thông tin chi tiết', data.first['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.first.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1043,12 +1092,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.first.uid,
           fullname: data.first['User.fullname'],
-          avatar: utils.JSONParse(data.first['User.avatar'], {id : 0, version: 0}),
-          sex : data.first['User.sex'],
+          avatar: utils.JSONParse(data.first['User.avatar'], {id: 0, version: 0}),
+          sex: data.first['User.sex'],
           stt: 1,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.first.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.first.uid,
+              fullname: data.first['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã vô địch giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.first['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.second) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1066,7 +1141,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải nhì tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.second['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.second.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1074,12 +1149,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.second.uid,
           fullname: data.second['User.fullname'],
-          avatar: utils.JSONParse(data.second['User.avatar'], {id : 0, version: 0}),
-          sex : data.second['User.sex'],
+          avatar: utils.JSONParse(data.second['User.avatar'], {id: 0, version: 0}),
+          sex: data.second['User.sex'],
           stt: 2,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.second.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.second.uid,
+              fullname: data.second['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về nhì giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.second['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.third) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1097,7 +1198,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.third['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.third.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1105,12 +1206,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.third.uid,
           fullname: data.third['User.fullname'],
-          avatar: utils.JSONParse(data.third['User.avatar'], {id : 0, version: 0}),
-          sex : data.third['User.sex'],
+          avatar: utils.JSONParse(data.third['User.avatar'], {id: 0, version: 0}),
+          sex: data.third['User.sex'],
           stt: 3,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.third.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.third.uid,
+              fullname: data.third['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về ba giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.third['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       if (data.four) {
         prizeIndex = lodash.findIndex(prizes, function (p) {
@@ -1128,7 +1255,7 @@ pro.finishTour = function (msg) {
           title: "Đấu trường",
           msg: util.format('Xin chúc mừng!! Tài khoản "%s" đã đạt giải ba tại giải đấu "%s". Vui lòng vào đấu trường để xem thông tin chi tiết', data.four['User.fullname'], tour.name),
           buttonLabel: "Ok",
-          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId : tourId},
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
           scope: consts.NOTIFY.SCOPE.USER, // gửi cho user
           users: [data.four.uid],
           image: consts.NOTIFY.IMAGE.NORMAL
@@ -1136,12 +1263,38 @@ pro.finishTour = function (msg) {
         champion.push({
           uid: data.four.uid,
           fullname: data.four['User.fullname'],
-          avatar: utils.JSONParse(data.four['User.avatar'], {id : 0, version: 0}),
-          sex : data.four['User.sex'],
+          avatar: utils.JSONParse(data.four['User.avatar'], {id: 0, version: 0}),
+          sex: data.four['User.sex'],
           stt: 3,
           text: prize.text || '',
           gold: prize.gold || 0
-        })
+        });
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              uid: data.four.uid,
+              role: {
+                $lte: consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+              }
+            },
+            include: [
+              {
+                model: pomelo.app.get('mysqlClient').Guild,
+                attributes: ['id']
+              }
+            ]
+          })
+          .then(function (member) {
+            if (!member) return;
+            GuildDao.addEvent({
+              guildId: member['Guild.id'],
+              uid: data.four.uid,
+              fullname: data.four['User.fullname'],
+              content: util.format('Chúc mừng %s [%s] đã về ba giải đấu "%s" ', consts.GUILD_MEMBER_STATUS_UMAP[member.role], data.four['User.fullname'], tour.name),
+              type: consts.GUILD_EVENT_TYPE.WIN_TOUR
+            })
+          })
       }
       pomelo.app.get('mysqlClient')
         .Tournament
@@ -1294,16 +1447,20 @@ pro.splitGroup = function (tourId, numGroup) {
 };
 
 pro.createTable = function (opts) {
+  console.error('tourManager createTable : ', opts);
   var hallConfigs = pomelo.app.get('dataService').get('hallConfig').data;
   var params = utils.clone(opts.tc);
   var hallConfig = hallConfigs['' + params.gameId + consts.HALL_ID.CAO_THU];
   params.username = opts.username;
   params.fullname = opts.fullname;
+  params.guildName = opts.guildName;
   params.uid = opts.uid;
   params.guildId = opts.guildId;
   params.timePlay = opts.matchTime * 1000;
   params.index = opts.index;
+  params.boardId = opts.boardId;
   params.tourId = opts.tourId;
+  params.matchPlay = opts.matchPlay || 3;
   params.battleType = opts.battleType;
   params.tourType = opts.tourType;
   params.mustWin = opts.battleType === consts.TOUR_BATTLE_TYPE.FACE_TO_FACE ? 1 : params.mustWin;
@@ -1318,15 +1475,15 @@ pro.createTable = function (opts) {
   return Promise.delay(0)
     .then(function () {
       var curServer = pomelo.app.curServer;
-      if (curServer.gameId = opts.gameId){
-        return game.boardManager.createRoomTournament(hallConfig, null, params);
-      }else {
-
+      if (curServer.gameId === opts.gameId) {
+        return pomelo.app.game.boardManager.createRoomTournament(hallConfig, null, params);
+      } else {
+        return Promise.promisify(pomelo.app.rpc.game.gameRemote.createRoomTournament.toServer)(utils.getServerIdFromServerIndex(opts.gameId * 10), hallConfig, null, params);
       }
     })
     .then(function (data) {
       console.log('createRoomTournament : ', data);
-      var opts = {
+      var createTableData = {
         boardId: data.boardId,
         serverId: data.serverId,
         gameId: opts.tc.gameId,
@@ -1339,12 +1496,12 @@ pro.createTable = function (opts) {
         tourId: opts.tourId,
         roundId: opts.roundId,
         matchTime: moment(opts.matchTime * 1000).toDate(),
-        player1: opts.uid[0],
-        player2: opts.uid[1],
-        player: opts.player || JSON.stringify([{},{}])
+        player1: opts.tourType === consts.TOUR_TYPE.FRIENDLY ? opts.guildId[0] : opts.uid[0],
+        player2: opts.tourType === consts.TOUR_TYPE.FRIENDLY ? opts.guildId[1] : opts.uid[1],
+        player: opts.player || JSON.stringify([{}, {}])
       };
-      console.log('createTourTable opts : ', opts);
-      return TourDao.createTable(opts);
+      console.log('createTourTable opts : ', createTableData);
+      return TourDao.createTable(createTableData);
     })
 };
 
@@ -1427,12 +1584,12 @@ pro.showTable = function (tourId, scheduleId) {
     where: {
       tourId: tourId
     },
-    attributes : ['name'],
+    attributes: ['name'],
     raw: true
   })
     .then(function (t) {
       tour = t;
-      if (!tour) return Promise.reject();
+      if (!tour) return Promise.reject({msg: "không có tour nào phù hợp"});
       return TourDao.getTourTable({
         where: {
           tourId: tourId,
@@ -1481,3 +1638,256 @@ pro.showTable = function (tourId, scheduleId) {
         })
     })
 };
+
+
+pro.finishTourFriendLy = function (tourId) {
+  var totalPoint = 0
+  return pomelo.app.get('mysqlClient').Tournament.update({
+    status : consts.TOUR_STATUS.FINISHED
+  },{
+    where : {
+      tourId : tourId
+    }
+  })
+    .then(function () {
+      return pomelo.app.get('mysqlClient').TourTable.findAll({
+        where : {
+          tourId : tourId
+        },
+        raw : true
+      })
+    })
+    .then(function (tables) {
+      var point = [0,0];
+      for (var i = 0, len = tables.length; i < len; i++){
+        var table = tables[i];
+        var score = table.score.split('-');
+        score = lodash.map(score, function (s) {
+          return parseFloat(s.trim());
+        });
+        point[0] += score[0];
+        point[1] += score[1];
+      }
+      totalPoint = point;
+      // tính toán kết quả
+      return [
+        pomelo.app.get('mysqlClient').Guild.findOne({
+          where: {
+            id : table.player1
+          },
+          raw : true
+        }),
+        pomelo.app.get('mysqlClient').Guild.findOne({
+          where :{
+            id : table.player2
+          },
+          raw : true
+        })
+      ]
+    })
+    .spread(function (guild1, guild2) {
+      var guild1Exp = 0;
+      var guild2Exp = 0;
+      if (totalPoint[0] > totalPoint[1]){
+        GuildDao.addEvent({
+          guildId: guild1.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Giành chiến thắng hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 50),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild1Exp= 50;
+        GuildDao.addEvent({
+          guildId: guild2.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Thua hội quán "%s" với tỷ số %s-%s, giành được %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 30),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild2Exp = 30;
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường giao hữu",
+            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Hội quán",
+            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.MARQUEE,
+          title: "Đấu trường",
+          msg: util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
+          scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
+          image: consts.NOTIFY.IMAGE.NORMAL
+        })
+      }else if (totalPoint[0] < totalPoint[1]){
+        GuildDao.addEvent({
+          guildId: guild2.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Giành chiến thắng hội quán "%s" với tỷ số: %s - %s, giành được %s điểm danh vọng', guild1.name, totalPoint[1],totalPoint[0], 50),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild1Exp = 30;
+        GuildDao.addEvent({
+          guildId: guild1.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Thua hội quán "%s" với tỷ số: %s - %s, giành được %s điểm danh vọng', guild2.name, totalPoint[0],totalPoint[1], 30),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild2Exp = 50;
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường giao hữu",
+            msg: util.format('Hội quán của bạn đã giành chiến thắng trước hội quán "%s" với tỷ số: %s - %s', guild1.name, totalPoint[1],totalPoint[0]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường giao hữu",
+            msg: util.format('Hội quán của bạn đã để thua hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.MARQUEE,
+          title: "Đấu trường",
+          msg: util.format('Chúc mừng hội quán "%s" đã giành chiến thắng trước hội quán "%s" với tỷ số %s-%s', guild2.name, guild1.name, totalPoint[1], totalPoint[0]),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
+          scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
+          image: consts.NOTIFY.IMAGE.NORMAL
+        })
+      }else {
+        GuildDao.addEvent({
+          guildId: guild2.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số %s-%s, giành được %s điểm', guild1.name, totalPoint[0],totalPoint[1], 40),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild1Exp = 40;
+        GuildDao.addEvent({
+          guildId: guild1.id,
+          uid: 1,
+          fullname: '1',
+          content: util.format('Giành kết quả hoà trước hội quán "%s" với tỷ số: %s - %s, giành được %s điểm', guild2.name, totalPoint[0],totalPoint[1], 40),
+          type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
+        });
+        guild2Exp = 40;
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild1.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường giao hữu",
+            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số: %s - %s', guild2.name, totalPoint[0],totalPoint[1]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        pomelo.app.get('chatService')
+          .sendMessageToGroup(redisKeyUtil.getChatGuildName(guild2.id), {
+            type: consts.NOTIFY.TYPE.NOTIFY_CENTER,
+            title: "Đấu trường giao hữu",
+            msg: util.format('Hội quán của bạn đã hoà hội quán "%s" với tỷ số : %s - %s', guild1.name, totalPoint[0],totalPoint[1]),
+            buttonLabel: "Ok",
+            command: {target: consts.NOTIFY.TARGET.NORMAL},
+            image: consts.NOTIFY.IMAGE.NORMAL
+          }, 'onNotify');
+        NotifyDao.push({
+          type: consts.NOTIFY.TYPE.MARQUEE,
+          title: "Đấu trường",
+          msg: util.format('Sau màn rượt đuổi tỷ số 2 hội quán "%s" và "%s" đã chấp nhận hoà nhau với tỷ số: %s - %s', guild1.name, guild2.name, totalPoint[0], totalPoint[1]),
+          buttonLabel: "Ok",
+          command: {target: consts.NOTIFY.TARGET.GO_TOURNAMENT, tourId: tourId},
+          scope: consts.NOTIFY.SCOPE.ALL, // gửi cho user
+          image: consts.NOTIFY.IMAGE.NORMAL
+        })
+      }
+      guild1.exp += guild1Exp;
+      guild2.exp += guild2Exp;
+      var promises = [];
+      var guildLevel = pomelo.app.get('dataService').get('guildLevel').data;
+      var values = lodash.values(guildLevel);
+      for (var i = 0, len = values.length; i < len; i++) {
+        var valueNext = values[i].nextLevel;
+        if (i) {
+          var value = values[i-1].nextLevel;
+        }else {
+          value = 0;
+        }
+        if (guild1.exp >= value && guild1.exp < valueNext && guild1.level !== i) {
+          promises.push(
+            pomelo.app.get('mysqlClient').Guild.update({
+              level : i
+            },{
+              where : {
+                id: guild1.id
+              }
+            })
+          );
+          // lên level
+        }
+        if (guild2.exp >= value && guild2.exp < valueNext && guild1.level !== i) {
+          // lên level
+          promises.push(
+            pomelo.app.get('mysqlClient').Guild.update({
+              level : i
+            },{
+              where : {
+                id: guild2.id
+              }
+            })
+          );
+        }
+      }
+      promises.push(pomelo.app.get('mysqlClient')
+        .Guild
+        .update({
+          exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild1Exp)
+        }, {
+          where: {
+            id : guild1.id
+          }
+        }));
+      promises.push(pomelo.app.get('mysqlClient')
+        .Guild
+        .update({
+          exp: pomelo.app.get('mysqlClient').sequelize.literal('exp + ' + guild2Exp)
+        }, {
+          where: {
+            id : guild2.id
+          }
+        }));
+      return promises;
+    })
+    .catch(function (error) {
+      console.error('events tournament friendly err : ', error);
+    })
+    .finally(function () {
+      pomelo.app.get('mysqlClient').TourTable.update({
+        status : consts.BOARD_STATUS.FINISH
+      },{
+        where : {
+          tourId : tourId
+        }
+      })
+    })
+}

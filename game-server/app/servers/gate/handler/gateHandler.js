@@ -1,3 +1,4 @@
+"use strict"
 var Code = require('../../../consts/code');
 var dispatcher = require('../../../util/dispatcher');
 var crc = require('crc');
@@ -6,6 +7,7 @@ var consts = require('../../../consts/consts');
 var shortId = require('shortid');
 var uuid = require('uuid');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
+var pomelo = require('pomelo');
 
 /**
  * Gate handler that dispatch user to connectors.
@@ -44,6 +46,20 @@ Handler.prototype.getServer = function (msg, session, next) {
   if (version < '20151210' && this.app.get('beta') && version !== '20150118'){
     next(null, { ec: Code.FAIL, msg : "Chương trình beta cờ thủ đã kết thúc. Bạn có thể cập nhật phần mềm để có những tính năng mới nhất"})
   }
+  if (msg.platform === consts.PLATFORM_ENUM.WEB) {
+    var connector = connectors.map(function (con) {
+      return {
+        host: con.privateHost || con.host,
+        port: con.clientPort
+      }
+    });
+    return next(null, {
+      connector: connector,
+      config: configService.getConfig(),
+      key: this.app.get('encryptConfig').key
+    })
+  }
+
   var link, type, message;
   var idSession = uuid.v4();
   var key = shortId.generate();
@@ -55,9 +71,17 @@ Handler.prototype.getServer = function (msg, session, next) {
       next(null, {ec : Code.FAIL})
     }
     else {
-      var config = configService.getConfig();
-      if (msg.packageName === 'com.chesscotuong.onekool' && msg.platform === 'android'){
-        config['IS_REVIEW'] = 1
+      var config = utils.clone(configService.getConfig());
+      // if (version === 11072018 && msg.platform === 'android'){
+      //   config['IS_REVIEW'] = 1;
+      //   pomelo.app.get('redisCache')
+      //     .set(redisKeyUtil.getIsReviewVersion(version), 1);
+      //   pomelo.app.get('redisCache')
+      //     .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
+      // }
+      if (version === '20180711' && (msg.platform === 'android' || msg.platform === 'ios')){
+         link = msg.platform === 'android' ? 'http://bit.ly/cothuad20180813' : 'http://bit.ly/cothuios20180813'
+        msg = 'Vui lòng cập nhật phiên bản mới để có trải nghiệm tốt nhất & bổ sung hệ thống nạp thẻ cào, ngân hàng'
       }
       var responseData = {
         ec : Code.OK,

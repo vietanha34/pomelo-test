@@ -9,6 +9,9 @@ var utils = require('../../util/utils');
 var consts = require('../../consts/consts');
 var UserDao = require('../../dao/userDao');
 var ItemDao = require('../../dao/itemDao');
+var NotifyDao = require('../../dao/notifyDao');
+var HomeDao = require('../../dao/homeDao');
+var DailyDao = require('../../dao/dailyDao');
 var moment = require('moment');
 
 module.exports.type = Config.TYPE.LOGIN;
@@ -32,6 +35,14 @@ module.exports.type = Config.TYPE.LOGIN;
 module.exports.process = function (app, type, param) {
   if (param.resume || !param.uid) return;
 
+  var fs = require('fs');
+  fs.appendFile("/home/anhlv/cothu/source/game-server/logs/logLogin.log", JSON.stringify(param) + '\n', function(err) {
+    if(err) {
+      return console.log(err);
+    }
+
+    console.log("The file was saved!");
+  });
   var theMoment = moment();
   var startOfDay = moment().startOf('day').unix();
   var startOfWeek = moment().startOf('isoweek').unix();
@@ -64,7 +75,7 @@ module.exports.process = function (app, type, param) {
 
       var userKey = redisKeyUtil.getPlayerInfoKey(param.uid);
       var multi = pomelo.app.get('redisInfo').multi();
-      multi.hdel([userKey, 'dailyReceived', 'todaySms', 'todayCard']);
+      multi.hdel([userKey, 'dailyReceived', 'todaySms', 'todayCard', 'todayPromotion', 'adsCount']);
 
       if (user.lastLogin <= startOfWeek)
         multi.hset(userKey, 'loginCount', '1');
@@ -75,6 +86,19 @@ module.exports.process = function (app, type, param) {
         if (e) {
           console.error(e.stack || e);
           utils.log(e.stack || e);
+        }
+        else {
+          setTimeout(function() {
+            pomelo.app.get('redisCache').getAsync(redisKeyUtil.getIsReviewVersion(param.version))
+              .then(function(isReview) {
+                if (isReview) {
+                  DailyDao.getGold(param.uid)
+                    .then(function(result) {
+                      HomeDao.pushInfo(param.uid, {userInfo: {gold: result.gold, dailyReceived: 1}});
+                    });
+                }
+              });
+          }, 3000);
         }
       });
 

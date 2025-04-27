@@ -14,10 +14,12 @@ module.exports = function(sequelize, DataTypes) {
     },
     name : {
       type : DataTypes.STRING,
-      allowNull : false
+      allowNull : false,
+      comment: "Tên giải đấu"
     },
     type : {
-      type : DataTypes.INTEGER
+      type : DataTypes.INTEGER,
+      comment: "loại giải đấu 1: giao hữu, 2:thường"
     },
     beginTime : {
       type : DataTypes.DATEONLY,
@@ -32,14 +34,16 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue : 0
     },
     fee : {
-      type : DataTypes.INTEGER
+      type : DataTypes.INTEGER,
+      comment: 'tiền cược'
     },
     registerTime : {
       type: DataTypes.DATE
     },
     status : {
       type : DataTypes.INTEGER,
-      defaultValue : consts.TOUR_STATUS.PRE_START
+      defaultValue : consts.TOUR_STATUS.PRE_START,
+      comment: 'trạng thái 1: sắp diễn ra 2: đang diễn ra, 3: đã kết thúc'
     },
     tourType: {
       type: DataTypes.INTEGER
@@ -58,7 +62,8 @@ module.exports = function(sequelize, DataTypes) {
       comment : 'champion'
     },
     rule: {
-      type: DataTypes.STRING
+      type: DataTypes.STRING,
+      comment: 'luật chơi game'
     },
     fund : {
       type: DataTypes.INTEGER,
@@ -68,11 +73,37 @@ module.exports = function(sequelize, DataTypes) {
     resultString: {
       type: DataTypes.STRING
     },
+    numMatch : {
+      type: DataTypes.INTEGER
+    },
+    numBoard : {
+      type : DataTypes.INTEGER
+    },
+    guild1 : {
+      type : DataTypes.STRING,
+      comment: 'thông tin hội quán 1'
+    },
+    guild2 : {
+      type : DataTypes.STRING,
+      comment: 'thông tin hội quán 2'
+    },
+    guildId1 : {
+      type : DataTypes.INTEGER
+    },
+    guildId2: {
+      type : DataTypes.INTEGER
+    },
     info: {
       type : DataTypes.TEXT
     },
     schedule : {
-      type : DataTypes.TEXT
+      type: DataTypes.INTEGER,
+      comment: 'Thời gian diễn ra dạng timestamp'
+    },
+    numTableFinish: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      comment: 'số lượng bàn đấu đã kết thúc'
     }
   }, {
     classMethods: {

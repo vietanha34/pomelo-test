@@ -31,7 +31,7 @@ var pro = Handler.prototype;
 
 pro.getListFormation = function (msg, session, next) {
   var offset = msg.offset || 0;
-  var length = msg.length || 10;
+  var length = 1000;
   var self = this;
   Promise.delay(0)
     .then(function () {
@@ -72,7 +72,7 @@ pro.getListFormation = function (msg, session, next) {
       return next(null, {formations: result, offset: offset, length: formations.length, total: count, version : version});
     })
     .catch(function (err) {
-      console.error('err: ', err);
+      console.error('getListFormation err: ', err);
     })
 };
 
@@ -117,7 +117,7 @@ pro.changeFormation = function (msg, session, next) {
     })
     .catch(function (err) {
       //logger.error('err : ', err);
-      console.error('err: ', err);
+      console.error('changeFormation err: ', err);
     })
     .finally(function () {
       board = null;

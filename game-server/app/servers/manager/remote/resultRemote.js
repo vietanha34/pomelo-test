@@ -12,6 +12,7 @@ var request = require('request');
 var Code = require('../../../consts/code');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
+var util = require('util');
 
 module.exports = function (app) {
   return new ResultRemote(app);
@@ -59,7 +60,7 @@ var pro = ResultRemote.prototype;
  */
 
 pro.management = function (logs, cb) {
-  console.log('manager : ', logs);
+  console.log('manager : ', util.inspect(logs,{depth : null}));
   var self = this;
   utils.invokeCallback(cb, null, {});
   // TODO , Đồng bộ dữ liệu
@@ -78,7 +79,10 @@ pro.management = function (logs, cb) {
     self.app.rpc.event.eventRemote.emit(null, self.app.get('emitterConfig').FINISH_GAME , logs, function () {});
   });
   if ([consts.GAME_ID.CO_TUONG, consts.GAME_ID.CO_UP, consts.GAME_ID.CO_VUA, consts.GAME_ID.CO_THE].indexOf(logs.boardInfo.gameId) > -1){
-    var GameLog = this.app.get('mongoClient').model('GameLog');
+    var GameLog = this.app.get('mongoClient').model('GameLog1');
+    if (logs.logs && logs.logs.status && logs.logs.status.boards) {
+      
+    }
     console.log(logs.logs);
     var log = new GameLog(logs.logs);
     log.save(function (err) {

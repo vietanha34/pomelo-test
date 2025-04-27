@@ -3,13 +3,7 @@
  */
 
 var pomelo = require('pomelo');
-var consts = require('../consts/consts');
 var utils = require('../util/utils');
-var Code = require('../consts/code');
-var Promise = require('bluebird');
-var redisKeyUtil = require('../util/redisKeyUtil');
-var regexValidUtil = require('../util/regexValid');
-var lodash = require('lodash');
 var moment = require('moment');
 var NewsDao = module.exports;
 var initCache = require('sequelize-redis-cache');
@@ -60,16 +54,18 @@ NewsDao.getList = function getList(uid, cate, cb) {
  * @param cb
  * @returns {*}
  */
-NewsDao.getNews = function getNews(uid, id, type, cb) {
+NewsDao.getNews = function getNews(uid, id, type, langCode, cb) {
   if (!uid || !id) {
     return utils.invokeCallback(cb, 'invalid param get news detail');
   }
-
+  langCode = langCode || 'vi'
   var where = {};
   if (!type)
     where.id = id;
-  else
+  else {
     where.cate = id;
+    where.langCode = langCode
+  }
 
   return cacher('News')
     .ttl(NewsDao.CONFIG.CACHE_TIME)

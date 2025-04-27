@@ -423,7 +423,7 @@ var login = function (req, res) {
           .zadd('onlineUser:oldVersion', Date.now(), data.uname, function (e, r) {
             if (!e) {
               res.json(this.result).end();
-            } else {
+            } else {b
               return res.json({code: 1, message: 'Bạn đang đăng nhập trên phiên bản cờ thủ mới', data: {}}).end();
             }
           }.bind({result: result}));

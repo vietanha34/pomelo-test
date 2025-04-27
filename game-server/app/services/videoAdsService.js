@@ -2,13 +2,11 @@
  * Created by vietanha34 on 5/12/15.
  */
 
-var async = require('async');
 var Code = require('../consts/code');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var pomelo = require('pomelo');
 var rp = require('request-promise');
-var qs = require('querystring');
 
 var VideoAdsService = function (app, opts) {
   this.app = app;
@@ -17,7 +15,7 @@ var VideoAdsService = function (app, opts) {
 VideoAdsService.prototype.getAds = function (opts, cb) {
   return rp({
     uri: 'http://10.2.10.88:8090/ads/get',
-    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.PR_ID},
+    qs: {username: opts.username || 'laanhdo', platform: opts.platform, appId: consts.PR_ID, version: opts.version || 'default'},
     json: true,
     timeout: 5000
   })
@@ -73,13 +71,16 @@ VideoAdsService.prototype.available = function (platform, cb) {
                 return utils.invokeCallback(cb, null, '[]')
               }
             }
+            else {
+              return utils.invokeCallback(cb, null, '[]');
+            }
           })
       }
     })
     .catch(function (err) {
       console.error(err);
       utils.log(err);
-      return utils.invokeCallback(cb, null, JSON.stringify([]));
+      return utils.invokeCallback(cb, null, '[]');
     })
 };
 

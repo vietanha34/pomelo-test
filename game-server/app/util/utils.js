@@ -552,3 +552,28 @@ utils.getGameIdUser = function (app, list) {
   });
   return false;
 };
+
+utils.getServerIndexFromServerId = function (serverId) {
+  try {
+    var tmp = serverId.split('-');
+    if (tmp.length == 3) {
+      return parseInt(tmp[2]);
+    }
+    else {
+      return null;
+    }
+  }
+  catch (err) {
+    return null
+  }
+};
+
+utils.autoParse = function(body, response) {
+  // FIXME: The content type string could contain additional values like the charset.
+  if (response.headers['content-type'] === 'application/json') {
+    response.body = utils.JSONParse(body, {});
+    return response
+  } else {
+    return response;
+  }
+};

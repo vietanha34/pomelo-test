@@ -7,9 +7,7 @@ var async = require('async');
 var utils = require('../../../util/utils');
 var Code = require('../../../consts/code');
 var consts = require('../../../consts/consts');
-var TopupDao = require('../../../dao/topupDao');
 var Promise = require('bluebird');
-var NotifyDao = require('../../../dao/notifyDao');
 var pomelo = require('pomelo');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var TourDao = require('../../../dao/tourDao');
@@ -39,10 +37,8 @@ var Handler = function (app) {
  */
 Handler.prototype.getListTour = function (msg, session, next) {
   msg.uid = session.uid;
-  console.error('handler getListTour');
   return TourDao.getListTour(msg)
     .then(function (tours) {
-      console.error('getListTour : ', tours)
       tours.type = msg.type;
       return utils.invokeCallback(next, null, tours)
     })
@@ -105,12 +101,11 @@ Handler.prototype.getTourGroup = function (msg, session, next) {
           if (schedule && schedule.show){
             if (moment(schedule.matchTime * 1000).isAfter(moment())){
               data['text'] = 'Chờ thi đấu';
-              //tour['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
-              data['remain'] = 10;
+              tour['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
               data['time'] = moment(schedule.matchTime * 1000).format('HH:mm MM:DD');
             }else if (moment(schedule.matchTime * 1000).add(4, 'hours').isAfter(moment())){
               data['text'] = 'Đang thi đấu';
-              data['time'] = moment(tour.schedule.matchTime).format('HH:mm MM:DD');
+              data['time'] = moment(schedule.matchTime).format('HH:mm MM:DD');
               data['remain'] = moment(schedule.matchTime * 1000).add(4, 'hours').diff(moment(), 'second');
             }else {
               data['text'] = 'Chờ tính điểm';
@@ -280,7 +275,8 @@ Handler.prototype.getTour = function (msg, session, next) {
             }
           },
           raw: true,
-          attributes: ['boardId']
+          attributes: ['boardId'],
+          order: '`TourTable`.`index` ASC'
         })
           .then(function (table) {
             var boardId;
@@ -463,24 +459,51 @@ Handler.prototype.getTourRank = function (msg, session, next) {
  */
 Handler.prototype.getTourTable = function (msg, session, next) {
   var tourId = msg.tourId;
-  var tourRound;
+  var tour;
+  var tourRound = {battleType : consts.TOUR_BATTLE_TYPE.THUY_SY};
+  var schedule, guildBattle;
   return TourDao.getTour({
     where: {
       tourId: tourId
     },
     raw: true
   })
-    .then(function (tour) {
+    .then(function (t) {
+      tour = t;
       if (!tour) {
         return Promise.reject({ec: Code.FAIL, msg: 'Không có đấu trường này'})
       }
       if (tour.type === consts.TOUR_TYPE.FRIENDLY) {
-        return TourDao.getTourTable({
-          where: {
-            tourId: tour.tourId
-          },
-          raw: true
-        })
+        return pomelo.app.get('mysqlClient')
+          .TourSchedule
+          .findOne({
+            where : {
+              roundId : tour.roundId
+            },
+            raw : true,
+            order : 'matchTime DESC'
+          })
+          .then(function (sch) {
+            schedule = sch;
+            return pomelo.app.get('mysqlClient')
+              .GuildBattle
+              .findOne({
+                where : {
+                  tourId : tourId
+                },
+                raw : true
+              })
+          })
+          .then(function (battle) {
+            guildBattle = battle;
+            return TourDao.getTourTable({
+              where: {
+                tourId: tour.tourId
+              },
+              raw: true,
+              order : "`TourTable`.`index` ASC"
+            })
+          })
       } else {
         return TourDao.getTourRound({
           where: {
@@ -552,7 +575,63 @@ Handler.prototype.getTourTable = function (msg, session, next) {
         }
         return data;
       });
-      return next(null, {table: tables, groupId: msg.groupId, tourId: msg.tourId, battleType: tourRound.battleType})
+      if (tour.type === consts.TOUR_TYPE.FRIENDLY){
+        var guild1 = utils.JSONParse(tour.guild1,{});
+        var guild2 = utils.JSONParse(tour.guild2,{});
+        var data = {
+          table: tables,
+          groupId: msg.groupId,
+          tourId: msg.tourId,
+          result : [guild1.name, '' + guildBattle.guildScore1 + ' - ' + guildBattle.guildScore2, guild2.name],
+          battleType: tourRound.battleType,
+          isFriendly : tour.type === consts.TOUR_TYPE.FRIENDLY ? 1 : 0,
+          name : tour.name
+        };
+        switch (tour.status) {
+          case consts.TOUR_STATUS.STARTED:
+          case consts.TOUR_STATUS.RUNNING:
+            if (schedule && schedule.show){
+              if (moment(schedule.matchTime * 1000).isAfter(moment())){
+                data['text'] = 'Chờ thi đấu';
+                data['remain'] = moment(schedule.matchTime * 1000).diff(moment(), 'second');
+                data['time'] = moment(schedule.matchTime * 1000).format('HH:mm DD/MM');
+              }else if (moment(schedule.matchTime * 1000).add(4, 'hours').isAfter(moment())){
+                data['text'] = 'Đang thi đấu';
+                data['remain'] = moment(schedule.matchTime * 1000).add(4, 'hours').diff(moment(), 'second');
+              }else {
+                data['text'] = 'Chờ tính điểm';
+                data['time'] = '--:--'
+              }
+            }else {
+              data['text'] = 'Đang xếp cặp';
+              data['time'] = '--:--';
+            }
+            break;
+          case consts.TOUR_STATUS.PRE_START:
+            if (moment(tour.registerTime).isAfter(moment())){
+              data['text'] = 'Nhận đăng kí';
+              data['remain'] = moment(tour.registerTime).diff(moment(), 'second');
+              data['time'] = moment(tour.registerTime).format('HH:mm DD/MM');
+            }else {
+              data['text'] = 'Sắp diễn ra';
+              data['remain'] = -1;
+              data['time'] = moment(tour.schedule * 1000).format('HH:mm DD/MM');
+            }
+            break;
+          case consts.TOUR_STATUS.FINISHED:
+          default :
+            data['text'] = 'Đã kết thúc';
+            data['time'] = moment(tour.schedule * 1000).format('HH:mm DD/MM');
+        }
+        return next(null, data)
+      }else {
+        return next(null, {
+          table: tables,
+          groupId: msg.groupId,
+          tourId: msg.tourId,
+          battleType: tourRound.battleType
+        })
+      }
     })
     .catch(function (err) {
       if (err){
@@ -562,6 +641,10 @@ Handler.prototype.getTourTable = function (msg, session, next) {
           msg: err.msg || 'Không thể lấy danh sách bàn vào thời điểm này'
         })
       }
+    })
+    .finally(function () {
+      tour = null;
+      schedule = null;
     })
 };
 

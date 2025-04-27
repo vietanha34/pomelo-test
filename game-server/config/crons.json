@@ -3,12 +3,18 @@
     "worker":[
       {"id":1, "serverId":"worker-server-1", "time": "0 0,10,20,30,40,50 * * * *", "action": "workerCron.loadDailyConfig"},
       {"id":2, "serverId":"worker-server-1", "time": "0 5,15,25,35,45,55 * * * *", "action": "workerCron.loadPaymentConfig"}
+    ],
+    "tournament": [
+      {"id":1, "serverId":"tournament-server-1", "time": "0 0 * * * *", "action": "tournamentCron.finishTourFriendLy"}
     ]
   },
   "production":{
     "worker":[
       {"id":1, "serverId":"worker-server-1", "time": "0 0,10,20,30,40,50 * * * *", "action": "workerCron.loadDailyConfig"},
       {"id":2, "serverId":"worker-server-1", "time": "0 5,15,25,35,45,55 * * * *", "action": "workerCron.loadPaymentConfig"}
+    ],
+    "tournament": [
+      {"id":1, "serverId":"tournament-server-1", "time": "0 0 * * * *", "action": "tournamentCron.finishTourFriendLy"}
     ]
   }
 }

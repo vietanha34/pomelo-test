@@ -40,7 +40,7 @@ Handler.prototype.getNews = function (msg, session, next) {
 };
 
 Handler.prototype.getNewsByCate = function (msg, session, next) {
-  NewsDao.getNews(session.uid, msg.cate, 1)
+  NewsDao.getNews(session.uid, msg.cate, 1, msg.langCode)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })

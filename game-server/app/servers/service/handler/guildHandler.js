@@ -2,7 +2,6 @@
  * Created by vietanha34 on 1/14/16.
  */
 
-var async = require('async');
 var utils = require('../../../util/utils');
 var Code = require('../../../consts/code');
 var pomelo = require('pomelo');
@@ -15,6 +14,7 @@ var util = require('util');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var ActionDao = require('../../../dao/actionDao');
 var NotifyDao = require('../../../dao/notifyDao');
+var moment = require('moment');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -82,7 +82,6 @@ Handler.prototype.getGuildResource = function (msg, session, next) {
       return GuildDao.getResource(roleId, permission, resourceId);
     })
     .then(function (resource) {
-      console.log('resource : ', resource);
       resource.isPopup = msg.isPopup;
       resource.guildId = guildId;
       return utils.invokeCallback(next, null, resource);
@@ -119,6 +118,8 @@ Handler.prototype.updateGuild = function (msg, session, next) {
     .then(function (resource) {
       resource = resource || {};
       resource.guildId = guildId;
+      resource = utils.merge_options(resource, msg);
+      delete resource.__route__;
       return utils.invokeCallback(next, null, resource);
     })
     .catch(function (err) {
@@ -192,7 +193,6 @@ Handler.prototype.getListGuild = function (msg, session, next) {
       return utils.invokeCallback(next, null, {data: [], offset: 0, length: 0, keyword: msg.keyword});
     })
 };
-
 
 Handler.prototype.updateMember = function (msg, session, next) {
   var uid = session.uid;
@@ -320,7 +320,6 @@ Handler.prototype.updateMember = function (msg, session, next) {
       return GuildDao.updateMember(roleId, permission, msg);
     })
     .then(function (resource) {
-      console.log('resource : ', resource);
       resource = resource || {};
       resource.guildId = guildId;
       resource.type = msg.type;
@@ -354,6 +353,20 @@ Handler.prototype.updateMember = function (msg, session, next) {
             GuildDao.updateGuild(roleId, {}, {
               numMember: pomelo.app.get('mysqlClient').sequelize.literal('numMember + ' + 1)
             });
+            Promise.promisify(pomelo.app.get('statusService').getSidsByUid, { context : pomelo.app.get('statusService')})(currentUid)
+              .then(function (list) {
+                if (!lodash.isArray(list) || list.length === 0) return;
+                pomelo.app.get('backendSessionService').getByUid(list[0], currentUid, function (err, backendService) {
+                  if (backendService && backendService.length > 0){
+                    var session = backendService[0];
+                    session.set('guild', {
+                      id : guildId,
+                      role : consts.GUILD_MEMBER_STATUS.NORMAL_MEMBER
+                    });
+                    session.push('guild');
+                  }
+                });
+              });
             // remove trong list invite
             resource.member = [{
               uid: currentUid,
@@ -393,6 +406,17 @@ Handler.prototype.updateMember = function (msg, session, next) {
                 type: consts.GUILD_EVENT_TYPE.LEAVE_GUILD
               });
             }
+            Promise.promisify(pomelo.app.get('statusService').getSidsByUid, { context : pomelo.app.get('statusService')})(currentUid)
+              .then(function (list) {
+                if (!lodash.isArray(list) || list.length === 0) return;
+                return pomelo.app.get('backendSessionService').getByUid(list[0], currentUid, function (err, backendService) {
+                  if (backendService && backendService.length > 0){
+                    var session = backendService[0];
+                    session.set('guild', {});
+                    session.push('guild');
+                  }
+                });
+              });
             pomelo.app.get('redisCache').set(redisKeyUtil.getLeaveGuild(currentUid), 1);
             pomelo.app.get('redisCache').expire(redisKeyUtil.getLeaveGuild(currentUid),24 * 60 * 60);
             resource.member = [{uid: currentUid, role: consts.GUILD_MEMBER_STATUS.GUEST}];
@@ -438,9 +462,16 @@ Handler.prototype.updateMember = function (msg, session, next) {
               guildId: guildId,
               uid: session.uid,
               fullname: resource.fullname,
-              content: util.format('[%s] Nhường chức cho người chơi [%s]', resource.member ? resource.member[0].fullname : '', resource.member ? resource.member[1].fullname : ''),
+              content: util.format('[%s] Nhường chức hội chủ cho người chơi [%s]', resource.member ? resource.member[0].fullname : '', resource.member ? resource.member[1].fullname : ''),
               type: consts.GUILD_EVENT_TYPE.JOIN_GUILD
             });
+            ActionDao.getAction({ type : consts.ACTION_ID.TOURNAMENT_DUEL}, uid)
+              .then(function (actions) {
+                for (var i = 0, len = actions.length; i < len; i ++){
+                  var action = actions[i];
+                  ActionDao.addAction(action, currentUid)
+                }
+              })
         }
       }
       return utils.invokeCallback(next, null, resource);
@@ -701,6 +732,7 @@ Handler.prototype.duel = function (msg, session, next) {
   var roleId;
   var guildId;
   var member;
+  var guild;
   var fullname = session.get('fullname');
   return getRole(uid)
     .then(function (user) {
@@ -714,31 +746,97 @@ Handler.prototype.duel = function (msg, session, next) {
       return getPermission(role, 1);
     })
     .then(function (permission) {
+      if (msg.bet < 10000){
+        return Promise.reject({ec :Code.FAIL, msg : "Tiền cược bàn phải lớn hơn hoặc bằng 10000"})
+      }
+      if (guildId === msg.guildId){
+        return Promise.reject({ec :Code.FAIL, msg : "Bạn không thể khiêu chiến với chính hội quán của mình"})
+      }
+      if (msg.time - Date.now() < 4 * 60 * 60 * 1000 ){
+        return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại ít nhất 4 tiếng"});
+      }
+      if (msg.time - Date.now() > 7 * 24 * 60 * 60 * 1000){
+        return Promise.reject({ec :Code.FAIL, msg : "Thời gian thi đấu cần cách thời điểm hiện tại không quá 7 ngày"});
+      }
       if (roleId.role === consts.GUILD_MEMBER_STATUS.PRESIDENT) {
-        return [
-          pomelo.app.get('mysqlClient')
-            .Guild
-            .findOne({
-              where: {
-                id: guildId
+        return [pomelo.app.get('mysqlClient')
+          .GuildBattle
+          .count({
+            where : {
+              guildId1 : guildId,
+              time  : {
+                $gte : new Date()
               },
-              raw: true,
-              attributes: ['name', 'id']
+              allow : null
+            }
+          }), pomelo.app.get('mysqlClient')
+            .GuildBattle
+            .count({
+            where : {
+              guildId1 : guildId,
+              guildId2 : msg.guildId,
+              time  : {
+                $gte : new Date()
+              },
+              allow : null
+            }
+          }),
+          pomelo.app.get('mysqlClient')
+            .GuildBattle
+            .findOne({
+              where : {
+                $or : [
+                  {
+                    guildId1 : msg.guildId
+                  },
+                  {
+                    guildId2 : msg.guildId
+                  }
+                ],
+                allow : 1
+              },
+              attributes : ['time'],
+              order : 'createdAt DESC'
             }),
           pomelo.app.get('mysqlClient')
-            .Guild
+            .GuildBattle
             .findOne({
-              where: {id: msg.guildId},
-              raw: true
+              where : {
+                $or : [
+                  {
+                    guildId1 : guildId
+                  },
+                  {
+                    guildId2 : guildId
+                  }
+                ],
+                allow : 1
+              },
+              attributes : ['time'],
+              order : 'createdAt DESC'
             }),
+          pomelo.app.get('redisCache')
+            .ttlAsync(redisKeyUtil.getGuildDuelFail(guildId, msg.guildId)),
+          pomelo.app.get('redisCache')
+            .ttlAsync(redisKeyUtil.getGuildDuelSuccess(guildId, msg.guildId)),
           pomelo.app.get('mysqlClient')
-            .GuildMember
+            .GuildBattle
             .findOne({
               where: {
-                guildId: msg.guildId,
-                role: consts.GUILD_MEMBER_STATUS.PRESIDENT
+                $or : [
+                  {
+                    guildId1: guildId,
+                    guildId2: msg.guildId
+                  },
+                  {
+                    guildId2: guildId,
+                    guildId1: msg.guildId
+                  }
+                ],
+                allow : 1
               },
-              raw: true
+              attributes : ['time'],
+              order : 'createdAt DESC'
             })
         ]
       } else {
@@ -748,12 +846,77 @@ Handler.prototype.duel = function (msg, session, next) {
         })
       }
     })
+    .spread(function (count, guildCount, guildTargetBattle, guildCurrentBattle, timeoutFail, timeoutSuccess, recentBattle) {
+      if (count >= 5){
+        return Promise.reject({ec: Code.FAIL, msg: "Hội quán của bạn không được gửi quá 3 lời mời khiêu chiến hội quán khác"})
+      }
+
+      if (guildCount >= 1){
+        return Promise.reject({ec: Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
+      }
+      var time = (msg.time / 1000 | 0)
+      var targetTime = guildTargetBattle ? moment(guildTargetBattle.time).unix() : 0 
+      var currentTime = guildCurrentBattle ? moment(guildCurrentBattle.time).unix() : 0 
+      var timeDelay = 60 * 4 * 60
+      if (guildTargetBattle && targetTime + timeDelay > time && targetTime - timeDelay < time){
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối phương đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildTargetBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
+      }
+      if (guildCurrentBattle && currentTime + timeDelay > time && currentTime - timeDelay < time){
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán của bạn đang trong thời gian thi đấu, vui lòng gửi lời mời thi đấu sau thời gian %s", moment(guildCurrentBattle.time).add(4, 'hours').format('HH:mm DD/MM'))})
+      }
+      if (timeoutFail > 0){
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Hội quán đối thủ vừa từ chối yêu cầu của bạn, vui lòng đợi %s nữa để gửi lời mời khác", moment().add(timeoutFail, 'seconds').from(moment(), true))})
+      }
+      if (timeoutSuccess > 0){
+        return Promise.reject({ec :Code.FAIL, msg : util.format("Hai hội quán vừa giao hữu thành công, vui lòng đợi %s nữa để gửi lời mời khác", moment().add(timeoutSuccess, 'seconds').from(moment(), true))})
+      }
+
+      if (recentBattle && time - moment(recentBattle.time).unix() < 7 * 24 * 60 * 60) {
+        return Promise.reject({ec : Code.FAIL, msg: util.format("Thời gian giãn cách để mời lại đối thủ là 7 ngày. Hội quán bạn vừa thách đấu hội quán này vào lúc '%s' ", moment(recentBattle.time).format('mm:HH DD/MM/YYYY'))})
+      }
+      
+      return [
+        pomelo.app.get('mysqlClient')
+          .Guild
+          .findOne({
+            where: {
+              id: guildId
+            },
+            raw: true,
+            attributes: ['name', 'id', 'gold', 'numMember']
+          }),
+        pomelo.app.get('mysqlClient')
+          .Guild
+          .findOne({
+            where: {id: msg.guildId},
+            raw: true
+          }),
+        pomelo.app.get('mysqlClient')
+          .GuildMember
+          .findOne({
+            where: {
+              guildId: msg.guildId,
+              role: consts.GUILD_MEMBER_STATUS.PRESIDENT
+            },
+            raw: true
+          })
+      ]
+    })
     .spread(function (currentGuild, targetGuild, president) {
+      msg.opponent = currentGuild ? currentGuild.name : '';
+      if (currentGuild.gold < msg.numBoard * msg.numMatch * msg.bet){
+        return Promise.reject({ ec: Code.FAIL, msg : util.format("Hội quán của bạn cần tối thiểu %s gold quỹ hội, để có thể khiêu chiến %s bàn x %s trận với số gold mỗi trân là %s", msg.numBoard * msg.numMatch * msg.bet, msg.numBoard, msg.numMatch, msg.bet)})
+      }
+      if (currentGuild.numMember < msg.numBoard){
+        return Promise.reject({ ec: Code.FAIL, msg : util.format("Hội quán của bạn cần tối thiểu %s thành viên để khiêu chiến với số bàn là %s", msg.numBoard, msg.numBoard )})
+      }
       if (!targetGuild) {
         return Promise.reject({ec: Code.FAIL, msg: 'Không có hội quán nào để khiêu chiến'})
       } else {
         msg.id = Date.now();
         msg.type = consts.ACTION_ID.TOURNAMENT_DUEL;
+        msg.currentGuildId = currentGuild.id;
+        msg.targetGuildId = targetGuild.id;
         GuildDao.addEvent({
           guildId: currentGuild.id,
           uid: session.uid,
@@ -768,21 +931,34 @@ Handler.prototype.duel = function (msg, session, next) {
           content: util.format('Nhận được một lời mời khiêu chiến từ hội quán [%s]', currentGuild.name),
           type: consts.GUILD_EVENT_TYPE.CHALLENGE_GUILD
         });
+        next(null, { ec : Code.FAIL, msg : "Đã gửi lời thách đấu thành công đến hội quán này"});
+        pomelo.app.get('mysqlClient')
+          .GuildBattle
+          .create({
+            actionId : msg.id,
+            guildId1 : msg.currentGuildId,
+            guildId2 : msg.targetGuildId,
+            time : msg.time
+          });
         return ActionDao.addAction({
-          msg: util.format("Bạn nhận được lời mời thách đấu từ hội quán '%s', bạn có muốn hội quán của mình ứng chiến không?. Vui lòng chạm vào thông báo để xem thông tin chi tiết", currentGuild.name),
+          msg: util.format("Hội quán nhận được lời mời giao hữu từ hội quán '%s' vào lúc %s. Nhấn nút xem để biết chi tiết", currentGuild.name, moment(msg.time).format('HH:mm DD/MM')),
           title: "Thách đấu",
           buttonLabel: 'Xem',
           popup: {
             type: consts.NOTIFY_NC_POPUP_TYPE.TOURNAMENT_DUEL,
             data: msg
           },
+          expire : msg.time - (Date.now() / 1000 | 0) - 60 * 60,
           action: msg
-        }, president.uid)
+        }, president ? president.uid : 0)
       }
     })
     .catch(function (err) {
       console.error('err : ', err);
       return utils.invokeCallback(next, null, {ec: err.ec || Code.FAIL, msg: err.msg || Code.FAIL});
+    })
+    .finally(function () {
+      guild = null;
     })
 };
 

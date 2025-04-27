@@ -17,10 +17,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       allowNull: true
     },
-    acronym: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
     detail: {
       type: DataTypes.STRING,
       allowNull: true
@@ -62,6 +58,9 @@ module.exports = function(sequelize, DataTypes) {
     requireText : {
       type : DataTypes.TEXT,
       comment : "yêu cầu thiết kế"
+    },
+    nextBattle : {
+      type : DataTypes.DATE
     }
   }, {
     classMethods: {

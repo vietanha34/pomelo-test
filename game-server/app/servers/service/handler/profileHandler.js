@@ -29,7 +29,32 @@ Handler.prototype.getProfile = function getProfile(msg, session, next) {
 Handler.prototype.updateProfile = function getProfile(msg, session, next) {
   msg.accessToken = session.get('accessToken');
   msg.username = session.get('username');
-  return ProfileDao.updateProfile(session.uid, msg)
+  if (msg.fullname === session.get('fullname')) {
+      delete msg.fullname
+  }
+  return ProfileDao.updateProfile(session, msg)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e){
+      console.error(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.updateProfileOTP = function updateProfileOTP(msg, session, next) {
+  return ProfileDao.updateProfileOTP(session.uid, msg, session)
+    .then(function(result) {
+      return utils.invokeCallback(next, null, result);
+    })
+    .catch(function(e){
+      console.error(e.stack || e);
+      return utils.invokeCallback(next, null, {ec: code.EC.NORMAL, msg: code.COMMON_LANGUAGE.ERROR});
+    });
+};
+
+Handler.prototype.confirmOTP = function confirmOTP(msg, session, next) {
+  return ProfileDao.confirmOTP(session.uid, msg, session)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })

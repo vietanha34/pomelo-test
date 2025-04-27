@@ -8,16 +8,16 @@ var Promise = require('bluebird');
 var consts = require('../consts/consts');
 var code = require('../consts/code');
 var formula = require('../consts/formula');
+var redisKeyUtil = require('../util/redisKeyUtil')
 var utils = require('../util/utils');
 var regexValid = require('../util/regexValid');
-var redisKeyUtil = require('../util/redisKeyUtil');
-var lodash = require('lodash');
 var moment = require('moment');
 var UserDao = require('./userDao');
 var ItemDao = require('./itemDao');
 var FriendDao = require('./friendDao');
 var wordFilter = require('../util/wordFilter');
 var request = require('request-promise').defaults({transform: true});
+var util = require('util')
 
 /**
  *
@@ -62,7 +62,7 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
       user.eloLevel = formula.calEloLevel(user.elo);
       var vipPoint = user.vipPoint || 0;
       user.vipLevel = formula.calVipLevel(vipPoint);
-      user.vipPoint = [vipPoint, formula.calVipPoint(formula.calVipLevel(vipPoint) + 1)];
+      user.vipPoint = [vipPoint, formula.calVipPoint(user.vipLevel + 1)];
 
       user.vipLevel = Math.max(user.vipLevel, (effects[consts.ITEM_EFFECT.THE_VIP]||0));
 
@@ -91,7 +91,9 @@ ProfileDao.getProfile = function getProfile(uid, cb) {
  *  accessToken
  * @param cb
  */
-ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
+ProfileDao.updateProfile = function updateProfile(session, params, cb) {
+  var uid = session.uid
+  var vipPoint = session.get('vipPoint')
   if (params.avatar) { // update avatar
     if (!uid || !params.avatar || !params.avatar.id || isNaN(params.avatar.id)) {
       return utils.invokeCallback(cb, 'invalid params update avatar');
@@ -106,6 +108,7 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       });
   }
   else { // update password or profile
+
     if (!uid
       || (params.password && params.password.length < 5)
       || (params.fullname && params.fullname.length < 2)
@@ -126,19 +129,44 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
       params.statusMsg = word.msg;
     }
 
-    if (params.phone) params.phoneNumber = params.phone;
-
-    var serviceConfig = pomelo.app.get('serviceConfig');
-    return request({
-      uri: serviceConfig.account.authUrl + serviceConfig.account.updateProfile,
-      method: 'POST',
-      headers: {Authorization: 'Bearer '+params.accessToken },
-      form: params,
-      resolveWithFullResponse: true
+    var userKey = redisKeyUtil.getPlayerInfoKey(uid);
+    var redis = pomelo.app.get('redisInfo');
+    return Promise.props({
+      profile: this.getProfile(uid),
+      redisInfo: redis.hmgetAsync([userKey, 'lastUpdateFullname'])
     })
+      .then((data) => {
+        var user = data.profile;
+        var redisInfo = data.redisInfo
+        var lastUpdateFullname = Number(redisInfo[0])
+        lastUpdateFullname = isNaN(lastUpdateFullname) ? 0 : lastUpdateFullname
+        if (params.fullname) {
+          if (lastUpdateFullname > (Date.now() / 1000 | 0) - 30 * 24 * 60 * 60) {
+            return Promise.reject({ ec : 500, msg : util.format('Bạn chỉ được phép đổi tên trong vòng 30 ngày. Lần cuối bạn đổi là vào lúc "%s"', moment(lastUpdateFullname * 1000).format('DD/MM/YYYY')) });
+          }
+        }
+        if (!user) {
+          return Promise.reject({ec: 500, msg: 'Không tìm thấy người chơi tương ứng'})
+        }
+        // if (user.phone && params.phone !== user.phone) {
+        //   return Promise.reject({ec: 500, msg: 'Bạn chỉ được đổi số điện thoại một lần duy nhất. Vui lòng liên hệ Admin để đối tiếp'})
+        // }
+        if (params.phone) params.phoneNumber = params.phone;
+        var serviceConfig = pomelo.app.get('serviceConfig');
+        return request({
+          uri: serviceConfig.account.authUrl + serviceConfig.account.updateProfile,
+          method: 'POST',
+          headers: {Authorization: 'Bearer '+params.accessToken },
+          form: params,
+          resolveWithFullResponse: true
+        })
+      })
       .then(function(response) {
         utils.log(response.statusCode, response.body);
-        if (response && response.statusCode == 200) {
+        if (response && response.statusCode === 200) {
+          if (params.fullname) {
+            redis.hmset(userKey, {lastUpdateFullname: Date.now()/1000 | 0})
+          }
           if (params.oldPassword && params.password) {
             var json = utils.JSONParse(response.body);
             if (!json || !json.changePassword) {
@@ -146,11 +174,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
               return utils.invokeCallback(cb, null, {ec: 3, msg: code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
             }
             return utils.invokeCallback(cb, null, {msg: code.PROFILE_LANGUAGE.PASSWORD_SUCCESS});
-          }
-          else {
+          } else {
             return UserDao.updateProperties(uid, params)
               .then(function(){
-
                 var mongoClient = pomelo.app.get('mongoClient');
                 var Top = mongoClient.model('Top');
                 Top.update({uid: uid}, {fullname: params.fullname}, {upsert: false}, function(e) {
@@ -170,6 +196,9 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
           var json = utils.JSONParse(e.error, {});
           return utils.invokeCallback(cb, null, {ec: 3, msg: (json[0] && json[0].msg) ? json[0].msg : json.msg ? json.msg : code.PROFILE_LANGUAGE.WRONG_OLD_PASSWORD});
         }
+        if (e.ec) {
+          return utils.invokeCallback(cb, null, e)
+        }
         console.error(e.stack || e);
         utils.log(e.stack || e);
         return utils.invokeCallback(cb, e.stack || e);
@@ -178,6 +207,115 @@ ProfileDao.updateProfile = function updateProfile(uid, params, cb) {
         UserDao.deleteCache(null, uid);
       })
   }
+};
+
+/**
+ *
+ * @param uid
+ * @param params
+ *  phone
+ *  email
+ * @param session
+ * @param cb
+ */
+ProfileDao.updateProfileOTP = function updateProfileOTP(uid, params, session, cb) {
+  if (!uid || (!params.phone && !params.email)) {
+    return utils.invokeCallback(cb, 'invalid params update profile otp');
+  }
+
+  var globalConfig = pomelo.app.get('configService').getConfig();
+  if ((params.phone && !globalConfig.phoneOTP) || (params.email && !globalConfig.emailOTP)) {
+    return UserDao.updateProperties(uid, params)
+      .then(function(){
+        params.msg = code.PROFILE_LANGUAGE.SUCCESS;
+        params.phoneOTP = globalConfig.phoneOTP;
+        params.emailOTP = globalConfig.emailOTP;
+        return utils.invokeCallback(cb, null, params);
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+        return utils.invokeCallback(cb, e.stack || e);
+      });
+  }
+  else {
+    var serviceConfig = pomelo.app.get('serviceConfig');
+    var qs = {};
+    if (params.phone) qs.phoneNumber = params.phone;
+    if (params.email) qs.email = params.email;
+
+    console.log({
+      method: 'POST',
+      uri: serviceConfig.account.authUrl + serviceConfig.account.verifyUserInfo,
+      form: qs,
+      headers: {Authorization: 'Bearer '+session.get('accessToken')},
+      json: true
+    });
+
+    return request({
+      method: 'POST',
+      uri: serviceConfig.account.authUrl + serviceConfig.account.verifyUserInfo,
+      form: qs,
+      headers: {Authorization: 'Bearer '+session.get('accessToken')},
+      json: true
+    })
+      .then(function(data) {
+        var res = {};
+        var attr = (params.phone ? 'phone' : 'email');
+        res[attr+'OTP'] = globalConfig[attr+'OTP'];
+        return utils.invokeCallback(cb, null, res);
+      })
+      .catch(function(e) {
+        console.error(e.stack || e);
+        utils.log(e.stack || e);
+        return utils.invokeCallback(cb, e.stack || e);
+      });
+  }
+};
+
+/**
+ *
+ * @param uid
+ * @param params
+ *  type (1: email, 2: phone)
+ *  code
+ * @param session
+ * @param cb
+ */
+ProfileDao.confirmOTP = function confirmOTP(uid, params, session, cb) {
+  if (!uid || !params.code || !params.type) {
+    return utils.invokeCallback(cb, 'invalid params confirm otp');
+  }
+
+  var serviceConfig = pomelo.app.get('serviceConfig');
+
+  console.log({
+    method: 'POST',
+    uri: serviceConfig.account.authUrl + serviceConfig.account.checkOTP,
+    form: params,
+    headers: {Authorization: 'Bearer '+session.get('accessToken')},
+    json: true
+  });
+
+  return request({
+    method: 'POST',
+    uri: serviceConfig.account.authUrl + serviceConfig.account.checkOTP,
+    form: params,
+    headers: {Authorization: 'Bearer '+session.get('accessToken')},
+    json: true
+  })
+    .then(function(data) {
+      var attribute = (params.type==1) ? 'email' : 'phone';
+      var res = {};
+      res[attribute] = data.value || '';
+      res.msg = code.PROFILE_LANGUAGE.SUCCESS;
+      return utils.invokeCallback(cb, null, res);
+    })
+    .catch(function(e) {
+      console.error(e.stack || e);
+      utils.log(e.stack || e);
+      return utils.invokeCallback(cb, e.stack || e);
+    });
 };
 
 /**

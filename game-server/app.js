@@ -1,9 +1,9 @@
-var pomelo = require('pomelo');
-var Mongo = require('./app/dao/mongo/mongo');
-var path = require('path');
-var utils = require('./app/util/utils');
-var Promise = require('bluebird');
-var consts = require('./app/consts/consts');
+const pomelo = require('pomelo');
+const Mongo = require('./app/dao/mongo/mongo');
+const path = require('path');
+const utils = require('./app/util/utils');
+const Promise = require('bluebird');
+const consts = require('./app/consts/consts');
 
 Promise.config({
   longStackTraces: true,
@@ -16,7 +16,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 /**
  * Init app for client.
  */
-var app = pomelo.createApp();
+const app = pomelo.createApp();
 app.set('name', 'cothu-v2');
 
 
@@ -109,358 +109,6 @@ app.configure('production|development|local', function () {
   if (curServer.serverType === 'manager') {
     db.sequelize
       .sync()
-      .then(function () {
-        console.log('create tournament');
-        return {};
-        return db
-          .Tournament
-          .bulkCreate([
-            {
-              tourId: 1,
-              name: "Kỳ Vương cờ tướng",
-              type: consts.TOUR_TYPE.NORMAL,
-              beginTime: '2016-04-13',
-              endTime: '2016-04-14',
-              numPlayer: 0,
-              fee: 5000,
-              roundId: 1,
-              battleType: 1,
-              status: 0,
-              tourType: 1,
-              rule: 'Cờ tướng: liệt C5'
-            },
-            {
-              tourId: 2,
-              name: "Long Môn kì hội thách đấu",
-              type: 1,
-              beginTime: '2016-04-13',
-              endTime: '2016-04-13',
-              numPlayer: 2,
-              fee: 5000,
-              battleType: 1,
-              status: 0,
-              tourType: 1
-            },
-            {
-              tourId: 3,
-              name: "Đả lôi đài",
-              type: 2,
-              beginTime: '2016-04-13',
-              endTime: '2016-04-13',
-              numPlayer: 3,
-              fee: 5000,
-              battleType: 1,
-              status: 3,
-              roundId: 2,
-              tourType: 2
-            }
-          ])
-          .then(function () {
-             //setup TourTableConfig
-            return [db.TourTableConfig
-              .create({
-                id : 1,
-                gameId : 1,
-                totalTime: 300,
-                turnTime : 30,
-                timeWait : 120000,
-                level : 0,
-                tourTimeWait : 600000,
-                showKill : 1,
-                matchPlay : 3,
-                mustWin : 1,
-                bet : 10000
-              }),
-              db.TourSchedule
-                .create({
-                  id : 1,
-                  matchTime : ((Date.now() + 60000) / 1000) | 0
-                })
-              ]
-          })
-          .spread(function () {
-            console.log('create tour round');
-            return [
-              db.TourRound.bulkCreate([{
-              roundId: 1,
-              tourId: 1,
-              battleType: 1,
-              numGroup: 1,
-              type: 1,
-              scheduleId: 1,
-                tableConfigId :1
-            },
-              {
-                roundId: 2,
-                tourId: 3,
-                battleType: 2,
-                numGroup: 1,
-                type: 1,
-                scheduleId: 2
-              }
-            ]),
-              db.TourGroup.bulkCreate([
-                {
-                  id : 9,
-                  tourId: 3,
-                  index: 1,
-                  roundId:2,
-                  numPlayer: 8,
-                  player1: 31,
-                  player2: 33,
-                  player3: 34,
-                  player4: 35,
-                  player5: 55,
-                  player6: 57,
-                  player7: 62,
-                  player8: 68,
-                  player9: 31,
-                  player10: 34,
-                  player11: 57,
-                  player12: 68,
-                  player13: 31,
-                  player14: 68,
-                  player15: 68
-                },
-                {
-                  id: 1,
-                  tourId: 1,
-                  index: 1,
-                  roundId: 1,
-                  numPlayer: 0
-                }
-                //{
-                //  id: 2,
-                //  tourId: 1,
-                //  index: 2,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 3,
-                //  tourId: 1,
-                //  index: 3,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 4,
-                //  tourId: 1,
-                //  index: 4,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 5,
-                //  tourId: 1,
-                //  index: 5,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 6,
-                //  tourId: 1,
-                //  index: 6,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 7,
-                //  tourId: 1,
-                //  index: 7,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //},
-                //{
-                //  id: 8,
-                //  tourId: 1,
-                //  index: 8,
-                //  roundId: 1,
-                //  numPlayer: 0
-                //}
-              ])
-            ]
-          })
-          .then(function () {
-            console.log('fill profile, prize');
-            return [db.TourProfile
-              .bulkCreate([
-                {
-                  uid: 31,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-                {
-                  uid: 33,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 2,
-                  groupId: 9
-                },
-                {
-                  uid: 34,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 3,
-                  groupId: 9
-                },
-                {
-                  uid: 35,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-                {
-                  uid: 55,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-                {
-                  uid: 57,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-                {
-                  uid: 62,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-                {
-                  uid: 68,
-                  tourId: 3,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 9
-                },
-
-                {
-                  uid: 461405,
-                  tourId: 1,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 1,
-                  groupId: 1
-                },
-                {
-                  uid: 5,
-                  tourId: 1,
-                  win: 0,
-                  lose: 0,
-                  draw: 0,
-                  status: 1,
-                  point: 0,
-                  rank: 2,
-                  groupId: 1
-                }
-                //{
-                //  uid: 6,
-                //  tourId: 1,
-                //  win: 0,
-                //  lose: 0,
-                //  draw: 0,
-                //  status: 1,
-                //  point: 0,
-                //  rank: 3,
-                //  groupId: 1
-                //}
-              ]), db.TourPrize.bulkCreate([
-              {
-                content: '',
-                gold: 50000,
-                tourId: 1
-              },
-              {
-                content: '',
-                gold: 30000,
-                tourId: 1
-              },
-              {
-                content: '',
-                gold: 20000,
-                tourId: 1
-              }
-            ])]
-          })
-          .then(function () {
-            console.log('create tourTable');
-            //return db.TourTable
-            //  .bulkCreate([
-            //    {
-            //      boardId: '123' + Date.now() + Math.random() * (100 - 1) + 1,
-            //      tourId: 1,
-            //      gameId: 1,
-            //      index: 1,
-            //      serverId: 'game-server-10',
-            //      status: consts.BOARD_STATUS.FINISH,
-            //      bet: 1000,
-            //      numPlayer: 2,
-            //      groupId: 1,
-            //      roundId: 1,
-            //      match: '6bd936ec-39ca-4892-867c-846b89b0e881,56777f78-b9b9-4c03-b280-8561461d59d7,176e397f-eb1c-4205-bd4a-5b8395ede903',
-            //      scheduleId: 1,
-            //      score: '0,5 - 0,5',
-            //      player: JSON.stringify([
-            //        {
-            //          fullname: 'Tuấn Anh',
-            //          avatar: {id: 0, version: 0},
-            //          point: 7,
-            //          inBoard: 1
-            //        },
-            //        {
-            //          fullname: 'Việt Anh',
-            //          avatar: {id: 0, version: 0},
-            //          point: 8,
-            //          inBoard: 0
-            //        }
-            //      ])
-            //    }
-            //  ])
-          })
-      })
       .catch(function (err) {
         console.error('sync err : ', err)
       })
@@ -478,13 +126,53 @@ app.configure('production|development|local', function () {
   }
 });
 
+// app.configure('production|development', 'district', function () {
+//   var DistrictManager = require('./app/domain/district/districtManager');
+//   var districtManager = new DistrictManager(app);
+// });
+
 app.configure('production', function () {
   app.set('beta', true);
 });
 
-// app configuration
+app.configure('production|development', 'master', function () {
+  var AutoRestart = require('pomelo-autoRestart-plugin');
+  app.use(AutoRestart,  {
+    auto: {
+      username: 'admin',
+      password: 'admin',
+      condition:{
+        service: {
+          memory: 500,
+          restart: true
+        },
+        district: {
+          memory : 500,
+          restart: true
+        },
+        event: {
+          memory: 500,
+          restart: true
+        },
+        manager: {
+          memory: 500,
+          restart: true
+        },
+        auth: {
+          memory : 500,
+          restart: true
+        }
+      }
+    }
+  });
+});
+// app configuration connector
 app.configure('production|development', 'connector|gate', function () {
   app.loadConfig('encryptConfig', app.getBase() + '/config/encrypt.json');
+  app.set('maintenance', {
+    enable: 1,
+    type: consts.MAINTENANCE_TYPE.ALL
+  });
   app.set('connectorConfig',
     {
       connector: pomelo.connectors.hybridconnector,
@@ -495,6 +183,7 @@ app.configure('production|development', 'connector|gate', function () {
     });
 });
 
+// config eventplugin
 app.configure('production|development|local', 'master|service|connector|manager|event|worker', function () {
   var EventPlugin = require('pomelo-event-plugin');
   app.use(EventPlugin, {
@@ -521,6 +210,13 @@ app.configure('production|development|local', 'master|service|connector|manager|
   })
 });
 
+// config chat abuse
+app.configure('production|development|local', 'chat', function () {
+  var abuseFilter = require('./app/servers/chat/filter/abuseFilter');
+  app.filter(abuseFilter());
+});
+
+
 app.configure('production|development|local', 'game', function () {
   app.filter(pomelo.filters.serial());
   app.filter(pomelo.filters.time());
@@ -533,25 +229,20 @@ app.configure('production|development|local', 'game', function () {
   app.game = new Game({gameId: gameId, serverId: server.id, base: server.base});
 });
 
-app.configure('production|development|local', 'chat', function () {
-  var abuseFilter = require('./app/servers/chat/filter/abuseFilter');
-  app.filter(abuseFilter());
-});
-
 // config board
-app.configure('production|development|local', 'game|district|service|manager|master|worker', function () {
+app.configure('production|development|local', 'game|district|service|manager|master|worker|connector|home', function () {
   var BoardService = require('pomelo-board-plugin');
   app.use(BoardService, {
     board: {
       db: app.get('mysqlClient'),
       redis: app.get('redisCache'),
-      genBoardAttributes: ['gameId', 'hallId']
+      genBoardAttributes: ['gameId', 'hallId', 'gameType', 'roomId']
     }
   });
 });
 
 // config waitingService
-app.configure('production|development|local', 'district|connector|game|home', function () {
+app.configure('production|development|local', 'district|connector|game|home|worker', function () {
   var WaitingService = require('pomelo-waiting-plugin');
   app.use(WaitingService, {
     waiting: {
@@ -561,7 +252,6 @@ app.configure('production|development|local', 'district|connector|game|home', fu
 });
 
 // config accountService
-
 app.configure('production|development|local', function () {
   var AccountPlugin = require('pomelo-account-plugin');
   app.use(AccountPlugin, {
@@ -579,7 +269,7 @@ app.configure('production|development', 'home|game|chat|service', function () {
   app.set('gameService', gameService)
 });
 
-app.configure('production|development', 'chat|game|service', function () {
+app.configure('production|development', 'chat|game|service|event', function () {
   var ChatService = require('./app/services/chatService');
   app.set('chatService', new ChatService(app));
 });
@@ -590,7 +280,7 @@ app.configure('production|development', 'manager|game|service|event|worker|http|
   app.set('paymentService', paymentService);
 });
 
-app.configure('production|development', 'gate|home|service|event|worker', function () {
+app.configure('production|development', 'gate|home|service|event|worker|manager', function () {
   var ConfigService = require('./app/services/configService');
   var configService = new ConfigService(app);
   configService.init();
@@ -618,7 +308,7 @@ app.configure('production|development', 'event', function () {
   var geoIpPlugin = require('pomelo-geoip-plugin');
   app.use(geoIpPlugin, {
     geoip: {
-      urlService: 'http://sdk.vgame.us:8888/iploc'
+      urlService: 'http://123.30.235.49:5688/query'
     }
   });
 });
@@ -628,12 +318,12 @@ app.configure('production|development', 'service|home|event', function () {
   app.set('videoAdsService', new VideoAdsService(app))
 });
 
-app.configure('development|production', function () {
-  app.set('maintenance', {
-    enable: 1,
-    type: consts.MAINTENANCE_TYPE.ALL
-  });
-});
+//app.configure('development|production', function () {
+//  app.set('maintenance', {
+//    enable: 1,
+//    type: consts.MAINTENANCE_TYPE.ALL
+//  });
+//});
 
 // start app
 app.start();

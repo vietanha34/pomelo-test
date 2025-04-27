@@ -128,10 +128,17 @@ pro.addBalance = function (opts, cb) {
           };
           pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(log));
           updateGoldInCache(user.username, user.gold + gold);
-          return user.updateAttributes({
-            gold: user.gold + gold,
-            goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
-          }, {transaction: t})
+          return pomelo.app.get('mysqlClient')
+            .User
+            .update({
+              gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + gold),
+              goldInGame: opts.type === consts.CHANGE_GOLD_TYPE.LEAVE_BOARD ? 0 : user.goldInGame
+            }, {
+              where: {
+                uid: uid
+              },
+              transaction: t
+            })
         }
       })
   })
@@ -147,7 +154,7 @@ pro.transfer = function (opts, cb) {
   var gold = opts.gold;
   if (isNaN(gold) || gold < 0)
     return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
-  console.log('handler transfer : ', opts);
+  console.error('handler transfer : ', opts);
   return Promises.delay(0)
     .then(function () {
       return [
@@ -183,42 +190,33 @@ pro.transfer = function (opts, cb) {
       updateGoldInCache(fromUser.username, fromUser.gold);
       updateGoldInCache(toUser.username, toUser.gold + addGold);
       var logFromUser = {
-        before: fromUser.gold + gold
-        ,
-        after: fromUser.gold
-        ,
-        temp: 0
-        ,
-        time: new Date().getTime()
-        ,
+        before: fromUser.gold + gold,
+        after: fromUser.gold,
+        temp: 0,
+        time: new Date().getTime(),
         opts: {
           uid: fromUser.uid,
-          gold: gold,
+          gold: subGold,
           type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
           gameId: opts.gameId,
           msg: opts.msg
         }
         ,
-        cmd: 'addGold'
+        cmd: 'subGold'
       };
       pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
       var logToUser = {
-        before: toUser.gold
-        ,
-        after: toUser.gold + gold
-        ,
-        temp: 0
-        ,
-        time: new Date().getTime()
-        ,
+        before: toUser.gold,
+        after: toUser.gold + addGold,
+        temp: 0,
+        time: new Date().getTime(),
         opts: {
           uid: toUser.uid,
-          gold: gold,
+          gold: addGold,
           type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
           gameId: opts.gameId,
           msg: opts.msg
-        }
-        ,
+        },
         cmd: 'addGold'
       };
       pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
@@ -258,6 +256,120 @@ pro.transfer = function (opts, cb) {
       console.log('err : ', err);
       return utils.invokeCallback(cb, err);
     })
+};
+
+pro.transferGuild = function (opts, cb) {
+  var gold = opts.gold;
+  if (isNaN(gold) || gold < 0)
+    return utils.invokeCallback(cb, null, {ec: Code.PAYMENT.ERROR_PARAM});
+  return Promises.delay(0)
+      .then(function () {
+        return [
+          pomelo.app.get('mysqlClient')
+              .Guild
+              .findOne({
+                where: {
+                  id: opts.fromGuildId
+                },
+                raw: true,
+                attributes: ['gold', 'name', 'id']
+              }),
+          pomelo.app.get('mysqlClient')
+              .Guild
+              .findOne({
+                where: {
+                  id: opts.toGuildId
+                },
+                raw: true,
+                attributes: ['gold', 'name', 'id']
+              })
+        ];
+      })
+      .spread(function (fromUser, toUser) {
+        var subGold = gold;
+        if (fromUser.gold >= gold) {
+          fromUser.gold -= gold
+        } else {
+          subGold = fromUser.gold;
+          fromUser.gold = 0;
+        }
+        var addGold = opts.tax ? Math.round(subGold * (100 - opts.tax) / 100) : subGold;
+        // var logFromUser = {
+        //   before: fromUser.gold + gold
+        //   ,
+        //   after: fromUser.gold
+        //   ,
+        //   temp: 0
+        //   ,
+        //   time: new Date().getTime()
+        //   ,
+        //   opts: {
+        //     uid: fromUser.uid,
+        //     gold: gold,
+        //     type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
+        //     gameId: opts.gameId,
+        //     msg: opts.msg
+        //   }
+        //   ,
+        //   cmd: 'addGold'
+        // };
+        // pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logFromUser));
+        // var logToUser = {
+        //   before: toUser.gold
+        //   ,
+        //   after: toUser.gold + gold
+        //   ,
+        //   temp: 0
+        //   ,
+        //   time: new Date().getTime()
+        //   ,
+        //   opts: {
+        //     uid: toUser.uid,
+        //     gold: gold,
+        //     type: consts.CHANGE_GOLD_TYPE.PLAY_GAME,
+        //     gameId: opts.gameId,
+        //     msg: opts.msg
+        //   }
+        //   ,
+        //   cmd: 'addGold'
+        // };
+        // pomelo.app.get('redisService').RPUSH(redisKeyUtil.getLogMoneyTopupKey(), JSON.stringify(logToUser));
+        return pomelo.app.get('mysqlClient').sequelize.transaction(function (t) {
+          console.log('transaction : ');
+          return pomelo.app.get('mysqlClient')
+              .Guild
+              .update({
+                gold: fromUser.gold
+              }, {
+                where: {
+                  id: opts.fromGuildId
+                },
+                transaction: t
+              })
+              .then(function () {
+                return pomelo.app.get('mysqlClient')
+                    .Guild
+                    .update({
+                      gold: pomelo.app.get('mysqlClient').sequelize.literal('gold + ' + addGold)
+                    }, {
+                      where: {
+                        id: opts.toGuildId
+                      },
+                      transaction: t
+                    })
+              });
+        })
+            .catch(function (err) {
+              console.log('err : ', err);
+            })
+      })
+      .spread(function () {
+        return utils.invokeCallback(cb, null);
+      })
+      .catch(function (err) {
+        console.log('transfer Guild err : ', err);
+        return utils.invokeCallback(cb, err);
+      })
 };
 
 pro.syncBalance = function (opts, cb) {

@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Created by vietanha34 on 11/20/14.
  */
@@ -7,13 +8,13 @@ var friendDao = require('../../../dao/friendDao');
 var async = require('async');
 var utils = require('../../../util/utils');
 var logger = require('pomelo-logger').getLogger('poker', __filename);
-var messageService = require('../../../services/messageService');
 var consts = require('../../../consts/consts');
 var lodash = require('lodash');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
+var redisKeyUtil = require('../../../util/redisKeyUtil')
 
-var LAYER_NUM_BOARD = 20;
+var TIME_LOCK = 300
 
 module.exports = function (app) {
   return new Handler(app);
@@ -46,49 +47,97 @@ Handler.prototype.quickPlay = function (msg, session, next) {
       $lt: 2
     },
     gameId: gameId,
+    gameType: 0,
     password : {
       $eq : null
     }
   };
-  if(msg.roomId){
-    whereClause['roomId'] = msg.roomId
+  if(lodash.isNumber(msg.roomId)){
+    whereClause['hallId'] = Math.round(msg.roomId / 100)
+  }
+  if (msg.hallId) whereClause['hallId'] = msg.hallId;
+  else {
+    msg.hallId = {
+      $ne: 1
+    }
   }
   var excludeBoardId = session.get('excludeBoardId');
   excludeBoardId = lodash.isArray(excludeBoardId) ? excludeBoardId : [];
   var eloKey = consts.ELO_MAP[gameId] ? consts.ELO_MAP[gameId] : 'tuongElo';
-  if (msg.hallId) whereClause['hallId'] = msg.hallId;
+  var gameName = consts.UMAP_GAME_NAME[gameId];
   var tableId;
+  var redis = pomelo.app.get('redisCache');
+  var boardLockIds = []
   async.waterfall([
-    // get userInfo,
     function (done) {
-      userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
+      var params = [redisKeyUtil.getLockBoardKey(), 0, -1, 'WITHSCORES']
+      return redis.zrange(params, done)
+    },
+    // get userInfo,
+    function (boardLocks, done) {
+      var unLockBoard = []
+      if (!boardLocks || !boardLocks.length) {
+      }else {
+        for (var i=0; i<boardLocks.length; i+=2) {
+          var boardId = boardLocks[i]
+          var boardLockTime = boardLocks[i+1]
+          if (Date.now() - Number(boardLockTime) < TIME_LOCK) {
+            boardLockIds.push(boardId)
+          } else {
+            unLockBoard.push(boardId)
+          }
+        }
+      }
+      if (unLockBoard.length) {
+        redis.zrem(redisKeyUtil.getLockBoardKey(), unLockBoard)
+      }
+      return userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo'], [gameName+'Win', 'win'], [gameName+'Lose', 'lose'], [gameName+'Draw', 'draw']], done);
     },
     function (userInfo, done) {
-      if (userInfo) {
-        user = userInfo;
-        user.elo = user['Achievement.elo'];
-        user.sIcon = session.get('sIcon');
-        user.level = Formula.calLevel(user.exp) || 0;
-        user.frontendId = session.frontendId;
-        user.version = session.get('version');
-          whereClause['level'] = {
-          $lte : user.level
-        };
-        whereClause['bet'] = {
-          $and : {
-            $lte : user.gold,
-            $gt : 0
-          }
-        };
-        self.app.get('boardService').getBoard({
-          where: whereClause,
-          limit: 6,
-          raw : true,
-          order: 'numPlayer DESC, bet DESC'
-        }, done)
-      } else {
-        next(null, {ec: Code.FAIL});
+      console.log('userInfo : ', userInfo);
+      if (!userInfo) return next(null, {ec: Code.FAIL});
+      user = {
+        gold: userInfo.gold,
+        username: userInfo.username,
+        uid: userInfo.uid,
+        vipPoint : userInfo.vipPoint,
+        fullname: userInfo.fullname,
+        sex: userInfo.sex,
+        avatar: userInfo.avatar,
+      };
+      var totalMatch = userInfo['Achievement.win'] + userInfo['Achievement.lose'] + userInfo['Achievement.draw'];
+      totalMatch = totalMatch || 0;
+      user.elo = userInfo['Achievement.elo'];
+      user.sIcon = session.get('guild').sIcon;
+      user.guildId = session.get('guild').id;
+      user.role = session.get('guild').role;
+      user.level = Formula.calLevel(user.exp) || 0;
+      user.frontendId = session.frontendId;
+      user.version = session.get('version');
+      whereClause['level'] = {
+        $lte : user.level
+      };
+      var divide = totalMatch > 50 ? 5 : 10;
+      var minBet = Math.round(user.gold / divide);
+      if (user.gold < 1000) {
+        whereClause.hallId = consts.HALL_ID.MIEN_PHI
       }
+      whereClause['bet'] = {
+        $and : {
+          $lte : minBet > 1000 ? minBet : 1000,
+          $gte : 0
+        },
+        boardId: {
+          $notIn: boardLockIds
+        },
+        stt: consts.BOARD_STATUS.NOT_STARTED
+      };
+      self.app.get('boardService').getBoard({
+        where: whereClause,
+        limit: 5,
+        raw : true,
+        order: 'numPlayer DESC, bet DESC'
+      }, done);
     }, function (boardIds, done) {
       for (var i = 0, len = boardIds.length; i < len; i++){
         var board = boardIds[i];
@@ -98,6 +147,7 @@ Handler.prototype.quickPlay = function (msg, session, next) {
         }
       }
       if (boardId) {
+        redis.zadd(redisKeyUtil.getLockBoardKey(), Date.now(), boardId.boardId)
         tableId = boardId.boardId;
         self.app.rpc.game.gameRemote.joinBoard(session, boardId.boardId, {userInfo: user}, done)
       } else {
@@ -141,7 +191,7 @@ Handler.prototype.joinBoard = function (msg, session, next) {
     gameId = tableId.split(':')[1];
   }
   var maintenance = this.app.get('maintenance');
-  if (!!maintenance) {
+  if (!!maintenance && session.username !== 'cobeit103') {
     if (maintenance.type === consts.MAINTENANCE_TYPE.ALL) {
       next(null, utils.getError(Code.GATE.FA_MAINTENANCE));
       return
@@ -162,25 +212,24 @@ Handler.prototype.joinBoard = function (msg, session, next) {
       userDao.getUserAchievementProperties(uid, consts.JOIN_BOARD_PROPERTIES,[[eloKey, 'elo']], done);
     },
     function (userInfo, done) {
-      if (userInfo) {
-        var user = {
-          level: Formula.calLevel(userInfo.exp),
-          gold: userInfo.gold,
-          username: userInfo.username,
-          uid: userInfo.uid,
-          sIcon : session.get('sIcon'),
-          vipPoint : userInfo.vipPoint,
-          fullname: userInfo.fullname,
-          sex: userInfo.sex,
-          avatar: userInfo.avatar,
-          elo : userInfo['Achievement.elo'] || 0,
-          version : session.get('version'),
-          frontendId: session.frontendId
-        };
-        self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
-      } else {
-        next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
-      }
+      if (!userInfo) return next(null, utils.getError(Code.ON_QUICK_PLAY.FA_NOT_ENOUGH_MONEY));
+      let user = {
+        level: Formula.calLevel(userInfo.exp),
+        gold: userInfo.gold,
+        username: userInfo.username,
+        uid: userInfo.uid,
+        sIcon: session.get('guild').sIcon,
+        guildId: session.get('guild').id,
+        role: session.get('guild').role,
+        vipPoint : userInfo.vipPoint,
+        fullname: userInfo.fullname,
+        sex: userInfo.sex,
+        avatar: userInfo.avatar,
+        elo : userInfo['Achievement.elo'] || 0,
+        version : session.get('version'),
+        frontendId: session.frontendId
+      };
+      self.app.rpc.game.gameRemote.joinBoard(session, tableId, {userInfo: user, password: msg.password}, done)
     }, function (result, done) {
       if (!result.data.ec) {
         session.set('tableId', result.tableId);
@@ -212,7 +261,7 @@ Handler.prototype.leaveBoard = function (msg, session, next) {
   if (excludeBoardId.indexOf(tableId) > -1){
   }else {
     if (excludeBoardId.length >= 5){
-      excludeBoardId[0] = tableId;
+      excludeBoardId = [tableId].concat(excludeBoardId);
     }else {
       excludeBoardId.push(tableId);
     }
@@ -315,16 +364,16 @@ Handler.prototype.getHall = function (msg, session, next) {
       raw : true
     })
     .then(function (user) {
-      if (user){
-        waitingData['elo'] = user.elo;
-        pomelo.app.get('waitingService').add(waitingData);
-      }
+      if (!user) return;
+      waitingData['elo'] = user.elo;
+      pomelo.app.get('waitingService').add(waitingData);
     });
   var boardService = this.app.get('boardService');
   boardService
     .getRoom({
       where: {
-        gameId: gameId
+        gameId: gameId,
+        show : 1
       },
       raw: true,
       order : 'roomId ASC'
@@ -352,7 +401,7 @@ Handler.prototype.getHall = function (msg, session, next) {
           icon: utils.JSONParse(hallConfig.icon, {id: 0, version: 0}),
           hint: hallConfig.hint,
           room: lodash.map(rooms[hallId], function (n) {
-            return {full: n.progress, roomId: n.roomId}
+            return {full: n.progress, roomId: n.roomId, name: n.roomId === 403 ? 'Lật pháo - 403' : undefined}
           }),
           level: parseInt(hallConfig.level),
           exp: parseInt(hallConfig.exp)
@@ -395,11 +444,12 @@ Handler.prototype.getBoardList = function (msg, session, next) {
       order: '`index` ASC'
     })
     .then(function (boards) {
-      var data = [];
+      let data = [];
+      let waitingBoard = [];
       for (var i = 0, len = boards.length; i < len; i++) {
-        var board = boards[i];
+        let board = boards[i];
         hallId = board.hallId;
-        data.push({
+        let boardInfo = {
           index: board.index,
           tableId: board.boardId,
           gameId: board.gameId,
@@ -410,9 +460,14 @@ Handler.prototype.getBoardList = function (msg, session, next) {
           turnTime: board.turnTime,
           lock: board.lock ? 1 : 0,
           optional: utils.JSONParse(board.optional, {})
-        });
+        };
+        if (waitingBoard.length < 9 && board.numPlayer == 1){
+          waitingBoard.push(boardInfo)
+        }else {
+          data.push(boardInfo);
+        }
       }
-      return next(null, {board: data, roomId: roomId, gameId: gameId, hallId: hallId})
+      return next(null, {board: waitingBoard.concat(data), roomId: roomId, gameId: gameId, hallId: hallId})
     })
     .catch(function (err) {
       logger.error('err : ', err);

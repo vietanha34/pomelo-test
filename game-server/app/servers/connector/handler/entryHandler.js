@@ -9,7 +9,6 @@ var utils = require('../../../util/utils');
 var redisKeyUtil = require('../../../util/redisKeyUtil');
 var pomelo = require('pomelo');
 var Formula = require('../../../consts/formula');
-var ItemDao = require('../../../dao/itemDao');
 
 module.exports = function (app) {
   return new Handler(app);
@@ -24,21 +23,17 @@ Handler.prototype.validClient = function (msg, session, next) {
   var idSession = msg.idSession;
   var sessionId = session.id;
   if (idSession) {
-    this.app.get('redisCache').get(redisKeyUtil.getIdSessionKey(idSession), function (err, key) {
-      if (err) {
-        next(null, {ec: Code.FAIL});
-      }
-      else if (key) {
-        self.app.sessionService.get(sessionId).changeEncryptKey(key);
-        var language;
-        next(null, {
-          language: language
-        });
-      }
-      else {
-        next(null, {ec: Code.FAIL});
-      }
-    })
+    this.app.get('redisCache').getAsync(redisKeyUtil.getIdSessionKey(idSession))
+      .then(function (key) {
+        if (key) {
+          self.app.sessionService.get(sessionId).changeEncryptKey(key);
+          next(null, {});
+        }
+      })
+      .catch(function (err) {
+        console.error('validClient error : ', err );
+        return next(null, {ec : Code.FAIL});
+      });
   } else {
     next(null, {ec: Code.FAIL});
   }
@@ -55,15 +50,13 @@ Handler.prototype.login = function (msg, session, next) {
   var self = this;
   var player, boardId;
   var type = msg.type;
-  var sessionId = session.id;
   var loginIp = utils.getIpv4FromIpv6(self.app.get('sessionService').getClientAddressBySessionId(session.id).ip);
   msg.versionCode = msg.versionCode ? msg.versionCode.toString() : '';
   msg.versionCode = msg.versionCode.length === 7 ? '0' + msg.versionCode : msg.versionCode;
   var version = '' + msg.versionCode.slice(4, 10) + msg.versionCode.slice(2, 4) + msg.versionCode.slice(0, 2);
-  console.log('version : ', version, loginIp);
-  //if (version >= '20160130'){
-  //  self.app.sessionService.get(sessionId).useGzip(true);
-  //}
+  if (version >= '20160130'){
+   this.app.sessionService.get(session.id).useGzip(true);
+  }
   msg.ip = loginIp;
   var maintenance = this.app.get('maintenance');
   if (!!maintenance && maintenance.type === consts.MAINTENANCE_TYPE.ALL && loginIp !== '113.190.233.178'){
@@ -98,6 +91,8 @@ Handler.prototype.login = function (msg, session, next) {
       session.set('accessToken', msg.accessToken);
       session.set('avatar', player.avatar);
       session.set('platform', msg.platform);
+      session.set('guild', {});
+      session.set('realIp', msg.realIp)
       session.set('version', version);
       session.on('closed', onUserLeave.bind(null, self.app));
       session.pushAll(done)
@@ -136,7 +131,6 @@ Handler.prototype.login = function (msg, session, next) {
       deviceName : msg.deviceName,
       frontendId : session.frontendId
     };
-
     if (boardId) {
       session.set('tableId', boardId);
       session.push('tableId');
@@ -187,19 +181,9 @@ var onUserLeave = function onUserLeave(app, session, reason) {
     // user chưa đăng nhập, bỏ qua không xử lý
   } else {
     // TODO, kiểm tra các kênh người dùng không sử dụng để unsubscribe, ví dụ như bang hội, chat nhóm
-    //app.rpc.chat.chatRemote.leaveGlobal(session, session.uid, session.frontendId,
-    //	channelUtil.getGlobalChannelName(), function () {
-    //	});
     app.get('waitingService').leave(session.uid);
     var emitterConfig = pomelo.app.get('emitterConfig');
     pomelo.app.rpc.game.gameRemote.logout(session, session.get('tableId'), session.uid,function () {});
-    //pomelo.app.rpc.event.eventRemote.emit(null, emitterConfig.LOGOUT, emitData, function () {});
-    //app.get('authService').playGame({
-    //	accessToken: session.get('accessToken'),
-    //	ip: session.get('ip'),
-    //	lastPlayedTime: Date.now() - session.get('lastLogin'),
-    //	balance : session.get('gold')
-    //})
   }
 };
 

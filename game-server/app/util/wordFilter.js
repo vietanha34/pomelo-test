@@ -62,7 +62,10 @@ module.exports = function (msg, sexDict) {
 
   for (var i = 1; i <= nlimit; i++) {
     for (var j = 0; j < grams[i].length; j++) {
-      if (grams[i][j][0].toLowerCase() in sexDict) {
+      var lowerIgram =  grams[i][j][0].toLowerCase();
+      var linking = lowerIgram.split(' ').join('');
+      //print ('lowerIgram', i, lowerIgram,' | ', linking)
+      if ((lowerIgram in sexDict) || (linking in sexDict)) {
         for (var k = grams[i][j][1][0]; k <= grams[i][j][1][1]; k++)
           sexcharIndexs[k] = 1;
       }

@@ -10,6 +10,7 @@ var NotifyDao = require('../dao/notifyDao');
 var UserDao = require('../dao/userDao');
 var ItemDao = require('../dao/itemDao');
 var MD5 = require('MD5');
+var pomelo = require('pomelo')
 
 module.exports = function(app) {
   app.post('/cms/topup', function(req, res) {
@@ -89,7 +90,8 @@ module.exports = function(app) {
     if (!msg.username || !msg.gold || !msg.signature) {
       return res.status(500).json({ec: 500, msg: 'invalid params'});
     }
-
+    var userId = null
+    msg.type = Number(msg.type) || consts.CHANGE_GOLD_TYPE.VIDEO_ADS;
     var checkContent = [msg.username, msg.gold, consts.CMS_SECRET_KEY].join('|');
     var checkMd5 = MD5(checkContent);
     if (checkMd5 != msg.signature) {
@@ -103,11 +105,11 @@ module.exports = function(app) {
           throw new Error('User not exists');
           return;
         }
-
+        userId = user.uid
         return TopupDao.topup({
           uid: user.uid,
           gold: Number(msg.gold),
-          type: consts.CHANGE_GOLD_TYPE.VIDEO_ADS,
+          type: Number(msg.type) || consts.CHANGE_GOLD_TYPE.VIDEO_ADS,
           msg: content
         })
       })
@@ -123,8 +125,19 @@ module.exports = function(app) {
           users: [msg.userId],
           image:  consts.NOTIFY.IMAGE.GOLD
         })
+        var mysqlClient = pomelo.app.get('mysqlClient')
+        mysqlClient
+          .User
+          .update({
+            vipPoint: mysqlClient.sequelize.literal('vipPoint + ' + 30)
+          }, {
+            where: {
+              uid: userId
+            }
+          })
       })
       .catch(function(e) {
+        console.error('payment topUp : ', e);
         res.status(500).json({ec: 500, msg: e.stack || e});
       });
   });
@@ -162,6 +175,26 @@ module.exports = function(app) {
         res.status(500).json({ec: 3, msg: e.stack || e});
       else
         res.json(result);
+    });
+  });
+
+  app.get('/cms/kick', (req, res, next) => {
+
+    var statusService = pomelo.app.get('statusService');
+
+    statusService.getSidsByUid(req.query.uid || req.query.userId, (err, sids) => {
+      if (sids && sids.length >= 1) {
+        pomelo.app.rpc.connector.connectorRemote.kick({
+          frontendId: sids[0]
+        }, req.query.uid || req.query.userId, e => {
+          e && console.error(e.stack || e);
+          res.json({ ec: 0 });
+          next();
+        });
+      } else {
+        res.json({ ec: 404, msg: 'not found' });
+        next();
+      }
     });
   });
 };

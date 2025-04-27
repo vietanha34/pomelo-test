@@ -3,7 +3,6 @@
  */
 
 
-var async = require('async');
 var utils = require('../../../util/utils');
 var code = require('../../../consts/code');
 var TopDao = require('../../../dao/topDao');
@@ -17,7 +16,7 @@ var Handler = function (app) {
 };
 
 Handler.prototype.getTop = function (msg, session, next) {
-  TopDao.getTop(session.uid, msg.type)
+  TopDao.getTop(session.uid, msg.type, msg.instant)
     .then(function(result) {
       return utils.invokeCallback(next, null, result);
     })

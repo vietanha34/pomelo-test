@@ -165,7 +165,11 @@ pro.sendMessageToPlayer = function (fromUid, targetUid, data) {
     });
 };
 
-pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
+pro.sendMessageToGroup = function (roomId, data, type, cb) {
+  if (typeof type === 'function') {
+    cb = type;
+    type = 'chat.chatHandler.send';
+  }
   var members;
   var fails;
   utils.invokeCallback(cb);
@@ -176,7 +180,9 @@ pro.sendMessageToGroup = function (fromUid, roomId, data, cb) {
     function (mems, done) {
       console.log('chat members : ', mems );
       members = mems;
-      pomelo.app.get('statusService').pushByUids(members, 'chat.chatHandler.send', data, done)
+      if (members.length > 0){
+        pomelo.app.get('statusService').pushByUids(members, type, data, done)
+      }
     },
     function (f, done) {
       console.log(f);

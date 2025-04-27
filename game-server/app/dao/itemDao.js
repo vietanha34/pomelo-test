@@ -23,6 +23,8 @@ ItemDao.durationMap = {
   30: 'price3'
 };
 
+const VIP_LEVEL = [13,14,15]
+
 /**
  *
  * @param uid
@@ -70,6 +72,9 @@ ItemDao.buy = function buy(uid, itemId, duration, cb) {
         return utils.invokeCallback(cb, null, {ec: topupResult.ec, msg: code.ITEM_LANGUAGE.NOT_ENOUGH_MONEY})
       }
 
+      if (VIP_LEVEL.indexOf(itemId) > -1) {
+        duration = 365 * 5
+      }
       // thêm vào hòm đồ
       var expiredAt = Math.max(item.expiredAt||0, now) + (duration*86400);
       return Promise.all([

@@ -7,7 +7,15 @@ module.exports = {
     IOS : 1,
     ANDROID : 2,
     WINDOWPHONE : 3,
-    JAVA : 4
+    JAVA : 4,
+    WEB: 6,
+    INSTANT: 7
+  },
+
+  FACE_OFF_MODE:{
+    NORMAL : 1,
+    CANNON : 2,
+    DEATH_MATCH : 3
   },
 
   GAME_ACTION_ID :{
@@ -29,6 +37,7 @@ module.exports = {
   },
 
   JOIN_BOARD_PROPERTIES : ['level', 'gold', 'username', 'fullname', 'sex', 'avatar', 'uid', 'exp', 'vipPoint'],
+
 
   WAITING_LIST : {
     TOTAL : 1,
@@ -191,9 +200,9 @@ module.exports = {
     CONTINUE : 100,
     SIT_BACK_IN : 3,
     DE_LAY : 4,
-    CHARGE_MONEY : 7,
     DRAW : 5,
     SURRENDER : 6,
+    CHARGE_MONEY : 7,
     HINT : 8,
     STAND_UP : 9,
     CHAT : 10,
@@ -204,7 +213,8 @@ module.exports = {
     CHANGE_SIDE : 15,
     BOTTOM_MENU_CHANGE_SIDE : 16,
     CHANGE_TURN : 17,
-    INFORMATION : 18
+    INFORMATION : 18,
+    TOURNAMENT: 19
   },
 
   LANGUAGE_LIMIT : {
@@ -287,7 +297,8 @@ module.exports = {
     GROUP : 1,
     PERSON : 2,
     BOARD : 3,
-    BOARD_GUEST : 4
+    BOARD_GUEST : 4,
+    GLOBAL: 5
   },
 
   MESSAGE_STATUS : {
@@ -449,7 +460,8 @@ module.exports = {
     SLEEP_TURN : 500,
     SLEEP_CHARGE : 1000,
     GUEST : 30 * 60 * 1000,
-    LOGOUT : 30 * 1000
+    LOGOUT : 30 * 1000,
+    FRIENDLY_WAIT : 5 * 60 * 1000,
   },
 
   CHANGE_GOLD_TYPE: {
@@ -457,6 +469,7 @@ module.exports = {
     TOPUP_SMS: 2,
     TOPUP_IAP: 3,
     TOPUP_BANKING: 4,
+    TOPUP_SUB: 5,
     BUY_ITEM: 34,
     MISSION_AWARD: 37,
     CMS: 41,
@@ -465,6 +478,9 @@ module.exports = {
     LEVEL_UP: 44,
     PLAY_GAME: 47,
     VIDEO_ADS: 48,
+    BONUS_PLAY_GAME: 49,
+    NRU: 50,
+    BANKRUPT: 60,
     UNKNOWN: 99
   },
 
@@ -668,7 +684,13 @@ module.exports = {
       GET_GOLD: 9,
       GO_CHAT: 10,
       GO_BOARD: 11,
-      GO_TOURNAMENT : 12
+      GO_TOURNAMENT : 12,
+      GO_FAN_PAGE : 13,
+      GO_URL : 14,
+      GO_EVENT : 15,
+      GO_PROFILE : 16,
+      GO_VIDEO : 17,
+      GO_GUILD : 18
     },
     SCOPE: {
       ALL: 99,
@@ -692,6 +714,8 @@ module.exports = {
     5 : 'caroElo',
     6 : 'vayElo'
   },
+  
+  
 
   PROFILE: {
     PER_PAGE: 5
@@ -794,6 +818,11 @@ module.exports = {
     INVITE_MEMBER : 5
   },
 
+  GUILD_MEMBER_STATUS_UMAP : {
+    1 : "Hội chủ",
+    2 : "Hội phó",
+    3 : "Thành viên"
+  },
 
   GUILD_UPDATE_MEMBER_TYPE : {
     ADD_MEMBER : 1,
@@ -811,6 +840,7 @@ module.exports = {
     5: 'Người chơi %s phạm luật đuổi dai.',
     6: 'Ván đấu kết thúc do 40 nước không tiến triển',
     7: 'Sau 300 nước ván cờ không kết thúc',
+    8: 'Không đủ quân để chiến thắng.',
     10: 'Người chơi %s xin thua',
     11: 'Người chơi %s rời bàn',
     12: 'Người chơi %s hết thời gian một lượt đi quân',
@@ -899,5 +929,41 @@ module.exports = {
   },
   NOTIFY_NC_POPUP_TYPE:{
     TOURNAMENT_DUEL : 1
-  }
+  },
+  NRU: {
+    1: {
+      xp: 10,
+      gold: 500,
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold và ${xp} xp khi chơi ván cờ đầu tiên'
+    },
+    2: {
+      friend: 10,
+      msg: 'Chúc mừng bạn đã có thêm ${friend} bạn mới khi chơi ván cờ thứ ${count}'
+    },
+    3: {
+      xp: 10,
+      gold: 1000,
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold và ${xp} xp khi thắng ván cờ thứ ${count}'
+    },
+    10: {
+      xp: 10,
+      gold: 2000,
+      item: {id: 1, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và vật phẩm luận cờ trong 3 ngày khi thắng ván cờ thứ ${count}'
+    },
+    20: {
+      xp: 20,
+      gold: 3000,
+      item: {id: 3, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và vật phẩm sửa thời gian trong 3 ngày khi thắng ván cờ thứ ${count}'
+    },
+    30: {
+      xp: 50,
+      gold: 5000,
+      item: {id: 13, duration: 4320},
+      msg: 'Chúc mừng bạn vừa nhận được ${gold} gold, ${xp} xp và thẻ VIP bạc trong 3 ngày khi thắng ván cờ thứ ${count}'
+    }
+  },
+
+  INSTANT_SECRET: '2f5057ee03a358614ca13b2e9d7d6ed2'
 };

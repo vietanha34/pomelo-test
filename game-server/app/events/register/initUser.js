@@ -40,26 +40,37 @@ module.exports.process = function (app, type, param) {
     console.error('wrong param register: ', param);
     return;
   }
+  var fs = require('fs');
+  fs.appendFile("/home/anhlv/cothu/source/game-server/logs/logRegister.log", JSON.stringify(param) + '\n', function(err) {
+    if(err) {
+      return console.log(err);
+    }
 
+    console.log("The file was saved!");
+  });
   param.ip = param.ip || 'ip';
   param.deviceId = param.deviceId || 'deviceId';
 
   var mysql = pomelo.app.get('mysqlClient');
 
-  var query = 'SELECT COUNT(uid) AS `count` FROM ' +
-                '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
-                  'UNION ' +
-                'SELECT uid FROM UserDevice WHERE ip = :ip) T';
+  // var query = 'SELECT COUNT(uid) AS `count` FROM ' +
+  //               '(SELECT uid FROM UserDevice WHERE deviceId = :deviceId ' +
+  //                 'UNION ' +
+  //               'SELECT uid FROM UserDevice WHERE ip = :ip) T';
+  var query = 'SELECT count(uid) AS `count` FROM UserDevice WHERE deviceId = :deviceId';
 
   mysql.sequelize
     .query(query, {
-      replacements: {ip: param.ip, deviceId: param.deviceId},
+      replacements: {
+        // ip: param.ip,
+        deviceId: param.deviceId
+      },
       type: mysql.sequelize.QueryTypes.SELECT,
       raw: true
     })
     .then(function(user) {
       var userCount = (user && user[0]) ? (user[0].count) : 0;
-      userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229') ? 1 : (userCount + 1);
+      userCount = (param.ip == '113.190.242.3' || param.ip == '42.115.210.229' || param.ip == '113.190.233.178') ? 1 : (userCount + 1);
 
       var Achievement = mysql.Achievement;
       Achievement
@@ -83,7 +94,7 @@ module.exports.process = function (app, type, param) {
 
         if (!globalConfig.IS_REVIEW) {
           var bonus = 0;
-          if (userCount == 1) {
+          if (userCount === 1) {
             switch (param.type) {
               case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
                 bonus = globalConfig.FB_GOLD || 0;
@@ -97,13 +108,13 @@ module.exports.process = function (app, type, param) {
             }
           }
           else if (
-            param.platform == consts.PLATFORM_ENUM.IOS || param.platform == consts.PLATFORM_ENUM.WINDOWPHONE ||
-            param.platform == 'ios' || param.platform == 'windowphone') {
-            if (userCount == 2) bonus = 3000;
-            else if (userCount == 3) bonus = 1000;
+            param.platform === consts.PLATFORM_ENUM.IOS || param.platform === consts.PLATFORM_ENUM.WINDOWPHONE ||
+            param.platform === 'ios' || param.platform === 'windowphone') {
+            if (userCount === 2) bonus = 5000;
+            else if (userCount === 3) bonus = 5000;
           }
 
-          if (app.get('env') == 'development') {
+          if (app.get('env') === 'development') {
             bonus = 100000;
           }
 
