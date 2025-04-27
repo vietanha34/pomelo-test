@@ -49,15 +49,18 @@ module.exports.process = function (app, type, param) {
       }
       var userId = param.uid;
       // update user info
-      user.hasPay = 1;
-      user.vipPoint += formula.calVipPointByMoney((param.currency == 'VND' ? param.money : param.money*22000));
+      user.hasPay = user.hasPay ? user.hasPay : 1;
+      if (['chess6', 'chess8', 'chess7'].indexOf(param.packageName) > -1) {
+        user.hasPay = 2
+      }
+      user.vipPoint += formula.calVipPointByMoney((param.currency === 'VND' ? param.money : param.money*22000));
       var vipPoint = user.vipPoint;
       UserDao.updateProperties(param.uid, user);
 
       // increase daily topup
       var attr = '';
-      if (param.topupType == consts.TOPUP_TYPE.SMS) attr = 'todaySms';
-      else if (param.topupType == consts.TOPUP_TYPE.CARD) attr = 'todayCard';
+      if (param.topupType === consts.TOPUP_TYPE.SMS) attr = 'todaySms';
+      else if (param.topupType === consts.TOPUP_TYPE.CARD) attr = 'todayCard';
       if (attr) pomelo.app.get('redisInfo').hincrby(redisKeyUtil.getPlayerInfoKey(param.uid), attr, 1);
 
       // update BXH

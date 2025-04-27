@@ -59,7 +59,7 @@ HomeDao.getHome = function getHome(params, cb) {
   ];
 
   return Promise.props({
-    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint']),
+    userInfo: UserDao.getUserProperties(params.uid, ['uid', 'username', 'fullname', 'gold', 'avatar', 'exp', 'vipPoint', 'hasPay']),
     achievement: pomelo.app.get('mysqlClient').Achievement.findOne({where: {uid: params.uid}}),
     effect: ItemDao.checkEffect(params.uid, effects),
     cacheInfo: pomelo.app.get('redisInfo').hmgetAsync(redisKeyUtil.getPlayerInfoKey(params.uid), 'dailyReceived', 'location', 'adsCount'),
@@ -102,6 +102,9 @@ HomeDao.getHome = function getHome(params, cb) {
         gold : adsGold,
         disable: enable?0:1
       };
+
+      data.offer = props.userInfo.hasPay === 2 ? 1 : 0
+
 
       data.videoAds = {
         enable: enable,

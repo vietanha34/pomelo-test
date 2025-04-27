@@ -94,7 +94,7 @@ module.exports.process = function (app, type, param) {
 
         if (!globalConfig.IS_REVIEW) {
           var bonus = 0;
-          if (userCount == 1) {
+          if (userCount === 1) {
             switch (param.type) {
               case (consts.ACCOUNT_TYPE.ACCOUNT_TYPE_FBUSER):
                 bonus = globalConfig.FB_GOLD || 0;
@@ -108,13 +108,13 @@ module.exports.process = function (app, type, param) {
             }
           }
           else if (
-            param.platform == consts.PLATFORM_ENUM.IOS || param.platform == consts.PLATFORM_ENUM.WINDOWPHONE ||
-            param.platform == 'ios' || param.platform == 'windowphone') {
-            if (userCount == 2) bonus = 3000;
-            else if (userCount == 3) bonus = 1000;
+            param.platform === consts.PLATFORM_ENUM.IOS || param.platform === consts.PLATFORM_ENUM.WINDOWPHONE ||
+            param.platform === 'ios' || param.platform === 'windowphone') {
+            if (userCount === 2) bonus = 5000;
+            else if (userCount === 3) bonus = 5000;
           }
 
-          if (app.get('env') == 'development') {
+          if (app.get('env') === 'development') {
             bonus = 100000;
           }
 

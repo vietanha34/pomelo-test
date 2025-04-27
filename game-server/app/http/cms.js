@@ -177,4 +177,24 @@ module.exports = function(app) {
         res.json(result);
     });
   });
+
+  app.get('/cms/kick', (req, res, next) => {
+
+    var statusService = pomelo.app.get('statusService');
+
+    statusService.getSidsByUid(req.query.uid || req.query.userId, (err, sids) => {
+      if (sids && sids.length >= 1) {
+        pomelo.app.rpc.connector.connectorRemote.kick({
+          frontendId: sids[0]
+        }, req.query.uid || req.query.userId, e => {
+          e && console.error(e.stack || e);
+          res.json({ ec: 0 });
+          next();
+        });
+      } else {
+        res.json({ ec: 404, msg: 'not found' });
+        next();
+      }
+    });
+  });
 };

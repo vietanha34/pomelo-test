@@ -2,15 +2,17 @@
  * Created by vietanha34 on 6/5/15.
  */
 
-var logger = require('pomelo-logger').getLogger(__filename);
-var pomelo = require('pomelo');
-var consts = require('../consts/consts');
-var utils = require('../util/utils');
-var Code = require('../consts/code');
-var Promise = require('bluebird');
-var redisKeyUtil = require('../util/redisKeyUtil');
-var lodash = require('lodash');
-var UserDao = module.exports;
+const logger = require('pomelo-logger').getLogger(__filename);
+const pomelo = require('pomelo');
+const consts = require('../consts/consts');
+const utils = require('../util/utils');
+const Code = require('../consts/code');
+const Promise = require('bluebird');
+const redisKeyUtil = require('../util/redisKeyUtil');
+const lodash = require('lodash');
+const UserDao = module.exports;
+var initCache = require('sequelize-redis-cache');
+var cacher
 
 
 UserDao.getUserProperties = function (uid, properties, cb) {
@@ -110,8 +112,11 @@ UserDao.getUserPropertiesByUsername = function (username, properties, cb) {
 };
 
 UserDao.getUsersPropertiesByUids = function (uids, properties, cb) {
-  return pomelo.app.get('mysqlClient')
-    .User
+  if (!cacher) {
+    cacher = initCache(pomelo.app.get('mysqlClient').sequelize, pomelo.app.get('redisCache'));
+  }
+  return cacher('Users')
+    .ttl(180)
     .findAll({where: {uid: {$in: uids}}, attributes: properties, raw: true})
     .then(function (users) {
       return utils.invokeCallback(cb, null, users);

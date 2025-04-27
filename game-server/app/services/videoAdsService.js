@@ -2,13 +2,11 @@
  * Created by vietanha34 on 5/12/15.
  */
 
-var async = require('async');
 var Code = require('../consts/code');
 var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var pomelo = require('pomelo');
 var rp = require('request-promise');
-var qs = require('querystring');
 
 var VideoAdsService = function (app, opts) {
   this.app = app;

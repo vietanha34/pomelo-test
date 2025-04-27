@@ -2,7 +2,6 @@
  * Created by vietanha34 on 1/14/16.
  */
 
-var async = require('async');
 var utils = require('../../../util/utils');
 var Code = require('../../../consts/code');
 var pomelo = require('pomelo');
@@ -848,12 +847,12 @@ Handler.prototype.duel = function (msg, session, next) {
       }
     })
     .spread(function (count, guildCount, guildTargetBattle, guildCurrentBattle, timeoutFail, timeoutSuccess, recentBattle) {
-      if (count >= 3){
+      if (count >= 5){
         return Promise.reject({ec: Code.FAIL, msg: "Hội quán của bạn không được gửi quá 3 lời mời khiêu chiến hội quán khác"})
       }
 
       if (guildCount >= 1){
-        return Promise.reject({ec : Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
+        return Promise.reject({ec: Code.FAIL, msg: "Bạn đã gửi lời mời khiêu chiến đến hội quán này rồi, vui lòng đợi đối phương chấp nhập"})
       }
       var time = (msg.time / 1000 | 0)
       var targetTime = guildTargetBattle ? moment(guildTargetBattle.time).unix() : 0 

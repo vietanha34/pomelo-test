@@ -1,9 +1,9 @@
-var pomelo = require('pomelo');
-var Mongo = require('./app/dao/mongo/mongo');
-var path = require('path');
-var utils = require('./app/util/utils');
-var Promise = require('bluebird');
-var consts = require('./app/consts/consts');
+const pomelo = require('pomelo');
+const Mongo = require('./app/dao/mongo/mongo');
+const path = require('path');
+const utils = require('./app/util/utils');
+const Promise = require('bluebird');
+const consts = require('./app/consts/consts');
 
 Promise.config({
   longStackTraces: true,
@@ -16,7 +16,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 /**
  * Init app for client.
  */
-var app = pomelo.createApp();
+const app = pomelo.createApp();
 app.set('name', 'cothu-v2');
 
 
@@ -242,7 +242,7 @@ app.configure('production|development|local', 'game|district|service|manager|mas
 });
 
 // config waitingService
-app.configure('production|development|local', 'district|connector|game|home', function () {
+app.configure('production|development|local', 'district|connector|game|home|worker', function () {
   var WaitingService = require('pomelo-waiting-plugin');
   app.use(WaitingService, {
     waiting: {

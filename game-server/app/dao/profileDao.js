@@ -18,7 +18,6 @@ var FriendDao = require('./friendDao');
 var wordFilter = require('../util/wordFilter');
 var request = require('request-promise').defaults({transform: true});
 var util = require('util')
-var Code = require('../consts/code')
 
 /**
  *

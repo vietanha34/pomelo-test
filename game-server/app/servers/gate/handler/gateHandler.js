@@ -72,12 +72,16 @@ Handler.prototype.getServer = function (msg, session, next) {
     }
     else {
       var config = utils.clone(configService.getConfig());
-      if (version === 11072018 && msg.platform === 'android'){
-        config['IS_REVIEW'] = 1;
-        pomelo.app.get('redisCache')
-          .set(redisKeyUtil.getIsReviewVersion(version), 1);
-        pomelo.app.get('redisCache')
-          .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
+      // if (version === 11072018 && msg.platform === 'android'){
+      //   config['IS_REVIEW'] = 1;
+      //   pomelo.app.get('redisCache')
+      //     .set(redisKeyUtil.getIsReviewVersion(version), 1);
+      //   pomelo.app.get('redisCache')
+      //     .expire(redisKeyUtil.getIsReviewVersion(version), 3600);
+      // }
+      if (version === '20180711' && (msg.platform === 'android' || msg.platform === 'ios')){
+         link = msg.platform === 'android' ? 'http://bit.ly/cothuad20180813' : 'http://bit.ly/cothuios20180813'
+        msg = 'Vui lòng cập nhật phiên bản mới để có trải nghiệm tốt nhất & bổ sung hệ thống nạp thẻ cào, ngân hàng'
       }
       var responseData = {
         ec : Code.OK,

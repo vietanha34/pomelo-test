@@ -11,6 +11,7 @@ var utils = require('../util/utils');
 var formula = require('../consts/formula');
 var UserDao = require('../dao/userDao');
 
+
 /**
  *
  * @param uid
@@ -140,6 +141,7 @@ TopDao.getTop = function getTop(uid, type, instant, cb) {
         .select(select)
         .lean()
         .then(function(user) {
+          user = user || {}
           me.rank = Number(user[rankAttr]) || 0;
           me.point = Number(user[attr]) || 0;
           return utils.invokeCallback(cb, null, {list: list, me: me});

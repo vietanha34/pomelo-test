@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  game-server:
+    build:
+      context: ./game-server
+      dockerfile: Dockerfile.prod
+    container_name: cothu-game-server
+    restart: always
+    volumes:
+      - ./game-server:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    ports:
+      - "3014:3014"  # Admin port
+      - "3010:3010"  # Connector port
+      - "3011:3011"  # Gate port
+      - "3012:3012"  # Game port
+      - "3013:3013"  # Auth port
+      - "3015:3015"  # Chat port
+      - "3016:3016"  # Tournament port
+      - "3017:3017"  # District port
+      - "3018:3018"  # Manager port
+      - "3019:3019"  # Service port
+      - "3020:3020"  # Event port
+      - "3021:3021"  # Worker port
+      - "3022:3022"  # Home port
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/cothu_production
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+      - RABBITMQ_URL=amqp://guest:payrabbit@v!@rabbitmq
+    depends_on:
+      - mongo
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - cothu-network
+    command: ["pm2-runtime", "start", "ecosystem.json", "--env", "production"]
+
+  mongo:
+    image: mongo:4.4
+    container_name: cothu-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    restart: always
+    networks:
+      - cothu-network
+    command: --auth
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE=cothu_production
+
+  mysql:
+    image: mysql:5.7
+    container_name: cothu-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=cothu_production
+      - MYSQL_USER=cothu
+      - MYSQL_PASSWORD=production_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+    networks:
+      - cothu-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+
+  redis:
+    image: redis:6
+    container_name: cothu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    networks:
+      - cothu-network
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass redis123
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cothu-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=payrabbit@v!
+    ports:
+      - "5672:5672"  # AMQP
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: always
+    networks:
+      - cothu-network
+
+  # Nginx để reverse proxy và load balancing
+  nginx:
+    image: nginx:1.19
+    container_name: cothu-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./static:/usr/share/nginx/html
+    restart: always
+    depends_on:
+      - game-server
+    networks:
+      - cothu-network
+
+networks:
+  cothu-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  mysql-data:
+  redis-data:
+  rabbitmq-data: 

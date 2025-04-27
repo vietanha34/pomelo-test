@@ -480,6 +480,7 @@ module.exports = {
     VIDEO_ADS: 48,
     BONUS_PLAY_GAME: 49,
     NRU: 50,
+    BANKRUPT: 60,
     UNKNOWN: 99
   },
 

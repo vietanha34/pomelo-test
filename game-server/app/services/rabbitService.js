@@ -123,9 +123,8 @@ pro.autoUnlockKey = function () {
 
 function ProcessTopup(app, msg, numberRetry) {
   try {
-    logger.info('msg: ', msg);
     var data = utils.JSONParse(msg.toString());
-    utils.log('TOPUP: ', data);
+    console.error('TOPUP: ', data);
     numberRetry = numberRetry || 0;
     if (numberRetry > 4) {
       data.msg = 'Retry failed';
@@ -174,10 +173,10 @@ function ProcessTopup(app, msg, numberRetry) {
           logging(data, false);
           return done({msg: 'uid not found'})
         }
-        if (data.methodType == consts.TOPUP_TYPE.SMS && data.sub)
+        if (data.methodType === consts.TOPUP_TYPE.SMS && data.sub)
           data.methodType = consts.TOPUP_TYPE.SUB;
 
-        var type = (data.methodType == consts.TOPUP_TYPE.SMS && data.sub)
+        var type = (data.methodType === consts.TOPUP_TYPE.SMS && data.sub)
                     ? consts.TOPUP_TYPE.SUB
                     : data.methodType;
 
@@ -191,7 +190,10 @@ function ProcessTopup(app, msg, numberRetry) {
         if (bonusPercent) {
           data.promotionMoney += Math.round(data.gameMoney * bonusPercent / 100);
         }
-        var addVip = formula.calVipPointByMoney((data.currency == 'VND' ? data.money : data.money*22000));
+        if (['chess6', 'chess8', 'chess7'].indexOf(data.packageName) > -1) {
+          data.promotionMoney = data.gameMoney
+        }
+        var addVip = formula.calVipPointByMoney((data.currency === 'VND' ? data.money : data.money*22000));
         var vipAfter = (vipPoint+addVip);
         var opts = {
           uid: uid,
@@ -224,6 +226,7 @@ function ProcessTopup(app, msg, numberRetry) {
         uid: userId,
         topupType: data.methodType,
         money: data.money,
+        packageName: data.packageName,
         currency: data.currency,
         gold: data.promotionMoney,
         bonus: data.promotionMoney - data.gameMoney

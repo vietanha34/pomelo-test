@@ -1,5 +1,4 @@
 var Code = require('../consts/code');
-var consts = require('../consts/consts');
 var utils = require('../util/utils');
 var rp = require('request-promise');
 var qs = require('querystring');

@@ -3,13 +3,7 @@
  */
 
 var pomelo = require('pomelo');
-var consts = require('../consts/consts');
 var utils = require('../util/utils');
-var Code = require('../consts/code');
-var Promise = require('bluebird');
-var redisKeyUtil = require('../util/redisKeyUtil');
-var regexValidUtil = require('../util/regexValid');
-var lodash = require('lodash');
 var moment = require('moment');
 var NewsDao = module.exports;
 var initCache = require('sequelize-redis-cache');
